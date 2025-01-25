@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ML System Bottleneck Analyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        :root {
+            --primary: #0070f3;
+            --destructive: #ff4444;
+            --border: #e5e7eb;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .device {
+            border: 1px solid var(--border);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        
+        .button-destructive {
+            background: var(--destructive);
+        }
+        
+        .input, select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .alert {
+            background: #ffe5e5;
+            border: 1px solid var(--destructive);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>ML System Bottleneck Analyzer</h1>
+    
+    <div class="grid">
+        <div class="card">
+            <h2>Model Configuration</h2>
+            <div id="modelConfig">
+                <label>Total Parameters (B)</label>
+                <input type="number" id="totalParamsB" class="input" value="400">
+                
+                <label>Batch Size</label>
+                <input type="number" id="batchSize" class="input" value="1">
+                
+                <label>Sequence Length</label>
+                <input type="number" id="seqLength" class="input" value="2048">
+                
+                <label>Hidden Size</label>
+                <input type="number" id="hiddenSize" class="input" value="12288">
+                
+                <label>Number of Layers</label>
+                <input type="number" id="numLayers" class="input" value="96">
+                
+                <label>Number of Heads</label>
+                <input type="number" id="numHeads" class="input" value="96">
+                
+                <label>Data Type</label>
+                <select id="dtype" class="input">
+                    <option value="float32">float32</option>
+                    <option value="bfloat16" selected>bfloat16</option>
+                    <option value="float16">float16</option>
+                    <option value="int8">int8</option>
+                </select>
+                
+                <label>Parallelism Strategy</label>
+                <select id="parallelismStrategy" class="input">
+                    <option value="pipeline">Pipeline Parallelism</option>
+                    <option value="tensor">Tensor Parallelism</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>Devices</h2>
+                <button class="button" onclick="addDevice()">Add Device</button>
+            </div>
+            <div id="devices"></div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Resource Utilization</h2>
+            <div class="chart-container">
+                <canvas id="utilizationChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>System Analysis</h2>
+            <div id="systemAnalysis"></div>
+        </div>
+    </div>
+
+    <div id="alerts"></div>
+
+    <script>
+        const DTYPE_SIZES = {
+            'float32': 4,
+            'bfloat16': 2,
+            'float16': 2,
+            'int8': 1
+        };
+
+        const DEVICE_TEMPLATES = {
+            'A100': {
+                memoryGB: 80,
+                localBandwidthGBps: 1935,
+                networkBandwidthGBps: 300,
+                computeTFlops: 312,
+                type: 'GPU'
+            },
+            'H100': {
+                memoryGB: 120,
+                localBandwidthGBps: 3350,
+                networkBandwidthGBps: 450,
+                computeTFlops: 989,
+                type: 'GPU'
+            },
+            '4090': {
+                memoryGB: 24,
+                localBandwidthGBps: 1008,
+                networkBandwidthGBps: 64,
+                computeTFlops: 83,
+                type: 'GPU'
+            },
+            'Custom': {
+                memoryGB: 16,
+                localBandwidthGBps: 800,
+                networkBandwidthGBps: 200,
+                computeTFlops: 100,
+                type: 'Custom'
+            }
+        };
+
+        let devices = [{
+            id: 1,
+            name: 'Device 1',
+            template: 'A100',
+            ...DEVICE_TEMPLATES.A100
+        }];
+
+        let utilizationChart = null;
+
+        function getModelConfig() {
+            return {
+                totalParamsB: parseFloat(document.getElementById('totalParamsB').value),
+                batchSize: parseFloat(document.getElementById('batchSize').value),
+                seqLength: parseFloat(document.getElementById('seqLength').value),
+                hiddenSize: parseFloat(document.getElementById('hiddenSize').value),
+                numLayers: parseFloat(document.getElementById('numLayers').value),
+                numHeads: parseFloat(document.getElementById('numHeads').value),
+                dtype: document.getElementById('dtype').value,
+                parallelismStrategy: document.getElementById('parallelismStrategy').value
+            };
+        }
+
+        function calculateMemoryBreakdown(modelConfig, dtypeSize) {
+            const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
+            const hiddenStates = modelConfig.batchSize * modelConfig.seqLength * 
+                               modelConfig.hiddenSize * dtypeSize * modelConfig.numLayers;
+            const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) * 
+                                  modelConfig.numHeads * dtypeSize;
+            
+            return {
+                paramsMemory,
+                hiddenStates,
+                attentionMemory,
+                total: paramsMemory + hiddenStates + attentionMemory
+            };
+        }
+
+        function calculateMetrics() {
+            const modelConfig = getModelConfig();
+            const dtypeSize = DTYPE_SIZES[modelConfig.dtype];
+            const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize);
+            const memoryPerDevice = memoryBreakdown.total / devices.length;
+
+            const isPipeline = modelConfig.parallelismStrategy === 'pipeline';
+            const activationSize = modelConfig.batchSize * modelConfig.seqLength * 
+                                 modelConfig.hiddenSize * dtypeSize;
+            
+            return devices.map(device => {
+                const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
+                
+                const networkBandwidthRequired = isPipeline ? 
+                    activationSize * 2 : 
+                    activationSize * 2 * (devices.length - 1);
+                
+                const localBandwidthRequired = activationSize * 4;
+                
+                const computeUtilization = ((modelConfig.totalParamsB * 1e9 * 2) / devices.length) / 
+                                        (device.computeTFlops * 1e12) * 100;
+                
+                return {
+                    name: device.name,
+                    memoryUtilization: Math.min(memoryUtilization, 1000),
+                    localBandwidthUtilization: Math.min((localBandwidthRequired / (device.localBandwidthGBps * 1e9)) * 100, 1000),
+                    networkBandwidthUtilization: Math.min((networkBandwidthRequired / (device.networkBandwidthGBps * 1e9)) * 100, 1000),
+                    computeUtilization: Math.min(computeUtilization, 1000),
+                    rawMemoryUtilization: memoryUtilization,
+                    rawLocalBandwidthUtilization: (localBandwidthRequired / (device.localBandwidthGBps * 1e9)) * 100,
+                    rawNetworkBandwidthUtilization: (networkBandwidthRequired / (device.networkBandwidthGBps * 1e9)) * 100,
+                    rawComputeUtilization: computeUtilization,
+                    isBottleneck: memoryUtilization > 100 || 
+                                (localBandwidthRequired / 1e9) > device.localBandwidthGBps ||
+                                (networkBandwidthRequired / 1e9) > device.networkBandwidthGBps
+                };
+            });
+        }
+
+        function updateDeviceDisplay() {
+            const devicesContainer = document.getElementById('devices');
+            devicesContainer.innerHTML = devices.map(device => `
+                <div class="device">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <input class="input" style="width: auto;" value="${device.name}"
+                               onchange="updateDevice(${device.id}, 'name', this.value)">
+                        <button class="button button-destructive" 
+                                onclick="removeDevice(${device.id})"
+                                ${devices.length === 1 ? 'disabled' : ''}>
+                            Remove
+                        </button>
+                    </div>
+                    
+                    <select class="input" onchange="updateDevice(${device.id}, 'template', this.value)">
+                        ${Object.keys(DEVICE_TEMPLATES).map(template => `
+                            <option value="${template}" ${device.template === template ? 'selected' : ''}>
+                                ${template}
+                            </option>
+                        `).join('')}
+                    </select>
+
+                    <div class="device-grid">
+                        ${['memoryGB', 'localBandwidthGBps', 'networkBandwidthGBps', 'computeTFlops']
+                            .map(field => `
+                                <div>
+                                    <label>${field.replace(/([A-Z])/g, ' $1')
+                                                .replace(/^./, str => str.toUpperCase())}</label>
+                                    <input type="number" class="input" value="${device[field]}"
+                                           onchange="updateDevice(${device.id}, '${field}', parseFloat(this.value) || 0)"
+                                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+                                </div>
+                            `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateSystemAnalysis() {
+            const metrics = calculateMetrics();
+            const analysisContainer = document.getElementById('systemAnalysis');
+            
+            analysisContainer.innerHTML = metrics.map(m => `
+                <div style="margin-bottom: 1rem;">
+                    <h3>${m.name}</h3>
+                    <div class="device-grid" style="font-size: 0.875rem;">
+                        <div>Memory Usage: ${m.memoryUtilization.toFixed(1)}%</div>
+                        <div>Compute Usage: ${m.computeUtilization.toFixed(1)}%</div>
+                        <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%</div>
+                        <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%</div>
+                    </div>
+                </div>
+            `).join('');
+
+            updateAlerts(metrics);
+            updateChart(metrics);
+        }
+
+        function updateAlerts(metrics) {
+            const alertsContainer = document.getElementById('alerts');
+            let alertsHtml = '';
+
+            if (metrics.some(m => m.isBottleneck)) {
+                alertsHtml += `
+                    <div class="alert">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                            Configuration Not Feasible:
+                        </div>
+                        ${metrics.filter(m => m.isBottleneck).map(m => `
+                            <div style="margin-left: 1rem;">
+                                • ${m.name}:
+                                ${m.memoryUtilization > 100 ? 
+                                    ` Requires ${(m.memoryUtilization/100).toFixed(1)}x more memory` : ''}
+                                ${m.localBandwidthUtilization > 100 ? 
+                                    ` Requires ${(m.localBandwidthUtilization/100).toFixed(1)}x more local bandwidth` : ''}
+                                ${m.networkBandwidthUtilization > 100 ? 
+                                    ` Requires ${(m.networkBandwidthUtilization/100).toFixed(1)}x more network bandwidth` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            alertsContainer.innerHTML = alertsHtml;
+        }
+
+        function updateChart(metrics) {
+            const ctx = document.getElementById('utilizationChart').getContext('2d');
+            
+            const chartData = {
+                labels: metrics.map(m => m.name),
+                datasets: [
+                    {
+                        label: 'Memory',
+                        data: metrics.map(m => Math.min(m.memoryUtilization, 200)),
+                        backgroundColor: '#8884d8'
+                    },
+                    {
+                        label: 'Local Bandwidth',
+                        data: metrics.map(m => Math.min(m.localBandwidthUtilization, 200)),
+                        backgroundColor: '#82ca9d'
+                    },
+                    {
+                        label: 'Network Bandwidth',
+                        data: metrics.map(m => Math.min(m.networkBandwidthUtilization, 200)),
+                        backgroundColor: '#ffc658'
+                    },
+                    {
+                        label: 'Compute',
+                        data: metrics.map(m => Math.min(m.computeUtilization, 200)),
+                        backgroundColor: '#ff7300'
+                    }
+                ]
+            };
+
+            if (utilizationChart) {
+                utilizationChart.destroy();
+            }
+
+            utilizationChart = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 200,
+                            title: {
+                                display: true,
+                                text: 'Utilization %'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    const metric = metrics[index];
+                                    const datasetLabel = context.dataset.label;
+                                    let rawValue;
+                                    
+                                    switch(datasetLabel) {
+                                        case 'Memory':
+                                            rawValue = metric.rawMemoryUtilization;
+                                            break;
+                                        case 'Local Bandwidth':
+                                            rawValue = metric.rawLocalBandwidthUtilization;
+                                            break;
+                                        case 'Network Bandwidth':
+                                            rawValue = metric.rawNetworkBandwidthUtilization;
+                                            break;
+                                        case 'Compute':
+                                            rawValue = metric.rawComputeUtilization;
+                                            break;
+                                    }
+                                    
+                                    return `${datasetLabel}: ${rawValue.toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function addDevice() {
+            const newDevice = {
+                id: devices.length + 1,
+                name: `Device ${devices.length + 1}`,
+                template: 'A100',
+                ...DEVICE_TEMPLATES.A100
+            };
+            devices.push(newDevice);
+            updateDeviceDisplay();
+            updateSystemAnalysis();
+        }
+
+        function removeDevice(id) {
+            if (devices.length > 1) {
+                devices = devices.filter(d => d.id !== id);
+                updateDeviceDisplay();
+                updateSystemAnalysis();
+            }
+        }
+
+        function updateDevice(id, field, value) {
+            devices = devices.map(d => {
+                if (d.id !== id) return d;
+                const updatedDevice = { ...d, [field]: value };
+                if (field === 'template' && value !== 'Custom') {
+                    return { ...updatedDevice, ...DEVICE_TEMPLATES[value] };
+                }
+                return updatedDevice;
+            });
+            updateDeviceDisplay();
+            updateSystemAnalysis();
+        }
+
+        // Add event listeners to model config inputs
+        document.querySelectorAll('#modelConfig input, #modelConfig select').forEach(input => {
+            input.addEventListener('change', updateSystemAnalysis);
+        });
+
+        // Initial render
+        updateDeviceDisplay();
+        updateSystemAnalysis();
+    </script>
+</body>
+</html>
