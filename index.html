@@ -212,18 +212,54 @@
             };
         }
 
+       // Replace the addDevice function with this updated version
+function addDevice() {
+    const lastDevice = devices[devices.length - 1];
+    const newDevice = {
+        id: devices.length + 1,
+        name: `Device ${devices.length + 1}`,
+        template: lastDevice.template,
+        ...DEVICE_TEMPLATES[lastDevice.template === 'Custom' ? 'Custom' : lastDevice.template],
+        memoryGB: lastDevice.memoryGB,
+        localBandwidthGBps: lastDevice.localBandwidthGBps,
+        networkBandwidthGBps: lastDevice.networkBandwidthGBps,
+        computeTFlops: lastDevice.computeTFlops
+    };
+    devices.push(newDevice);
+    updateDeviceDisplay();
+    updateSystemAnalysis();
+}
+
+// Update the calculation functions for more accurate metrics
         function calculateMemoryBreakdown(modelConfig, dtypeSize) {
+            // Model parameters memory
             const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
-            const hiddenStates = modelConfig.batchSize * modelConfig.seqLength * 
-                               modelConfig.hiddenSize * dtypeSize * modelConfig.numLayers;
+            
+            // KV Cache memory per layer
+            const kvCacheSize = 2 * modelConfig.batchSize * modelConfig.seqLength * 
+                               (modelConfig.hiddenSize / modelConfig.numHeads) * 
+                               modelConfig.numHeads * dtypeSize;
+            
+            // Attention operation memory
             const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) * 
-                                  modelConfig.numHeads * dtypeSize;
+                                   modelConfig.numHeads * dtypeSize;
+            
+            // Activation memory for forward and backward pass
+            const activationMemory = 2 * modelConfig.batchSize * modelConfig.seqLength * 
+                                   modelConfig.hiddenSize * dtypeSize;
+            
+            // Layer-specific memory
+            const layerMemory = (kvCacheSize + activationMemory) * modelConfig.numLayers;
+            
+            // Optimizer states (assume Adam optimizer - 8 bytes per parameter)
+            const optimizerMemory = paramsMemory * 2;
             
             return {
                 paramsMemory,
-                hiddenStates,
+                layerMemory,
                 attentionMemory,
-                total: paramsMemory + hiddenStates + attentionMemory
+                optimizerMemory,
+                total: paramsMemory + layerMemory + attentionMemory + optimizerMemory
             };
         }
 
@@ -231,23 +267,42 @@
             const modelConfig = getModelConfig();
             const dtypeSize = DTYPE_SIZES[modelConfig.dtype];
             const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize);
-            const memoryPerDevice = memoryBreakdown.total / devices.length;
-
+            
+            // Memory per device based on parallelism strategy
             const isPipeline = modelConfig.parallelismStrategy === 'pipeline';
-            const activationSize = modelConfig.batchSize * modelConfig.seqLength * 
-                                 modelConfig.hiddenSize * dtypeSize;
+            const memoryPerDevice = isPipeline ? 
+                (memoryBreakdown.total / devices.length) + memoryBreakdown.layerMemory : 
+                memoryBreakdown.total / devices.length;
+        
+            // Calculate FLOPs for attention and MLP
+            const seqLen = modelConfig.seqLength;
+            const batchSize = modelConfig.batchSize;
+            const hiddenSize = modelConfig.hiddenSize;
+            const numLayers = modelConfig.numLayers;
+            
+            // Attention FLOPs
+            const attentionFlops = 4 * batchSize * seqLen * (seqLen * hiddenSize + hiddenSize * hiddenSize);
+            
+            // MLP FLOPs (assuming 4x hidden size for intermediate)
+            const mlpFlops = 8 * batchSize * seqLen * hiddenSize * hiddenSize;
+            
+            // Total FLOPs per forward+backward pass
+            const totalFlops = (attentionFlops + mlpFlops) * numLayers * 2;
             
             return devices.map(device => {
+                // Memory utilization
                 const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
                 
+                // Network bandwidth requirements
                 const networkBandwidthRequired = isPipeline ? 
-                    activationSize * 2 : 
-                    activationSize * 2 * (devices.length - 1);
+                    (2 * batchSize * seqLen * hiddenSize * dtypeSize) / devices.length :
+                    (4 * batchSize * seqLen * hiddenSize * dtypeSize * (devices.length - 1)) / devices.length;
                 
-                const localBandwidthRequired = activationSize * 4;
+                // Local memory bandwidth requirements (accounts for reading and writing activations)
+                const localBandwidthRequired = 3 * memoryPerDevice;
                 
-                const computeUtilization = ((modelConfig.totalParamsB * 1e9 * 2) / devices.length) / 
-                                        (device.computeTFlops * 1e12) * 100;
+                // Compute utilization based on theoretical peak performance
+                const computeUtilization = (totalFlops / devices.length) / (device.computeTFlops * 1e12) * 100;
                 
                 return {
                     name: device.name,
@@ -260,8 +315,9 @@
                     rawNetworkBandwidthUtilization: (networkBandwidthRequired / (device.networkBandwidthGBps * 1e9)) * 100,
                     rawComputeUtilization: computeUtilization,
                     isBottleneck: memoryUtilization > 100 || 
-                                (localBandwidthRequired / 1e9) > device.localBandwidthGBps ||
-                                (networkBandwidthRequired / 1e9) > device.networkBandwidthGBps
+                                 (localBandwidthRequired / 1e9) > device.localBandwidthGBps ||
+                                 (networkBandwidthRequired / 1e9) > device.networkBandwidthGBps ||
+                                 computeUtilization > 100
                 };
             });
         }
@@ -435,11 +491,16 @@
         }
 
         function addDevice() {
+            const lastDevice = devices[devices.length - 1];
             const newDevice = {
                 id: devices.length + 1,
                 name: `Device ${devices.length + 1}`,
-                template: 'A100',
-                ...DEVICE_TEMPLATES.A100
+                template: lastDevice.template,
+                ...DEVICE_TEMPLATES[lastDevice.template === 'Custom' ? 'Custom' : lastDevice.template],
+                memoryGB: lastDevice.memoryGB,
+                localBandwidthGBps: lastDevice.localBandwidthGBps,
+                networkBandwidthGBps: lastDevice.networkBandwidthGBps,
+                computeTFlops: lastDevice.computeTFlops
             };
             devices.push(newDevice);
             updateDeviceDisplay();
