@@ -66,7 +66,354 @@
     }
     </script>
     <style>
+	
+@media (prefers-color-scheme: dark) {
 :root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --destructive: #ef4444;
+    --destructive-hover: #dc2626;
+    --border: #1e293b;
+    --background: #0b0f1a;
+    --card: #1e293b;
+    --text: #f8fafc;
+    --text-secondary: #94a3b8;
+    --radius: 0.5rem;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    margin: 0;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin: 2rem 0;
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.025em;
+}
+
+h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1.5rem 0;
+    color: var(--text);
+    letter-spacing: -0.025em;
+}
+
+h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1rem 0;
+    color: var(--text);
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    backdrop-filter: blur(8px);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+    border-color: var(--primary);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.device {
+    background: var(--background);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.device:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: var(--transition);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.button:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.button:active {
+    transform: translateY(0);
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-destructive {
+    background: var(--destructive);
+}
+
+.button-destructive:hover {
+    background: var(--destructive-hover);
+}
+
+.input, select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    transition: var(--transition);
+    color: var(--text);
+    background: var(--background);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.input:hover, select:hover {
+    border-color: var(--primary);
+}
+
+.input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input:disabled, select:disabled {
+    background: #334155;
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+.alert {
+    background: #881337;
+    border: 1px solid var(--destructive);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    color: #fecdd3;
+}
+
+.device-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.chart-container {
+    height: 400px;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--background);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.chart-container:hover {
+    border-color: var(--primary);
+}
+
+.inline-select-group {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.inline-select-group label {
+    margin-bottom: 0;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+    width: auto;
+    white-space: nowrap;
+}
+
+.inline-select-group select {
+    flex-grow: 1;
+    margin-bottom: 0;
+    min-width: 0;
+}
+
+table {
+    width: 100%;
+    margin: 1.5rem 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--card);
+}
+
+th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+}
+
+th {
+    background: var(--background);
+    font-weight: 600;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition);
+}
+
+th:hover {
+    background: #334155;
+}
+
+th::after {
+    content: '';
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+}
+
+th.asc::after {
+    content: '▲';
+}
+
+th.desc::after {
+    content: '▼';
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:nth-child(even) {
+    background-color: rgba(30, 41, 59, 0.5);
+}
+
+tr:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+.filters {
+    margin: 1.5rem 0;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: var(--card);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .device-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inline-select-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .inline-select-group select {
+        width: 100%;
+    }
+
+    .filters {
+        flex-direction: column;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+    }
+}
+}
+@media (prefers-color-scheme: light) {
+ :root {
     --primary: #6366f1;
     --primary-hover: #4f46e5;
     --destructive: #ef4444;
@@ -318,7 +665,8 @@ input, select {
     }
 }
 
-
+ 
+}
     </style>
 </head>
 <body>
@@ -966,7 +1314,7 @@ input, select {
                     }
                     systemAnalysisHtml += `
                         <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem;">
-                            Prefill performance limited by <strong><span class="math-inline">\{bottleneckType\}</strong\> constraints \(</span>{m.bottleneckFactor.toFixed(1)}x slower)
+                            Prefill performance limited by <strong><span class="math-inline">${bottleneckType}</strong\> constraints (</span>${m.bottleneckFactor.toFixed(1)}x slower)
                         </div>
                     `;
                 }
