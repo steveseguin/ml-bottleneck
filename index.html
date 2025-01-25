@@ -1200,7 +1200,7 @@ input, select {
                 parallelismStrategy: document.getElementById('parallelismStrategy').value
             };
         }
-		function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline) {
+		function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex ) {
 			const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
 			const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength * 
 				(modelConfig.hiddenSize / modelConfig.numHeads) * 
@@ -1212,14 +1212,23 @@ input, select {
 			const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) * 
 				modelConfig.numHeads * dtypeSize;
 
-			// Adjust memory per device based on parallelism strategy
+			// Calculate total available memory across all devices
+			const totalSystemMemory = devices.reduce((sum, device) => sum + device.memoryGB * 1e9, 0);
+			
+			// Get this device's memory capacity
+			const deviceMemory = devices[deviceIndex].memoryGB * 1e9;
+			
+			// Calculate proportion of total memory for this device
+			const memoryProportion = deviceMemory / totalSystemMemory;
+
+			// Adjust memory allocation based on device's proportion of total memory
 			const adjustedParamsMemory = isPipeline ? 
-				paramsMemory / deviceCount : // Pipeline: divide layers across devices
+				paramsMemory * memoryProportion : // Pipeline: divide based on memory proportion
 				paramsMemory; // Tensor: replicate most params
 				
-			const adjustedKVCacheMemory = kvCacheMemory / deviceCount; // Always divide KV cache
-			const adjustedActivationMemory = activationMemory / deviceCount; // Always divide activations
-			const adjustedAttentionMemory = attentionMemory / deviceCount; // Always divide attention
+			const adjustedKVCacheMemory = kvCacheMemory * memoryProportion;
+			const adjustedActivationMemory = activationMemory * memoryProportion;
+			const adjustedAttentionMemory = attentionMemory * memoryProportion;
 
 			return {
 				paramsMemory: adjustedParamsMemory,
@@ -1295,12 +1304,10 @@ input, select {
 			const isPipeline = modelConfig.parallelismStrategy === 'pipeline';
 			const deviceCount = devices.length;
 
-			// Calculate per-device memory and network requirements
-			const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline);
-			const networkTraffic = calculateNetworkTraffic(modelConfig, dtypeSize, deviceCount, isPipeline);
-
 			return devices.map((device, deviceIndex) => {
-				// Calculate total FLOPs required for prefill
+				// Calculate per-device memory and network requirements
+				const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex);
+				const networkTraffic = calculateNetworkTraffic(modelConfig, dtypeSize, deviceCount, isPipeline);
 				
 				const quantSpeedFactor = {
 					'float32': 1.0,
