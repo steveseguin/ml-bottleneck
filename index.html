@@ -4,103 +4,205 @@
     <title>ML System Bottleneck Analyzer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <style>
-        :root {
-            --primary: #0070f3;
-            --destructive: #ff4444;
-            --border: #e5e7eb;
-        }
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --destructive: #ef4444;
+    --destructive-hover: #dc2626;
+    --border: #e2e8f0;
+    --background: #ffffff;
+    --card: #ffffff;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --radius: 0.75rem;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 1rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    margin: 0;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    background: #f8fafc;
+    color: var(--text);
+}
 
-        .card {
-            border: 1px solid var(--border);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
+h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    background: linear-gradient(to right, var(--primary), var(--primary-hover));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
-        }
+h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+}
 
-        .device {
-            border: 1px solid var(--border);
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 0.5rem;
-        }
+h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text);
+}
 
-        .button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.25rem;
-            cursor: pointer;
-        }
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
 
-        .button-destructive {
-            background: var(--destructive);
-        }
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
 
-        .input, select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 0.25rem;
-            margin-bottom: 0.5rem;
-        }
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
 
-        .alert {
-            background: #ffe5e5;
-            border: 1px solid var(--destructive);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-        }
+.device {
+    background: var(--background);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-radius: var(--radius);
+    transition: border-color 0.2s;
+}
 
-        .device-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-        }
+.device:hover {
+    border-color: var(--primary);
+}
 
-        label {
-            display: block;
-            margin-bottom: 0.25rem;
-            font-size: 0.875rem;
-        }
+.button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
 
-        .chart-container {
-            height: 300px;
-            margin-bottom: 1rem;
-        }
+.button:hover {
+    background: var(--primary-hover);
+}
 
-        .inline-select-group {
-            display: flex;
-            gap: 0.5rem; /* Space between selects */
-            margin-bottom: 0.5rem; /* Space below the group */
-            align-items: baseline; /* Align labels and selects nicely */
-        }
+.button-destructive {
+    background: var(--destructive);
+}
 
-        .inline-select-group label {
-            margin-bottom: 0; /* Remove default margin-bottom for labels in inline group */
-            margin-right: 0.5rem; /* Space between label and select */
-            flex-shrink: 0; /* Prevent label from shrinking */
-            width: auto; /* Adjust label width as needed */
-        }
+.button-destructive:hover {
+    background: var(--destructive-hover);
+}
 
-        .inline-select-group select {
-            flex-grow: 1; /* Allow select to take remaining space */
-        }
+.input, select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    color: var(--text);
+    background: var(--background);
+}
+
+.input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input:disabled, select:disabled {
+    background: #f1f5f9;
+    cursor: not-allowed;
+}
+
+.alert {
+    background: #fef2f2;
+    border: 1px solid var(--destructive);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    color: var(--destructive);
+}
+
+.device-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.chart-container {
+    height: 400px;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--background);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.inline-select-group {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.inline-select-group label {
+    margin-bottom: 0;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+    width: auto;
+}
+
+.inline-select-group select {
+    flex-grow: 1;
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .device-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inline-select-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .inline-select-group select {
+        width: 100%;
+    }
+}
 
 
     </style>
