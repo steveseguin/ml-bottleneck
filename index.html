@@ -799,167 +799,44 @@ input, select {
             'int8': 1,
             'q4': 0.5
         };
-        const MODEL_PRESETS = {
-            'llama3_8b': {
-                'q4': {
-                    totalParamsB: 8,
-                    hiddenSize: 3072,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'q4'
-                },
-                'int8': {
-                    totalParamsB: 8,
-                    hiddenSize: 3072,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'int8'
-                },
-                'float16': {
-                    totalParamsB: 8,
-                    hiddenSize: 3072,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'float16'
-                },
-                'bfloat16': {
-                    totalParamsB: 8,
-                    hiddenSize: 3072,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'bfloat16'
-                },
-                'float32': {
-                    totalParamsB: 8,
-                    hiddenSize: 3072,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'float32'
-                },
-            },
-            'llama3_70b': {
-                'q4': {
-                    totalParamsB: 70,
-                    hiddenSize: 8192,
-                    numLayers: 80,
-                    numHeads: 64,
-                    dtype: 'q4'
-                },
-                'int8': {
-                    totalParamsB: 70,
-                    hiddenSize: 8192,
-                    numLayers: 80,
-                    numHeads: 64,
-                    dtype: 'int8'
-                },
-                'float16': {
-                    totalParamsB: 70,
-                    hiddenSize: 8192,
-                    numLayers: 80,
-                    numHeads: 64,
-                    dtype: 'float16'
-                },
-                'bfloat16': {
-                    totalParamsB: 70,
-                    hiddenSize: 8192,
-                    numLayers: 80,
-                    numHeads: 64,
-                    dtype: 'bfloat16'
-                },
-                'float32': {
-                    totalParamsB: 70,
-                    hiddenSize: 8192,
-                    numLayers: 80,
-                    numHeads: 64,
-                    dtype: 'float32'
-                }
-            },
-            'mistral_7b': {
-                'q4': {
-                    totalParamsB: 7,
-                    hiddenSize: 4096,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'q4'
-                },
-                'int8': {
-                    totalParamsB: 7,
-                    hiddenSize: 4096,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'int8'
-                },
-                'float16': {
-                    totalParamsB: 7,
-                    hiddenSize: 4096,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'float16'
-                },
-                'bfloat16': {
-                    totalParamsB: 7,
-                    hiddenSize: 4096,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'bfloat16'
-                },
-                'float32': {
-                    totalParamsB: 7,
-                    hiddenSize: 4096,
-                    numLayers: 32,
-                    numHeads: 32,
-                    dtype: 'float32'
-                }
-            },
-            'deepseek_v3': {
-                'float16': {
-                    totalParamsB: 671,
-                    hiddenSize: 8192,
-                    numLayers: 64,
-                    numHeads: 64,
-                    dtype: 'float16'
-                },
-                'bfloat16': {
-                    totalParamsB: 671,
-                    hiddenSize: 8192,
-                    numLayers: 64,
-                    numHeads: 64,
-                    dtype: 'bfloat16'
-                }
-            },
-            'large_model_400b': {
-                'float16': {
-                    totalParamsB: 400,
-                    hiddenSize: 16384,
-                    numLayers: 120,
-                    numHeads: 128,
-                    dtype: 'float16'
-                },
-                'bfloat16': {
-                    totalParamsB: 400,
-                    hiddenSize: 16384,
-                    numLayers: 120,
-                    numHeads: 128,
-                    dtype: 'bfloat16'
-                }
-            },
-            'very_large_model_1t': {
-                'float16': {
-                    totalParamsB: 1000,
-                    hiddenSize: 32768,
-                    numLayers: 200,
-                    numHeads: 256,
-                    dtype: 'float16'
-                },
-                'bfloat16': {
-                    totalParamsB: 1000,
-                    hiddenSize: 32768,
-                    numLayers: 200,
-                    numHeads: 256,
-                    dtype: 'bfloat16'
-                }
-            }
-        };
+	const MODEL_PRESETS = {
+		'llama3_8b': {
+			totalParamsB: 8,
+			hiddenSize: 3072,
+			numLayers: 32,
+			numHeads: 32
+		},
+		'llama3_70b': {
+			totalParamsB: 70,
+			hiddenSize: 8192,
+			numLayers: 80,
+			numHeads: 64
+		},
+		'mistral_7b': {
+			totalParamsB: 7,
+			hiddenSize: 4096,
+			numLayers: 32,
+			numHeads: 32
+		},
+		'deepseek_v3': {
+			totalParamsB: 671,
+			hiddenSize: 8192,
+			numLayers: 64,
+			numHeads: 64
+		},
+		'large_model_400b': {
+			totalParamsB: 400,
+			hiddenSize: 16384,
+			numLayers: 120,
+			numHeads: 128
+		},
+		'very_large_model_1t': {
+			totalParamsB: 1000,
+			hiddenSize: 32768,
+			numLayers: 200,
+			numHeads: 256
+		}
+	};
         const DEVICE_TEMPLATES = {
 			'A100': {
 				name: 'NVIDIA A100',
@@ -1686,25 +1563,27 @@ input, select {
 			updateDeviceDisplay();
 			updateSystemAnalysis();
 		}
-        function updateModelConfigFromPreset() {
-            const modelPresetId = document.getElementById('modelPreset').value;
-            const quantizationType = document.getElementById('quantizationType').value;
-            if (modelPresetId && MODEL_PRESETS[modelPresetId] && MODEL_PRESETS[modelPresetId][quantizationType]) {
-                const preset = MODEL_PRESETS[modelPresetId][quantizationType];
-                for (const key in preset) {
-                    if (document.getElementById(key)) {
-                        document.getElementById(key).value = preset[key];
-                    }
-                }
-            } else if (modelPresetId === "") {
-                for (const key in MODEL_PRESETS['llama3_8b']['q4']) {
-                    if (document.getElementById(key)) {
-                        document.getElementById(key).value = '';
-                    }
-                }
-            }
-            updateSystemAnalysis();
-        }
+		
+		function updateModelConfigFromPreset() {
+			const modelPresetId = document.getElementById('modelPreset').value;
+			if (modelPresetId && MODEL_PRESETS[modelPresetId]) {
+				const preset = MODEL_PRESETS[modelPresetId];
+				for (const key in preset) {
+					if (document.getElementById(key)) {
+						document.getElementById(key).value = preset[key];
+					}
+				}
+			} else if (modelPresetId === "") {
+				// Reset to empty values if no preset selected
+				const defaultKeys = ['totalParamsB', 'hiddenSize', 'numLayers', 'numHeads'];
+				defaultKeys.forEach(key => {
+					if (document.getElementById(key)) {
+						document.getElementById(key).value = '';
+					}
+				});
+			}
+			updateSystemAnalysis();
+		}
 
 
         document.getElementById('modelPreset').addEventListener('change', updateModelConfigFromPreset);
