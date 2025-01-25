@@ -274,6 +274,11 @@ function addDevice() {
                 (memoryBreakdown.total / devices.length) + memoryBreakdown.layerMemory : 
                 memoryBreakdown.total / devices.length;
         
+            // Keep these for network bandwidth calculations
+            const seqLen = modelConfig.seqLength;
+            const batchSize = modelConfig.batchSize;
+            const hiddenSize = modelConfig.hiddenSize;
+            
             // Simple FLOPs model - 2 FLOPs per parameter
             const totalFlops = modelConfig.totalParamsB * 1e9 * 2;
             
