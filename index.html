@@ -289,17 +289,19 @@ function addDevice() {
             // Total FLOPs per forward+backward pass
             const totalFlops = (attentionFlops + mlpFlops) * numLayers * 2;
             
-             return devices.map(device => {
+            return devices.map(device => {
                 const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
                 
-                // Calculate bandwidth utilization based on total data movement needed
                 const modelSizeBytes = modelConfig.totalParamsB * 1e9 * dtypeSize;
-                const localBandwidthUtilization = (modelSizeBytes / device.localBandwidthGBps) * 100;
+                const bandwidthLimitedTime = modelSizeBytes / (device.localBandwidthGBps * 1e9);
+                const computeLimitedTime = totalFlops / (device.computeTFlops * 1e12);
                 
-                // Compute utilization should be limited by bandwidth
-                const timeForMemoryAccess = modelSizeBytes / (device.localBandwidthGBps * 1e9);
-                const maxPossibleFlops = timeForMemoryAccess * (device.computeTFlops * 1e12);
-                const computeUtilization = Math.min(100, (totalFlops / maxPossibleFlops) * 100);
+                // The actual time will be the longer of the two
+                const actualTime = Math.max(bandwidthLimitedTime, computeLimitedTime);
+                
+                // Calculate utilizations based on relative time requirements
+                const localBandwidthUtilization = (bandwidthLimitedTime / actualTime) * 100;
+                const computeUtilization = (computeLimitedTime / actualTime) * 100;
                 
                 // Network bandwidth calculations remain the same
                 const networkBandwidthRequired = isPipeline ? 
