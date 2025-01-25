@@ -680,7 +680,7 @@ input, select {
                     <label for="modelPreset">Model Preset</label>
                     <select id="modelPreset" class="input">
                         <option value="">Custom</option>
-                        <option value="llama3_8b">Llama 3 8B</option>
+                        <option value="llama3_8b" selected>Llama 3 8B</option>
                         <option value="llama3_70b">Llama 3 70B</option>
                         <option value="mistral_7b">Mistral 7B</option>
                         <option value="deepseek_v3">DeepSeek V3 (700B)</option>
@@ -692,8 +692,8 @@ input, select {
                     <select id="quantizationType" class="input">
                         <option value="q4">Q4</option>
                         <option value="int8">INT8</option>
-                        <option value="float16">FP16</option>
-                        <option value="bfloat16" selected>BF16</option>
+                        <option value="float16" selected>FP16</option>
+                        <option value="bfloat16">BF16</option>
                         <option value="float32">FP32</option>
                     </select>
                 </div>
@@ -741,6 +741,8 @@ input, select {
             <div id="devices"></div>
         </div>
     </div>
+	
+	<div id="alerts"></div>
 
     <div class="grid">
         <div class="card">
@@ -755,8 +757,6 @@ input, select {
             <div id="systemAnalysis"></div>
         </div>
     </div>
-
-    <div id="alerts"></div>
 
     <h1>Real-world results are below for reference</h1>
     <div class="filters">
@@ -961,127 +961,224 @@ input, select {
             }
         };
         const DEVICE_TEMPLATES = {
-            'A100': {
-                name: 'NVIDIA A100',
-                memoryGB: 80,
-                localBandwidthGBps: 1935,
-                networkBandwidthGBps: 300,
-                computeTFlops: 312,  // FP16/BF16 TFLOPS
-                type: 'GPU'
-            },
-            'H100': {
-                name: 'NVIDIA H100',
-                memoryGB: 120,
-                localBandwidthGBps: 3350,
-                networkBandwidthGBps: 450,
-                computeTFlops: 989,  // FP16/BF16 TFLOPS
-                type: 'GPU'
-            },
-            'RTX 4090': {
-                name: 'RTX 4090',
-                memoryGB: 24,
-                localBandwidthGBps: 1008,
-                networkBandwidthGBps: 32,
-                computeTFlops: 83,    // FP32 TFLOPS - Corrected and using FP32 for RTX 4090 as it's often quoted. Real FP16/BF16 performance might be higher depending on workload
-                type: 'GPU'
-            },
-            'RTX 4070': {
-                name: 'RTX 4070',
-                memoryGB: 12, // Or 16GB depending on variant
-                localBandwidthGBps: 504,
-                networkBandwidthGBps: 32, // Assuming similar network capabilities as 4090 for typical desktop use
-                computeTFlops: 29,    // FP32 TFLOPS -  Using FP32 for RTX 4070 for consistency in quoted values. FP16/BF16 will be higher.
-                type: 'GPU'
-            },
-            'RTX 5090 (Projected)': { // Added RTX 5090 - using projected/estimated values. Real values will depend on final specs.
-                name: 'RTX 5090 (Projected)',
-                memoryGB: 32, // Assuming increase from 4090
-                localBandwidthGBps: 1500, // Projecting bandwidth increase
-                networkBandwidthGBps: 64, // Projecting slight network increase
-                computeTFlops: 105,  // Projecting TFLOPS increase - FP32 - This is a rough estimate, actual could vary significantly.
-                type: 'GPU'
-            },
-            'Intel Xeon CPU (High-End)': { // Example High-End Intel CPU - Adjust values based on specific CPU
-                name: 'Intel Xeon CPU (High-End)',
-                memoryGB: 256, // Assuming server/workstation class
-                localBandwidthGBps: 80, // Representative of system memory bandwidth
-                networkBandwidthGBps: 25, // Assuming 25 GbE networking
-                computeTFlops: 2,    // CPU FP32 TFLOPS - CPUs are much lower TFLOPS than GPUs for ML tasks.
-                type: 'CPU'
-            },
-            'AMD EPYC CPU (High-End)': { // Example High-End AMD CPU - Adjust values based on specific CPU
-                name: 'AMD EPYC CPU (High-End)',
-                memoryGB: 256, // Assuming server/workstation class
-                localBandwidthGBps: 90, // Representative of system memory bandwidth - EPYC often has slightly higher bandwidth
-                networkBandwidthGBps: 25, // Assuming 25 GbE networking
-                computeTFlops: 2.5,    // CPU FP32 TFLOPS -  CPUs are much lower TFLOPS than GPUs for ML tasks. EPYC might have slightly better FP performance than Xeon in some cases.
-                type: 'CPU'
-            },
-            'AMD Ryzen Integrated Graphics': { // Example of AMD Integrated Graphics - e.g., Ryzen 7000/8000 series iGPU
-                name: 'AMD Ryzen Integrated Graphics',
-                memoryGB: 16, // Shared system memory
-                localBandwidthGBps: 50, // System memory bandwidth influence
-                networkBandwidthGBps: 2.5 / 8.0, // Assuming typical desktop ethernet
-                computeTFlops: 0.5,    // iGPU FP32 TFLOPS - Integrated graphics are much less powerful than dedicated GPUs.
-                type: 'Integrated GPU'
-            },
-            'Mac Mini M2 (10G Ethernet)': {
-                name: 'Mac Mini M2 (10G)',
-                memoryGB: 16,
-                localBandwidthGBps: 68,
-                networkBandwidthGBps: 10,
-                computeTFlops: 4,     // Apple Silicon (M2) typical FP16/BF16 performance for ML tasks.
-                type: 'CPU/Integrated GPU'
-            },
-            'Raspberry Pi 5 (5G Ethernet)': {
-                name: 'Raspberry Pi 5 (5G)',
-                memoryGB: 8,
-                localBandwidthGBps: 34,
-                networkBandwidthGBps: 5 / 8.0,
-                computeTFlops: 0.1,    // Raspberry Pi 5 CPU/GPU performance is very limited for ML.
-                type: 'CPU/Integrated GPU'
-            },
-            'Desktop PC (2.5G Ethernet)': {
-                name: 'Desktop PC (2.5G)',
-                memoryGB: 32,
-                localBandwidthGBps: 50,
-                networkBandwidthGBps: 2.5 / 8.0,
-                computeTFlops: 1,     // Representative of a basic desktop CPU's integrated graphics or low-end dGPU if no dedicated GPU is specified
-                type: 'CPU/Integrated GPU'
-            },
-            'NVMe CPU (Gen5)': {
-                name: 'NVMe CPU (Gen5)',
-                memoryGB: 2000,
-                localBandwidthGBps: 14,
-                networkBandwidthGBps: 40 / 8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
-                computeTFlops: 2,
-                type: 'CPU/NVMe'
-            },
-            'NVMe 4xRAID 5090 (Gen5)': {
-                name: 'NVMe 4xRAID GPU (Gen5)',
-                memoryGB: 8000,
-                localBandwidthGBps: 32,
-                networkBandwidthGBps: 40 / 8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
-                computeTFlops: 105,
-                type: 'GPU/NVMe'
-            },
-            'Titan RTX + NVMe Gen3': {
-                name: 'Titan RTX + NVMe Gen3',
-                memoryGB: 4000,
-                localBandwidthGBps: 3.5,
-                networkBandwidthGBps: 1 / 8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
-                computeTFlops: 16.3,
-                type: 'GPU/NVMe'
-            },
-            'Custom': {
-                name: 'Custom Device',
-                memoryGB: 192,
-                localBandwidthGBps: 50,
-                networkBandwidthGBps: 2.5 / 8,
-                computeTFlops: 2,
-                type: 'Custom'
-            }
-        };
+			'A100': {
+				name: 'NVIDIA A100',
+				memoryGB: 80,
+				localBandwidthGBps: 1935,
+				networkBandwidthGBps: 300,
+				computeTFlops: {
+					'float32': 156,
+					'float16': 312,
+					'bfloat16': 312,  // Same as float16
+					'int8': 624,
+					'q4': 1000
+				},
+				type: 'GPU'
+			},
+			'H100': {
+				name: 'NVIDIA H100',
+				memoryGB: 120,
+				localBandwidthGBps: 3350,
+				networkBandwidthGBps: 450,
+				computeTFlops: {
+					'float32': 500,
+					'float16': 989,
+					'bfloat16': 989,  // Same as float16
+					'int8': 1979,
+					'q4': 2500
+				},
+				type: 'GPU'
+			},
+			'RTX 4090': {
+				name: 'RTX 4090',
+				memoryGB: 24,
+				localBandwidthGBps: 1008,
+				networkBandwidthGBps: 32,
+				computeTFlops: {
+					'float32': 83,
+					'float16': 166,
+					'bfloat16': 83,  // Falls back to float32
+					'int8': 332,
+					'q4': 500
+				},
+				type: 'GPU'
+			},
+			'RTX 4070': {
+				name: 'RTX 4070',
+				memoryGB: 12,
+				localBandwidthGBps: 504,
+				networkBandwidthGBps: 32,
+				computeTFlops: {
+					'float32': 29,
+					'float16': 58,
+					'int8': 116,
+					'q4': 175
+				},
+				type: 'GPU'
+			},
+			'RTX 5090 (Projected)': {
+				name: 'RTX 5090 (Projected)',
+				memoryGB: 32,
+				localBandwidthGBps: 1500,
+				networkBandwidthGBps: 64,
+				computeTFlops: {
+					'float32': 105,
+					'float16': 210,
+					'int8': 420,
+					'q4': 630
+				},
+				type: 'GPU'
+			},
+			'Intel Xeon CPU (High-End)': {
+				name: 'Intel Xeon CPU (High-End)',
+				memoryGB: 256,
+				localBandwidthGBps: 80,
+				networkBandwidthGBps: 25,
+				computeTFlops: {
+					'float32': 2,
+					'bfloat16': 4,  // Supported natively
+					'float16': 4,
+					'int8': 8,
+					'q4': 12
+				},
+				type: 'CPU'
+			},
+			'AMD EPYC CPU (High-End)': {
+				name: 'AMD EPYC CPU (High-End)',
+				memoryGB: 256,
+				localBandwidthGBps: 90,
+				networkBandwidthGBps: 25,
+				computeTFlops: {
+					'float32': 2.5,
+					'bfloat16': 5,
+					'float16': 5,
+					'int8': 10,
+					'q4': 15
+				},
+				type: 'CPU'
+			},
+			'AMD Ryzen Integrated Graphics': {
+				name: 'AMD Ryzen Integrated Graphics',
+				memoryGB: 16,
+				localBandwidthGBps: 50,
+				networkBandwidthGBps: 2.5 / 8.0,
+				computeTFlops: {
+					'float32': 0.5,
+					'bfloat16': 1.0,
+					'float16': 1.0,
+					'int8': 2.0,
+					'q4': 3.0
+				},
+				type: 'Integrated GPU'
+			},
+			'Mac M2 Ultra (192GB)': {
+				name: 'Mac M2 Ultra (192GB)',
+				memoryGB: 192,
+				localBandwidthGBps: 800,
+				networkBandwidthGBps: 10,
+				computeTFlops: {
+					'float32': 16,
+					'bfloat16': 32,
+					'float16': 32,
+					'int8': 64,
+					'q4': 96
+				},
+				type: 'CPU/Integrated GPU'
+			},
+			'Mac Mini M2 (10G Ethernet)': {
+				name: 'Mac Mini M2 (10G)',
+				memoryGB: 16,
+				localBandwidthGBps: 68,
+				networkBandwidthGBps: 10,
+				computeTFlops: {
+					'float32': 2,
+					'bfloat16': 4,
+					'float16': 4,
+					'int8': 8,
+					'q4': 12
+				},
+				type: 'CPU/Integrated GPU'
+			},
+			'Raspberry Pi 5 (5G Ethernet)': {
+				name: 'Raspberry Pi 5 (5G)',
+				memoryGB: 8,
+				localBandwidthGBps: 34,
+				networkBandwidthGBps: 5 / 8.0,
+				computeTFlops: {
+					'float32': 0.1,
+					'bfloat16': 0.2,
+					'float16': 0.2,
+					'int8': 0.4,
+					'q4': 0.6
+				},
+				type: 'CPU/Integrated GPU'
+			},
+			'Desktop PC (2.5G Ethernet)': {
+				name: 'Desktop PC (2.5G)',
+				memoryGB: 32,
+				localBandwidthGBps: 50,
+				networkBandwidthGBps: 2.5 / 8.0,
+				computeTFlops: {
+					'float32': 1,
+					'float16': 2,
+					'int8': 4,
+					'q4': 6
+				},
+				type: 'CPU/Integrated GPU'
+			},
+			'NVMe CPU (Gen5)': {
+				name: 'NVMe CPU (Gen5)',
+				memoryGB: 2000,
+				localBandwidthGBps: 14,
+				networkBandwidthGBps: 40 / 8,
+				computeTFlops: {
+					'float32': 2,
+					'float16': 4,
+					'int8': 8,
+					'q4': 12
+				},
+				type: 'CPU/NVMe'
+			},
+			'NVMe 4xRAID 5090 (Gen5)': {
+				name: 'NVMe 4xRAID GPU (Gen5)',
+				memoryGB: 8000,
+				localBandwidthGBps: 32,
+				networkBandwidthGBps: 40 / 8,
+				computeTFlops: {
+					'float32': 105,
+					'float16': 210,
+					'int8': 420,
+					'q4': 630
+				},
+				type: 'GPU/NVMe'
+			},
+			'Titan RTX + NVMe Gen3': {
+				name: 'Titan RTX + NVMe Gen3',
+				memoryGB: 4000,
+				localBandwidthGBps: 3.5,
+				networkBandwidthGBps: 1 / 8,
+				computeTFlops: {
+					'float32': 16.3,
+					'float16': 32.6,
+					'int8': 65.2,
+					'q4': 98
+				},
+				type: 'GPU/NVMe'
+			},
+			'Custom': {
+				name: 'Custom Device',
+				memoryGB: 192,
+				localBandwidthGBps: 50,
+				networkBandwidthGBps: 2.5 / 8,
+				computeTFlops: {
+					'float32': 2,
+					'float16': 4,
+					'int8': 8,
+					'q4': 12
+				},
+				type: 'Custom'
+			}
+		};
         let devices = [{
             id: 1,
             name: 'Device 1',
@@ -1103,25 +1200,57 @@ input, select {
                 parallelismStrategy: document.getElementById('parallelismStrategy').value
             };
         }
-        function calculateMemoryBreakdown(modelConfig, dtypeSize) {
-            const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
-            const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength *
-                (modelConfig.hiddenSize / modelConfig.numHeads) *
-                modelConfig.numHeads * dtypeSize;
-            const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers;
-            const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength * modelConfig.hiddenSize * dtypeSize;
-            const activationMemory = activationSizePerLayer * modelConfig.numLayers;
-            const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) *
-                modelConfig.numHeads * dtypeSize;
-            const totalMemory = paramsMemory + kvCacheMemory + activationMemory + attentionMemory;
-            return {
-                paramsMemory,
-                kvCacheMemory,
-                activationMemory,
-                attentionMemory,
-                total: totalMemory
-            };
-        }
+		function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline) {
+			const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
+			const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength * 
+				(modelConfig.hiddenSize / modelConfig.numHeads) * 
+				modelConfig.numHeads * dtypeSize;
+			const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers;
+			const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength * 
+				modelConfig.hiddenSize * dtypeSize;
+			const activationMemory = activationSizePerLayer * modelConfig.numLayers;
+			const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) * 
+				modelConfig.numHeads * dtypeSize;
+
+			// Adjust memory per device based on parallelism strategy
+			const adjustedParamsMemory = isPipeline ? 
+				paramsMemory / deviceCount : // Pipeline: divide layers across devices
+				paramsMemory; // Tensor: replicate most params
+				
+			const adjustedKVCacheMemory = kvCacheMemory / deviceCount; // Always divide KV cache
+			const adjustedActivationMemory = activationMemory / deviceCount; // Always divide activations
+			const adjustedAttentionMemory = attentionMemory / deviceCount; // Always divide attention
+
+			return {
+				paramsMemory: adjustedParamsMemory,
+				kvCacheMemory: adjustedKVCacheMemory,
+				activationMemory: adjustedActivationMemory,
+				attentionMemory: adjustedAttentionMemory,
+				total: adjustedParamsMemory + adjustedKVCacheMemory + 
+					   adjustedActivationMemory + adjustedAttentionMemory
+			};
+		}
+		
+		function calculateNetworkTraffic(modelConfig, dtypeSize, deviceCount, isPipeline) {
+			if (deviceCount <= 1) return 0;
+
+			const batchSize = modelConfig.batchSize;
+			const seqLength = modelConfig.seqLength;
+			const hiddenSize = modelConfig.hiddenSize;
+			
+			if (isPipeline) {
+				// Pipeline parallelism: Forward and backward activation passing
+				const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
+				// Each layer boundary requires passing activations forward and gradients back
+				return activationSize * 2 * (deviceCount - 1);
+			} else {
+				// Tensor parallelism: All-reduce for gradients and activations
+				const gradientSize = modelConfig.totalParamsB * 1e9 * dtypeSize / deviceCount;
+				const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
+				// All-reduce communication pattern: (n-1)/n * data_size * 2
+				return (deviceCount - 1) * (gradientSize + activationSize) * 2 / deviceCount;
+			}
+		}
 
         // Improved FLOPs calculation (more accurate for forward and backward pass)
         function calculateTransformerFlops(modelConfig) {
@@ -1161,119 +1290,110 @@ input, select {
         }
 
         function calculateMetrics() {
-            const modelConfig = getModelConfig();
-            const dtypeSize = DTYPE_SIZES[modelConfig.quantizationType];
-            const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize);
-            const isPipeline = modelConfig.parallelismStrategy === 'pipeline';
-            const memoryPerDevice = isPipeline ?
-                (memoryBreakdown.total / devices.length) :
-                memoryBreakdown.total; // Note: Not dividing by devices.length for tensor parallelism
+			const modelConfig = getModelConfig();
+			const dtypeSize = DTYPE_SIZES[modelConfig.quantizationType];
+			const isPipeline = modelConfig.parallelismStrategy === 'pipeline';
+			const deviceCount = devices.length;
 
-            return devices.map(device => {
-                // Calculate total FLOPs required for prefill (using improved function)
-                const totalPrefillFlops = calculateTransformerFlops(modelConfig);
+			// Calculate per-device memory and network requirements
+			const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline);
+			const networkTraffic = calculateNetworkTraffic(modelConfig, dtypeSize, deviceCount, isPipeline);
 
-                // Calculate theoretical maximum compute time for prefill
-                const theoreticalPrefillComputeTime = totalPrefillFlops / (device.computeTFlops * 1e12);
+			return devices.map((device, deviceIndex) => {
+				// Calculate total FLOPs required for prefill
 				
-				                // Introduce an overhead factor (e.g., 2x) to account for real-world inefficiencies
-                const overheadFactorPrefill = 2.0; // Example prefill overhead
+				const quantSpeedFactor = {
+					'float32': 1.0,
+					'bfloat16': 2.0,
+					'float16': 2.0,
+					'int8': 2.5,
+					'q4': 3.0
+				}[modelConfig.quantizationType] || 1.0;
+
+				const totalPrefillFlops = calculateTransformerFlops(modelConfig) / (deviceCount * quantSpeedFactor);
+				const theoreticalPrefillComputeTime = totalPrefillFlops / (device.computeTFlops[modelConfig.quantizationType] * 1e12);
+
+
+				// Network time calculation
+				const networkTime = networkTraffic / (device.networkBandwidthGBps * 1e9);
+				
+				// Memory traffic calculation adjusted for distributed setup
+				const memoryTrafficScale = modelConfig.quantizationType === 'q4' ? 1.2 : 1.0; // Q4 has some overhead
+				const totalPrefillMemoryTraffic = memoryTrafficScale * (
+					memoryBreakdown.paramsMemory + 
+					(2 * memoryBreakdown.kvCacheMemory) +
+					(3 * memoryBreakdown.activationMemory) +
+					(2 * memoryBreakdown.attentionMemory)
+				);
+
+				const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic / (device.localBandwidthGBps * 1e9);
+
+				// Include network time in actual execution time
+				const overheadFactorPrefill = 2.0;
+				const actualPrefillTime = Math.max(
+					theoreticalPrefillComputeTime,
+					prefillBandwidthLimitedTime,
+					networkTime
+				) * overheadFactorPrefill;
+
+				// Calculate utilizations
+				const prefillComputeUtilization = (theoreticalPrefillComputeTime / actualPrefillTime) * 100;
+				const prefillLocalBandwidthUtilization = (prefillBandwidthLimitedTime / actualPrefillTime) * 100;
+				const networkBandwidthUtilization = (networkTime / actualPrefillTime) * 100;
+				const memoryUtilization = (memoryBreakdown.total / (device.memoryGB * 1e9)) * 100;
+
+				// Calculate bottleneck factor
+				const bottleneckFactor = Math.max(
+					1,
+					prefillComputeUtilization / 100,
+					memoryUtilization / 100,
+					prefillLocalBandwidthUtilization / 100,
+					networkBandwidthUtilization / 100
+				);
+
+				// Calculate token throughput
+				const prefillTokensPerSecond = modelConfig.batchSize * modelConfig.seqLength / actualPrefillTime;
+
+				// Decode calculations remain similar but scaled by device count
+				const decodeFlops = calculateDecodeFlops(modelConfig) / deviceCount;
+				const theoreticalDecodeTime = decodeFlops / (device.computeTFlops[modelConfig.quantizationType] * 1e12);
+
+				const decodeMemoryTrafficPerToken = (
+					memoryBreakdown.paramsMemory + 
+					(2 * modelConfig.seqLength * (modelConfig.hiddenSize / modelConfig.numHeads) * 
+					 modelConfig.numHeads * dtypeSize) * modelConfig.numLayers / deviceCount + 
+					(4 * modelConfig.hiddenSize * dtypeSize) * modelConfig.numLayers / deviceCount
+				) / modelConfig.seqLength;
+
+				const decodeBandwidthLimitedTime = decodeMemoryTrafficPerToken / (device.localBandwidthGBps * 1e9);
 				const overheadFactorDecode = 1;
+				const actualDecodeTime = Math.max(theoreticalDecodeTime, decodeBandwidthLimitedTime) * 
+					overheadFactorDecode;
 
-                // Calculate memory traffic for prefill
-                const totalPrefillMemoryTraffic = memoryBreakdown.paramsMemory +
-                    (2 * memoryBreakdown.kvCacheMemory) +
-                    (3 * memoryBreakdown.activationMemory) +
-                    (2 * memoryBreakdown.attentionMemory);
+				return {
+					name: device.name,
+					memoryUtilization,
+					localBandwidthUtilization: prefillLocalBandwidthUtilization,
+					networkBandwidthUtilization,
+					computeUtilization: prefillComputeUtilization,
+					rawMemoryUtilization: memoryUtilization,
+					rawLocalBandwidthUtilization: prefillLocalBandwidthUtilization,
+					rawNetworkBandwidthUtilization: networkBandwidthUtilization,
+					rawComputeUtilization: prefillComputeUtilization,
+					bottleneckFactor,
+					isBottleneck: bottleneckFactor > 1,
+					prefillTokensPerSecond,
+					decodeTokensPerSecond: modelConfig.batchSize / actualDecodeTime,
+					decodeComputeUtilization: (theoreticalDecodeTime / actualDecodeTime) * 100,
+					decodeLocalBandwidthUtilization: (decodeBandwidthLimitedTime / actualDecodeTime) * 100,
+					decodeBottleneckFactor: Math.max(
+						theoreticalDecodeTime / actualDecodeTime,
+						decodeBandwidthLimitedTime / actualDecodeTime
+					)
+				};
+			});
+		}
 
-                // Calculate time required based on memory bandwidth for prefill
-                const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic / (device.localBandwidthGBps * 1e9);
-
-                // Actual execution time for prefill
-                const actualPrefillTime = Math.max(theoreticalPrefillComputeTime, prefillBandwidthLimitedTime) * overheadFactorPrefill;
-
-                // Calculate utilizations for prefill
-                const prefillComputeUtilization = (theoreticalPrefillComputeTime / actualPrefillTime) * 100;
-                const prefillLocalBandwidthUtilization = (prefillBandwidthLimitedTime / actualPrefillTime) * 100;
-                const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
-
-                // Calculate network utilization for pipeline parallelism (Prefill Phase)
-                let prefillNetworkBandwidthUtilization = 0;
-                if (isPipeline && devices.length > 1) {
-                    const activationsPerForwardPass = modelConfig.batchSize * modelConfig.seqLength *
-                        modelConfig.hiddenSize * dtypeSize;
-                    const totalNetworkTraffic = activationsPerForwardPass * 2 * (devices.length - 1); // Forward and backward pass
-                    prefillNetworkBandwidthUtilization = (totalNetworkTraffic /
-                        (device.networkBandwidthGBps * 1e9 * actualPrefillTime)) * 100;
-                }
-
-                // Bottleneck factor for prefill
-                const prefillBottleneckFactor = Math.max(
-                    1,
-                    prefillComputeUtilization / 100,
-                    memoryUtilization / 100,
-                    prefillLocalBandwidthUtilization / 100,
-                    prefillNetworkBandwidthUtilization / 100
-                );
-
-                // Tokens per second for prefill
-                const prefillTokensPerSecond = modelConfig.batchSize * modelConfig.seqLength / actualPrefillTime;
-
-                // --- Decode Calculations ---
-                // Estimate FLOPs for decode
-                const decodeFlops = calculateDecodeFlops(modelConfig);
-
-                // Theoretical decode time (compute-bound)
-                const theoreticalDecodeTime = decodeFlops / (device.computeTFlops * 1e12);
-
-                // Memory traffic during decode (more accurate estimation)
-                const decodeMemoryTrafficPerToken = (
-                    memoryBreakdown.paramsMemory + // Read model parameters 
-                    (2 * modelConfig.seqLength * (modelConfig.hiddenSize / modelConfig.numHeads) * modelConfig.numHeads * dtypeSize) * modelConfig.numLayers + // Read and write K, V caches
-                    (4 * modelConfig.hiddenSize * dtypeSize) * modelConfig.numLayers // Activations (estimate)
-                ) / modelConfig.seqLength;
-
-                // Decode time based on memory bandwidth
-                const decodeBandwidthLimitedTime = decodeMemoryTrafficPerToken / (device.localBandwidthGBps * 1e9);
-
-                // Actual decode time (per token)
-				const actualDecodeTime = Math.max(theoreticalDecodeTime, decodeBandwidthLimitedTime) * overheadFactorDecode;
-				
-                // Decode tokens per second (per token)
-                const decodeTokensPerSecond = modelConfig.batchSize / actualDecodeTime;
-
-                // Utilizations for decode (simplified)
-                const decodeComputeUtilization = (theoreticalDecodeTime / actualDecodeTime) * 100;
-                const decodeLocalBandwidthUtilization = (decodeBandwidthLimitedTime / actualDecodeTime) * 100;
-
-                // Bottleneck factor for decode (simplified)
-                const decodeBottleneckFactor = Math.max(
-                    1,
-                    decodeComputeUtilization / 100,
-                    decodeLocalBandwidthUtilization / 100
-                );
-
-                return {
-                    name: device.name,
-                    memoryUtilization,
-                    localBandwidthUtilization: prefillLocalBandwidthUtilization, // Using prefill for overall utilization
-                    networkBandwidthUtilization: prefillNetworkBandwidthUtilization, // Using prefill for overall utilization
-                    computeUtilization: prefillComputeUtilization, // Using prefill for overall utilization
-                    rawMemoryUtilization: memoryUtilization,
-                    rawLocalBandwidthUtilization: prefillLocalBandwidthUtilization,
-                    rawNetworkBandwidthUtilization: prefillNetworkBandwidthUtilization,
-                    rawComputeUtilization: prefillComputeUtilization,
-                    bottleneckFactor: prefillBottleneckFactor, // Using prefill for overall bottleneck
-                    isBottleneck: prefillBottleneckFactor > 1,
-                    prefillTokensPerSecond,
-                    decodeTokensPerSecond,
-                    // for reporting
-                    decodeComputeUtilization,
-                    decodeLocalBandwidthUtilization,
-                    decodeBottleneckFactor
-                };
-            });
-        }
         function updateSystemAnalysis() {
             const metrics = calculateMetrics();
             console.log(metrics);
@@ -1339,40 +1459,56 @@ input, select {
             updateChart(metrics);
         }
         function updateDeviceDisplay() {
-            const devicesContainer = document.getElementById('devices');
-            devicesContainer.innerHTML = devices.map(device => `
-                <div class="device">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <input class="input" style="width: auto;" value="${device.name}"
-                               onchange="updateDevice(${device.id}, 'name', this.value)">
-                        <button class="button button-destructive"
-                                onclick="removeDevice(${device.id})"
-                                ${devices.length === 1 ? 'disabled' : ''}>
-                            Remove
-                        </button>
-                    </div>
-                    <select class="input" onchange="updateDevice(${device.id}, 'template', this.value)">
-                        ${Object.keys(DEVICE_TEMPLATES).map(template => `
-                            <option value="${template}" ${device.template === template ? 'selected' : ''}>
-                                ${DEVICE_TEMPLATES[template].name}
-                            </option>
-                        `).join('')}
-                    </select>
-                    <div class="device-grid">
-                        ${['memoryGB', 'localBandwidthGBps', 'networkBandwidthGBps', 'computeTFlops']
-                            .map(field => `
-                                <div>
-                                    <label>${field.replace(/([A-Z])/g, ' $1')
-                                                .replace(/^./, str => str.toUpperCase())}</label>
-                                    <input type="number" class="input" value="${device[field]}"
-                                           onchange="updateDevice(${device.id}, '${field}', parseFloat(this.value) || 0)"
-                                           ${device.template !== 'Custom' ? 'disabled' : ''}>
-                                </div>
-                            `).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
+			const currentQuant = document.getElementById('quantizationType').value;
+			const devicesContainer = document.getElementById('devices');
+			devicesContainer.innerHTML = devices.map(device => `
+				<div class="device">
+					<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+						<input class="input" style="width: auto;" value="${device.name}"
+							   onchange="updateDevice(${device.id}, 'name', this.value)">
+						<button class="button button-destructive"
+								onclick="removeDevice(${device.id})"
+								${devices.length === 1 ? 'disabled' : ''}>
+							Remove
+						</button>
+					</div>
+					<select class="input" onchange="updateDevice(${device.id}, 'template', this.value)">
+						${Object.keys(DEVICE_TEMPLATES).map(template => `
+							<option value="${template}" ${device.template === template ? 'selected' : ''}>
+								${DEVICE_TEMPLATES[template].name}
+							</option>
+						`).join('')}
+					</select>
+					<div class="device-grid">
+						<div>
+							<label>Memory GB</label>
+							<input type="number" class="input" value="${device.memoryGB}"
+								   onchange="updateDevice(${device.id}, 'memoryGB', parseFloat(this.value) || 0)"
+								   ${device.template !== 'Custom' ? 'disabled' : ''}>
+						</div>
+						<div>
+							<label>Local Bandwidth GBps</label>
+							<input type="number" class="input" value="${device.localBandwidthGBps}"
+								   onchange="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)"
+								   ${device.template !== 'Custom' ? 'disabled' : ''}>
+						</div>
+						<div>
+							<label>Network Bandwidth GBps</label>
+							<input type="number" class="input" value="${device.networkBandwidthGBps}"
+								   onchange="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)"
+								   ${device.template !== 'Custom' ? 'disabled' : ''}>
+						</div>
+						<div>
+							<label>Compute TFlops (${currentQuant})</label>
+							<input type="number" class="input" value="${device.computeTFlops[currentQuant]}"
+								   onchange="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)"
+								   ${device.template !== 'Custom' ? 'disabled' : ''}>
+						</div>
+					</div>
+				</div>
+			`).join('');
+		}
+
         function updateAlerts(metrics) {
             const alertsContainer = document.getElementById('alerts');
             let alertsHtml = '';
@@ -1506,22 +1642,43 @@ input, select {
                 updateSystemAnalysis();
             }
         }
-        function updateDevice(id, field, value) {
-            devices = devices.map(d => {
-                if (d.id !== id) return d;
-                let updatedValue = value;
-                if (field === 'computeTFlops') {
-                    updatedValue = Math.max(0.01, value); // Ensure computeTFlops is at least 0.01
-                }
-                const updatedDevice = { ...d, [field]: updatedValue };
-                if (field === 'template' && value !== 'Custom') {
-                    return { ...updatedDevice, ...DEVICE_TEMPLATES[value] };
-                }
-                return updatedDevice;
-            });
-            updateDeviceDisplay();
-            updateSystemAnalysis();
-        }
+		function updateDevice(id, field, value) {
+			devices = devices.map(d => {
+				if (d.id !== id) return d;
+				
+				let updatedDevice = { ...d };
+				
+				if (field === 'template' && value !== 'Custom') {
+					// Update entire device with template
+					updatedDevice = { ...updatedDevice, ...DEVICE_TEMPLATES[value] };
+				} else if (field === 'computeTFlops') {
+					// For custom devices, use the entered value as base and scale for other precisions
+					const currentQuant = document.getElementById('quantizationType').value;
+					const baseValue = value / {
+						'float32': 1,
+						'bfloat16': 2,
+						'float16': 2,
+						'int8': 4,
+						'q4': 6
+					}[currentQuant];
+
+					updatedDevice.computeTFlops = {
+						'float32': baseValue,
+						'bfloat16': baseValue * 2,
+						'float16': baseValue * 2,
+						'int8': baseValue * 4,
+						'q4': baseValue * 6
+					};
+				} else {
+					updatedDevice[field] = value;
+				}
+				
+				return updatedDevice;
+			});
+			
+			updateDeviceDisplay();
+			updateSystemAnalysis();
+		}
         function updateModelConfigFromPreset() {
             const modelPresetId = document.getElementById('modelPreset').value;
             const quantizationType = document.getElementById('quantizationType').value;
@@ -1544,12 +1701,17 @@ input, select {
 
 
         document.getElementById('modelPreset').addEventListener('change', updateModelConfigFromPreset);
-        document.getElementById('quantizationType').addEventListener('change', updateModelConfigFromPreset);
+        document.getElementById('quantizationType').addEventListener('change', () => {
+			// Update display for custom devices
+			updateDeviceDisplay();
+			updateSystemAnalysis();
+		});
         document.querySelectorAll('#modelConfig input, #modelConfig select').forEach(input => {
             if (input.id !== 'modelPreset' && input.id !== 'quantizationType' && input.id !== 'dtype') {
                 input.addEventListener('change', updateSystemAnalysis);
             }
         });
+		updateModelConfigFromPreset();
         updateDeviceDisplay();
         updateSystemAnalysis();
 		
