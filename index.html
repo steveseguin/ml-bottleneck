@@ -290,33 +290,38 @@ function addDevice() {
             const totalFlops = (attentionFlops + mlpFlops) * numLayers * 2;
             
             return devices.map(device => {
-                // Memory utilization
+                // Memory utilization (can exceed 100%)
                 const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
                 
-                // Network bandwidth requirements
+                // Network bandwidth requirements - theoretical vs actual
                 const networkBandwidthRequired = isPipeline ? 
                     (2 * batchSize * seqLen * hiddenSize * dtypeSize) / devices.length :
                     (4 * batchSize * seqLen * hiddenSize * dtypeSize * (devices.length - 1)) / devices.length;
+                const networkUtilization = (networkBandwidthRequired / (device.networkBandwidthGBps * 1e9)) * 100;
+                const actualNetworkUtilization = Math.min(networkUtilization, 100);
                 
-                // Local memory bandwidth requirements (accounts for reading and writing activations)
+                // Local memory bandwidth - theoretical vs actual
                 const localBandwidthRequired = 3 * memoryPerDevice;
+                const localBandwidthUtilization = (localBandwidthRequired / (device.localBandwidthGBps * 1e9)) * 100;
+                const actualLocalBandwidthUtilization = Math.min(localBandwidthUtilization, 100);
                 
-                // Compute utilization based on theoretical peak performance
+                // Compute utilization - theoretical vs actual
                 const computeUtilization = (totalFlops / devices.length) / (device.computeTFlops * 1e12) * 100;
+                const actualComputeUtilization = Math.min(computeUtilization, 100);
                 
                 return {
                     name: device.name,
-                    memoryUtilization: Math.min(memoryUtilization, 1000),
-                    localBandwidthUtilization: Math.min((localBandwidthRequired / (device.localBandwidthGBps * 1e9)) * 100, 1000),
-                    networkBandwidthUtilization: Math.min((networkBandwidthRequired / (device.networkBandwidthGBps * 1e9)) * 100, 1000),
-                    computeUtilization: Math.min(computeUtilization, 1000),
+                    memoryUtilization: memoryUtilization,
+                    localBandwidthUtilization: actualLocalBandwidthUtilization,
+                    networkBandwidthUtilization: actualNetworkUtilization,
+                    computeUtilization: actualComputeUtilization,
                     rawMemoryUtilization: memoryUtilization,
-                    rawLocalBandwidthUtilization: (localBandwidthRequired / (device.localBandwidthGBps * 1e9)) * 100,
-                    rawNetworkBandwidthUtilization: (networkBandwidthRequired / (device.networkBandwidthGBps * 1e9)) * 100,
+                    rawLocalBandwidthUtilization: localBandwidthUtilization,
+                    rawNetworkBandwidthUtilization: networkUtilization,
                     rawComputeUtilization: computeUtilization,
                     isBottleneck: memoryUtilization > 100 || 
-                                 (localBandwidthRequired / 1e9) > device.localBandwidthGBps ||
-                                 (networkBandwidthRequired / 1e9) > device.networkBandwidthGBps ||
+                                 localBandwidthUtilization > 100 ||
+                                 networkUtilization > 100 ||
                                  computeUtilization > 100
                 };
             });
