@@ -181,6 +181,58 @@ label {
     margin-bottom: 0;
 }
 
+table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 20px 0;
+	font-family: Arial, sans-serif;
+}
+th, td {
+	border: 1px solid #ddd;
+	padding: 8px;
+	text-align: left;
+}
+th {
+	background-color: #f5f5f5;
+	position: relative;
+	cursor: pointer;
+}
+th:hover {
+	background-color: #eee;
+}
+th::after {
+	content: '';
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+}
+th.asc::after {
+	content: '▲';
+}
+th.desc::after {
+	content: '▼';
+}
+tr:nth-child(even) {
+	background-color: #f9f9f9;
+}
+.filters {
+	margin: 20px 0;
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+.filter-group {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+input, select {
+	padding: 5px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
 @media (max-width: 768px) {
     body {
         padding: 1rem;
@@ -296,6 +348,39 @@ label {
     </div>
 
     <div id="alerts"></div>
+	
+	<h1>Real-world results are below for reference</h1>
+	<div class="filters">
+        <div class="filter-group">
+            <label for="modelFilter">Model:</label>
+            <input type="text" id="modelFilter" placeholder="Filter models...">
+        </div>
+        <div class="filter-group">
+            <label for="hardwareFilter">Hardware:</label>
+            <input type="text" id="hardwareFilter" placeholder="Filter hardware...">
+        </div>
+        <div class="filter-group">
+            <label for="quantizationFilter">Quantization:</label>
+            <input type="text" id="quantizationFilter" placeholder="Filter quantization...">
+        </div>
+    </div>
+
+    <table id="llmTable">
+        <thead>
+            <tr>
+                <th data-sort="model">Model</th>
+                <th data-sort="quantization">Quantization</th>
+                <th data-sort="framework">Framework</th>
+                <th data-sort="hardware">Hardware</th>
+                <th data-sort="batchSize">Batch Size</th>
+                <th data-sort="seqLength">Sequence Length</th>
+                <th data-sort="tokenRateBatch">Token Rate (Batch)</th>
+                <th data-sort="tokenRateSingle">Token Rate (Single)</th>
+                <th data-sort="source">Source</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
     <script>
 const DTYPE_SIZES = {
@@ -985,6 +1070,144 @@ const DTYPE_SIZES = {
         });
         updateDeviceDisplay();
         updateSystemAnalysis();
+		
+		        const rawData = `Model	Quantization	Framework	Hardware	Batch Size	Sequence Length	Token Rate (Batch)	Token Rate (Single)	Source
+Llama 3.1 8b	FP16		Groq				100 t/s	https://www.vellum.ai/llm-leaderboard
+Llama 3.1 70b	FP16		Groq				40 t/s	https://www.vellum.ai/llm-leaderboard
+Llama 3.1 405b	FP16		Groq				10 t/s	https://www.vellum.ai/llm-leaderboard
+Claude 3 Opus					4096		25 t/s	https://www.vellum.ai/llm-leaderboard
+GPT-4					8192		125 t/s	https://www.vellum.ai/llm-leaderboard
+Claude 3.5 Sonnet						170.4 t/s		https://yourgpt.ai/tools/llm-comparison-and-leaderboard
+llama3-8b			SambaNova's RDU (Reconfigurable Dataflow Unit) system with 8-chips		4096	430 t/s		https://blog.lancedb.com/tokens-per-second-is-not-all-you-need/
+Mistral 7B	FP16	vLLM	A10G	1			30.9 t/s	https://lightning.ai/lightning-ai/studios/optimized-llm-inference-api-for-mistral-7b-using-vllm
+Mistral 7B	FP16	vLLM	4 x A10G	1			64.5 t/s	https://lightning.ai/lightning-ai/studios/optimized-llm-inference-api-for-mistral-7b-using-vllm
+Mistral 7B	AWQ 4-bit	vLLM	A10G	1			86.1 t/s	https://lightning.ai/lightning-ai/studios/optimized-llm-inference-api-for-mistral-7b-using-vllm
+Mistral 7B	FP16			1	80x100		170 t/s	https://www.baseten.co/blog/benchmarking-fast-mistral-7b-inference/
+Mistral-8x7B	Q8_0		RTX 3090				6.55 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
+Mistral-8x7B	Q5_K_M		RTX 3090				13.16 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
+Mistral-8x7B	Q4_K_M		RTX 3090				23.06 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
+Mistral-8x7B	Q4_K_M		2 x RTX 3090				48.26 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
+Mistral 7B	Q4		Raspberry Pi 5				2 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		i7-7700HQ (CPU)				3 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		Apple M1 (CPU)				12 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		RTX 4060 Ti				44 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		Tesla P40				45 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		Apple M1 Max (CPU)				58 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		Nvidia RTX 3060				59 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		Apple M1 Ultra (CPU)				70 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		Nvidia RTX 4070				70 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		Nvidia RTX 3090				120 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4		Nvidia RTX 4090				140 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Llama 2 70B	FP16		2 x Tesla P40				3 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Llama 2 70B	Q4		Apple M1 Max (CPU)				6 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+CodeLlama 70B	Q5_K_M	llama.cpp	Apple M2 Ultra (CPU)				8.72 t/s	https://obrienlabs.medium.com/running-the-70b-llama-2-llm-locally-on-metal-via-llama-cpp-on-mac-studio-m2-ultra-32b3179e9cbe
+Llama 2 7B	FP16	vLLM	NVIDIA H100 SXM	1	2048	1000 t/s		https://blog.ori.co/benchmarking-llama-3.1-8b-instruct-on-nvidia-h100-and-a100-chips-with-the-vllm-inferencing-engine
+Llama 2 7B	FP16	vLLM	NVIDIA A100	1	2048	500 t/s		https://blog.ori.co/benchmarking-llama-3.1-8b-instruct-on-nvidia-h100-and-a100-chips-with-the-vllm-inferencing-engine
+GPT-J 6B	FP8	TensorRT-LLM	NVIDIA H100	64	128	10,907 t/s		https://nvidia.github.io/TensorRT-LLM/blogs/H100vsA100.html
+GPT-J 6B	FP16	TensorRT-LLM	NVIDIA A100	64	128	3,679 t/s		https://nvidia.github.io/TensorRT-LLM/blogs/H100vsA100.html
+DeepSeek V3	FP16		NVIDIA H800 x 2048					https://www.infoq.com/news/2025/01/deepseek-v3-llm/`;
+
+        const data = rawData.split('\n')
+            .filter(line => line.trim())
+            .map(line => {
+                const [model, quantization, framework, hardware, batchSize, seqLength, tokenRateBatch, tokenRateSingle, source] = line.split('\t');
+                return {
+                    model, quantization, framework, hardware, batchSize, 
+                    seqLength, tokenRateBatch, tokenRateSingle, source
+                };
+            });
+
+        // Function to render the table
+        const renderTable = (data) => {
+            const tbody = document.querySelector('#llmTable tbody');
+            tbody.innerHTML = '';
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value || '';
+                    if (value && value.startsWith('http')) {
+                        const a = document.createElement('a');
+                        a.href = value;
+                        a.textContent = 'Link';
+                        a.target = '_blank';
+                        td.textContent = '';
+                        td.appendChild(a);
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        };
+
+        // Sorting function
+        const sortTable = (column, direction = 'asc') => {
+            const sortedData = [...data].sort((a, b) => {
+                let aVal = a[column] || '';
+                let bVal = b[column] || '';
+                
+                // Extract numerical values from strings like "100 t/s"
+                if (aVal.includes('t/s')) {
+                    aVal = parseFloat(aVal.replace(' t/s', '').replace(',', ''));
+                }
+                if (bVal.includes('t/s')) {
+                    bVal = parseFloat(bVal.replace(' t/s', '').replace(',', ''));
+                }
+                
+                // Convert to numbers if possible
+                if (!isNaN(aVal) && !isNaN(bVal)) {
+                    aVal = parseFloat(aVal);
+                    bVal = parseFloat(bVal);
+                }
+                
+                if (direction === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            renderTable(sortedData);
+        };
+
+        // Filtering function
+        const filterTable = () => {
+            const modelFilter = document.getElementById('modelFilter').value.toLowerCase();
+            const hardwareFilter = document.getElementById('hardwareFilter').value.toLowerCase();
+            const quantizationFilter = document.getElementById('quantizationFilter').value.toLowerCase();
+
+            const filteredData = data.filter(row => {
+                return (!modelFilter || row.model.toLowerCase().includes(modelFilter)) &&
+                       (!hardwareFilter || (row.hardware && row.hardware.toLowerCase().includes(hardwareFilter))) &&
+                       (!quantizationFilter || (row.quantization && row.quantization.toLowerCase().includes(quantizationFilter)));
+            });
+
+            renderTable(filteredData);
+        };
+
+        // Event listeners
+        document.querySelectorAll('th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const column = th.dataset.sort;
+                const currentDirection = th.classList.contains('asc') ? 'desc' : 'asc';
+                
+                // Remove all sort indicators
+                document.querySelectorAll('th').forEach(el => {
+                    el.classList.remove('asc', 'desc');
+                });
+                
+                th.classList.add(currentDirection);
+                sortTable(column, currentDirection);
+            });
+        });
+
+        document.getElementById('modelFilter').addEventListener('input', filterTable);
+        document.getElementById('hardwareFilter').addEventListener('input', filterTable);
+        document.getElementById('quantizationFilter').addEventListener('input', filterTable);
+
+        // Initialize table
+        renderTable(data);
     </script>
 </body>
 </html>
