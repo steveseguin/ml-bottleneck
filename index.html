@@ -1329,7 +1329,7 @@ input, select {
 				const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic / (device.localBandwidthGBps * 1e9);
 
 				// Include network time in actual execution time
-				const overheadFactorPrefill = 2.0;
+				const overheadFactorPrefill = 1.05;
 				const actualPrefillTime = Math.max(
 					theoreticalPrefillComputeTime,
 					prefillBandwidthLimitedTime,
@@ -1366,7 +1366,7 @@ input, select {
 				) / modelConfig.seqLength;
 
 				const decodeBandwidthLimitedTime = decodeMemoryTrafficPerToken / (device.localBandwidthGBps * 1e9);
-				const overheadFactorDecode = 1;
+				const overheadFactorDecode = 1.5;
 				const actualDecodeTime = Math.max(theoreticalDecodeTime, decodeBandwidthLimitedTime) * 
 					overheadFactorDecode;
 
