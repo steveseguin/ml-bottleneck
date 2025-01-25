@@ -83,6 +83,26 @@
             height: 300px;
             margin-bottom: 1rem;
         }
+
+        .inline-select-group {
+            display: flex;
+            gap: 0.5rem; /* Space between selects */
+            margin-bottom: 0.5rem; /* Space below the group */
+            align-items: baseline; /* Align labels and selects nicely */
+        }
+
+        .inline-select-group label {
+            margin-bottom: 0; /* Remove default margin-bottom for labels in inline group */
+            margin-right: 0.5rem; /* Space between label and select */
+            flex-shrink: 0; /* Prevent label from shrinking */
+            width: auto; /* Adjust label width as needed */
+        }
+
+        .inline-select-group select {
+            flex-grow: 1; /* Allow select to take remaining space */
+        }
+
+
     </style>
 </head>
 <body>
@@ -92,17 +112,30 @@
         <div class="card">
             <h2>Model Configuration</h2>
             <div id="modelConfig">
-                <label>Model Preset</label>
-                <select id="modelPreset" class="input">
-                    <option value="">Custom</option>
-                    <option value="llama3_8b_q4">Llama 3 8B Q4</option>
-                    <option value="llama3_8b_int8">Llama 3 8B INT8</option>
-                    <option value="llama3_70b_q4">Llama 3 70B Q4</option>
-                    <option value="llama3_70b_int8">Llama 3 70B INT8</option>
-                    <option value="mistral_7b_q4">Mistral 7B Q4</option>
-                    <option value="mistral_7b_int8">Mistral 7B INT8</option>
-                    <!-- Add more model presets here -->
-                </select>
+
+                <div class="inline-select-group">
+                    <label for="modelPreset">Model Preset</label>
+                    <select id="modelPreset" class="input">
+                        <option value="">Custom</option>
+                        <option value="llama3_8b">Llama 3 8B</option>
+                        <option value="llama3_70b">Llama 3 70B</option>
+                        <option value="mistral_7b">Mistral 7B</option>
+                        <option value="deepseek_v3">DeepSeek V3 (700B)</option>
+                        <option value="large_model_400b">Large Model (400B+)</option>
+                        <option value="very_large_model_1t">Very Large Model (1T+)</option>
+                        <!-- Add more model presets here -->
+                    </select>
+
+                    <label for="quantizationType">Quantization</label>
+                    <select id="quantizationType" class="input">
+                        <option value="q4">Q4</option>
+                        <option value="int8">INT8</option>
+                        <option value="float16">FP16</option>
+                        <option value="bfloat16" selected>BF16</option>
+                        <option value="float32">FP32</option>
+                    </select>
+                </div>
+
 
                 <label>Total Parameters (B)</label>
                 <input type="number" id="totalParamsB" class="input" value="400">
@@ -122,8 +155,8 @@
                 <label>Number of Heads</label>
                 <input type="number" id="numHeads" class="input" value="96">
 
-                <label>Data Type</label>
-                <select id="dtype" class="input">
+                <label style="display: none;">Data Type</label>  <!-- Hide the old dtype select -->
+                <select id="dtype" class="input" style="display: none;">  <!-- Hide the old dtype select -->
                     <option value="float32">float32</option>
                     <option value="bfloat16" selected>bfloat16</option>
                     <option value="float16">float16</option>
@@ -174,49 +207,166 @@
         };
 
         const MODEL_PRESETS = {
-            'llama3_8b_q4': {
-                totalParamsB: 8,
-                hiddenSize: 3072,
-                numLayers: 32,
-                numHeads: 32,
-                dtype: 'q4'
+            'llama3_8b': {
+                'q4': {
+                    totalParamsB: 8,
+                    hiddenSize: 3072,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'q4'
+                },
+                'int8': {
+                    totalParamsB: 8,
+                    hiddenSize: 3072,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'int8'
+                },
+                 'float16': {
+                    totalParamsB: 8,
+                    hiddenSize: 3072,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'float16'
+                },
+                'bfloat16': {
+                    totalParamsB: 8,
+                    hiddenSize: 3072,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'bfloat16'
+                },
+                'float32': {
+                    totalParamsB: 8,
+                    hiddenSize: 3072,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'float32'
+                },
             },
-            'llama3_8b_int8': {
-                totalParamsB: 8,
-                hiddenSize: 3072,
-                numLayers: 32,
-                numHeads: 32,
-                dtype: 'int8'
+            'llama3_70b': {
+                'q4': {
+                    totalParamsB: 70,
+                    hiddenSize: 8192,
+                    numLayers: 80,
+                    numHeads: 64,
+                    dtype: 'q4'
+                },
+                'int8': {
+                    totalParamsB: 70,
+                    hiddenSize: 8192,
+                    numLayers: 80,
+                    numHeads: 64,
+                    dtype: 'int8'
+                },
+                'float16': {
+                    totalParamsB: 70,
+                    hiddenSize: 8192,
+                    numLayers: 80,
+                    numHeads: 64,
+                    dtype: 'float16'
+                },
+                'bfloat16': {
+                    totalParamsB: 70,
+                    hiddenSize: 8192,
+                    numLayers: 80,
+                    numHeads: 64,
+                    dtype: 'bfloat16'
+                },
+                'float32': {
+                    totalParamsB: 70,
+                    hiddenSize: 8192,
+                    numLayers: 80,
+                    numHeads: 64,
+                    dtype: 'float32'
+                }
             },
-            'llama3_70b_q4': {
-                totalParamsB: 70,
-                hiddenSize: 8192,
-                numLayers: 80,
-                numHeads: 64,
-                dtype: 'q4'
+            'mistral_7b': {
+                 'q4': {
+                    totalParamsB: 7,
+                    hiddenSize: 4096,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'q4'
+                },
+                'int8': {
+                    totalParamsB: 7,
+                    hiddenSize: 4096,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'int8'
+                },
+                'float16': {
+                    totalParamsB: 7,
+                    hiddenSize: 4096,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'float16'
+                },
+                'bfloat16': {
+                    totalParamsB: 7,
+                    hiddenSize: 4096,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'bfloat16'
+                },
+                'float32': {
+                    totalParamsB: 7,
+                    hiddenSize: 4096,
+                    numLayers: 32,
+                    numHeads: 32,
+                    dtype: 'float32'
+                }
             },
-            'llama3_70b_int8': {
-                totalParamsB: 70,
-                hiddenSize: 8192,
-                numLayers: 80,
-                numHeads: 64,
-                dtype: 'int8'
+            'deepseek_v3': { // Added preset for ~700B parameter model
+                'float16': {
+                    totalParamsB: 671,
+                    hiddenSize: 8192,
+                    numLayers: 64,
+                    numHeads: 64,
+                    dtype: 'float16'
+                },
+                'bfloat16': {
+                    totalParamsB: 671,
+                    hiddenSize: 8192,
+                    numLayers: 64,
+                    numHeads: 64,
+                    dtype: 'bfloat16'
+                }
+                // No Q4/INT8 for conceptual very large models for now, can add if needed.
             },
-            'mistral_7b_q4': {
-                totalParamsB: 7,
-                hiddenSize: 4096,
-                numLayers: 32,
-                numHeads: 32, // or 64 for GQA
-                dtype: 'q4'
+            'large_model_400b': { // Added preset for ~400B parameter model (conceptual)
+                 'float16': {
+                    totalParamsB: 400,
+                    hiddenSize: 16384,
+                    numLayers: 120,
+                    numHeads: 128,
+                    dtype: 'float16'
+                },
+                'bfloat16': {
+                    totalParamsB: 400,
+                    hiddenSize: 16384,
+                    numLayers: 120,
+                    numHeads: 128,
+                    dtype: 'bfloat16'
+                }
             },
-            'mistral_7b_int8': {
-                totalParamsB: 7,
-                hiddenSize: 4096,
-                numLayers: 32,
-                numHeads: 32, // or 64 for GQA
-                dtype: 'int8'
-            },
-            // Add more presets as needed
+             'very_large_model_1t': { // Added preset for ~1T parameter model (conceptual, for future scale)
+                 'float16': {
+                    totalParamsB: 1000,
+                    hiddenSize: 32768,
+                    numLayers: 200,
+                    numHeads: 256,
+                    dtype: 'float16'
+                },
+                'bfloat16': {
+                    totalParamsB: 1000,
+                    hiddenSize: 32768,
+                    numLayers: 200,
+                    numHeads: 256,
+                    dtype: 'bfloat16'
+                }
+            }
         };
 
 
@@ -291,13 +441,14 @@
         function getModelConfig() {
             return {
                 modelPreset: document.getElementById('modelPreset').value,
+                quantizationType: document.getElementById('quantizationType').value,
                 totalParamsB: parseFloat(document.getElementById('totalParamsB').value),
                 batchSize: parseFloat(document.getElementById('batchSize').value),
                 seqLength: parseFloat(document.getElementById('seqLength').value),
                 hiddenSize: parseFloat(document.getElementById('hiddenSize').value),
                 numLayers: parseFloat(document.getElementById('numLayers').value),
                 numHeads: parseFloat(document.getElementById('numHeads').value),
-                dtype: document.getElementById('dtype').value,
+                dtype: document.getElementById('dtype').value, // Still need dtype for calculations
                 parallelismStrategy: document.getElementById('parallelismStrategy').value
             };
         }
@@ -673,15 +824,20 @@
             updateSystemAnalysis();
         }
 
-        document.getElementById('modelPreset').addEventListener('change', function() {
-            const presetId = this.value;
-            if (presetId && MODEL_PRESETS[presetId]) {
-                const preset = MODEL_PRESETS[presetId];
+        function updateModelConfigFromPreset() {
+            const modelPresetId = document.getElementById('modelPreset').value;
+            const quantizationType = document.getElementById('quantizationType').value;
+
+            if (modelPresetId && MODEL_PRESETS[modelPresetId] && MODEL_PRESETS[modelPresetId][quantizationType]) {
+                const preset = MODEL_PRESETS[modelPresetId][quantizationType];
                 for (const key in preset) {
                     document.getElementById(key).value = preset[key];
                 }
-            } else if (!presetId) { // "Custom" selected, clear presets
-                for (const key in MODEL_PRESETS['llama3_8b_q4']) { // Using an arbitrary preset keys to reset fields.
+                // Importantly, set the *hidden* dtype select's value to the selected quantization type for calculations.
+                document.getElementById('dtype').value = quantizationType;
+
+            } else if (modelPresetId === "") { // "Custom" model selected, clear presets
+                for (const key in MODEL_PRESETS['llama3_8b']['q4']) { // Using an arbitrary preset keys to reset fields.
                     if (document.getElementById(key)) { // Check if element exists to avoid errors if fields change.
                         document.getElementById(key).value = ''; // Or set to a default value if preferred.
                     }
@@ -689,12 +845,16 @@
                 document.getElementById('dtype').value = 'bfloat16'; //reset dtype to default if needed.
             }
             updateSystemAnalysis();
-        });
+        }
 
 
-        // Add event listeners to model config inputs (except modelPreset, already handled)
+        document.getElementById('modelPreset').addEventListener('change', updateModelConfigFromPreset);
+        document.getElementById('quantizationType').addEventListener('change', updateModelConfigFromPreset);
+
+
+        // Add event listeners to model config inputs (except modelPreset and quantizationType, already handled)
         document.querySelectorAll('#modelConfig input, #modelConfig select').forEach(input => {
-            if (input.id !== 'modelPreset') {
+            if (input.id !== 'modelPreset' && input.id !== 'quantizationType' && input.id !== 'dtype') { // Exclude modelPreset, quantizationType, and hidden dtype
                 input.addEventListener('change', updateSystemAnalysis);
             }
         });
