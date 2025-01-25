@@ -274,20 +274,8 @@ function addDevice() {
                 (memoryBreakdown.total / devices.length) + memoryBreakdown.layerMemory : 
                 memoryBreakdown.total / devices.length;
         
-            // Calculate FLOPs for attention and MLP
-            const seqLen = modelConfig.seqLength;
-            const batchSize = modelConfig.batchSize;
-            const hiddenSize = modelConfig.hiddenSize;
-            const numLayers = modelConfig.numLayers;
-            
-            // Attention FLOPs
-            const attentionFlops = 4 * batchSize * seqLen * (seqLen * hiddenSize + hiddenSize * hiddenSize);
-            
-            // MLP FLOPs (assuming 4x hidden size for intermediate)
-            const mlpFlops = 8 * batchSize * seqLen * hiddenSize * hiddenSize;
-            
-            // Total FLOPs per forward+backward pass
-            const totalFlops = (attentionFlops + mlpFlops) * numLayers * 2;
+            // Simple FLOPs model - 2 FLOPs per parameter
+            const totalFlops = modelConfig.totalParamsB * 1e9 * 2;
             
             return devices.map(device => {
                 const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
