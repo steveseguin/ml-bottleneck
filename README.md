@@ -1,5 +1,3 @@
-I'll help improve the README with emojis and updated information based on the provided code. Here's an enhanced version:
-
 # 🔬 ML System Bottleneck Analyzer
 
 [![Visit MLBottleneck.com](https://img.shields.io/badge/Visit-MLBottleneck.com-blue)](https://mlbottleneck.com)
