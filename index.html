@@ -9,7 +9,7 @@
             --destructive: #ff4444;
             --border: #e5e7eb;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
@@ -17,27 +17,27 @@
             max-width: 1200px;
             margin: 0 auto;
         }
-        
+
         .card {
             border: 1px solid var(--border);
             border-radius: 0.5rem;
             padding: 1rem;
             margin-bottom: 1rem;
         }
-        
+
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1rem;
         }
-        
+
         .device {
             border: 1px solid var(--border);
             padding: 1rem;
             margin-bottom: 1rem;
             border-radius: 0.5rem;
         }
-        
+
         .button {
             background: var(--primary);
             color: white;
@@ -46,11 +46,11 @@
             border-radius: 0.25rem;
             cursor: pointer;
         }
-        
+
         .button-destructive {
             background: var(--destructive);
         }
-        
+
         .input, select {
             width: 100%;
             padding: 0.5rem;
@@ -58,7 +58,7 @@
             border-radius: 0.25rem;
             margin-bottom: 0.5rem;
         }
-        
+
         .alert {
             background: #ffe5e5;
             border: 1px solid var(--destructive);
@@ -66,19 +66,19 @@
             border-radius: 0.5rem;
             margin-bottom: 1rem;
         }
-        
+
         .device-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 0.5rem;
         }
-        
+
         label {
             display: block;
             margin-bottom: 0.25rem;
             font-size: 0.875rem;
         }
-        
+
         .chart-container {
             height: 300px;
             margin-bottom: 1rem;
@@ -87,37 +87,50 @@
 </head>
 <body>
     <h1>ML System Bottleneck Analyzer</h1>
-    
+
     <div class="grid">
         <div class="card">
             <h2>Model Configuration</h2>
             <div id="modelConfig">
+                <label>Model Preset</label>
+                <select id="modelPreset" class="input">
+                    <option value="">Custom</option>
+                    <option value="llama3_8b_q4">Llama 3 8B Q4</option>
+                    <option value="llama3_8b_int8">Llama 3 8B INT8</option>
+                    <option value="llama3_70b_q4">Llama 3 70B Q4</option>
+                    <option value="llama3_70b_int8">Llama 3 70B INT8</option>
+                    <option value="mistral_7b_q4">Mistral 7B Q4</option>
+                    <option value="mistral_7b_int8">Mistral 7B INT8</option>
+                    <!-- Add more model presets here -->
+                </select>
+
                 <label>Total Parameters (B)</label>
                 <input type="number" id="totalParamsB" class="input" value="400">
-                
+
                 <label>Batch Size</label>
                 <input type="number" id="batchSize" class="input" value="1">
-                
+
                 <label>Sequence Length</label>
                 <input type="number" id="seqLength" class="input" value="2048">
-                
+
                 <label>Hidden Size</label>
                 <input type="number" id="hiddenSize" class="input" value="12288">
-                
+
                 <label>Number of Layers</label>
                 <input type="number" id="numLayers" class="input" value="96">
-                
+
                 <label>Number of Heads</label>
                 <input type="number" id="numHeads" class="input" value="96">
-                
+
                 <label>Data Type</label>
                 <select id="dtype" class="input">
                     <option value="float32">float32</option>
                     <option value="bfloat16" selected>bfloat16</option>
                     <option value="float16">float16</option>
                     <option value="int8">int8</option>
+                    <option value="q4">q4</option>
                 </select>
-                
+
                 <label>Parallelism Strategy</label>
                 <select id="parallelismStrategy" class="input">
                     <option value="pipeline">Pipeline Parallelism</option>
@@ -156,32 +169,108 @@
             'float32': 4,
             'bfloat16': 2,
             'float16': 2,
-            'int8': 1
+            'int8': 1,
+            'q4': 0.5 // Assuming 4-bit quantization is roughly 0.5 bytes per parameter
         };
+
+        const MODEL_PRESETS = {
+            'llama3_8b_q4': {
+                totalParamsB: 8,
+                hiddenSize: 3072,
+                numLayers: 32,
+                numHeads: 32,
+                dtype: 'q4'
+            },
+            'llama3_8b_int8': {
+                totalParamsB: 8,
+                hiddenSize: 3072,
+                numLayers: 32,
+                numHeads: 32,
+                dtype: 'int8'
+            },
+            'llama3_70b_q4': {
+                totalParamsB: 70,
+                hiddenSize: 8192,
+                numLayers: 80,
+                numHeads: 64,
+                dtype: 'q4'
+            },
+            'llama3_70b_int8': {
+                totalParamsB: 70,
+                hiddenSize: 8192,
+                numLayers: 80,
+                numHeads: 64,
+                dtype: 'int8'
+            },
+            'mistral_7b_q4': {
+                totalParamsB: 7,
+                hiddenSize: 4096,
+                numLayers: 32,
+                numHeads: 32, // or 64 for GQA
+                dtype: 'q4'
+            },
+            'mistral_7b_int8': {
+                totalParamsB: 7,
+                hiddenSize: 4096,
+                numLayers: 32,
+                numHeads: 32, // or 64 for GQA
+                dtype: 'int8'
+            },
+            // Add more presets as needed
+        };
+
 
         const DEVICE_TEMPLATES = {
             'A100': {
+                name: 'NVIDIA A100',
                 memoryGB: 80,
                 localBandwidthGBps: 1935,
-                networkBandwidthGBps: 300,
+                networkBandwidthGBps: 300, // High-speed interconnect, e.g., NVLink or fast ethernet
                 computeTFlops: 312,
                 type: 'GPU'
             },
             'H100': {
+                name: 'NVIDIA H100',
                 memoryGB: 120,
                 localBandwidthGBps: 3350,
-                networkBandwidthGBps: 450,
+                networkBandwidthGBps: 450, // NVLink, Infiniband, or very fast ethernet
                 computeTFlops: 989,
                 type: 'GPU'
             },
-            '4090': {
+            'RTX 4090': {
+                name: 'RTX 4090',
                 memoryGB: 24,
                 localBandwidthGBps: 1008,
-                networkBandwidthGBps: 64,
+                networkBandwidthGBps: 64, // Typical PCIe or Ethernet
                 computeTFlops: 83,
                 type: 'GPU'
             },
+            'Mac Mini M2 (10G Ethernet)': {
+                name: 'Mac Mini M2 (10G)',
+                memoryGB: 16, // Or 8/16/24GB depending on config
+                localBandwidthGBps: 68, // Unified Memory Bandwidth M2
+                networkBandwidthGBps: 10, // 10G Ethernet
+                computeTFlops: 4, // M2 GPU performance estimate - very rough for ML
+                type: 'CPU/Integrated GPU' // Differentiate type if needed
+            },
+            'Raspberry Pi 5 (5G Ethernet)': {
+                name: 'Raspberry Pi 5 (5G)',
+                memoryGB: 8, // Or 4/8GB
+                localBandwidthGBps: 34, // LPDDR4X Bandwidth (very approx)
+                networkBandwidthGBps: 5/8.0, // 5G Ethernet (in GBps) -  5 Gigabit Ethernet / 8 bits per byte.
+                computeTFlops: 0.1, //  Broadcom BCM2712 - extremely rough, for basic comparison
+                type: 'CPU/Integrated GPU'
+            },
+            'Desktop PC (2.5G Ethernet)': {
+                name: 'Desktop PC (2.5G)',
+                memoryGB: 32, // Typical desktop RAM
+                localBandwidthGBps: 50, //  DDR4/DDR5 bandwidth - very approx
+                networkBandwidthGBps: 2.5/8.0, // 2.5G Ethernet (in GBps)
+                computeTFlops: 1, //  Mid-range CPU integrated GPU - very rough
+                type: 'CPU/Integrated GPU'
+            },
             'Custom': {
+                name: 'Custom Device',
                 memoryGB: 16,
                 localBandwidthGBps: 800,
                 networkBandwidthGBps: 200,
@@ -201,6 +290,7 @@
 
         function getModelConfig() {
             return {
+                modelPreset: document.getElementById('modelPreset').value,
                 totalParamsB: parseFloat(document.getElementById('totalParamsB').value),
                 batchSize: parseFloat(document.getElementById('batchSize').value),
                 seqLength: parseFloat(document.getElementById('seqLength').value),
@@ -212,119 +302,111 @@
             };
         }
 
-       // Replace the addDevice function with this updated version
-function addDevice() {
-    const lastDevice = devices[devices.length - 1];
-    const newDevice = {
-        id: devices.length + 1,
-        name: `Device ${devices.length + 1}`,
-        template: lastDevice.template,
-        ...DEVICE_TEMPLATES[lastDevice.template === 'Custom' ? 'Custom' : lastDevice.template],
-        memoryGB: lastDevice.memoryGB,
-        localBandwidthGBps: lastDevice.localBandwidthGBps,
-        networkBandwidthGBps: lastDevice.networkBandwidthGBps,
-        computeTFlops: lastDevice.computeTFlops
-    };
-    devices.push(newDevice);
-    updateDeviceDisplay();
-    updateSystemAnalysis();
-}
 
-// Update the calculation functions for more accurate metrics
         function calculateMemoryBreakdown(modelConfig, dtypeSize) {
             // Model parameters memory
             const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
-            
-            // KV Cache memory per layer
-            const kvCacheSize = 2 * modelConfig.batchSize * modelConfig.seqLength * 
-                               (modelConfig.hiddenSize / modelConfig.numHeads) * 
+
+            // KV Cache memory per layer (simplified - assuming 2 copies for K and V)
+            const kvCacheSize = 2 * modelConfig.batchSize * modelConfig.seqLength *
+                               (modelConfig.hiddenSize / modelConfig.numHeads) * // Assuming shared head dimension
                                modelConfig.numHeads * dtypeSize;
-            
-            // Attention operation memory
-            const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) * 
+
+            // Attention operation memory (very rough estimate - might not be the biggest factor)
+            const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) *
                                    modelConfig.numHeads * dtypeSize;
-            
-            // Activation memory for forward and backward pass
-            const activationMemory = 2 * modelConfig.batchSize * modelConfig.seqLength * 
+
+            // Activation memory for forward pass (simplified -  can be higher depending on layers)
+            const activationMemory = modelConfig.batchSize * modelConfig.seqLength *
                                    modelConfig.hiddenSize * dtypeSize;
-            
-            // Layer-specific memory
+
+
+            // Layer-specific memory (KV Cache + Activations - simplified per layer estimate)
             const layerMemory = (kvCacheSize + activationMemory) * modelConfig.numLayers;
-            
-            // Optimizer states (assume Adam optimizer - 8 bytes per parameter)
-            const optimizerMemory = paramsMemory * 2;
-            
+
+
             return {
                 paramsMemory,
                 layerMemory,
                 attentionMemory,
-                optimizerMemory,
-                total: paramsMemory + layerMemory + attentionMemory + optimizerMemory
+                total: paramsMemory + layerMemory + attentionMemory // Optimizer memory removed for inference focus
             };
         }
+
 
         function calculateMetrics() {
             const modelConfig = getModelConfig();
             const dtypeSize = DTYPE_SIZES[modelConfig.dtype];
             const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize);
-            
+
             // Memory per device based on parallelism strategy
             const isPipeline = modelConfig.parallelismStrategy === 'pipeline';
-            const memoryPerDevice = isPipeline ? 
-                (memoryBreakdown.total / devices.length) + memoryBreakdown.layerMemory : 
-                memoryBreakdown.total / devices.length;
-        
-            // Keep these for network bandwidth calculations
-            const seqLen = modelConfig.seqLength;
-            const batchSize = modelConfig.batchSize;
-            const hiddenSize = modelConfig.hiddenSize;
-            
-            // Simple FLOPs model - 2 FLOPs per parameter
-            const totalFlops = modelConfig.totalParamsB * 1e9 * 2;
-            
+            const memoryPerDevice = isPipeline ?
+                (memoryBreakdown.total / devices.length) : // Simple pipeline memory split
+                memoryBreakdown.total / devices.length; // Simple tensor memory split (assuming model parallelism)
+
+
+            // Simplified FLOPs model - just for relative compute comparison. Not precise.
+            const totalFlops = modelConfig.totalParamsB * 1e9 * 2; // Very rough estimate
+
+
             return devices.map(device => {
                 const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
-                
+
                 const modelSizeBytes = modelConfig.totalParamsB * 1e9 * dtypeSize;
-                const bandwidthLimitedTime = modelSizeBytes / (device.localBandwidthGBps * 1e9);
-                const computeLimitedTime = totalFlops / (device.computeTFlops * 1e12);
-                
-                // The actual time will be the longer of the two
-                const actualTime = Math.max(bandwidthLimitedTime, computeLimitedTime);
-                
-                // Calculate utilizations based on relative time requirements
+                const bandwidthLimitedTime = modelSizeBytes / (device.localBandwidthGBps * 1e9); // Time to load model from local memory (simplified)
+                const computeLimitedTime = totalFlops / (device.computeTFlops * 1e12); // Time if purely compute bound
+
+
+                const actualTime = Math.max(bandwidthLimitedTime, computeLimitedTime); // Bottleneck is whichever is slower
+
                 const localBandwidthUtilization = (bandwidthLimitedTime / actualTime) * 100;
                 const computeUtilization = (computeLimitedTime / actualTime) * 100;
-                
-                // Network bandwidth calculations remain the same
-                const networkBandwidthRequired = isPipeline ? 
-                    (2 * batchSize * seqLen * hiddenSize * dtypeSize) / devices.length :
-                    (4 * batchSize * seqLen * hiddenSize * dtypeSize * (devices.length - 1)) / devices.length;
-                const networkUtilization = (networkBandwidthRequired / (device.networkBandwidthGBps * 1e9)) * 100;
-        
-                // Bottleneck is determined by highest utilization
+
+
+                // Network Bandwidth Calculation (Pipeline Parallelism - simplified for inference)
+                let networkBandwidthUtilization = 0;
+                if (isPipeline && devices.length > 1) {
+                    // In pipeline parallelism, activations are passed between stages.
+                    // Estimating data per batch, per sequence, per hidden size, per dtype.
+                    const activationsPerBatch = modelConfig.batchSize * modelConfig.seqLength * modelConfig.hiddenSize * dtypeSize;
+                    const networkDataPerDevice = activationsPerBatch; // Simplified - assuming roughly this much data passed per device in pipeline. Needs more detailed modelling for accuracy.
+
+                    const totalNetworkData = networkDataPerDevice * devices.length; // Total data moved across network in a simplified pipeline pass.
+                    const networkBandwidthRequired = totalNetworkData; // Assuming we want to transfer this in 'actualTime' (which is compute or local BW bound).
+                    networkBandwidthUtilization = (networkBandwidthRequired / (device.networkBandwidthGBps * 1e9 * actualTime)) * 100; // Utilization based on 'actualTime'
+
+                    // Simplified network utilization -  needs more refined modeling of pipeline stages and data transfer.
+                    networkBandwidthUtilization = Math.min(100, networkBandwidthUtilization); // Cap at 100%
+                }
+
+
+                // Bottleneck factor - consider memory, local bandwidth, and network bandwidth.
                 const bottleneckFactor = Math.max(
                     1,
                     memoryUtilization / 100,
                     localBandwidthUtilization / 100,
-                    networkUtilization / 100
+                    networkBandwidthUtilization / 100,
+                    computeUtilization / 100 // Include compute in bottleneck factor.
                 );
-        
+
+
                 return {
                     name: device.name,
                     memoryUtilization,
                     localBandwidthUtilization,
-                    networkBandwidthUtilization: networkUtilization,
+                    networkBandwidthUtilization: networkBandwidthUtilization,
                     computeUtilization,
                     rawMemoryUtilization: memoryUtilization,
                     rawLocalBandwidthUtilization: localBandwidthUtilization,
-                    rawNetworkBandwidthUtilization: networkUtilization,
-                    rawComputeUtilization: computeUtilization * bottleneckFactor,
+                    rawNetworkBandwidthUtilization: networkBandwidthUtilization,
+                    rawComputeUtilization: computeUtilization * bottleneckFactor, // Scale compute by bottleneck for chart display.
                     bottleneckFactor,
                     isBottleneck: bottleneckFactor > 1 || memoryUtilization > 100
                 };
             });
         }
+
 
         function updateDeviceDisplay() {
             const devicesContainer = document.getElementById('devices');
@@ -333,17 +415,17 @@ function addDevice() {
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                         <input class="input" style="width: auto;" value="${device.name}"
                                onchange="updateDevice(${device.id}, 'name', this.value)">
-                        <button class="button button-destructive" 
+                        <button class="button button-destructive"
                                 onclick="removeDevice(${device.id})"
                                 ${devices.length === 1 ? 'disabled' : ''}>
                             Remove
                         </button>
                     </div>
-                    
+
                     <select class="input" onchange="updateDevice(${device.id}, 'template', this.value)">
                         ${Object.keys(DEVICE_TEMPLATES).map(template => `
                             <option value="${template}" ${device.template === template ? 'selected' : ''}>
-                                ${template}
+                                ${DEVICE_TEMPLATES[template].name}
                             </option>
                         `).join('')}
                     </select>
@@ -367,36 +449,67 @@ function addDevice() {
         function updateSystemAnalysis() {
             const metrics = calculateMetrics();
             const analysisContainer = document.getElementById('systemAnalysis');
-            
-            analysisContainer.innerHTML = metrics.map(m => `
-                <div style="margin-bottom: 1rem;">
-                    <h3>${m.name}</h3>
-                    <div class="device-grid" style="font-size: 0.875rem;">
-                        <div>Memory Usage: ${m.memoryUtilization.toFixed(1)}%</div>
-                        <div>Compute Usage: ${m.computeUtilization.toFixed(1)}% 
-                            ${m.rawComputeUtilization > m.computeUtilization ? 
-                                `(max: ${m.rawComputeUtilization.toFixed(1)}%)` : ''}
+
+            let systemAnalysisHtml = '';
+            metrics.forEach(m => {
+                systemAnalysisHtml += `
+                    <div style="margin-bottom: 1rem;">
+                        <h3>${m.name}</h3>
+                        <div class="device-grid" style="font-size: 0.875rem;">
+                            <div>Memory Usage: ${m.memoryUtilization.toFixed(1)}%</div>
+                            <div>Compute Usage: ${m.computeUtilization.toFixed(1)}%
+                                ${m.rawComputeUtilization > m.computeUtilization ?
+                                    `(max: ${m.rawComputeUtilization.toFixed(1)}%)` : ''}
+                            </div>
+                            <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%
+                                ${m.rawLocalBandwidthUtilization > m.localBandwidthUtilization ?
+                                    `(max: ${m.rawLocalBandwidthUtilization.toFixed(1)}%)` : ''}
+                            </div>
+                            <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%
+                                ${m.rawNetworkBandwidthUtilization > m.networkBandwidthUtilization ?
+                                    `(max: ${m.rawNetworkBandwidthUtilization.toFixed(1)}%)` : ''}
+                            </div>
                         </div>
-                        <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%
-                            ${m.rawLocalBandwidthUtilization > m.localBandwidthUtilization ? 
-                                `(max: ${m.rawLocalBandwidthUtilization.toFixed(1)}%)` : ''}
-                        </div>
-                        <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%
-                            ${m.rawNetworkBandwidthUtilization > m.networkBandwidthUtilization ? 
-                                `(max: ${m.rawNetworkBandwidthUtilization.toFixed(1)}%)` : ''}
-                        </div>
-                    </div>
-                    ${m.bottleneckFactor > 1 ? `
+                `;
+
+                let bottleneckType = "None";
+                let bottleneckValue = 1;
+                if (m.isBottleneck) {
+                    if (m.memoryUtilization > 100 && m.memoryUtilization > bottleneckValue) {
+                        bottleneckType = "Memory";
+                        bottleneckValue = m.memoryUtilization;
+                    }
+                    if (m.localBandwidthUtilization > 100 && m.localBandwidthUtilization > bottleneckValue) {
+                        bottleneckType = "Local Bandwidth";
+                        bottleneckValue = m.localBandwidthUtilization;
+                    }
+                    if (m.networkBandwidthUtilization > 100 && m.networkBandwidthUtilization > bottleneckValue) {
+                        bottleneckType = "Network Bandwidth";
+                        bottleneckValue = m.networkBandwidthUtilization;
+                    }
+                     if (m.computeUtilization > 100 && m.computeUtilization > bottleneckValue) { // Compute can also be a bottleneck
+                        bottleneckType = "Compute";
+                        bottleneckValue = m.computeUtilization;
+                    }
+
+
+                    systemAnalysisHtml += `
                         <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem;">
-                            Performance limited by resource constraints (${m.bottleneckFactor.toFixed(1)}x slower)
+                            Performance limited by <strong>${bottleneckType}</strong> constraints (${m.bottleneckFactor.toFixed(1)}x slower)
                         </div>
-                    ` : ''}
-                </div>
-            `).join('');
-        
+                    `;
+                }
+                systemAnalysisHtml += `</div>`; // close device analysis div
+            });
+
+
+            analysisContainer.innerHTML = systemAnalysisHtml;
+
+
             updateAlerts(metrics);
             updateChart(metrics);
         }
+
 
         function updateAlerts(metrics) {
             const alertsContainer = document.getElementById('alerts');
@@ -406,17 +519,19 @@ function addDevice() {
                 alertsHtml += `
                     <div class="alert">
                         <div style="font-weight: 600; margin-bottom: 0.5rem;">
-                            Configuration Not Feasible:
+                            Configuration Issues:
                         </div>
                         ${metrics.filter(m => m.isBottleneck).map(m => `
                             <div style="margin-left: 1rem;">
                                 • ${m.name}:
-                                ${m.memoryUtilization > 100 ? 
+                                ${m.memoryUtilization > 100 ?
                                     ` Requires ${(m.memoryUtilization/100).toFixed(1)}x more memory` : ''}
-                                ${m.localBandwidthUtilization > 100 ? 
+                                ${m.localBandwidthUtilization > 100 ?
                                     ` Requires ${(m.localBandwidthUtilization/100).toFixed(1)}x more local bandwidth` : ''}
-                                ${m.networkBandwidthUtilization > 100 ? 
+                                ${m.networkBandwidthUtilization > 100 && getModelConfig().parallelismStrategy === 'pipeline' ? // Only show network alert for pipeline parallelism for clarity
                                     ` Requires ${(m.networkBandwidthUtilization/100).toFixed(1)}x more network bandwidth` : ''}
+                                ${m.computeUtilization > 100 ?
+                                    ` Requires ${(m.computeUtilization/100).toFixed(1)}x more compute` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -426,9 +541,10 @@ function addDevice() {
             alertsContainer.innerHTML = alertsHtml;
         }
 
+
         function updateChart(metrics) {
             const ctx = document.getElementById('utilizationChart').getContext('2d');
-            
+
             const chartData = {
                 labels: metrics.map(m => m.name),
                 datasets: [
@@ -454,11 +570,11 @@ function addDevice() {
                     }
                 ]
             };
-        
+
             if (utilizationChart) {
                 utilizationChart.destroy();
             }
-        
+
             utilizationChart = new Chart(ctx, {
                 type: 'bar',
                 data: chartData,
@@ -468,7 +584,7 @@ function addDevice() {
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 100,
+                            max: 120, // Slightly increased max for better visualization of over-utilization
                             title: {
                                 display: true,
                                 text: 'Utilization %'
@@ -483,8 +599,8 @@ function addDevice() {
                                     const metric = metrics[index];
                                     const datasetLabel = context.dataset.label;
                                     let actualValue, rawValue;
-                                    
-                                    switch(datasetLabel) {
+
+                                    switch (datasetLabel) {
                                         case 'Memory':
                                             actualValue = metric.memoryUtilization;
                                             rawValue = metric.rawMemoryUtilization;
@@ -502,7 +618,7 @@ function addDevice() {
                                             rawValue = metric.rawComputeUtilization;
                                             break;
                                     }
-                                    
+
                                     if (rawValue !== actualValue) {
                                         return `${datasetLabel}: ${actualValue.toFixed(1)}% (theoretical max: ${rawValue.toFixed(1)}%)`;
                                     }
@@ -553,10 +669,32 @@ function addDevice() {
             updateSystemAnalysis();
         }
 
-        // Add event listeners to model config inputs
-        document.querySelectorAll('#modelConfig input, #modelConfig select').forEach(input => {
-            input.addEventListener('change', updateSystemAnalysis);
+        document.getElementById('modelPreset').addEventListener('change', function() {
+            const presetId = this.value;
+            if (presetId && MODEL_PRESETS[presetId]) {
+                const preset = MODEL_PRESETS[presetId];
+                for (const key in preset) {
+                    document.getElementById(key).value = preset[key];
+                }
+            } else if (!presetId) { // "Custom" selected, clear presets
+                for (const key in MODEL_PRESETS['llama3_8b_q4']) { // Using an arbitrary preset keys to reset fields.
+                    if (document.getElementById(key)) { // Check if element exists to avoid errors if fields change.
+                        document.getElementById(key).value = ''; // Or set to a default value if preferred.
+                    }
+                }
+                document.getElementById('dtype').value = 'bfloat16'; //reset dtype to default if needed.
+            }
+            updateSystemAnalysis();
         });
+
+
+        // Add event listeners to model config inputs (except modelPreset, already handled)
+        document.querySelectorAll('#modelConfig input, #modelConfig select').forEach(input => {
+            if (input.id !== 'modelPreset') {
+                input.addEventListener('change', updateSystemAnalysis);
+            }
+        });
+
 
         // Initial render
         updateDeviceDisplay();
