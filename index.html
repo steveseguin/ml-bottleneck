@@ -1,8 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>ML System Bottleneck Analyzer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML System Bottleneck Analyzer - Hardware Performance Analysis Tool</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNjM2NmYxO3N0b3Atb3BhY2l0eToxIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM0ZjQ2ZTU7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB4PSI0IiB5PSI0IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHJ4PSI0IiBmaWxsPSJ1cmwoI2dyYWQpIi8+CiAgPHBhdGggZD0iTTEwIDE2IEwxNCAyMCBMMjIgMTIiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik04IDIyIEwyNCAyMiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTggMjYgTDIwIDI2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC43Ii8+Cjwvc3ZnPg==">
+
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="ML System Bottleneck Analyzer - Hardware Performance Analysis Tool">
+    <meta name="description" content="Analyze and visualize hardware bottlenecks in machine learning systems. Get real-time insights into memory, bandwidth, and compute utilization across multiple devices.">
+    <meta name="keywords" content="ML, machine learning, hardware bottleneck, performance analysis, GPU, CPU, token rate, memory utilization, bandwidth analysis, compute utilization">
+    <meta name="author" content="Steve Seguin">
+    <meta name="theme-color" content="#6366f1">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mlbottleneck.com/">
+    <meta property="og:title" content="ML System Bottleneck Analyzer">
+    <meta property="og:description" content="Web-based tool for analyzing hardware bottlenecks in ML systems. Visualize performance limitations across distributed setups - right in your browser!">
+    <meta property="og:image" content="https://mlbottleneck.com/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://mlbottleneck.com/">
+    <meta property="twitter:title" content="ML System Bottleneck Analyzer">
+    <meta property="twitter:description" content="Web-based tool for analyzing hardware bottlenecks in ML systems. Visualize performance limitations across distributed setups - right in your browser!">
+    <meta property="twitter:image" content="https://mlbottleneck.com/og-image.png">
+
+    <!-- Additional Meta -->
+    <meta name="application-name" content="ML Bottleneck Analyzer">
+    <meta name="apple-mobile-web-app-title" content="ML Bottleneck">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+
     <style>
 :root {
     --primary: #6366f1;
@@ -266,7 +306,6 @@ input, select {
         <div class="card">
             <h2>Model Configuration</h2>
             <div id="modelConfig">
-
                 <div class="inline-select-group">
                     <label for="modelPreset">Model Preset</label>
                     <select id="modelPreset" class="input">
@@ -277,7 +316,7 @@ input, select {
                         <option value="deepseek_v3">DeepSeek V3 (700B)</option>
                         <option value="large_model_400b">Large Model (400B+)</option>
                         <option value="very_large_model_1t">Very Large Model (1T+)</option>
-                        </select>
+                    </select>
 
                     <label for="quantizationType">Quantization</label>
                     <select id="quantizationType" class="input">
@@ -341,16 +380,16 @@ input, select {
             </div>
         </div>
 
-    <div class="card">
-            <h2>System Analysis <small>(Token rate is an approximation)</small></h2>
+        <div class="card">
+            <h2>System Analysis <small>(Token rates are approximations)</small></h2>
             <div id="systemAnalysis"></div>
         </div>
     </div>
 
     <div id="alerts"></div>
-	
-	<h1>Real-world results are below for reference</h1>
-	<div class="filters">
+
+    <h1>Real-world results are below for reference</h1>
+    <div class="filters">
         <div class="filter-group">
             <label for="modelFilter">Model:</label>
             <input type="text" id="modelFilter" placeholder="Filter models...">
@@ -383,7 +422,7 @@ input, select {
     </table>
 
     <script>
-const DTYPE_SIZES = {
+        const DTYPE_SIZES = {
             'float32': 4,
             'bfloat16': 2,
             'float16': 2,
@@ -534,7 +573,7 @@ const DTYPE_SIZES = {
                     dtype: 'bfloat16'
                 }
             },
-             'very_large_model_1t': {
+            'very_large_model_1t': {
                 'float16': {
                     totalParamsB: 1000,
                     hiddenSize: 32768,
@@ -573,7 +612,7 @@ const DTYPE_SIZES = {
                 memoryGB: 24,
                 localBandwidthGBps: 1008,
                 networkBandwidthGBps: 32,
-                computeTFlops: 83,   // FP32 TFLOPS - Corrected and using FP32 for RTX 4090 as it's often quoted. Real FP16/BF16 performance might be higher depending on workload
+                computeTFlops: 83,    // FP32 TFLOPS - Corrected and using FP32 for RTX 4090 as it's often quoted. Real FP16/BF16 performance might be higher depending on workload
                 type: 'GPU'
             },
             'RTX 4070': {
@@ -581,7 +620,7 @@ const DTYPE_SIZES = {
                 memoryGB: 12, // Or 16GB depending on variant
                 localBandwidthGBps: 504,
                 networkBandwidthGBps: 32, // Assuming similar network capabilities as 4090 for typical desktop use
-                computeTFlops: 29,   // FP32 TFLOPS -  Using FP32 for RTX 4070 for consistency in quoted values. FP16/BF16 will be higher.
+                computeTFlops: 29,    // FP32 TFLOPS -  Using FP32 for RTX 4070 for consistency in quoted values. FP16/BF16 will be higher.
                 type: 'GPU'
             },
             'RTX 5090 (Projected)': { // Added RTX 5090 - using projected/estimated values. Real values will depend on final specs.
@@ -597,7 +636,7 @@ const DTYPE_SIZES = {
                 memoryGB: 256, // Assuming server/workstation class
                 localBandwidthGBps: 80, // Representative of system memory bandwidth
                 networkBandwidthGBps: 25, // Assuming 25 GbE networking
-                computeTFlops: 2,     // CPU FP32 TFLOPS - CPUs are much lower TFLOPS than GPUs for ML tasks.
+                computeTFlops: 2,    // CPU FP32 TFLOPS - CPUs are much lower TFLOPS than GPUs for ML tasks.
                 type: 'CPU'
             },
             'AMD EPYC CPU (High-End)': { // Example High-End AMD CPU - Adjust values based on specific CPU
@@ -605,15 +644,15 @@ const DTYPE_SIZES = {
                 memoryGB: 256, // Assuming server/workstation class
                 localBandwidthGBps: 90, // Representative of system memory bandwidth - EPYC often has slightly higher bandwidth
                 networkBandwidthGBps: 25, // Assuming 25 GbE networking
-                computeTFlops: 2.5,   // CPU FP32 TFLOPS -  CPUs are much lower TFLOPS than GPUs for ML tasks. EPYC might have slightly better FP performance than Xeon in some cases.
+                computeTFlops: 2.5,    // CPU FP32 TFLOPS -  CPUs are much lower TFLOPS than GPUs for ML tasks. EPYC might have slightly better FP performance than Xeon in some cases.
                 type: 'CPU'
             },
             'AMD Ryzen Integrated Graphics': { // Example of AMD Integrated Graphics - e.g., Ryzen 7000/8000 series iGPU
                 name: 'AMD Ryzen Integrated Graphics',
                 memoryGB: 16, // Shared system memory
                 localBandwidthGBps: 50, // System memory bandwidth influence
-                networkBandwidthGBps: 2.5/8.0, // Assuming typical desktop ethernet
-                computeTFlops: 0.5,   // iGPU FP32 TFLOPS - Integrated graphics are much less powerful than dedicated GPUs.
+                networkBandwidthGBps: 2.5 / 8.0, // Assuming typical desktop ethernet
+                computeTFlops: 0.5,    // iGPU FP32 TFLOPS - Integrated graphics are much less powerful than dedicated GPUs.
                 type: 'Integrated GPU'
             },
             'Mac Mini M2 (10G Ethernet)': {
@@ -628,39 +667,39 @@ const DTYPE_SIZES = {
                 name: 'Raspberry Pi 5 (5G)',
                 memoryGB: 8,
                 localBandwidthGBps: 34,
-                networkBandwidthGBps: 5/8.0,
-                computeTFlops: 0.1,   // Raspberry Pi 5 CPU/GPU performance is very limited for ML.
+                networkBandwidthGBps: 5 / 8.0,
+                computeTFlops: 0.1,    // Raspberry Pi 5 CPU/GPU performance is very limited for ML.
                 type: 'CPU/Integrated GPU'
             },
             'Desktop PC (2.5G Ethernet)': {
                 name: 'Desktop PC (2.5G)',
                 memoryGB: 32,
                 localBandwidthGBps: 50,
-                networkBandwidthGBps: 2.5/8.0,
+                networkBandwidthGBps: 2.5 / 8.0,
                 computeTFlops: 1,     // Representative of a basic desktop CPU's integrated graphics or low-end dGPU if no dedicated GPU is specified
                 type: 'CPU/Integrated GPU'
             },
-			'NVMe CPU (Gen5)': {
+            'NVMe CPU (Gen5)': {
                 name: 'NVMe CPU (Gen5)',
                 memoryGB: 2000,
                 localBandwidthGBps: 14,
-                networkBandwidthGBps: 40/8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
+                networkBandwidthGBps: 40 / 8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
                 computeTFlops: 2,
                 type: 'CPU/NVMe'
             },
-			'NVMe 4xRAID 5090 (Gen5)': {
+            'NVMe 4xRAID 5090 (Gen5)': {
                 name: 'NVMe 4xRAID GPU (Gen5)',
                 memoryGB: 8000,
                 localBandwidthGBps: 32,
-                networkBandwidthGBps: 40/8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
+                networkBandwidthGBps: 40 / 8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
                 computeTFlops: 105,
                 type: 'GPU/NVMe'
             },
-			'Titan RTX + NVMe Gen3': {
+            'Titan RTX + NVMe Gen3': {
                 name: 'Titan RTX + NVMe Gen3',
                 memoryGB: 4000,
                 localBandwidthGBps: 3.5,
-                networkBandwidthGBps: 1/8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
+                networkBandwidthGBps: 1 / 8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
                 computeTFlops: 16.3,
                 type: 'GPU/NVMe'
             },
@@ -668,7 +707,7 @@ const DTYPE_SIZES = {
                 name: 'Custom Device',
                 memoryGB: 192,
                 localBandwidthGBps: 50,
-                networkBandwidthGBps: 2.5/8,
+                networkBandwidthGBps: 2.5 / 8,
                 computeTFlops: 2,
                 type: 'Custom'
             }
@@ -697,13 +736,13 @@ const DTYPE_SIZES = {
         function calculateMemoryBreakdown(modelConfig, dtypeSize) {
             const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
             const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength *
-                                        (modelConfig.hiddenSize / modelConfig.numHeads) *
-                                        modelConfig.numHeads * dtypeSize;
+                (modelConfig.hiddenSize / modelConfig.numHeads) *
+                modelConfig.numHeads * dtypeSize;
             const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers;
             const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength * modelConfig.hiddenSize * dtypeSize;
             const activationMemory = activationSizePerLayer * modelConfig.numLayers;
             const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) *
-                                    modelConfig.numHeads * dtypeSize;
+                modelConfig.numHeads * dtypeSize;
             const totalMemory = paramsMemory + kvCacheMemory + activationMemory + attentionMemory;
             return {
                 paramsMemory,
@@ -723,8 +762,8 @@ const DTYPE_SIZES = {
 
             // Self-Attention
             forwardFlops += 3 * (batchSize * seqLength * hiddenSize * hiddenSize); // Q, K, V projections
-            forwardFlops += batchSize * numHeads * seqLength * seqLength; // Attention scores
-            forwardFlops += batchSize * numHeads * seqLength * (hiddenSize / numHeads); // Weighted sum
+            forwardFlops += batchSize * numHeads * seqLength * seqLength * (hiddenSize / numHeads); // Attention scores
+            forwardFlops += batchSize * numHeads * seqLength * (hiddenSize / numHeads) * (hiddenSize / numHeads); // Weighted sum
             forwardFlops += batchSize * seqLength * hiddenSize * hiddenSize; // Output projection
 
             // Feed-Forward Network
@@ -733,6 +772,22 @@ const DTYPE_SIZES = {
 
             // Multiply by number of layers and then by 3 for forward + backward pass
             return forwardFlops * numLayers * 3;
+        }
+
+        function calculateDecodeFlops(modelConfig) {
+            const { batchSize, seqLength, hiddenSize, numLayers, numHeads } = modelConfig;
+
+            // Decode FLOPs are dominated by KV cache interactions and are roughly:
+            let decodeFlops = 0;
+
+            // KV Cache interaction in self-attention (per layer)
+            decodeFlops += 2 * batchSize * seqLength * hiddenSize * hiddenSize; 
+
+            // Feed-Forward Network (remains similar to prefill per token)
+            decodeFlops += batchSize * hiddenSize * (4 * hiddenSize); // First layer
+            decodeFlops += batchSize * (4 * hiddenSize) * hiddenSize; // Second layer
+
+            return decodeFlops * numLayers; 
         }
 
         function calculateMetrics() {
@@ -745,64 +800,107 @@ const DTYPE_SIZES = {
                 memoryBreakdown.total; // Note: Not dividing by devices.length for tensor parallelism
 
             return devices.map(device => {
-                // Calculate total FLOPs required for the operation (using improved function)
-                const totalFlops = calculateTransformerFlops(modelConfig);
+                // Calculate total FLOPs required for prefill (using improved function)
+                const totalPrefillFlops = calculateTransformerFlops(modelConfig);
 
-                // Calculate theoretical maximum compute time
-                const theoreticalComputeTime = totalFlops / (device.computeTFlops * 1e12);
+                // Calculate theoretical maximum compute time for prefill
+                const theoreticalPrefillComputeTime = totalPrefillFlops / (device.computeTFlops * 1e12);
+				
+				                // Introduce an overhead factor (e.g., 2x) to account for real-world inefficiencies
+                const overheadFactorPrefill = 2.0; // Example prefill overhead
+				const overheadFactorDecode = 1;
 
-                // Calculate memory traffic for the operation (Prefill Phase)
-                const totalMemoryTraffic = memoryBreakdown.paramsMemory +
-                                         (2 * memoryBreakdown.kvCacheMemory) +
-                                         (3 * memoryBreakdown.activationMemory) +
-                                         (2 * memoryBreakdown.attentionMemory); // Approximation for attention
+                // Calculate memory traffic for prefill
+                const totalPrefillMemoryTraffic = memoryBreakdown.paramsMemory +
+                    (2 * memoryBreakdown.kvCacheMemory) +
+                    (3 * memoryBreakdown.activationMemory) +
+                    (2 * memoryBreakdown.attentionMemory);
 
-                // Calculate time required based on memory bandwidth
-                const bandwidthLimitedTime = totalMemoryTraffic / (device.localBandwidthGBps * 1e9);
+                // Calculate time required based on memory bandwidth for prefill
+                const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic / (device.localBandwidthGBps * 1e9);
 
-                // Actual execution time (Prefill Phase)
-                const actualTime = Math.max(theoreticalComputeTime, bandwidthLimitedTime);
+                // Actual execution time for prefill
+                const actualPrefillTime = Math.max(theoreticalPrefillComputeTime, prefillBandwidthLimitedTime) * overheadFactorPrefill;
 
-                // Calculate utilizations
-                const computeUtilization = (theoreticalComputeTime / actualTime) * 100;
-                const localBandwidthUtilization = (bandwidthLimitedTime / actualTime) * 100;
+                // Calculate utilizations for prefill
+                const prefillComputeUtilization = (theoreticalPrefillComputeTime / actualPrefillTime) * 100;
+                const prefillLocalBandwidthUtilization = (prefillBandwidthLimitedTime / actualPrefillTime) * 100;
                 const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
 
                 // Calculate network utilization for pipeline parallelism (Prefill Phase)
-                let networkBandwidthUtilization = 0;
+                let prefillNetworkBandwidthUtilization = 0;
                 if (isPipeline && devices.length > 1) {
                     const activationsPerForwardPass = modelConfig.batchSize * modelConfig.seqLength *
-                                                    modelConfig.hiddenSize * dtypeSize;
+                        modelConfig.hiddenSize * dtypeSize;
                     const totalNetworkTraffic = activationsPerForwardPass * 2 * (devices.length - 1); // Forward and backward pass
-                    networkBandwidthUtilization = (totalNetworkTraffic /
-                        (device.networkBandwidthGBps * 1e9 * actualTime)) * 100;
+                    prefillNetworkBandwidthUtilization = (totalNetworkTraffic /
+                        (device.networkBandwidthGBps * 1e9 * actualPrefillTime)) * 100;
                 }
 
-                // Bottleneck factor
-                const bottleneckFactor = Math.max(
+                // Bottleneck factor for prefill
+                const prefillBottleneckFactor = Math.max(
                     1,
-                    computeUtilization/ 100,
+                    prefillComputeUtilization / 100,
                     memoryUtilization / 100,
-                    localBandwidthUtilization / 100,
-                    networkBandwidthUtilization / 100
+                    prefillLocalBandwidthUtilization / 100,
+                    prefillNetworkBandwidthUtilization / 100
                 );
 
-                // Tokens per second (Prefill Phase Approximation)
-                const tokensPerSecond = modelConfig.batchSize * modelConfig.seqLength / actualTime;
+                // Tokens per second for prefill
+                const prefillTokensPerSecond = modelConfig.batchSize * modelConfig.seqLength / actualPrefillTime;
+
+                // --- Decode Calculations ---
+                // Estimate FLOPs for decode
+                const decodeFlops = calculateDecodeFlops(modelConfig);
+
+                // Theoretical decode time (compute-bound)
+                const theoreticalDecodeTime = decodeFlops / (device.computeTFlops * 1e12);
+
+                // Memory traffic during decode (more accurate estimation)
+                const decodeMemoryTrafficPerToken = (
+                    memoryBreakdown.paramsMemory + // Read model parameters 
+                    (2 * modelConfig.seqLength * (modelConfig.hiddenSize / modelConfig.numHeads) * modelConfig.numHeads * dtypeSize) * modelConfig.numLayers + // Read and write K, V caches
+                    (4 * modelConfig.hiddenSize * dtypeSize) * modelConfig.numLayers // Activations (estimate)
+                ) / modelConfig.seqLength;
+
+                // Decode time based on memory bandwidth
+                const decodeBandwidthLimitedTime = decodeMemoryTrafficPerToken / (device.localBandwidthGBps * 1e9);
+
+                // Actual decode time (per token)
+				const actualDecodeTime = Math.max(theoreticalDecodeTime, decodeBandwidthLimitedTime) * overheadFactorDecode;
+				
+                // Decode tokens per second (per token)
+                const decodeTokensPerSecond = modelConfig.batchSize / actualDecodeTime;
+
+                // Utilizations for decode (simplified)
+                const decodeComputeUtilization = (theoreticalDecodeTime / actualDecodeTime) * 100;
+                const decodeLocalBandwidthUtilization = (decodeBandwidthLimitedTime / actualDecodeTime) * 100;
+
+                // Bottleneck factor for decode (simplified)
+                const decodeBottleneckFactor = Math.max(
+                    1,
+                    decodeComputeUtilization / 100,
+                    decodeLocalBandwidthUtilization / 100
+                );
 
                 return {
                     name: device.name,
                     memoryUtilization,
-                    localBandwidthUtilization,
-                    networkBandwidthUtilization,
-                    computeUtilization,
+                    localBandwidthUtilization: prefillLocalBandwidthUtilization, // Using prefill for overall utilization
+                    networkBandwidthUtilization: prefillNetworkBandwidthUtilization, // Using prefill for overall utilization
+                    computeUtilization: prefillComputeUtilization, // Using prefill for overall utilization
                     rawMemoryUtilization: memoryUtilization,
-                    rawLocalBandwidthUtilization: localBandwidthUtilization,
-                    rawNetworkBandwidthUtilization: networkBandwidthUtilization,
-                    rawComputeUtilization: computeUtilization,
-                    bottleneckFactor,
-                    isBottleneck: bottleneckFactor > 1,
-                    tokensPerSecond
+                    rawLocalBandwidthUtilization: prefillLocalBandwidthUtilization,
+                    rawNetworkBandwidthUtilization: prefillNetworkBandwidthUtilization,
+                    rawComputeUtilization: prefillComputeUtilization,
+                    bottleneckFactor: prefillBottleneckFactor, // Using prefill for overall bottleneck
+                    isBottleneck: prefillBottleneckFactor > 1,
+                    prefillTokensPerSecond,
+                    decodeTokensPerSecond,
+                    // for reporting
+                    decodeComputeUtilization,
+                    decodeLocalBandwidthUtilization,
+                    decodeBottleneckFactor
                 };
             });
         }
@@ -817,15 +915,14 @@ const DTYPE_SIZES = {
                         <h3>${m.name}</h3>
                         <div class="device-grid" style="font-size: 0.875rem;">
                             <div>Memory Usage: ${m.memoryUtilization.toFixed(1)}%</div>
-                            <div>Compute Usage: ${m.computeUtilization.toFixed(1)}%
-                            </div>
-                            <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%
-                            </div>
-                            <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%
-                            </div>
-                            <div>Token Rate (approx.): ${m.tokensPerSecond.toFixed(2)} tokens/second</div>
+                            <div>Compute Usage: ${m.computeUtilization.toFixed(1)}%</div>
+                            <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%</div>
+                            <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%</div>
+                            <div><strong>Prefill Token Rate (approx.):</strong> ${m.prefillTokensPerSecond.toFixed(2)} tokens/second</div>
+                            <div><strong>Decode Token Rate (approx.):</strong> ${m.decodeTokensPerSecond.toFixed(2)} tokens/second</div>
                         </div>
                 `;
+                // Determine bottleneck for reporting
                 let bottleneckType = "None";
                 let bottleneckValue = 1;
                 if (m.isBottleneck) {
@@ -847,7 +944,21 @@ const DTYPE_SIZES = {
                     }
                     systemAnalysisHtml += `
                         <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem;">
-                            Performance limited by <strong>${bottleneckType}</strong> constraints (${m.bottleneckFactor.toFixed(1)}x slower)
+                            Prefill performance limited by <strong><span class="math-inline">\{bottleneckType\}</strong\> constraints \(</span>{m.bottleneckFactor.toFixed(1)}x slower)
+                        </div>
+                    `;
+                }
+                // Decode bottleneck (simplified for reporting)
+                if (m.decodeBottleneckFactor > 1) {
+                    let decodeBottleneckType = "None";
+                    if (m.decodeComputeUtilization > m.decodeLocalBandwidthUtilization) {
+                        decodeBottleneckType = "Compute";
+                    } else {
+                        decodeBottleneckType = "Local Bandwidth";
+                    }
+                    systemAnalysisHtml += `
+                        <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem;">
+                            Decode performance limited by <strong><span class="math-inline">\{decodeBottleneckType\}</strong\> constraints \(</span>{m.decodeBottleneckFactor.toFixed(1)}x slower)
                         </div>
                     `;
                 }
@@ -905,20 +1016,20 @@ const DTYPE_SIZES = {
                             <div style="margin-left: 1rem;">
                                 • ${m.name}:
                                 ${m.memoryUtilization > 100 ?
-                                    ` Requires ${(m.memoryUtilization/100).toFixed(1)}x more memory` : ''}
+                    ` Requires ${(m.memoryUtilization / 100).toFixed(1)}x more memory` : ''}
                                 ${m.localBandwidthUtilization > 100 ?
-                                    ` Requires ${(m.localBandwidthUtilization/100).toFixed(1)}x more local bandwidth` : ''}
+                    ` Requires ${(m.localBandwidthUtilization / 100).toFixed(1)}x more local bandwidth` : ''}
                                 ${m.networkBandwidthUtilization > 100 && getModelConfig().parallelismStrategy === 'pipeline' ?
-                                    ` Requires ${(m.networkBandwidthUtilization/100).toFixed(1)}x more network bandwidth` : ''}
+                    ` Requires ${(m.networkBandwidthUtilization / 100).toFixed(1)}x more network bandwidth` : ''}
                                 ${m.computeUtilization > 100 ?
-                                    ` Requires ${(m.computeUtilization/100).toFixed(1)}x more compute` : ''}
+                    ` Requires ${(m.computeUtilization / 100).toFixed(1)}x more compute` : ''}
                             </div>
                         `).join('')}
                     </div>
                 `;
             }
             alertsContainer.innerHTML = alertsHtml;
-        }
+                }
         function updateChart(metrics) {
             const ctx = document.getElementById('utilizationChart').getContext('2d');
             const chartData = {
@@ -968,7 +1079,7 @@ const DTYPE_SIZES = {
                     plugins: {
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     const index = context.dataIndex;
                                     const metric = metrics[index];
                                     const datasetLabel = context.dataset.label;
@@ -1061,6 +1172,7 @@ const DTYPE_SIZES = {
             updateSystemAnalysis();
         }
 
+
         document.getElementById('modelPreset').addEventListener('change', updateModelConfigFromPreset);
         document.getElementById('quantizationType').addEventListener('change', updateModelConfigFromPreset);
         document.querySelectorAll('#modelConfig input, #modelConfig select').forEach(input => {
@@ -1083,9 +1195,10 @@ Mistral 7B	FP16	vLLM	A10G	1			30.9 t/s	https://lightning.ai/lightning-ai/studios
 Mistral 7B	FP16	vLLM	4 x A10G	1			64.5 t/s	https://lightning.ai/lightning-ai/studios/optimized-llm-inference-api-for-mistral-7b-using-vllm
 Mistral 7B	AWQ 4-bit	vLLM	A10G	1			86.1 t/s	https://lightning.ai/lightning-ai/studios/optimized-llm-inference-api-for-mistral-7b-using-vllm
 Mistral 7B	FP16			1	80x100		170 t/s	https://www.baseten.co/blog/benchmarking-fast-mistral-7b-inference/
-Mistral-8x7B	Q8_0		RTX 3090				6.55 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
-Mistral-8x7B	Q5_K_M		RTX 3090				13.16 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
-Mistral-8x7B	Q4_K_M		RTX 3090				23.06 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
+Mistral-8x7B	Q8_0		RTX 4090				6.55 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
+Mistral-8x7B	Q5_K_M		RTX 4090				13.16 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
+Mistral-8x7B	Q4_K_M		RTX 4090				23.06 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
+Mistral-8x7B	Q8_0		AMD 7950X3D				3.95 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
 Mistral-8x7B	Q4_K_M		2 x RTX 3090				48.26 t/s	https://www.reddit.com/r/LocalLLaMA/comments/18jslmf/tokens_per_second_mistral_8x7b_performance/
 Mistral 7B	Q4		Raspberry Pi 5				2 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
 Mistral 7B	Q4		i7-7700HQ (CPU)				3 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
