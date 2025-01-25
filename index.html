@@ -156,8 +156,8 @@
             </div>
         </div>
 
-        <div class="card">
-            <h2>System Analysis</h2>
+    <div class="card">
+            <h2>System Analysis <small>(Token rate is an approximation)</small></h2>
             <div id="systemAnalysis"></div>
         </div>
     </div>
@@ -390,6 +390,8 @@
                     computeUtilization / 100 // Include compute in bottleneck factor.
                 );
 
+                // Token Rate Calculation (Simplified - tokens per second per device)
+                const tokensPerSecond = modelConfig.batchSize / actualTime; // Tokens generated per second, assuming 1 token per forward pass per batch item
 
                 return {
                     name: device.name,
@@ -402,49 +404,12 @@
                     rawNetworkBandwidthUtilization: networkBandwidthUtilization,
                     rawComputeUtilization: computeUtilization * bottleneckFactor, // Scale compute by bottleneck for chart display.
                     bottleneckFactor,
-                    isBottleneck: bottleneckFactor > 1 || memoryUtilization > 100
+                    isBottleneck: bottleneckFactor > 1 || memoryUtilization > 100,
+                    tokensPerSecond: tokensPerSecond // Add token rate to metrics
                 };
             });
         }
 
-
-        function updateDeviceDisplay() {
-            const devicesContainer = document.getElementById('devices');
-            devicesContainer.innerHTML = devices.map(device => `
-                <div class="device">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <input class="input" style="width: auto;" value="${device.name}"
-                               onchange="updateDevice(${device.id}, 'name', this.value)">
-                        <button class="button button-destructive"
-                                onclick="removeDevice(${device.id})"
-                                ${devices.length === 1 ? 'disabled' : ''}>
-                            Remove
-                        </button>
-                    </div>
-
-                    <select class="input" onchange="updateDevice(${device.id}, 'template', this.value)">
-                        ${Object.keys(DEVICE_TEMPLATES).map(template => `
-                            <option value="${template}" ${device.template === template ? 'selected' : ''}>
-                                ${DEVICE_TEMPLATES[template].name}
-                            </option>
-                        `).join('')}
-                    </select>
-
-                    <div class="device-grid">
-                        ${['memoryGB', 'localBandwidthGBps', 'networkBandwidthGBps', 'computeTFlops']
-                            .map(field => `
-                                <div>
-                                    <label>${field.replace(/([A-Z])/g, ' $1')
-                                                .replace(/^./, str => str.toUpperCase())}</label>
-                                    <input type="number" class="input" value="${device[field]}"
-                                           onchange="updateDevice(${device.id}, '${field}', parseFloat(this.value) || 0)"
-                                           ${device.template !== 'Custom' ? 'disabled' : ''}>
-                                </div>
-                            `).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
 
         function updateSystemAnalysis() {
             const metrics = calculateMetrics();
@@ -469,6 +434,7 @@
                                 ${m.rawNetworkBandwidthUtilization > m.networkBandwidthUtilization ?
                                     `(max: ${m.rawNetworkBandwidthUtilization.toFixed(1)}%)` : ''}
                             </div>
+                            <div>Token Rate (approx.): ${m.tokensPerSecond.toFixed(2)} tokens/second</div>
                         </div>
                 `;
 
@@ -510,6 +476,44 @@
             updateChart(metrics);
         }
 
+
+        function updateDeviceDisplay() {
+            const devicesContainer = document.getElementById('devices');
+            devicesContainer.innerHTML = devices.map(device => `
+                <div class="device">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <input class="input" style="width: auto;" value="${device.name}"
+                               onchange="updateDevice(${device.id}, 'name', this.value)">
+                        <button class="button button-destructive"
+                                onclick="removeDevice(${device.id})"
+                                ${devices.length === 1 ? 'disabled' : ''}>
+                            Remove
+                        </button>
+                    </div>
+
+                    <select class="input" onchange="updateDevice(${device.id}, 'template', this.value)">
+                        ${Object.keys(DEVICE_TEMPLATES).map(template => `
+                            <option value="${template}" ${device.template === template ? 'selected' : ''}>
+                                ${DEVICE_TEMPLATES[template].name}
+                            </option>
+                        `).join('')}
+                    </select>
+
+                    <div class="device-grid">
+                        ${['memoryGB', 'localBandwidthGBps', 'networkBandwidthGBps', 'computeTFlops']
+                            .map(field => `
+                                <div>
+                                    <label>${field.replace(/([A-Z])/g, ' $1')
+                                                .replace(/^./, str => str.toUpperCase())}</label>
+                                    <input type="number" class="input" value="${device[field]}"
+                                           onchange="updateDevice(${device.id}, '${field}', parseFloat(this.value) || 0)"
+                                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+                                </div>
+                            `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
 
         function updateAlerts(metrics) {
             const alertsContainer = document.getElementById('alerts');
