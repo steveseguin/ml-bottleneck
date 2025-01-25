@@ -380,13 +380,27 @@ function addDevice() {
                     <h3>${m.name}</h3>
                     <div class="device-grid" style="font-size: 0.875rem;">
                         <div>Memory Usage: ${m.memoryUtilization.toFixed(1)}%</div>
-                        <div>Compute Usage: ${m.computeUtilization.toFixed(1)}%</div>
-                        <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%</div>
-                        <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%</div>
+                        <div>Compute Usage: ${m.computeUtilization.toFixed(1)}% 
+                            ${m.rawComputeUtilization > m.computeUtilization ? 
+                                `(max: ${m.rawComputeUtilization.toFixed(1)}%)` : ''}
+                        </div>
+                        <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%
+                            ${m.rawLocalBandwidthUtilization > m.localBandwidthUtilization ? 
+                                `(max: ${m.rawLocalBandwidthUtilization.toFixed(1)}%)` : ''}
+                        </div>
+                        <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%
+                            ${m.rawNetworkBandwidthUtilization > m.networkBandwidthUtilization ? 
+                                `(max: ${m.rawNetworkBandwidthUtilization.toFixed(1)}%)` : ''}
+                        </div>
                     </div>
+                    ${m.bottleneckFactor > 1 ? `
+                        <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem;">
+                            Performance limited by resource constraints (${m.bottleneckFactor.toFixed(1)}x slower)
+                        </div>
+                    ` : ''}
                 </div>
             `).join('');
-
+        
             updateAlerts(metrics);
             updateChart(metrics);
         }
@@ -427,31 +441,31 @@ function addDevice() {
                 datasets: [
                     {
                         label: 'Memory',
-                        data: metrics.map(m => Math.min(m.memoryUtilization, 200)),
+                        data: metrics.map(m => m.memoryUtilization),
                         backgroundColor: '#8884d8'
                     },
                     {
                         label: 'Local Bandwidth',
-                        data: metrics.map(m => Math.min(m.localBandwidthUtilization, 200)),
+                        data: metrics.map(m => m.localBandwidthUtilization),
                         backgroundColor: '#82ca9d'
                     },
                     {
                         label: 'Network Bandwidth',
-                        data: metrics.map(m => Math.min(m.networkBandwidthUtilization, 200)),
+                        data: metrics.map(m => m.networkBandwidthUtilization),
                         backgroundColor: '#ffc658'
                     },
                     {
                         label: 'Compute',
-                        data: metrics.map(m => Math.min(m.computeUtilization, 200)),
+                        data: metrics.map(m => m.computeUtilization),
                         backgroundColor: '#ff7300'
                     }
                 ]
             };
-
+        
             if (utilizationChart) {
                 utilizationChart.destroy();
             }
-
+        
             utilizationChart = new Chart(ctx, {
                 type: 'bar',
                 data: chartData,
@@ -461,7 +475,7 @@ function addDevice() {
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 200,
+                            max: 100,
                             title: {
                                 display: true,
                                 text: 'Utilization %'
@@ -475,24 +489,31 @@ function addDevice() {
                                     const index = context.dataIndex;
                                     const metric = metrics[index];
                                     const datasetLabel = context.dataset.label;
-                                    let rawValue;
+                                    let actualValue, rawValue;
                                     
                                     switch(datasetLabel) {
                                         case 'Memory':
+                                            actualValue = metric.memoryUtilization;
                                             rawValue = metric.rawMemoryUtilization;
                                             break;
                                         case 'Local Bandwidth':
+                                            actualValue = metric.localBandwidthUtilization;
                                             rawValue = metric.rawLocalBandwidthUtilization;
                                             break;
                                         case 'Network Bandwidth':
+                                            actualValue = metric.networkBandwidthUtilization;
                                             rawValue = metric.rawNetworkBandwidthUtilization;
                                             break;
                                         case 'Compute':
+                                            actualValue = metric.computeUtilization;
                                             rawValue = metric.rawComputeUtilization;
                                             break;
                                     }
                                     
-                                    return `${datasetLabel}: ${rawValue.toFixed(1)}%`;
+                                    if (rawValue !== actualValue) {
+                                        return `${datasetLabel}: ${actualValue.toFixed(1)}% (theoretical max: ${rawValue.toFixed(1)}%)`;
+                                    }
+                                    return `${datasetLabel}: ${actualValue.toFixed(1)}%`;
                                 }
                             }
                         }
