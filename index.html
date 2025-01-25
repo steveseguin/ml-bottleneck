@@ -289,25 +289,25 @@ function addDevice() {
             // Total FLOPs per forward+backward pass
             const totalFlops = (attentionFlops + mlpFlops) * numLayers * 2;
             
-            return devices.map(device => {
-                // Calculate memory bandwidth constrained performance
-                const memoryBoundTime = memoryPerDevice / (device.localBandwidthGBps * 1e9);
-                const computeBoundTime = totalFlops / (device.computeTFlops * 1e12);
-                
-                // Take the longer of the two times to determine actual utilization
-                const actualTime = Math.max(memoryBoundTime, computeBoundTime);
-                const computeUtilization = (computeBoundTime / actualTime) * 100;
-                const localBandwidthUtilization = (memoryBoundTime / actualTime) * 100;
-        
-                // Rest of your existing utilization calculations
+             return devices.map(device => {
                 const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
                 
+                // Calculate bandwidth utilization based on total data movement needed
+                const modelSizeBytes = modelConfig.totalParamsB * 1e9 * dtypeSize;
+                const localBandwidthUtilization = (modelSizeBytes / device.localBandwidthGBps) * 100;
+                
+                // Compute utilization should be limited by bandwidth
+                const timeForMemoryAccess = modelSizeBytes / (device.localBandwidthGBps * 1e9);
+                const maxPossibleFlops = timeForMemoryAccess * (device.computeTFlops * 1e12);
+                const computeUtilization = Math.min(100, (totalFlops / maxPossibleFlops) * 100);
+                
+                // Network bandwidth calculations remain the same
                 const networkBandwidthRequired = isPipeline ? 
                     (2 * batchSize * seqLen * hiddenSize * dtypeSize) / devices.length :
                     (4 * batchSize * seqLen * hiddenSize * dtypeSize * (devices.length - 1)) / devices.length;
                 const networkUtilization = (networkBandwidthRequired / (device.networkBandwidthGBps * 1e9)) * 100;
         
-                // Find bottleneck factor
+                // Bottleneck is determined by highest utilization
                 const bottleneckFactor = Math.max(
                     1,
                     memoryUtilization / 100,
@@ -319,12 +319,12 @@ function addDevice() {
                     name: device.name,
                     memoryUtilization,
                     localBandwidthUtilization,
-                    networkBandwidthUtilization: networkUtilization / bottleneckFactor,
-                    computeUtilization: computeUtilization / bottleneckFactor,
+                    networkBandwidthUtilization: networkUtilization,
+                    computeUtilization,
                     rawMemoryUtilization: memoryUtilization,
                     rawLocalBandwidthUtilization: localBandwidthUtilization,
                     rawNetworkBandwidthUtilization: networkUtilization,
-                    rawComputeUtilization: computeUtilization,
+                    rawComputeUtilization: computeUtilization * bottleneckFactor,
                     bottleneckFactor,
                     isBottleneck: bottleneckFactor > 1 || memoryUtilization > 100
                 };
