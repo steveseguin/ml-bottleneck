@@ -555,6 +555,14 @@ const DTYPE_SIZES = {
                 computeTFlops: 1,     // Representative of a basic desktop CPU's integrated graphics or low-end dGPU if no dedicated GPU is specified
                 type: 'CPU/Integrated GPU'
             },
+			'NVMe RAID PC (4 x Gen5)': {
+                name: 'NVMe RAID PC (4 x Gen5)',
+                memoryGB: 8000,
+                localBandwidthGBps: 50,
+                networkBandwidthGBps: 0,
+                computeTFlops: 3,
+                type: 'CPU/NVMe'
+            }
             'Custom': {
                 name: 'Custom Device',
                 memoryGB: 8000,
@@ -567,7 +575,7 @@ const DTYPE_SIZES = {
         let devices = [{
             id: 1,
             name: 'Device 1',
-            template: 'Custom',
+            template: 'RTX 5090 (Projected)',
             ...DEVICE_TEMPLATES.Custom
         }];
         let utilizationChart = null;
