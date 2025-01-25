@@ -290,44 +290,42 @@ function addDevice() {
             const totalFlops = (attentionFlops + mlpFlops) * numLayers * 2;
             
             return devices.map(device => {
-                // Calculate raw utilization values first
+                // Calculate memory bandwidth constrained performance
+                const memoryBoundTime = memoryPerDevice / (device.localBandwidthGBps * 1e9);
+                const computeBoundTime = totalFlops / (device.computeTFlops * 1e12);
+                
+                // Take the longer of the two times to determine actual utilization
+                const actualTime = Math.max(memoryBoundTime, computeBoundTime);
+                const computeUtilization = (computeBoundTime / actualTime) * 100;
+                const localBandwidthUtilization = (memoryBoundTime / actualTime) * 100;
+        
+                // Rest of your existing utilization calculations
                 const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
                 
                 const networkBandwidthRequired = isPipeline ? 
                     (2 * batchSize * seqLen * hiddenSize * dtypeSize) / devices.length :
                     (4 * batchSize * seqLen * hiddenSize * dtypeSize * (devices.length - 1)) / devices.length;
                 const networkUtilization = (networkBandwidthRequired / (device.networkBandwidthGBps * 1e9)) * 100;
-                
-                const localBandwidthRequired = 3 * memoryPerDevice;
-                const localBandwidthUtilization = (localBandwidthRequired / (device.localBandwidthGBps * 1e9)) * 100;
-                
-                const computeUtilization = (totalFlops / devices.length) / (device.computeTFlops * 1e12) * 100;
         
-                // Find the bottleneck factor (how much we need to scale down)
+                // Find bottleneck factor
                 const bottleneckFactor = Math.max(
-                    1,  // minimum scale factor
+                    1,
+                    memoryUtilization / 100,
                     localBandwidthUtilization / 100,
-                    networkUtilization / 100,
-                    computeUtilization / 100
+                    networkUtilization / 100
                 );
         
-                // Scale down actual utilizations based on bottleneck
-                const actualMemoryUtilization = memoryUtilization; // Memory doesn't scale down
-                const actualLocalBandwidthUtilization = Math.min(100, localBandwidthUtilization);
-                const actualNetworkUtilization = networkUtilization / bottleneckFactor;
-                const actualComputeUtilization = computeUtilization / bottleneckFactor;
-                
                 return {
                     name: device.name,
-                    memoryUtilization: actualMemoryUtilization,
-                    localBandwidthUtilization: actualLocalBandwidthUtilization,
-                    networkBandwidthUtilization: actualNetworkUtilization,
-                    computeUtilization: actualComputeUtilization,
+                    memoryUtilization,
+                    localBandwidthUtilization,
+                    networkBandwidthUtilization: networkUtilization / bottleneckFactor,
+                    computeUtilization: computeUtilization / bottleneckFactor,
                     rawMemoryUtilization: memoryUtilization,
                     rawLocalBandwidthUtilization: localBandwidthUtilization,
                     rawNetworkBandwidthUtilization: networkUtilization,
                     rawComputeUtilization: computeUtilization,
-                    bottleneckFactor: bottleneckFactor,
+                    bottleneckFactor,
                     isBottleneck: bottleneckFactor > 1 || memoryUtilization > 100
                 };
             });
