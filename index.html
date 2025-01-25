@@ -487,7 +487,7 @@ const DTYPE_SIZES = {
                 name: 'RTX 4090',
                 memoryGB: 24,
                 localBandwidthGBps: 1008,
-                networkBandwidthGBps: 64,
+                networkBandwidthGBps: 32,
                 computeTFlops: 83,   // FP32 TFLOPS - Corrected and using FP32 for RTX 4090 as it's often quoted. Real FP16/BF16 performance might be higher depending on workload
                 type: 'GPU'
             },
@@ -495,7 +495,7 @@ const DTYPE_SIZES = {
                 name: 'RTX 4070',
                 memoryGB: 12, // Or 16GB depending on variant
                 localBandwidthGBps: 504,
-                networkBandwidthGBps: 64, // Assuming similar network capabilities as 4090 for typical desktop use
+                networkBandwidthGBps: 32, // Assuming similar network capabilities as 4090 for typical desktop use
                 computeTFlops: 29,   // FP32 TFLOPS -  Using FP32 for RTX 4070 for consistency in quoted values. FP16/BF16 will be higher.
                 type: 'GPU'
             },
@@ -503,8 +503,8 @@ const DTYPE_SIZES = {
                 name: 'RTX 5090 (Projected)',
                 memoryGB: 32, // Assuming increase from 4090
                 localBandwidthGBps: 1500, // Projecting bandwidth increase
-                networkBandwidthGBps: 100, // Projecting slight network increase
-                computeTFlops: 150,  // Projecting TFLOPS increase - FP32 - This is a rough estimate, actual could vary significantly.
+                networkBandwidthGBps: 64, // Projecting slight network increase
+                computeTFlops: 105,  // Projecting TFLOPS increase - FP32 - This is a rough estimate, actual could vary significantly.
                 type: 'GPU'
             },
             'Intel Xeon CPU (High-End)': { // Example High-End Intel CPU - Adjust values based on specific CPU
@@ -555,28 +555,44 @@ const DTYPE_SIZES = {
                 computeTFlops: 1,     // Representative of a basic desktop CPU's integrated graphics or low-end dGPU if no dedicated GPU is specified
                 type: 'CPU/Integrated GPU'
             },
-			'NVMe RAID PC (4 x Gen5)': {
-                name: 'NVMe RAID PC (4 x Gen5)',
-                memoryGB: 8000,
-                localBandwidthGBps: 50,
-                networkBandwidthGBps: 0,
-                computeTFlops: 3,
+			'NVMe CPU (Gen5)': {
+                name: 'NVMe CPU (Gen5)',
+                memoryGB: 2000,
+                localBandwidthGBps: 14,
+                networkBandwidthGBps: 40/8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
+                computeTFlops: 2,
                 type: 'CPU/NVMe'
-            }
+            },
+			'NVMe 4xRAID 5090 (Gen5)': {
+                name: 'NVMe 4xRAID GPU (Gen5)',
+                memoryGB: 8000,
+                localBandwidthGBps: 32,
+                networkBandwidthGBps: 40/8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
+                computeTFlops: 105,
+                type: 'GPU/NVMe'
+            },
+			'Titan RTX + NVMe Gen3': {
+                name: 'Titan RTX + NVMe Gen3',
+                memoryGB: 4000,
+                localBandwidthGBps: 3.5,
+                networkBandwidthGBps: 1/8, // USB 4.0 40-gbps/8 or 40-GBps/8 ethernet
+                computeTFlops: 16.3,
+                type: 'GPU/NVMe'
+            },
             'Custom': {
                 name: 'Custom Device',
-                memoryGB: 8000,
+                memoryGB: 192,
                 localBandwidthGBps: 50,
-                networkBandwidthGBps: 0,
-                computeTFlops: 1500,
+                networkBandwidthGBps: 2.5/8,
+                computeTFlops: 2,
                 type: 'Custom'
             }
         };
         let devices = [{
             id: 1,
             name: 'Device 1',
-            template: 'RTX 5090 (Projected)',
-            ...DEVICE_TEMPLATES.Custom
+            template: 'Custom',
+            ...DEVICE_TEMPLATES["RTX 5090 (Projected)"]
         }];
         let utilizationChart = null;
         function getModelConfig() {
