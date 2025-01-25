@@ -123,8 +123,7 @@
                         <option value="deepseek_v3">DeepSeek V3 (700B)</option>
                         <option value="large_model_400b">Large Model (400B+)</option>
                         <option value="very_large_model_1t">Very Large Model (1T+)</option>
-                        <!-- Add more model presets here -->
-                    </select>
+                        </select>
 
                     <label for="quantizationType">Quantization</label>
                     <select id="quantizationType" class="input">
@@ -136,7 +135,6 @@
                     </select>
                 </div>
 
-
                 <label>Total Parameters (B)</label>
                 <input type="number" id="totalParamsB" class="input" value="400">
 
@@ -147,16 +145,16 @@
                 <input type="number" id="seqLength" class="input" value="2048">
 
                 <label>Hidden Size</label>
-                <input type="number" id="hiddenSize" class="input" value="12288">
+                <input type="number" id="hiddenSize" class="input" value="16384">
 
                 <label>Number of Layers</label>
-                <input type="number" id="numLayers" class="input" value="96">
+                <input type="number" id="numLayers" class="input" value="120">
 
                 <label>Number of Heads</label>
-                <input type="number" id="numHeads" class="input" value="96">
+                <input type="number" id="numHeads" class="input" value="128">
 
-                <label style="display: none;">Data Type</label>  <!-- Hide the old dtype select -->
-                <select id="dtype" class="input" style="display: none;">  <!-- Hide the old dtype select -->
+                <label style="display: none;">Data Type</label>
+                <select id="dtype" class="input" style="display: none;">
                     <option value="float32">float32</option>
                     <option value="bfloat16" selected>bfloat16</option>
                     <option value="float16">float16</option>
@@ -198,14 +196,13 @@
     <div id="alerts"></div>
 
     <script>
-        const DTYPE_SIZES = {
+const DTYPE_SIZES = {
             'float32': 4,
             'bfloat16': 2,
             'float16': 2,
             'int8': 1,
-            'q4': 0.5 // Assuming 4-bit quantization is roughly 0.5 bytes per parameter
+            'q4': 0.5
         };
-
         const MODEL_PRESETS = {
             'llama3_8b': {
                 'q4': {
@@ -222,7 +219,7 @@
                     numHeads: 32,
                     dtype: 'int8'
                 },
-                 'float16': {
+                'float16': {
                     totalParamsB: 8,
                     hiddenSize: 3072,
                     numLayers: 32,
@@ -282,7 +279,7 @@
                 }
             },
             'mistral_7b': {
-                 'q4': {
+                'q4': {
                     totalParamsB: 7,
                     hiddenSize: 4096,
                     numLayers: 32,
@@ -318,7 +315,7 @@
                     dtype: 'float32'
                 }
             },
-            'deepseek_v3': { // Added preset for ~700B parameter model
+            'deepseek_v3': {
                 'float16': {
                     totalParamsB: 671,
                     hiddenSize: 8192,
@@ -333,10 +330,9 @@
                     numHeads: 64,
                     dtype: 'bfloat16'
                 }
-                // No Q4/INT8 for conceptual very large models for now, can add if needed.
             },
-            'large_model_400b': { // Added preset for ~400B parameter model (conceptual)
-                 'float16': {
+            'large_model_400b': {
+                'float16': {
                     totalParamsB: 400,
                     hiddenSize: 16384,
                     numLayers: 120,
@@ -351,8 +347,8 @@
                     dtype: 'bfloat16'
                 }
             },
-             'very_large_model_1t': { // Added preset for ~1T parameter model (conceptual, for future scale)
-                 'float16': {
+             'very_large_model_1t': {
+                'float16': {
                     totalParamsB: 1000,
                     hiddenSize: 32768,
                     numLayers: 200,
@@ -368,76 +364,111 @@
                 }
             }
         };
-
-
         const DEVICE_TEMPLATES = {
             'A100': {
                 name: 'NVIDIA A100',
                 memoryGB: 80,
                 localBandwidthGBps: 1935,
-                networkBandwidthGBps: 300, // High-speed interconnect, e.g., NVLink or fast ethernet
-                computeTFlops: 312,
+                networkBandwidthGBps: 300,
+                computeTFlops: 312,  // FP16/BF16 TFLOPS
                 type: 'GPU'
             },
             'H100': {
                 name: 'NVIDIA H100',
                 memoryGB: 120,
                 localBandwidthGBps: 3350,
-                networkBandwidthGBps: 450, // NVLink, Infiniband, or very fast ethernet
-                computeTFlops: 989,
+                networkBandwidthGBps: 450,
+                computeTFlops: 989,  // FP16/BF16 TFLOPS
                 type: 'GPU'
             },
             'RTX 4090': {
                 name: 'RTX 4090',
                 memoryGB: 24,
                 localBandwidthGBps: 1008,
-                networkBandwidthGBps: 64, // Typical PCIe or Ethernet
-                computeTFlops: 83,
+                networkBandwidthGBps: 64,
+                computeTFlops: 83,   // FP32 TFLOPS - Corrected and using FP32 for RTX 4090 as it's often quoted. Real FP16/BF16 performance might be higher depending on workload
                 type: 'GPU'
+            },
+            'RTX 4070': {
+                name: 'RTX 4070',
+                memoryGB: 12, // Or 16GB depending on variant
+                localBandwidthGBps: 504,
+                networkBandwidthGBps: 64, // Assuming similar network capabilities as 4090 for typical desktop use
+                computeTFlops: 29,   // FP32 TFLOPS -  Using FP32 for RTX 4070 for consistency in quoted values. FP16/BF16 will be higher.
+                type: 'GPU'
+            },
+            'RTX 5090 (Projected)': { // Added RTX 5090 - using projected/estimated values. Real values will depend on final specs.
+                name: 'RTX 5090 (Projected)',
+                memoryGB: 32, // Assuming increase from 4090
+                localBandwidthGBps: 1500, // Projecting bandwidth increase
+                networkBandwidthGBps: 100, // Projecting slight network increase
+                computeTFlops: 150,  // Projecting TFLOPS increase - FP32 - This is a rough estimate, actual could vary significantly.
+                type: 'GPU'
+            },
+            'Intel Xeon CPU (High-End)': { // Example High-End Intel CPU - Adjust values based on specific CPU
+                name: 'Intel Xeon CPU (High-End)',
+                memoryGB: 256, // Assuming server/workstation class
+                localBandwidthGBps: 80, // Representative of system memory bandwidth
+                networkBandwidthGBps: 25, // Assuming 25 GbE networking
+                computeTFlops: 2,     // CPU FP32 TFLOPS - CPUs are much lower TFLOPS than GPUs for ML tasks.
+                type: 'CPU'
+            },
+            'AMD EPYC CPU (High-End)': { // Example High-End AMD CPU - Adjust values based on specific CPU
+                name: 'AMD EPYC CPU (High-End)',
+                memoryGB: 256, // Assuming server/workstation class
+                localBandwidthGBps: 90, // Representative of system memory bandwidth - EPYC often has slightly higher bandwidth
+                networkBandwidthGBps: 25, // Assuming 25 GbE networking
+                computeTFlops: 2.5,   // CPU FP32 TFLOPS -  CPUs are much lower TFLOPS than GPUs for ML tasks. EPYC might have slightly better FP performance than Xeon in some cases.
+                type: 'CPU'
+            },
+            'AMD Ryzen Integrated Graphics': { // Example of AMD Integrated Graphics - e.g., Ryzen 7000/8000 series iGPU
+                name: 'AMD Ryzen Integrated Graphics',
+                memoryGB: 16, // Shared system memory
+                localBandwidthGBps: 50, // System memory bandwidth influence
+                networkBandwidthGBps: 2.5/8.0, // Assuming typical desktop ethernet
+                computeTFlops: 0.5,   // iGPU FP32 TFLOPS - Integrated graphics are much less powerful than dedicated GPUs.
+                type: 'Integrated GPU'
             },
             'Mac Mini M2 (10G Ethernet)': {
                 name: 'Mac Mini M2 (10G)',
-                memoryGB: 16, // Or 8/16/24GB depending on config
-                localBandwidthGBps: 68, // Unified Memory Bandwidth M2
-                networkBandwidthGBps: 10, // 10G Ethernet
-                computeTFlops: 4, // M2 GPU performance estimate - very rough for ML
-                type: 'CPU/Integrated GPU' // Differentiate type if needed
+                memoryGB: 16,
+                localBandwidthGBps: 68,
+                networkBandwidthGBps: 10,
+                computeTFlops: 4,     // Apple Silicon (M2) typical FP16/BF16 performance for ML tasks.
+                type: 'CPU/Integrated GPU'
             },
             'Raspberry Pi 5 (5G Ethernet)': {
                 name: 'Raspberry Pi 5 (5G)',
-                memoryGB: 8, // Or 4/8GB
-                localBandwidthGBps: 34, // LPDDR4X Bandwidth (very approx)
-                networkBandwidthGBps: 5/8.0, // 5G Ethernet (in GBps) -  5 Gigabit Ethernet / 8 bits per byte.
-                computeTFlops: 0.1, //  Broadcom BCM2712 - extremely rough, for basic comparison
+                memoryGB: 8,
+                localBandwidthGBps: 34,
+                networkBandwidthGBps: 5/8.0,
+                computeTFlops: 0.1,   // Raspberry Pi 5 CPU/GPU performance is very limited for ML.
                 type: 'CPU/Integrated GPU'
             },
             'Desktop PC (2.5G Ethernet)': {
                 name: 'Desktop PC (2.5G)',
-                memoryGB: 32, // Typical desktop RAM
-                localBandwidthGBps: 50, //  DDR4/DDR5 bandwidth - very approx
-                networkBandwidthGBps: 2.5/8.0, // 2.5G Ethernet (in GBps)
-                computeTFlops: 1, //  Mid-range CPU integrated GPU - very rough
+                memoryGB: 32,
+                localBandwidthGBps: 50,
+                networkBandwidthGBps: 2.5/8.0,
+                computeTFlops: 1,     // Representative of a basic desktop CPU's integrated graphics or low-end dGPU if no dedicated GPU is specified
                 type: 'CPU/Integrated GPU'
             },
             'Custom': {
                 name: 'Custom Device',
-                memoryGB: 16,
-                localBandwidthGBps: 800,
-                networkBandwidthGBps: 200,
-                computeTFlops: 100,
+                memoryGB: 8000,
+                localBandwidthGBps: 50,
+                networkBandwidthGBps: 0,
+                computeTFlops: 1500,
                 type: 'Custom'
             }
         };
-
         let devices = [{
             id: 1,
             name: 'Device 1',
-            template: 'A100',
-            ...DEVICE_TEMPLATES.A100
+            template: 'Custom',
+            ...DEVICE_TEMPLATES.Custom
         }];
-
         let utilizationChart = null;
-
         function getModelConfig() {
             return {
                 modelPreset: document.getElementById('modelPreset').value,
@@ -448,124 +479,126 @@
                 hiddenSize: parseFloat(document.getElementById('hiddenSize').value),
                 numLayers: parseFloat(document.getElementById('numLayers').value),
                 numHeads: parseFloat(document.getElementById('numHeads').value),
-                dtype: document.getElementById('dtype').value, // Still need dtype for calculations
+                dtype: document.getElementById('dtype').value,
                 parallelismStrategy: document.getElementById('parallelismStrategy').value
             };
         }
-
-
         function calculateMemoryBreakdown(modelConfig, dtypeSize) {
-            // Model parameters memory
             const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
-
-            // KV Cache memory per layer (simplified - assuming 2 copies for K and V)
-            const kvCacheSize = 2 * modelConfig.batchSize * modelConfig.seqLength *
-                               (modelConfig.hiddenSize / modelConfig.numHeads) * // Assuming shared head dimension
-                               modelConfig.numHeads * dtypeSize;
-
-            // Attention operation memory (very rough estimate - might not be the biggest factor)
+            const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength *
+                                        (modelConfig.hiddenSize / modelConfig.numHeads) *
+                                        modelConfig.numHeads * dtypeSize;
+            const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers;
+            const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength * modelConfig.hiddenSize * dtypeSize;
+            const activationMemory = activationSizePerLayer * modelConfig.numLayers;
             const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) *
-                                   modelConfig.numHeads * dtypeSize;
-
-            // Activation memory for forward pass (simplified -  can be higher depending on layers)
-            const activationMemory = modelConfig.batchSize * modelConfig.seqLength *
-                                   modelConfig.hiddenSize * dtypeSize;
-
-
-            // Layer-specific memory (KV Cache + Activations - simplified per layer estimate)
-            const layerMemory = (kvCacheSize + activationMemory) * modelConfig.numLayers;
-
-
+                                    modelConfig.numHeads * dtypeSize;
+            const totalMemory = paramsMemory + kvCacheMemory + activationMemory + attentionMemory;
             return {
                 paramsMemory,
-                layerMemory,
+                kvCacheMemory,
+                activationMemory,
                 attentionMemory,
-                total: paramsMemory + layerMemory + attentionMemory // Optimizer memory removed for inference focus
+                total: totalMemory
             };
         }
 
+        // Improved FLOPs calculation (more accurate for forward and backward pass)
+        function calculateTransformerFlops(modelConfig) {
+            const { batchSize, seqLength, hiddenSize, numLayers, numHeads } = modelConfig;
+
+            // Forward pass FLOPs for one layer
+            let forwardFlops = 0;
+
+            // Self-Attention
+            forwardFlops += 3 * (batchSize * seqLength * hiddenSize * hiddenSize); // Q, K, V projections
+            forwardFlops += batchSize * numHeads * seqLength * seqLength; // Attention scores
+            forwardFlops += batchSize * numHeads * seqLength * (hiddenSize / numHeads); // Weighted sum
+            forwardFlops += batchSize * seqLength * hiddenSize * hiddenSize; // Output projection
+
+            // Feed-Forward Network
+            forwardFlops += batchSize * seqLength * hiddenSize * (4 * hiddenSize); // First layer
+            forwardFlops += batchSize * seqLength * (4 * hiddenSize) * hiddenSize; // Second layer
+
+            // Multiply by number of layers and then by 3 for forward + backward pass
+            return forwardFlops * numLayers * 3;
+        }
 
         function calculateMetrics() {
             const modelConfig = getModelConfig();
-            const dtypeSize = DTYPE_SIZES[modelConfig.dtype];
+            const dtypeSize = DTYPE_SIZES[modelConfig.quantizationType];
             const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize);
-
-            // Memory per device based on parallelism strategy
             const isPipeline = modelConfig.parallelismStrategy === 'pipeline';
             const memoryPerDevice = isPipeline ?
-                (memoryBreakdown.total / devices.length) : // Simple pipeline memory split
-                memoryBreakdown.total / devices.length; // Simple tensor memory split (assuming model parallelism)
-
-
-            // Simplified FLOPs model - just for relative compute comparison. Not precise.
-            const totalFlops = modelConfig.totalParamsB * 1e9 * 2; // Very rough estimate
-
+                (memoryBreakdown.total / devices.length) :
+                memoryBreakdown.total; // Note: Not dividing by devices.length for tensor parallelism
 
             return devices.map(device => {
+                // Calculate total FLOPs required for the operation (using improved function)
+                const totalFlops = calculateTransformerFlops(modelConfig);
+
+                // Calculate theoretical maximum compute time
+                const theoreticalComputeTime = totalFlops / (device.computeTFlops * 1e12);
+
+                // Calculate memory traffic for the operation (Prefill Phase)
+                const totalMemoryTraffic = memoryBreakdown.paramsMemory +
+                                         (2 * memoryBreakdown.kvCacheMemory) +
+                                         (3 * memoryBreakdown.activationMemory) +
+                                         (2 * memoryBreakdown.attentionMemory); // Approximation for attention
+
+                // Calculate time required based on memory bandwidth
+                const bandwidthLimitedTime = totalMemoryTraffic / (device.localBandwidthGBps * 1e9);
+
+                // Actual execution time (Prefill Phase)
+                const actualTime = Math.max(theoreticalComputeTime, bandwidthLimitedTime);
+
+                // Calculate utilizations
+                const computeUtilization = (theoreticalComputeTime / actualTime) * 100;
+                const localBandwidthUtilization = (bandwidthLimitedTime / actualTime) * 100;
                 const memoryUtilization = (memoryPerDevice / (device.memoryGB * 1e9)) * 100;
 
-                const modelSizeBytes = modelConfig.totalParamsB * 1e9 * dtypeSize;
-                const bandwidthLimitedTime = modelSizeBytes / (device.localBandwidthGBps * 1e9); // Time to load model from local memory (simplified)
-                const computeLimitedTime = totalFlops / (device.computeTFlops * 1e12); // Time if purely compute bound
-
-
-                const actualTime = Math.max(bandwidthLimitedTime, computeLimitedTime); // Bottleneck is whichever is slower
-
-                const localBandwidthUtilization = (bandwidthLimitedTime / actualTime) * 100;
-                const computeUtilization = (computeLimitedTime / actualTime) * 100;
-
-
-                // Network Bandwidth Calculation (Pipeline Parallelism - simplified for inference)
+                // Calculate network utilization for pipeline parallelism (Prefill Phase)
                 let networkBandwidthUtilization = 0;
                 if (isPipeline && devices.length > 1) {
-                    // In pipeline parallelism, activations are passed between stages.
-                    // Estimating data per batch, per sequence, per hidden size, per dtype.
-                    const activationsPerBatch = modelConfig.batchSize * modelConfig.seqLength * modelConfig.hiddenSize * dtypeSize;
-                    const networkDataPerDevice = activationsPerBatch; // Simplified - assuming roughly this much data passed per device in pipeline. Needs more detailed modelling for accuracy.
-
-                    const totalNetworkData = networkDataPerDevice * devices.length; // Total data moved across network in a simplified pipeline pass.
-                    const networkBandwidthRequired = totalNetworkData; // Assuming we want to transfer this in 'actualTime' (which is compute or local BW bound).
-                    networkBandwidthUtilization = (networkBandwidthRequired / (device.networkBandwidthGBps * 1e9 * actualTime)) * 100; // Utilization based on 'actualTime'
-
-                    // Simplified network utilization -  needs more refined modeling of pipeline stages and data transfer.
-                    networkBandwidthUtilization = Math.min(100, networkBandwidthUtilization); // Cap at 100%
+                    const activationsPerForwardPass = modelConfig.batchSize * modelConfig.seqLength *
+                                                    modelConfig.hiddenSize * dtypeSize;
+                    const totalNetworkTraffic = activationsPerForwardPass * 2 * (devices.length - 1); // Forward and backward pass
+                    networkBandwidthUtilization = (totalNetworkTraffic /
+                        (device.networkBandwidthGBps * 1e9 * actualTime)) * 100;
                 }
 
-
-                // Bottleneck factor - consider memory, local bandwidth, and network bandwidth.
+                // Bottleneck factor
                 const bottleneckFactor = Math.max(
                     1,
+                    computeUtilization/ 100,
                     memoryUtilization / 100,
                     localBandwidthUtilization / 100,
-                    networkBandwidthUtilization / 100,
-                    computeUtilization / 100 // Include compute in bottleneck factor.
+                    networkBandwidthUtilization / 100
                 );
 
-                // Token Rate Calculation (Simplified - tokens per second per device)
-                const tokensPerSecond = modelConfig.batchSize / actualTime; // Tokens generated per second, assuming 1 token per forward pass per batch item
+                // Tokens per second (Prefill Phase Approximation)
+                const tokensPerSecond = modelConfig.batchSize * modelConfig.seqLength / actualTime;
 
                 return {
                     name: device.name,
                     memoryUtilization,
                     localBandwidthUtilization,
-                    networkBandwidthUtilization: networkBandwidthUtilization,
+                    networkBandwidthUtilization,
                     computeUtilization,
                     rawMemoryUtilization: memoryUtilization,
                     rawLocalBandwidthUtilization: localBandwidthUtilization,
                     rawNetworkBandwidthUtilization: networkBandwidthUtilization,
-                    rawComputeUtilization: computeUtilization * bottleneckFactor, // Scale compute by bottleneck for chart display.
+                    rawComputeUtilization: computeUtilization,
                     bottleneckFactor,
-                    isBottleneck: bottleneckFactor > 1 || memoryUtilization > 100,
-                    tokensPerSecond: tokensPerSecond // Add token rate to metrics
+                    isBottleneck: bottleneckFactor > 1,
+                    tokensPerSecond
                 };
             });
         }
-
-
         function updateSystemAnalysis() {
             const metrics = calculateMetrics();
+            console.log(metrics);
             const analysisContainer = document.getElementById('systemAnalysis');
-
             let systemAnalysisHtml = '';
             metrics.forEach(m => {
                 systemAnalysisHtml += `
@@ -574,60 +607,45 @@
                         <div class="device-grid" style="font-size: 0.875rem;">
                             <div>Memory Usage: ${m.memoryUtilization.toFixed(1)}%</div>
                             <div>Compute Usage: ${m.computeUtilization.toFixed(1)}%
-                                ${m.rawComputeUtilization > m.computeUtilization ?
-                                    `(max: ${m.rawComputeUtilization.toFixed(1)}%)` : ''}
                             </div>
                             <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%
-                                ${m.rawLocalBandwidthUtilization > m.localBandwidthUtilization ?
-                                    `(max: ${m.rawLocalBandwidthUtilization.toFixed(1)}%)` : ''}
                             </div>
                             <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%
-                                ${m.rawNetworkBandwidthUtilization > m.networkBandwidthUtilization ?
-                                    `(max: ${m.rawNetworkBandwidthUtilization.toFixed(1)}%)` : ''}
                             </div>
                             <div>Token Rate (approx.): ${m.tokensPerSecond.toFixed(2)} tokens/second</div>
                         </div>
                 `;
-
                 let bottleneckType = "None";
                 let bottleneckValue = 1;
                 if (m.isBottleneck) {
-                    if (m.memoryUtilization > 100 && m.memoryUtilization > bottleneckValue) {
-                        bottleneckType = "Memory";
-                        bottleneckValue = m.memoryUtilization;
-                    }
-                    if (m.localBandwidthUtilization > 100 && m.localBandwidthUtilization > bottleneckValue) {
-                        bottleneckType = "Local Bandwidth";
-                        bottleneckValue = m.localBandwidthUtilization;
-                    }
-                    if (m.networkBandwidthUtilization > 100 && m.networkBandwidthUtilization > bottleneckValue) {
-                        bottleneckType = "Network Bandwidth";
-                        bottleneckValue = m.networkBandwidthUtilization;
-                    }
-                     if (m.computeUtilization > 100 && m.computeUtilization > bottleneckValue) { // Compute can also be a bottleneck
+                    if (m.computeUtilization > bottleneckValue) {
                         bottleneckType = "Compute";
                         bottleneckValue = m.computeUtilization;
                     }
-
-
+                    if (m.memoryUtilization > bottleneckValue) {
+                        bottleneckType = "Memory";
+                        bottleneckValue = m.memoryUtilization;
+                    }
+                    if (m.localBandwidthUtilization > bottleneckValue) {
+                        bottleneckType = "Local Bandwidth";
+                        bottleneckValue = m.localBandwidthUtilization;
+                    }
+                    if (m.networkBandwidthUtilization > bottleneckValue) {
+                        bottleneckType = "Network Bandwidth";
+                        bottleneckValue = m.networkBandwidthUtilization;
+                    }
                     systemAnalysisHtml += `
                         <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem;">
                             Performance limited by <strong>${bottleneckType}</strong> constraints (${m.bottleneckFactor.toFixed(1)}x slower)
                         </div>
                     `;
                 }
-                systemAnalysisHtml += `</div>`; // close device analysis div
+                systemAnalysisHtml += `</div>`;
             });
-
-
             analysisContainer.innerHTML = systemAnalysisHtml;
-
-
             updateAlerts(metrics);
             updateChart(metrics);
         }
-
-
         function updateDeviceDisplay() {
             const devicesContainer = document.getElementById('devices');
             devicesContainer.innerHTML = devices.map(device => `
@@ -641,7 +659,6 @@
                             Remove
                         </button>
                     </div>
-
                     <select class="input" onchange="updateDevice(${device.id}, 'template', this.value)">
                         ${Object.keys(DEVICE_TEMPLATES).map(template => `
                             <option value="${template}" ${device.template === template ? 'selected' : ''}>
@@ -649,7 +666,6 @@
                             </option>
                         `).join('')}
                     </select>
-
                     <div class="device-grid">
                         ${['memoryGB', 'localBandwidthGBps', 'networkBandwidthGBps', 'computeTFlops']
                             .map(field => `
@@ -665,11 +681,9 @@
                 </div>
             `).join('');
         }
-
         function updateAlerts(metrics) {
             const alertsContainer = document.getElementById('alerts');
             let alertsHtml = '';
-
             if (metrics.some(m => m.isBottleneck)) {
                 alertsHtml += `
                     <div class="alert">
@@ -683,7 +697,7 @@
                                     ` Requires ${(m.memoryUtilization/100).toFixed(1)}x more memory` : ''}
                                 ${m.localBandwidthUtilization > 100 ?
                                     ` Requires ${(m.localBandwidthUtilization/100).toFixed(1)}x more local bandwidth` : ''}
-                                ${m.networkBandwidthUtilization > 100 && getModelConfig().parallelismStrategy === 'pipeline' ? // Only show network alert for pipeline parallelism for clarity
+                                ${m.networkBandwidthUtilization > 100 && getModelConfig().parallelismStrategy === 'pipeline' ?
                                     ` Requires ${(m.networkBandwidthUtilization/100).toFixed(1)}x more network bandwidth` : ''}
                                 ${m.computeUtilization > 100 ?
                                     ` Requires ${(m.computeUtilization/100).toFixed(1)}x more compute` : ''}
@@ -692,14 +706,10 @@
                     </div>
                 `;
             }
-
             alertsContainer.innerHTML = alertsHtml;
         }
-
-
         function updateChart(metrics) {
             const ctx = document.getElementById('utilizationChart').getContext('2d');
-
             const chartData = {
                 labels: metrics.map(m => m.name),
                 datasets: [
@@ -725,11 +735,9 @@
                     }
                 ]
             };
-
             if (utilizationChart) {
                 utilizationChart.destroy();
             }
-
             utilizationChart = new Chart(ctx, {
                 type: 'bar',
                 data: chartData,
@@ -739,7 +747,7 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 120, // Slightly increased max for better visualization of over-utilization
+                            max: 120,
                             title: {
                                 display: true,
                                 text: 'Utilization %'
@@ -754,7 +762,6 @@
                                     const metric = metrics[index];
                                     const datasetLabel = context.dataset.label;
                                     let actualValue, rawValue;
-
                                     switch (datasetLabel) {
                                         case 'Memory':
                                             actualValue = metric.memoryUtilization;
@@ -773,7 +780,6 @@
                                             rawValue = metric.rawComputeUtilization;
                                             break;
                                     }
-
                                     if (rawValue !== actualValue) {
                                         return `${datasetLabel}: ${actualValue.toFixed(1)}% (theoretical max: ${rawValue.toFixed(1)}%)`;
                                     }
@@ -785,7 +791,6 @@
                 }
             });
         }
-
         function addDevice() {
             const lastDevice = devices[devices.length - 1];
             const newDevice = {
@@ -802,7 +807,6 @@
             updateDeviceDisplay();
             updateSystemAnalysis();
         }
-
         function removeDevice(id) {
             if (devices.length > 1) {
                 devices = devices.filter(d => d.id !== id);
@@ -810,11 +814,14 @@
                 updateSystemAnalysis();
             }
         }
-
         function updateDevice(id, field, value) {
             devices = devices.map(d => {
                 if (d.id !== id) return d;
-                const updatedDevice = { ...d, [field]: value };
+                let updatedValue = value;
+                if (field === 'computeTFlops') {
+                    updatedValue = Math.max(0.01, value); // Ensure computeTFlops is at least 0.01
+                }
+                const updatedDevice = { ...d, [field]: updatedValue };
                 if (field === 'template' && value !== 'Custom') {
                     return { ...updatedDevice, ...DEVICE_TEMPLATES[value] };
                 }
@@ -823,44 +830,33 @@
             updateDeviceDisplay();
             updateSystemAnalysis();
         }
-
         function updateModelConfigFromPreset() {
             const modelPresetId = document.getElementById('modelPreset').value;
             const quantizationType = document.getElementById('quantizationType').value;
-
             if (modelPresetId && MODEL_PRESETS[modelPresetId] && MODEL_PRESETS[modelPresetId][quantizationType]) {
                 const preset = MODEL_PRESETS[modelPresetId][quantizationType];
                 for (const key in preset) {
-                    document.getElementById(key).value = preset[key];
-                }
-                // Importantly, set the *hidden* dtype select's value to the selected quantization type for calculations.
-                document.getElementById('dtype').value = quantizationType;
-
-            } else if (modelPresetId === "") { // "Custom" model selected, clear presets
-                for (const key in MODEL_PRESETS['llama3_8b']['q4']) { // Using an arbitrary preset keys to reset fields.
-                    if (document.getElementById(key)) { // Check if element exists to avoid errors if fields change.
-                        document.getElementById(key).value = ''; // Or set to a default value if preferred.
+                    if (document.getElementById(key)) {
+                        document.getElementById(key).value = preset[key];
                     }
                 }
-                document.getElementById('dtype').value = 'bfloat16'; //reset dtype to default if needed.
+            } else if (modelPresetId === "") {
+                for (const key in MODEL_PRESETS['llama3_8b']['q4']) {
+                    if (document.getElementById(key)) {
+                        document.getElementById(key).value = '';
+                    }
+                }
             }
             updateSystemAnalysis();
         }
 
-
         document.getElementById('modelPreset').addEventListener('change', updateModelConfigFromPreset);
         document.getElementById('quantizationType').addEventListener('change', updateModelConfigFromPreset);
-
-
-        // Add event listeners to model config inputs (except modelPreset and quantizationType, already handled)
         document.querySelectorAll('#modelConfig input, #modelConfig select').forEach(input => {
-            if (input.id !== 'modelPreset' && input.id !== 'quantizationType' && input.id !== 'dtype') { // Exclude modelPreset, quantizationType, and hidden dtype
+            if (input.id !== 'modelPreset' && input.id !== 'quantizationType' && input.id !== 'dtype') {
                 input.addEventListener('change', updateSystemAnalysis);
             }
         });
-
-
-        // Initial render
         updateDeviceDisplay();
         updateSystemAnalysis();
     </script>
