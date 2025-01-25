@@ -1,110 +1,100 @@
-# ML System Bottleneck Analyzer
+I'll help improve the README with emojis and updated information based on the provided code. Here's an enhanced version:
 
-A standalone web-based tool for analyzing hardware bottlenecks in machine learning systems. This tool helps visualize and identify potential performance limitations across multiple devices in distributed ML setups.
+# 🔬 ML System Bottleneck Analyzer
 
-## Features
+[![Visit MLBottleneck.com](https://img.shields.io/badge/Visit-MLBottleneck.com-blue)](https://mlbottleneck.com)
 
-- Model configuration analysis
-- Multi-device support with predefined templates (A100, H100, 4090)
-- Custom device configuration
-- Real-time resource utilization visualization
-- Automatic bottleneck detection
-- Support for different parallelism strategies
-- Interactive charts and metrics
-- No installation or dependencies required
+A powerful web-based tool for analyzing hardware bottlenecks in machine learning systems. Visualize and identify performance limitations across multiple devices in distributed ML setups - all in your browser! 🚀
 
-## Quick Start
+## ✨ Key Features
 
-1. Download the `analyzer.html` file
-2. Open it directly in a modern web browser
-3. Start analyzing your ML system configuration
+- 📊 Real-time visualization of system bottlenecks
+- 🎯 Precise token rate estimation
+- 🔄 Support for pipeline and tensor parallelism
+- 💾 Advanced memory usage analysis
+- 🖥️ Multi-device configuration support
+- ⚡ Bandwidth and compute utilization metrics
+- 📱 Responsive design for all devices
+- 🌐 No installation required - runs in browser!
 
-## Configuration Options
+## 🎮 Quick Start
 
-### Model Parameters
+1. Visit [MLBottleneck.com](https://mlbottleneck.com)
+2. Or download `index.html` to run locally
+3. Configure your model parameters
+4. Add devices to analyze
+5. Get instant insights! 
 
-- Total Parameters (B): Total number of parameters in billions
-- Batch Size: Training batch size
-- Sequence Length: Maximum sequence length for transformer models
-- Hidden Size: Model hidden dimension size
-- Number of Layers: Total transformer layers
-- Number of Heads: Attention heads per layer
-- Data Type: Supported types include float32, bfloat16, float16, int8
-- Parallelism Strategy: Choose between pipeline or tensor parallelism
+## 🛠️ Configuration Options
 
-### Device Configuration
+### 📐 Model Parameters
+- Model Presets:
+  - Llama 3 (8B/70B)
+  - Mistral 7B
+  - DeepSeek V3 (700B)
+  - Large Models (400B+)
+  - Very Large Models (1T+)
+- Quantization Options:
+  - Q4
+  - INT8
+  - FP16
+  - BF16
+  - FP32
 
-Predefined templates:
-- NVIDIA A100 (80GB)
-- NVIDIA H100 (120GB)
-- NVIDIA RTX 4090 (24GB)
-- Custom configuration
+### 💻 Device Templates
+- High-End GPUs:
+  - NVIDIA H100
+  - NVIDIA A100
+  - RTX 4090/4070
+  - RTX 5090 (Projected)
+- CPUs & Integrated:
+  - Intel Xeon
+  - AMD EPYC
+  - Apple M2
+  - AMD Integrated Graphics
+- Storage Solutions:
+  - NVMe CPU (Gen5)
+  - NVMe 4xRAID GPU
+  - Titan RTX + NVMe
+- Consumer Devices:
+  - Mac Mini M2
+  - Raspberry Pi 5
+  - Desktop PC
 
-Device parameters:
-- Memory (GB)
-- Local Bandwidth (GB/s)
-- Network Bandwidth (GB/s)
-- Compute (TFLOPs)
+## 📊 Analysis Features
 
-## Analysis Features
-
-The tool provides real-time analysis of:
-- Memory utilization
-- Local bandwidth requirements
-- Network bandwidth utilization
+The analyzer provides comprehensive metrics for:
+- Memory utilization percentage
+- Local/Network bandwidth usage
 - Compute utilization
-- System bottlenecks and feasibility warnings
+- Token generation rate
+- Bottleneck identification
+- System feasibility warnings
 
-## Technical Details
+## 🔧 Technical Implementation
 
-### Memory Calculation
+- 💯 Pure vanilla JavaScript
+- 📈 Chart.js for visualizations
+- 🎨 Modern CSS with variables
+- 📱 Responsive design
+- 🌐 Single HTML file deployment
+- ☁️ CDN-loaded dependencies
 
-Memory usage is calculated considering:
-- Parameter memory (model weights)
-- Hidden state memory
-- Attention memory
-- Memory distribution across devices
+## 🤝 Contributing
 
-### Bandwidth Analysis
+Feel free to contribute to this project! Here's how:
 
-Calculates required bandwidth based on:
-- Activation size
-- Chosen parallelism strategy
-- Number of devices
-- Forward/backward pass requirements
+1. 🍴 Fork the repository
+2. 🔧 Create a feature branch
+3. ✨ Make your improvements
+4. 📝 Submit a pull request
 
-### Compute Requirements
+Visit the [GitHub repository](https://github.com/steveseguin/ml-bottleneck) to get started!
 
-Estimates computational needs considering:
-- Total parameters
-- Device distribution
-- Operation requirements
+## 👨‍💻 Author
 
-## Browser Compatibility
+Created by [Steve Seguin](https://github.com/steveseguin)
 
-Tested and compatible with:
-- Chrome (recommended)
-- Firefox
-- Safari
-- Edge
+## 🌟 Star History
 
-## Technical Implementation
-
-- Built with vanilla JavaScript
-- Uses Chart.js for visualizations
-- Single HTML file with embedded CSS/JS
-- No external dependencies except Chart.js (loaded via CDN)
-
-## Limitations
-
-- Calculations are theoretical and may not account for all real-world factors
-- Memory overhead from framework implementations is not included
-- Network topology effects are simplified
-- Specific hardware optimizations are not considered
-
-## Contributing
-
-Feel free to contribute by:
-1. Opening issues for bugs or feature requests
-2. Submitting pull requests with improvements
-3. Suggesting additional device templates or analysis metrics
+[![Star History Chart](https://api.star-history.com/svg?repos=steveseguin/ml-bottleneck&type=Date)](https://star-history.com/#steveseguin/ml-bottleneck&Date)
