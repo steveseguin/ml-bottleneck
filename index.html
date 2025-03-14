@@ -642,6 +642,34 @@ input, select {
 	border-radius: 4px;
 }
 
+.device {
+    position: relative;
+    transition: all 0.2s ease;
+}
+.device.custom-device {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+.custom-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: var(--primary);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    opacity: 0.8;
+}
+.device-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+.device-actions button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+}
+
 @media (max-width: 768px) {
     body {
         padding: 1rem;
@@ -664,10 +692,7 @@ input, select {
         width: 100%;
     }
 }
-
- 
-}
-    </style>
+</style>
 </head>
 <body>
     <h1>ML System Bottleneck Analyzer</h1>
@@ -733,13 +758,13 @@ input, select {
             </div>
         </div>
 
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>Devices</h2>
-                <button class="button" onclick="addDevice()">Add Device</button>
-            </div>
-            <div id="devices"></div>
-        </div>
+	<div class="card">
+	    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+	        <h2>Devices</h2>
+	        <button id="loadDevicesBtn" class="button" onclick="loadDevices()" title="Load devices from storage">Load Saved</button>
+	    </div>
+	    <div id="devices"></div>
+	</div>
     </div>
 	
 	<div id="alerts"></div>
@@ -893,8 +918,8 @@ input, select {
 				},
 				type: 'GPU'
 			},
-			'RTX 5090 (Projected)': {
-				name: 'RTX 5090 (Projected)',
+			'RTX 5090': {
+				name: 'RTX 5090',
 				memoryGB: 32,
 				localBandwidthGBps: 1500,
 				networkBandwidthGBps: 64,
@@ -1073,8 +1098,8 @@ input, select {
         let devices = [{
             id: 1,
             name: 'Device 1',
-            template: 'Custom',
-            ...DEVICE_TEMPLATES["RTX 5090 (Projected)"]
+            template: 'RTX 5090',
+            ...DEVICE_TEMPLATES["RTX 5090"]
         }];
         let utilizationChart = null;
         function getModelConfig() {
@@ -1188,7 +1213,163 @@ input, select {
 
             return decodeFlops * numLayers; 
         }
-
+	    
+	// Load devices from localStorage
+	function loadDevices() {
+	    const savedDevices = localStorage.getItem('savedDevices');
+	    if (savedDevices) {
+	        try {
+	            devices = JSON.parse(savedDevices);
+	            updateDeviceDisplay();
+	            updateSystemAnalysis();
+	        } catch (e) {
+	            console.error('Error loading saved devices:', e);
+	        }
+	    }
+	}
+	
+	// Save devices to localStorage
+	function saveDevices() {
+	    localStorage.setItem('savedDevices', JSON.stringify(devices));
+	}
+	
+	// Add a new empty device with a default template
+	function addDevice() {
+	    const newId = devices.length > 0 ? Math.max(...devices.map(d => d.id)) + 1 : 1;
+	    const defaultTemplate = 'RTX 5090';
+	    const newDevice = {
+	        id: newId,
+	        name: `Device ${newId}`,
+	        template: defaultTemplate,
+	        ...DEVICE_TEMPLATES[defaultTemplate]
+	    };
+	    devices.push(newDevice);
+	    updateDeviceDisplay();
+	    updateSystemAnalysis();
+	    saveDevices();
+	}
+	
+	// Clone an existing device
+	function cloneDevice(id) {
+	    const sourceDevice = devices.find(d => d.id === id);
+	    if (!sourceDevice) return;
+	    
+	    const newId = Math.max(...devices.map(d => d.id)) + 1;
+	    const newDevice = {
+	        ...JSON.parse(JSON.stringify(sourceDevice)), // Deep clone
+	        id: newId,
+	        name: `${sourceDevice.name} (Clone)`
+	    };
+	    
+	    devices.push(newDevice);
+	    updateDeviceDisplay();
+	    updateSystemAnalysis();
+	    saveDevices();
+	}
+	
+	// Remove a device
+	function removeDevice(id) {
+	    if (devices.length > 1) {
+	        devices = devices.filter(d => d.id !== id);
+	        updateDeviceDisplay();
+	        updateSystemAnalysis();
+	        saveDevices();
+	    }
+	}
+	
+	function updateDevice(id, field, value) {
+	    devices = devices.map(d => {
+	        if (d.id !== id) return d;
+	        
+	        let updatedDevice = { ...d };
+	        
+	        if (field === 'template') {
+	            if (value !== 'Custom') {
+	                // Update entire device with template
+	                updatedDevice = { 
+	                    ...updatedDevice, 
+	                    ...DEVICE_TEMPLATES[value],
+	                    template: value, // Keep the template name
+	                    name: updatedDevice.name // Keep original name
+	                };
+	            } else {
+	                updatedDevice.template = 'Custom';
+	            }
+	        } else if (field === 'computeTFlops') {
+	            // For custom devices, use the entered value as base and scale for other precisions
+	            const currentQuant = document.getElementById('quantizationType').value;
+	            const baseValue = value / {
+	                'float32': 1,
+	                'bfloat16': 2,
+	                'float16': 2,
+	                'int8': 4,
+	                'q4': 6
+	            }[currentQuant];
+	
+	            updatedDevice.computeTFlops = {
+	                'float32': baseValue,
+	                'bfloat16': baseValue * 2,
+	                'float16': baseValue * 2,
+	                'int8': baseValue * 4,
+	                'q4': baseValue * 6
+	            };
+	            
+	            // Automatically switch to custom template when modifying values
+	            if (updatedDevice.template !== 'Custom') {
+	                updatedDevice.template = 'Custom';
+	            }
+	        } else {
+	            updatedDevice[field] = value;
+	            
+	            // Automatically switch to custom template when modifying specs
+	            if (field !== 'name' && field !== 'template' && updatedDevice.template !== 'Custom') {
+	                updatedDevice.template = 'Custom';
+	            }
+	        }
+	        
+	        return updatedDevice;
+	    });
+	    
+	    updateDeviceDisplay();
+	    updateSystemAnalysis();
+	    saveDevices();
+	}
+	    
+	    updateDeviceDisplay();
+	    updateSystemAnalysis();
+	    saveDevices();
+	}
+	
+	// Device library management
+	function saveToLibrary(id) {
+	    const device = devices.find(d => d.id === id);
+	    if (!device) return;
+	    
+	    // Get existing library
+	    let deviceLibrary = [];
+	    try {
+	        const savedLibrary = localStorage.getItem('deviceLibrary');
+	        if (savedLibrary) {
+	            deviceLibrary = JSON.parse(savedLibrary);
+	        }
+	    } catch (e) {
+	        console.error('Error loading device library:', e);
+	    }
+	    
+	    // Create a copy to save
+	    const deviceToSave = {
+	        ...JSON.parse(JSON.stringify(device)),
+	        template: 'Custom', // Force as custom when saved
+	        id: Date.now() // Use timestamp as unique ID in library
+	    };
+	    
+	    // Add to library
+	    deviceLibrary.push(deviceToSave);
+	    localStorage.setItem('deviceLibrary', JSON.stringify(deviceLibrary));
+	    
+	    alert(`Device "${device.name}" saved to library!`);
+	    updateDeviceDisplay(); // Refresh to show updated library
+	}
         function calculateMetrics() {
 			const modelConfig = getModelConfig();
 			const dtypeSize = DTYPE_SIZES[modelConfig.quantizationType];
@@ -1356,56 +1537,108 @@ input, select {
             updateAlerts(metrics);
             updateChart(metrics);
         }
-        function updateDeviceDisplay() {
-			const currentQuant = document.getElementById('quantizationType').value;
-			const devicesContainer = document.getElementById('devices');
-			devicesContainer.innerHTML = devices.map(device => `
-				<div class="device">
-					<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-						<input class="input" style="width: auto;" value="${device.name}"
-							   onchange="updateDevice(${device.id}, 'name', this.value)">
-						<button class="button button-destructive"
-								onclick="removeDevice(${device.id})"
-								${devices.length === 1 ? 'disabled' : ''}>
-							Remove
-						</button>
-					</div>
-					<select class="input" onchange="updateDevice(${device.id}, 'template', this.value)">
-						${Object.keys(DEVICE_TEMPLATES).map(template => `
-							<option value="${template}" ${device.template === template ? 'selected' : ''}>
-								${DEVICE_TEMPLATES[template].name}
-							</option>
-						`).join('')}
-					</select>
-					<div class="device-grid">
-						<div>
-							<label>Memory GB</label>
-							<input type="number" class="input" value="${device.memoryGB}"
-								   onchange="updateDevice(${device.id}, 'memoryGB', parseFloat(this.value) || 0)"
-								   ${device.template !== 'Custom' ? 'disabled' : ''}>
-						</div>
-						<div>
-							<label>Local Bandwidth GBps</label>
-							<input type="number" class="input" value="${device.localBandwidthGBps}"
-								   onchange="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)"
-								   ${device.template !== 'Custom' ? 'disabled' : ''}>
-						</div>
-						<div>
-							<label>Network Bandwidth GBps</label>
-							<input type="number" class="input" value="${device.networkBandwidthGBps}"
-								   onchange="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)"
-								   ${device.template !== 'Custom' ? 'disabled' : ''}>
-						</div>
-						<div>
-							<label>Compute TFlops (${currentQuant})</label>
-							<input type="number" class="input" value="${device.computeTFlops[currentQuant]}"
-								   onchange="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)"
-								   ${device.template !== 'Custom' ? 'disabled' : ''}>
-						</div>
-					</div>
-				</div>
-			`).join('');
-		}
+	    
+	function updateDeviceDisplay() {
+	    const currentQuant = document.getElementById('quantizationType').value;
+	    const devicesContainer = document.getElementById('devices');
+	    
+	    // Get saved device library
+	    let deviceLibrary = [];
+	    try {
+	        const savedLibrary = localStorage.getItem('deviceLibrary');
+	        if (savedLibrary) {
+	            deviceLibrary = JSON.parse(savedLibrary);
+	        }
+	    } catch (e) {
+	        console.error('Error loading device library:', e);
+	    }
+	    
+	    // Create custom library options
+	    const libraryOptions = deviceLibrary.map(device => 
+	        `<option value="lib_${device.id}">${device.name}</option>`
+	    ).join('');
+	    
+	    devicesContainer.innerHTML = devices.map(device => `
+	        <div class="device ${device.template === 'Custom' ? 'custom-device' : ''}">
+	            ${device.template === 'Custom' ? '<div class="custom-badge">Custom</div>' : ''}
+	            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+	                <input class="input" style="width: auto; flex-grow: 1; margin-right: 0.5rem;" value="${device.name}"
+	                       onchange="updateDevice(${device.id}, 'name', this.value)">
+	                <div class="device-actions">
+	                    <button class="button" 
+	                            onclick="cloneDevice(${device.id})"
+	                            title="Clone this device">
+	                        Clone
+	                    </button>
+	                    <button class="button" 
+	                            onclick="saveToLibrary(${device.id})"
+	                            title="Save to library">
+	                        Save
+	                    </button>
+	                    <button class="button button-destructive"
+	                            onclick="removeDevice(${device.id})"
+	                            ${devices.length === 1 ? 'disabled' : ''}
+	                            title="Remove this device">
+	                        Remove
+	                    </button>
+	                </div>
+	            </div>
+	            <select class="input" onchange="handleDeviceTemplateChange(${device.id}, this)">
+	                <option value="Custom" ${device.template === 'Custom' ? 'selected' : ''}>
+	                    Custom Device
+	                </option>
+	                <optgroup label="Presets">
+	                    ${Object.keys(DEVICE_TEMPLATES)
+	                        .filter(key => key !== 'Custom')
+	                        .map(template => `
+	                            <option value="${template}" ${device.template === template ? 'selected' : ''}>
+	                                ${DEVICE_TEMPLATES[template].name}
+	                            </option>
+	                        `).join('')}
+	                </optgroup>
+	                ${deviceLibrary.length > 0 ? 
+	                    `<optgroup label="My Saved Devices">
+	                        ${libraryOptions}
+	                    </optgroup>` : ''}
+	            </select>
+	            <div class="device-grid">
+	                <div>
+	                    <label>Memory GB</label>
+	                    <input type="number" class="input" value="${device.memoryGB}"
+	                           onchange="updateDevice(${device.id}, 'memoryGB', parseFloat(this.value) || 0)"
+	                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+	                </div>
+	                <div>
+	                    <label>Local Bandwidth GBps</label>
+	                    <input type="number" class="input" value="${device.localBandwidthGBps}"
+	                           onchange="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)"
+	                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+	                </div>
+	                <div>
+	                    <label>Network Bandwidth GBps</label>
+	                    <input type="number" class="input" value="${device.networkBandwidthGBps}"
+	                           onchange="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)"
+	                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+	                </div>
+	                <div>
+	                    <label>Compute TFlops (${currentQuant})</label>
+	                    <input type="number" class="input" value="${device.computeTFlops[currentQuant]}"
+	                           onchange="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)"
+	                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+	                </div>
+	            </div>
+	        </div>
+	    `).join('');
+	    
+	    // Add the "Add New Device" button at the bottom
+	    devicesContainer.innerHTML += `
+	        <div style="display: flex; justify-content: center; margin-top: 1rem;">
+	            <button class="button" onclick="addDevice()" style="width: 100%;">
+	                + Add New Device
+	            </button>
+	        </div>
+	    `;
+	}
 
         function updateAlerts(metrics) {
             const alertsContainer = document.getElementById('alerts');
@@ -1433,7 +1666,8 @@ input, select {
                 `;
             }
             alertsContainer.innerHTML = alertsHtml;
-                }
+        }
+	    
         function updateChart(metrics) {
             const ctx = document.getElementById('utilizationChart').getContext('2d');
             const chartData = {
@@ -1540,64 +1774,64 @@ input, select {
                 updateSystemAnalysis();
             }
         }
-		function updateDevice(id, field, value) {
-			devices = devices.map(d => {
-				if (d.id !== id) return d;
-				
-				let updatedDevice = { ...d };
-				
-				if (field === 'template' && value !== 'Custom') {
-					// Update entire device with template
-					updatedDevice = { ...updatedDevice, ...DEVICE_TEMPLATES[value] };
-				} else if (field === 'computeTFlops') {
-					// For custom devices, use the entered value as base and scale for other precisions
-					const currentQuant = document.getElementById('quantizationType').value;
-					const baseValue = value / {
-						'float32': 1,
-						'bfloat16': 2,
-						'float16': 2,
-						'int8': 4,
-						'q4': 6
-					}[currentQuant];
-
-					updatedDevice.computeTFlops = {
-						'float32': baseValue,
-						'bfloat16': baseValue * 2,
-						'float16': baseValue * 2,
-						'int8': baseValue * 4,
-						'q4': baseValue * 6
-					};
-				} else {
-					updatedDevice[field] = value;
-				}
-				
-				return updatedDevice;
-			});
+	function updateDevice(id, field, value) {
+		devices = devices.map(d => {
+			if (d.id !== id) return d;
 			
-			updateDeviceDisplay();
-			updateSystemAnalysis();
-		}
-		
-		function updateModelConfigFromPreset() {
-			const modelPresetId = document.getElementById('modelPreset').value;
-			if (modelPresetId && MODEL_PRESETS[modelPresetId]) {
-				const preset = MODEL_PRESETS[modelPresetId];
-				for (const key in preset) {
-					if (document.getElementById(key)) {
-						document.getElementById(key).value = preset[key];
-					}
-				}
-			} else if (modelPresetId === "") {
-				// Reset to empty values if no preset selected
-				const defaultKeys = ['totalParamsB', 'hiddenSize', 'numLayers', 'numHeads'];
-				defaultKeys.forEach(key => {
-					if (document.getElementById(key)) {
-						document.getElementById(key).value = '';
-					}
-				});
+			let updatedDevice = { ...d };
+			
+			if (field === 'template' && value !== 'Custom') {
+				// Update entire device with template
+				updatedDevice = { ...updatedDevice, ...DEVICE_TEMPLATES[value] };
+			} else if (field === 'computeTFlops') {
+				// For custom devices, use the entered value as base and scale for other precisions
+				const currentQuant = document.getElementById('quantizationType').value;
+				const baseValue = value / {
+					'float32': 1,
+					'bfloat16': 2,
+					'float16': 2,
+					'int8': 4,
+					'q4': 6
+				}[currentQuant];
+
+				updatedDevice.computeTFlops = {
+					'float32': baseValue,
+					'bfloat16': baseValue * 2,
+					'float16': baseValue * 2,
+					'int8': baseValue * 4,
+					'q4': baseValue * 6
+				};
+			} else {
+				updatedDevice[field] = value;
 			}
-			updateSystemAnalysis();
+			
+			return updatedDevice;
+		});
+		
+		updateDeviceDisplay();
+		updateSystemAnalysis();
+	}
+	
+	function updateModelConfigFromPreset() {
+		const modelPresetId = document.getElementById('modelPreset').value;
+		if (modelPresetId && MODEL_PRESETS[modelPresetId]) {
+			const preset = MODEL_PRESETS[modelPresetId];
+			for (const key in preset) {
+				if (document.getElementById(key)) {
+					document.getElementById(key).value = preset[key];
+				}
+			}
+		} else if (modelPresetId === "") {
+			// Reset to empty values if no preset selected
+			const defaultKeys = ['totalParamsB', 'hiddenSize', 'numLayers', 'numHeads'];
+			defaultKeys.forEach(key => {
+				if (document.getElementById(key)) {
+					document.getElementById(key).value = '';
+				}
+			});
 		}
+		updateSystemAnalysis();
+	}
 
 
         document.getElementById('modelPreset').addEventListener('change', updateModelConfigFromPreset);
@@ -1716,6 +1950,46 @@ DeepSeek V3	FP16		NVIDIA H800 x 2048					https://www.infoq.com/news/2025/01/deep
             renderTable(sortedData);
         };
 
+	function handleDeviceTemplateChange(id, selectElement) {
+	    const value = selectElement.value;
+	    
+	    // Check if this is a library device
+	    if (value.startsWith('lib_')) {
+	        const libraryId = value.replace('lib_', '');
+	        
+	        try {
+	            const savedLibrary = localStorage.getItem('deviceLibrary');
+	            if (savedLibrary) {
+	                const deviceLibrary = JSON.parse(savedLibrary);
+	                const libraryDevice = deviceLibrary.find(d => d.id.toString() === libraryId);
+	                
+	                if (libraryDevice) {
+	                    // Apply the library device properties
+	                    devices = devices.map(d => {
+	                        if (d.id !== id) return d;
+	                        
+	                        // Create a new device with library device properties
+	                        return {
+	                            ...JSON.parse(JSON.stringify(libraryDevice)),
+	                            id: d.id, // Keep the original ID
+	                            name: d.name // Keep the original name
+	                        };
+	                    });
+	                    
+	                    updateDeviceDisplay();
+	                    updateSystemAnalysis();
+	                    saveDevices();
+	                }
+	            }
+	        } catch (e) {
+	            console.error('Error loading device from library:', e);
+	        }
+	    } else {
+	        // Normal template handling
+	        updateDevice(id, 'template', value);
+	    }
+	}
+
         // Filtering function
         const filterTable = () => {
             const modelFilter = document.getElementById('modelFilter').value.toLowerCase();
@@ -1751,8 +2025,16 @@ DeepSeek V3	FP16		NVIDIA H800 x 2048					https://www.infoq.com/news/2025/01/deep
         document.getElementById('hardwareFilter').addEventListener('input', filterTable);
         document.getElementById('quantizationFilter').addEventListener('input', filterTable);
 
-        // Initialize table
-        renderTable(data);
+	document.addEventListener('DOMContentLoaded', function() {
+        	renderTable(data);
+		
+	        if(localStorage.getItem('savedDevices')) {
+	            document.getElementById('loadDevicesBtn').removeAttribute('disabled');
+	        } else {
+	            document.getElementById('loadDevicesBtn').setAttribute('disabled', true);
+	        }
+	});
+        
     </script>
 </body>
 </html>
