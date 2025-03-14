@@ -44,11 +44,12 @@ A powerful web-based tool for analyzing hardware bottlenecks in machine learning
   - NVIDIA H100
   - NVIDIA A100
   - RTX 4090/4070
-  - RTX 5090 (Projected)
+  - RTX 5090
+  - Mac Studio Ultra
 - CPUs & Integrated:
   - Intel Xeon
   - AMD EPYC
-  - Apple M2
+  - Apple Silicon
   - AMD Integrated Graphics
 - Storage Solutions:
   - NVMe CPU (Gen5)
