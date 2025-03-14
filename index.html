@@ -1784,10 +1784,11 @@ input, select {
 	                    ...updatedDevice, 
 	                    ...DEVICE_TEMPLATES[value],
 	                    template: value, // Keep the template name
-	                    name: updatedDevice.name // Keep original name
+	                    name: DEVICE_TEMPLATES[value].name // Use template name
 	                };
 	            } else {
 	                updatedDevice.template = 'Custom';
+	                updatedDevice.name = 'Custom Device';
 	            }
 	        } else if (field === 'computeTFlops') {
 	            // For custom devices, use the entered value as base and scale for other precisions
@@ -1808,25 +1809,23 @@ input, select {
 	                'q4': baseValue * 6
 	            };
 	            
-	            // Automatically mark as edited if not already custom
-	            if (updatedDevice.template !== 'Custom') {
-	                updatedDevice.template = 'Custom';
+	            // Mark as edited if not already custom
+	            if (!updatedDevice.isEdited && updatedDevice.template !== 'Custom') {
 	                updatedDevice.isEdited = true;
-	                // Append "(Edited)" to the name if not already there
-	                if (!updatedDevice.name.includes('(Edited)')) {
-	                    updatedDevice.name += ' (Edited)';
+	                // Add "- Custom" to the name if not already there
+	                if (!updatedDevice.name.includes('- Custom')) {
+	                    updatedDevice.name = `${updatedDevice.name} - Custom`;
 	                }
 	            }
 	        } else {
 	            updatedDevice[field] = value;
 	            
-	            // Automatically mark as edited if modifying specs and not already custom
-	            if (field !== 'name' && updatedDevice.template !== 'Custom') {
-	                updatedDevice.template = 'Custom';
+	            // Skip for name field updates or already edited devices
+	            if (field !== 'name' && !updatedDevice.isEdited && updatedDevice.template !== 'Custom') {
 	                updatedDevice.isEdited = true;
-	                // Append "(Edited)" to the name if not already there
-	                if (!updatedDevice.name.includes('(Edited)') && field !== 'name') {
-	                    updatedDevice.name += ' (Edited)';
+	                // Add "- Custom" to the name
+	                if (!updatedDevice.name.includes('- Custom')) {
+	                    updatedDevice.name = `${updatedDevice.name} - Custom`;
 	                }
 	            }
 	        }
@@ -1999,7 +1998,7 @@ DeepSeek V3	FP16		NVIDIA H800 x 2048					https://www.infoq.com/news/2025/01/deep
 	                        return {
 	                            ...JSON.parse(JSON.stringify(libraryDevice)),
 	                            id: d.id, // Keep the original ID
-	                            name: d.name // Keep the original name
+	                            isEdited: false
 	                        };
 	                    });
 	                    
@@ -2013,10 +2012,40 @@ DeepSeek V3	FP16		NVIDIA H800 x 2048					https://www.infoq.com/news/2025/01/deep
 	        }
 	    } else {
 	        // Normal template handling
-	        updateDevice(id, 'template', value);
+	        // Get the template name first
+	        const templateName = value !== 'Custom' ? DEVICE_TEMPLATES[value].name : 'Custom Device';
+	        
+	        // Update device with new template
+	        devices = devices.map(d => {
+	            if (d.id !== id) return d;
+	            
+	            const baseDevice = { ...d };
+	            
+	            if (value !== 'Custom') {
+	                // Update device with template and its name
+	                return { 
+	                    ...baseDevice, 
+	                    ...DEVICE_TEMPLATES[value],
+	                    id: d.id,
+	                    template: value,
+	                    name: templateName, // Use template name
+	                    isEdited: false
+	                };
+	            } else {
+	                return {
+	                    ...baseDevice,
+	                    template: 'Custom',
+	                    name: 'Custom Device',
+	                    isEdited: false
+	                };
+	            }
+	        });
+	        
+	        updateDeviceDisplay();
+	        updateSystemAnalysis();
+	        saveDevices();
 	    }
 	}
-
         // Filtering function
         const filterTable = () => {
             const modelFilter = document.getElementById('modelFilter').value.toLowerCase();
