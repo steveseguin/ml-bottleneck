@@ -1555,8 +1555,8 @@ input, select {
 	    ).join('');
 	    
 	    devicesContainer.innerHTML = devices.map(device => `
-	        <div class="device ${device.template === 'Custom' ? 'custom-device' : ''}">
-	            ${device.template === 'Custom' ? '<div class="custom-badge">Custom</div>' : ''}
+	        <div class="device ${device.template === 'Custom' || device.isEdited ? 'custom-device' : ''}">
+	            ${device.template === 'Custom' || device.isEdited ? '<div class="custom-badge">Custom</div>' : ''}
 	            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
 	                <input class="input" style="width: auto; flex-grow: 1; margin-right: 0.5rem;" value="${device.name}"
 	                       onchange="updateDevice(${device.id}, 'name', this.value)">
@@ -1587,7 +1587,7 @@ input, select {
 	                    ${Object.keys(DEVICE_TEMPLATES)
 	                        .filter(key => key !== 'Custom')
 	                        .map(template => `
-	                            <option value="${template}" ${device.template === template ? 'selected' : ''}>
+	                            <option value="${template}" ${device.template === template && !device.isEdited ? 'selected' : ''}>
 	                                ${DEVICE_TEMPLATES[template].name}
 	                            </option>
 	                        `).join('')}
@@ -1602,25 +1602,25 @@ input, select {
 	                    <label>Memory GB</label>
 	                    <input type="number" class="input" value="${device.memoryGB}"
 	                           onchange="updateDevice(${device.id}, 'memoryGB', parseFloat(this.value) || 0)"
-	                           ${device.template !== 'Custom' ? '' : ''}>
+	                           oninput="updateDevice(${device.id}, 'memoryGB', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
 	                    <label>Local Bandwidth GBps</label>
 	                    <input type="number" class="input" value="${device.localBandwidthGBps}"
 	                           onchange="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)"
-	                           ${device.template !== 'Custom' ? '' : ''}>
+	                           oninput="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
 	                    <label>Network Bandwidth GBps</label>
 	                    <input type="number" class="input" value="${device.networkBandwidthGBps}"
 	                           onchange="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)"
-	                           ${device.template !== 'Custom' ? '' : ''}>
+	                           oninput="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
 	                    <label>Compute TFlops (${currentQuant})</label>
 	                    <input type="number" class="input" value="${device.computeTFlops[currentQuant]}"
 	                           onchange="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)"
-	                           ${device.template !== 'Custom' ? '' : ''}>
+	                           oninput="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)">
 	                </div>
 	            </div>
 	        </div>
@@ -1635,7 +1635,6 @@ input, select {
 	        </div>
 	    `;
 	}
-
         function updateAlerts(metrics) {
             const alertsContainer = document.getElementById('alerts');
             let alertsHtml = '';
@@ -1772,6 +1771,19 @@ input, select {
         }
 	    
 	function updateDevice(id, field, value) {
+	    const device = devices.find(d => d.id === id);
+	    if (!device) return;
+	    
+	    // Check if the value is actually different before marking as edited
+	    let valueChanged = false;
+	    
+	    if (field === 'computeTFlops') {
+	        const currentQuant = document.getElementById('quantizationType').value;
+	        valueChanged = device.computeTFlops[currentQuant] !== value;
+	    } else if (field !== 'name' && field !== 'template') {
+	        valueChanged = device[field] !== value;
+	    }
+	    
 	    devices = devices.map(d => {
 	        if (d.id !== id) return d;
 	        
@@ -1784,11 +1796,13 @@ input, select {
 	                    ...updatedDevice, 
 	                    ...DEVICE_TEMPLATES[value],
 	                    template: value, // Keep the template name
-	                    name: DEVICE_TEMPLATES[value].name // Use template name
+	                    name: DEVICE_TEMPLATES[value].name, // Use template name
+	                    isEdited: false
 	                };
 	            } else {
 	                updatedDevice.template = 'Custom';
 	                updatedDevice.name = 'Custom Device';
+	                updatedDevice.isEdited = true;
 	            }
 	        } else if (field === 'computeTFlops') {
 	            // For custom devices, use the entered value as base and scale for other precisions
@@ -1809,8 +1823,8 @@ input, select {
 	                'q4': baseValue * 6
 	            };
 	            
-	            // Mark as edited if not already custom
-	            if (!updatedDevice.isEdited && updatedDevice.template !== 'Custom') {
+	            // Mark as edited if value changed and not already custom
+	            if (valueChanged && !updatedDevice.isEdited && updatedDevice.template !== 'Custom') {
 	                updatedDevice.isEdited = true;
 	                // Add "- Custom" to the name if not already there
 	                if (!updatedDevice.name.includes('- Custom')) {
@@ -1821,7 +1835,7 @@ input, select {
 	            updatedDevice[field] = value;
 	            
 	            // Skip for name field updates or already edited devices
-	            if (field !== 'name' && !updatedDevice.isEdited && updatedDevice.template !== 'Custom') {
+	            if (valueChanged && field !== 'name' && !updatedDevice.isEdited && updatedDevice.template !== 'Custom') {
 	                updatedDevice.isEdited = true;
 	                // Add "- Custom" to the name
 	                if (!updatedDevice.name.includes('- Custom')) {
