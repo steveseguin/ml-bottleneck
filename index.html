@@ -1557,7 +1557,7 @@ input, select {
 	        <div class="device ${device.template === 'Custom' || device.isEdited ? 'custom-device' : ''}">
 	            ${device.template === 'Custom' || device.isEdited ? '<div class="custom-badge">Custom</div>' : ''}
 	            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-	                <input class="input" style="width: auto; flex-grow: 1; margin-right: 0.5rem;" value="${device.name}"
+	                <input class="input" title="Give this device a name" style="width: auto; flex-grow: 1; margin-right: 0.5rem;" value="${device.name}"
 	                       onchange="updateDevice(${device.id}, 'name', this.value)">
 	                <div class="device-actions">
 	                    <button class="button" 
