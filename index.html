@@ -767,7 +767,7 @@ input, select {
 	</div>
     </div>
 	
-	<div id="alerts"></div>
+    <div id="alerts"></div>
 
     <div class="grid">
         <div class="card">
@@ -863,244 +863,245 @@ input, select {
 		}
 	};
         const DEVICE_TEMPLATES = {
-			'A100': {
-				name: 'NVIDIA A100',
-				memoryGB: 80,
-				localBandwidthGBps: 1935,
-				networkBandwidthGBps: 300,
-				computeTFlops: {
-					'float32': 156,
-					'float16': 312,
-					'bfloat16': 312,  // Same as float16
-					'int8': 624,
-					'q4': 1000
-				},
-				type: 'GPU'
+		'A100': {
+			name: 'NVIDIA A100',
+			memoryGB: 80,
+			localBandwidthGBps: 1935,
+			networkBandwidthGBps: 300,
+			computeTFlops: {
+				'float32': 156,
+				'float16': 312,
+				'bfloat16': 312,  // Same as float16
+				'int8': 624,
+				'q4': 1000
 			},
-			'H100': {
-				name: 'NVIDIA H100',
-				memoryGB: 120,
-				localBandwidthGBps: 3350,
-				networkBandwidthGBps: 450,
-				computeTFlops: {
-					'float32': 500,
-					'float16': 989,
-					'bfloat16': 989,  // Same as float16
-					'int8': 1979,
-					'q4': 2500
-				},
-				type: 'GPU'
+			type: 'GPU'
+		},
+		'H100': {
+			name: 'NVIDIA H100',
+			memoryGB: 120,
+			localBandwidthGBps: 3350,
+			networkBandwidthGBps: 450,
+			computeTFlops: {
+				'float32': 500,
+				'float16': 989,
+				'bfloat16': 989,  // Same as float16
+				'int8': 1979,
+				'q4': 2500
 			},
-			'RTX 4090': {
-				name: 'RTX 4090',
-				memoryGB: 24,
-				localBandwidthGBps: 1008,
-				networkBandwidthGBps: 32,
-				computeTFlops: {
-					'float32': 83,
-					'float16': 166,
-					'bfloat16': 83,  // Falls back to float32
-					'int8': 332,
-					'q4': 500
-				},
-				type: 'GPU'
+			type: 'GPU'
+		},
+		'RTX 4090': {
+			name: 'RTX 4090',
+			memoryGB: 24,
+			localBandwidthGBps: 1008,
+			networkBandwidthGBps: 32,
+			computeTFlops: {
+				'float32': 83,
+				'float16': 166,
+				'bfloat16': 83,  // Falls back to float32
+				'int8': 332,
+				'q4': 500
 			},
-			'RTX 4070': {
-				name: 'RTX 4070',
-				memoryGB: 12,
-				localBandwidthGBps: 504,
-				networkBandwidthGBps: 32,
-				computeTFlops: {
-					'float32': 29,
-					'float16': 58,
-					'int8': 116,
-					'q4': 175
-				},
-				type: 'GPU'
+			type: 'GPU'
+		},
+		'RTX 4070': {
+			name: 'RTX 4070',
+			memoryGB: 12,
+			localBandwidthGBps: 504,
+			networkBandwidthGBps: 32,
+			computeTFlops: {
+				'float32': 29,
+				'float16': 58,
+				'int8': 116,
+				'q4': 175
 			},
-			'RTX 5090': {
-				name: 'RTX 5090',
-				memoryGB: 32,
-				localBandwidthGBps: 1500,
-				networkBandwidthGBps: 64,
-				computeTFlops: {
-					'float32': 105,
-					'float16': 210,
-					'int8': 420,
-					'q4': 630
-				},
-				type: 'GPU'
+			type: 'GPU'
+		},
+		'RTX 5090': {
+			name: 'RTX 5090',
+			memoryGB: 32,
+			localBandwidthGBps: 1500,
+			networkBandwidthGBps: 64,
+			computeTFlops: {
+				'float32': 105,
+				'float16': 210,
+				'int8': 420,
+				'q4': 630
 			},
-			'Intel Xeon CPU (High-End)': {
-				name: 'Intel Xeon CPU (High-End)',
-				memoryGB: 256,
-				localBandwidthGBps: 80,
-				networkBandwidthGBps: 25,
-				computeTFlops: {
-					'float32': 2,
-					'bfloat16': 4,  // Supported natively
-					'float16': 4,
-					'int8': 8,
-					'q4': 12
-				},
-				type: 'CPU'
+			type: 'GPU'
+		},
+		'Intel Xeon CPU (High-End)': {
+			name: 'Intel Xeon CPU (High-End)',
+			memoryGB: 256,
+			localBandwidthGBps: 80,
+			networkBandwidthGBps: 25,
+			computeTFlops: {
+				'float32': 2,
+				'bfloat16': 4,  // Supported natively
+				'float16': 4,
+				'int8': 8,
+				'q4': 12
 			},
-			'AMD EPYC CPU (High-End)': {
-				name: 'AMD EPYC CPU (High-End)',
-				memoryGB: 256,
-				localBandwidthGBps: 90,
-				networkBandwidthGBps: 25,
-				computeTFlops: {
-					'float32': 2.5,
-					'bfloat16': 5,
-					'float16': 5,
-					'int8': 10,
-					'q4': 15
-				},
-				type: 'CPU'
+			type: 'CPU'
+		},
+		'AMD EPYC CPU (High-End)': {
+			name: 'AMD EPYC CPU (High-End)',
+			memoryGB: 256,
+			localBandwidthGBps: 90,
+			networkBandwidthGBps: 25,
+			computeTFlops: {
+				'float32': 2.5,
+				'bfloat16': 5,
+				'float16': 5,
+				'int8': 10,
+				'q4': 15
 			},
-			'AMD Ryzen Integrated Graphics': {
-				name: 'AMD Ryzen Integrated Graphics',
-				memoryGB: 16,
-				localBandwidthGBps: 50,
-				networkBandwidthGBps: 2.5 / 8.0,
-				computeTFlops: {
-					'float32': 0.5,
-					'bfloat16': 1.0,
-					'float16': 1.0,
-					'int8': 2.0,
-					'q4': 3.0
-				},
-				type: 'Integrated GPU'
+			type: 'CPU'
+		},
+		'AMD Ryzen Integrated Graphics': {
+			name: 'AMD Ryzen Integrated Graphics',
+			memoryGB: 16,
+			localBandwidthGBps: 50,
+			networkBandwidthGBps: 2.5 / 8.0,
+			computeTFlops: {
+				'float32': 0.5,
+				'bfloat16': 1.0,
+				'float16': 1.0,
+				'int8': 2.0,
+				'q4': 3.0
 			},
-			'Mac M2 Ultra (192GB)': {
-				name: 'Mac M2 Ultra (192GB)',
-				memoryGB: 192,
-				localBandwidthGBps: 800,
-				networkBandwidthGBps: 10,
-				computeTFlops: {
-					'float32': 16,
-					'bfloat16': 32,
-					'float16': 32,
-					'int8': 64,
-					'q4': 96
-				},
-				type: 'CPU/Integrated GPU'
+			type: 'Integrated GPU'
+		},
+		'Mac M2 Ultra (192GB)': {
+			name: 'Mac M2 Ultra (192GB)',
+			memoryGB: 192,
+			localBandwidthGBps: 800,
+			networkBandwidthGBps: 10,
+			computeTFlops: {
+				'float32': 16,
+				'bfloat16': 32,
+				'float16': 32,
+				'int8': 64,
+				'q4': 96
 			},
-			'Mac M3 Ultra (512)': {
-				name: 'Mac M3 Ultra (512GB)',
-				memoryGB: 512,
-				localBandwidthGBps: 1500,
-				networkBandwidthGBps: 40,
-				computeTFlops: {
-					'float32': 35,
-					'bfloat16': 70,
-					'float16': 70,
-					'int8': 140,
-					'q4': 210
-				},
-				type: 'CPU/Integrated GPU'
+			type: 'CPU/Integrated GPU'
+		},
+		'Mac M3 Ultra (512)': {
+			name: 'Mac M3 Ultra (512GB)',
+			memoryGB: 512,
+			localBandwidthGBps: 1500,
+			networkBandwidthGBps: 40,
+			computeTFlops: {
+				'float32': 35,
+				'bfloat16': 70,
+				'float16': 70,
+				'int8': 140,
+				'q4': 210
 			},
-			'Mac Mini M2 (10G Ethernet)': {
-				name: 'Mac Mini M2 (10G)',
-				memoryGB: 16,
-				localBandwidthGBps: 68,
-				networkBandwidthGBps: 10,
-				computeTFlops: {
-					'float32': 2,
-					'bfloat16': 4,
-					'float16': 4,
-					'int8': 8,
-					'q4': 12
-				},
-				type: 'CPU/Integrated GPU'
+			type: 'CPU/Integrated GPU'
+		},
+		'Mac Mini M2 (10G Ethernet)': {
+			name: 'Mac Mini M2 (10G)',
+			memoryGB: 16,
+			localBandwidthGBps: 68,
+			networkBandwidthGBps: 10,
+			computeTFlops: {
+				'float32': 2,
+				'bfloat16': 4,
+				'float16': 4,
+				'int8': 8,
+				'q4': 12
 			},
-			'Raspberry Pi 5 (5G Ethernet)': {
-				name: 'Raspberry Pi 5 (5G)',
-				memoryGB: 8,
-				localBandwidthGBps: 34,
-				networkBandwidthGBps: 5 / 8.0,
-				computeTFlops: {
-					'float32': 0.1,
-					'bfloat16': 0.2,
-					'float16': 0.2,
-					'int8': 0.4,
-					'q4': 0.6
-				},
-				type: 'CPU/Integrated GPU'
+			type: 'CPU/Integrated GPU'
+		},
+		'Raspberry Pi 5 (5G Ethernet)': {
+			name: 'Raspberry Pi 5 (5G)',
+			memoryGB: 8,
+			localBandwidthGBps: 34,
+			networkBandwidthGBps: 5 / 8.0,
+			computeTFlops: {
+				'float32': 0.1,
+				'bfloat16': 0.2,
+				'float16': 0.2,
+				'int8': 0.4,
+				'q4': 0.6
 			},
-			'Desktop PC (2.5G Ethernet)': {
-				name: 'Desktop PC (2.5G)',
-				memoryGB: 32,
-				localBandwidthGBps: 50,
-				networkBandwidthGBps: 2.5 / 8.0,
-				computeTFlops: {
-					'float32': 1,
-					'float16': 2,
-					'int8': 4,
-					'q4': 6
-				},
-				type: 'CPU/Integrated GPU'
+			type: 'CPU/Integrated GPU'
+		},
+		'Desktop PC (2.5G Ethernet)': {
+			name: 'Desktop PC (2.5G)',
+			memoryGB: 32,
+			localBandwidthGBps: 50,
+			networkBandwidthGBps: 2.5 / 8.0,
+			computeTFlops: {
+				'float32': 1,
+				'float16': 2,
+				'int8': 4,
+				'q4': 6
 			},
-			'NVMe CPU (Gen5)': {
-				name: 'NVMe CPU (Gen5)',
-				memoryGB: 2000,
-				localBandwidthGBps: 14,
-				networkBandwidthGBps: 40 / 8,
-				computeTFlops: {
-					'float32': 2,
-					'float16': 4,
-					'int8': 8,
-					'q4': 12
-				},
-				type: 'CPU/NVMe'
+			type: 'CPU/Integrated GPU'
+		},
+		'NVMe CPU (Gen5)': {
+			name: 'NVMe CPU (Gen5)',
+			memoryGB: 2000,
+			localBandwidthGBps: 14,
+			networkBandwidthGBps: 40 / 8,
+			computeTFlops: {
+				'float32': 2,
+				'float16': 4,
+				'int8': 8,
+				'q4': 12
 			},
-			'NVMe 4xRAID 5090 (Gen5)': {
-				name: 'NVMe 4xRAID GPU (Gen5)',
-				memoryGB: 8000,
-				localBandwidthGBps: 32,
-				networkBandwidthGBps: 40 / 8,
-				computeTFlops: {
-					'float32': 105,
-					'float16': 210,
-					'int8': 420,
-					'q4': 630
-				},
-				type: 'GPU/NVMe'
+			type: 'CPU/NVMe'
+		},
+		'NVMe 4xRAID 5090 (Gen5)': {
+			name: 'NVMe 4xRAID GPU (Gen5)',
+			memoryGB: 8000,
+			localBandwidthGBps: 32,
+			networkBandwidthGBps: 40 / 8,
+			computeTFlops: {
+				'float32': 105,
+				'float16': 210,
+				'int8': 420,
+				'q4': 630
 			},
-			'Titan RTX + NVMe Gen3': {
-				name: 'Titan RTX + NVMe Gen3',
-				memoryGB: 4000,
-				localBandwidthGBps: 3.5,
-				networkBandwidthGBps: 1 / 8,
-				computeTFlops: {
-					'float32': 16.3,
-					'float16': 32.6,
-					'int8': 65.2,
-					'q4': 98
-				},
-				type: 'GPU/NVMe'
+			type: 'GPU/NVMe'
+		},
+		'Titan RTX + NVMe Gen3': {
+			name: 'Titan RTX + NVMe Gen3',
+			memoryGB: 4000,
+			localBandwidthGBps: 3.5,
+			networkBandwidthGBps: 1 / 8,
+			computeTFlops: {
+				'float32': 16.3,
+				'float16': 32.6,
+				'int8': 65.2,
+				'q4': 98
 			},
-			'Custom': {
-				name: 'Custom Device',
-				memoryGB: 192,
-				localBandwidthGBps: 50,
-				networkBandwidthGBps: 2.5 / 8,
-				computeTFlops: {
-					'float32': 2,
-					'float16': 4,
-					'int8': 8,
-					'q4': 12
-				},
-				type: 'Custom'
-			}
-		};
+			type: 'GPU/NVMe'
+		},
+		'Custom': {
+			name: 'Custom Device',
+			memoryGB: 192,
+			localBandwidthGBps: 50,
+			networkBandwidthGBps: 2.5 / 8,
+			computeTFlops: {
+				'float32': 2,
+				'float16': 4,
+				'int8': 8,
+				'q4': 12
+			},
+			type: 'Custom'
+		}
+	};
         let devices = [{
             id: 1,
             name: 'Device 1',
             template: 'RTX 5090',
             ...DEVICE_TEMPLATES["RTX 5090"]
         }];
+	    
         let utilizationChart = null;
         function getModelConfig() {
             return {
@@ -1116,66 +1117,66 @@ input, select {
                 parallelismStrategy: document.getElementById('parallelismStrategy').value
             };
         }
-		function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex ) {
-			const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
-			const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength * 
-				(modelConfig.hiddenSize / modelConfig.numHeads) * 
-				modelConfig.numHeads * dtypeSize;
-			const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers;
-			const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength * 
-				modelConfig.hiddenSize * dtypeSize;
-			const activationMemory = activationSizePerLayer * modelConfig.numLayers;
-			const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) * 
-				modelConfig.numHeads * dtypeSize;
+	function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex ) {
+		const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
+		const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength * 
+			(modelConfig.hiddenSize / modelConfig.numHeads) * 
+			modelConfig.numHeads * dtypeSize;
+		const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers;
+		const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength * 
+			modelConfig.hiddenSize * dtypeSize;
+		const activationMemory = activationSizePerLayer * modelConfig.numLayers;
+		const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) * 
+			modelConfig.numHeads * dtypeSize;
 
-			// Calculate total available memory across all devices
-			const totalSystemMemory = devices.reduce((sum, device) => sum + device.memoryGB * 1e9, 0);
-			
-			// Get this device's memory capacity
-			const deviceMemory = devices[deviceIndex].memoryGB * 1e9;
-			
-			// Calculate proportion of total memory for this device
-			const memoryProportion = deviceMemory / totalSystemMemory;
-
-			// Adjust memory allocation based on device's proportion of total memory
-			const adjustedParamsMemory = isPipeline ? 
-				paramsMemory * memoryProportion : // Pipeline: divide based on memory proportion
-				paramsMemory; // Tensor: replicate most params
-				
-			const adjustedKVCacheMemory = kvCacheMemory * memoryProportion;
-			const adjustedActivationMemory = activationMemory * memoryProportion;
-			const adjustedAttentionMemory = attentionMemory * memoryProportion;
-
-			return {
-				paramsMemory: adjustedParamsMemory,
-				kvCacheMemory: adjustedKVCacheMemory,
-				activationMemory: adjustedActivationMemory,
-				attentionMemory: adjustedAttentionMemory,
-				total: adjustedParamsMemory + adjustedKVCacheMemory + 
-					   adjustedActivationMemory + adjustedAttentionMemory
-			};
-		}
+		// Calculate total available memory across all devices
+		const totalSystemMemory = devices.reduce((sum, device) => sum + device.memoryGB * 1e9, 0);
 		
-		function calculateNetworkTraffic(modelConfig, dtypeSize, deviceCount, isPipeline) {
-			if (deviceCount <= 1) return 0;
+		// Get this device's memory capacity
+		const deviceMemory = devices[deviceIndex].memoryGB * 1e9;
+		
+		// Calculate proportion of total memory for this device
+		const memoryProportion = deviceMemory / totalSystemMemory;
 
-			const batchSize = modelConfig.batchSize;
-			const seqLength = modelConfig.seqLength;
-			const hiddenSize = modelConfig.hiddenSize;
+		// Adjust memory allocation based on device's proportion of total memory
+		const adjustedParamsMemory = isPipeline ? 
+			paramsMemory * memoryProportion : // Pipeline: divide based on memory proportion
+			paramsMemory; // Tensor: replicate most params
 			
-			if (isPipeline) {
-				// Pipeline parallelism: Forward and backward activation passing
-				const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
-				// Each layer boundary requires passing activations forward and gradients back
-				return activationSize * 2 * (deviceCount - 1);
-			} else {
-				// Tensor parallelism: All-reduce for gradients and activations
-				const gradientSize = modelConfig.totalParamsB * 1e9 * dtypeSize / deviceCount;
-				const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
-				// All-reduce communication pattern: (n-1)/n * data_size * 2
-				return (deviceCount - 1) * (gradientSize + activationSize) * 2 / deviceCount;
-			}
+		const adjustedKVCacheMemory = kvCacheMemory * memoryProportion;
+		const adjustedActivationMemory = activationMemory * memoryProportion;
+		const adjustedAttentionMemory = attentionMemory * memoryProportion;
+
+		return {
+			paramsMemory: adjustedParamsMemory,
+			kvCacheMemory: adjustedKVCacheMemory,
+			activationMemory: adjustedActivationMemory,
+			attentionMemory: adjustedAttentionMemory,
+			total: adjustedParamsMemory + adjustedKVCacheMemory + 
+				   adjustedActivationMemory + adjustedAttentionMemory
+		};
+	}
+	
+	function calculateNetworkTraffic(modelConfig, dtypeSize, deviceCount, isPipeline) {
+		if (deviceCount <= 1) return 0;
+
+		const batchSize = modelConfig.batchSize;
+		const seqLength = modelConfig.seqLength;
+		const hiddenSize = modelConfig.hiddenSize;
+		
+		if (isPipeline) {
+			// Pipeline parallelism: Forward and backward activation passing
+			const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
+			// Each layer boundary requires passing activations forward and gradients back
+			return activationSize * 2 * (deviceCount - 1);
+		} else {
+			// Tensor parallelism: All-reduce for gradients and activations
+			const gradientSize = modelConfig.totalParamsB * 1e9 * dtypeSize / deviceCount;
+			const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
+			// All-reduce communication pattern: (n-1)/n * data_size * 2
+			return (deviceCount - 1) * (gradientSize + activationSize) * 2 / deviceCount;
 		}
+	}
 
         // Improved FLOPs calculation (more accurate for forward and backward pass)
         function calculateTransformerFlops(modelConfig) {
@@ -1329,11 +1330,6 @@ input, select {
 	        
 	        return updatedDevice;
 	    });
-	    
-	    updateDeviceDisplay();
-	    updateSystemAnalysis();
-	    saveDevices();
-	}
 	    
 	    updateDeviceDisplay();
 	    updateSystemAnalysis();
