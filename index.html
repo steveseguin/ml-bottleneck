@@ -1583,7 +1583,7 @@ input, select {
 	                <option value="Custom" ${device.template === 'Custom' ? 'selected' : ''}>
 	                    Custom Device
 	                </option>
-	                <optgroup label="Presets">
+	                <optgroup label="Preset Library">
 	                    ${Object.keys(DEVICE_TEMPLATES)
 	                        .filter(key => key !== 'Custom')
 	                        .map(template => `
@@ -1602,25 +1602,25 @@ input, select {
 	                    <label>Memory GB</label>
 	                    <input type="number" class="input" value="${device.memoryGB}"
 	                           onchange="updateDevice(${device.id}, 'memoryGB', parseFloat(this.value) || 0)"
-	                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+	                           ${device.template !== 'Custom' ? '' : ''}>
 	                </div>
 	                <div>
 	                    <label>Local Bandwidth GBps</label>
 	                    <input type="number" class="input" value="${device.localBandwidthGBps}"
 	                           onchange="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)"
-	                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+	                           ${device.template !== 'Custom' ? '' : ''}>
 	                </div>
 	                <div>
 	                    <label>Network Bandwidth GBps</label>
 	                    <input type="number" class="input" value="${device.networkBandwidthGBps}"
 	                           onchange="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)"
-	                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+	                           ${device.template !== 'Custom' ? '' : ''}>
 	                </div>
 	                <div>
 	                    <label>Compute TFlops (${currentQuant})</label>
 	                    <input type="number" class="input" value="${device.computeTFlops[currentQuant]}"
 	                           onchange="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)"
-	                           ${device.template !== 'Custom' ? 'disabled' : ''}>
+	                           ${device.template !== 'Custom' ? '' : ''}>
 	                </div>
 	            </div>
 	        </div>
@@ -1770,42 +1770,73 @@ input, select {
                 updateSystemAnalysis();
             }
         }
+	    
 	function updateDevice(id, field, value) {
-		devices = devices.map(d => {
-			if (d.id !== id) return d;
-			
-			let updatedDevice = { ...d };
-			
-			if (field === 'template' && value !== 'Custom') {
-				// Update entire device with template
-				updatedDevice = { ...updatedDevice, ...DEVICE_TEMPLATES[value] };
-			} else if (field === 'computeTFlops') {
-				// For custom devices, use the entered value as base and scale for other precisions
-				const currentQuant = document.getElementById('quantizationType').value;
-				const baseValue = value / {
-					'float32': 1,
-					'bfloat16': 2,
-					'float16': 2,
-					'int8': 4,
-					'q4': 6
-				}[currentQuant];
-
-				updatedDevice.computeTFlops = {
-					'float32': baseValue,
-					'bfloat16': baseValue * 2,
-					'float16': baseValue * 2,
-					'int8': baseValue * 4,
-					'q4': baseValue * 6
-				};
-			} else {
-				updatedDevice[field] = value;
-			}
-			
-			return updatedDevice;
-		});
-		
-		updateDeviceDisplay();
-		updateSystemAnalysis();
+	    devices = devices.map(d => {
+	        if (d.id !== id) return d;
+	        
+	        let updatedDevice = { ...d };
+	        
+	        if (field === 'template') {
+	            if (value !== 'Custom') {
+	                // Update entire device with template
+	                updatedDevice = { 
+	                    ...updatedDevice, 
+	                    ...DEVICE_TEMPLATES[value],
+	                    template: value, // Keep the template name
+	                    name: updatedDevice.name // Keep original name
+	                };
+	            } else {
+	                updatedDevice.template = 'Custom';
+	            }
+	        } else if (field === 'computeTFlops') {
+	            // For custom devices, use the entered value as base and scale for other precisions
+	            const currentQuant = document.getElementById('quantizationType').value;
+	            const baseValue = value / {
+	                'float32': 1,
+	                'bfloat16': 2,
+	                'float16': 2,
+	                'int8': 4,
+	                'q4': 6
+	            }[currentQuant];
+	
+	            updatedDevice.computeTFlops = {
+	                'float32': baseValue,
+	                'bfloat16': baseValue * 2,
+	                'float16': baseValue * 2,
+	                'int8': baseValue * 4,
+	                'q4': baseValue * 6
+	            };
+	            
+	            // Automatically mark as edited if not already custom
+	            if (updatedDevice.template !== 'Custom') {
+	                updatedDevice.template = 'Custom';
+	                updatedDevice.isEdited = true;
+	                // Append "(Edited)" to the name if not already there
+	                if (!updatedDevice.name.includes('(Edited)')) {
+	                    updatedDevice.name += ' (Edited)';
+	                }
+	            }
+	        } else {
+	            updatedDevice[field] = value;
+	            
+	            // Automatically mark as edited if modifying specs and not already custom
+	            if (field !== 'name' && updatedDevice.template !== 'Custom') {
+	                updatedDevice.template = 'Custom';
+	                updatedDevice.isEdited = true;
+	                // Append "(Edited)" to the name if not already there
+	                if (!updatedDevice.name.includes('(Edited)') && field !== 'name') {
+	                    updatedDevice.name += ' (Edited)';
+	                }
+	            }
+	        }
+	        
+	        return updatedDevice;
+	    });
+	    
+	    updateDeviceDisplay();
+	    updateSystemAnalysis();
+	    saveDevices();
 	}
 	
 	function updateModelConfigFromPreset() {
