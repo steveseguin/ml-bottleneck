@@ -1139,7 +1139,7 @@ input, select {
 		'Mac M3 Ultra (512)': {
 			name: 'Mac M3 Ultra (512GB)',
 			memoryGB: 512,
-			localBandwidthGBps: 800,
+			localBandwidthGBps: 819,
 			networkBandwidthGBps: 40/8,
 			computeTFlops: {
 				'float32': 35,
@@ -1147,6 +1147,20 @@ input, select {
 				'float16': 70,
 				'int8': 140,
 				'q4': 210
+			},
+			type: 'CPU/Integrated GPU'
+		},
+		'Mac M4 Max (128)': {
+			name: 'Mac M3 Ultra (512GB)',
+			memoryGB: 128,
+			localBandwidthGBps: 546,
+			networkBandwidthGBps: 40/8,
+			computeTFlops: {
+				'float32': 18,
+				'bfloat16': 35,
+				'float16': 35,
+				'int8': 70,
+				'q4': 105
 			},
 			type: 'CPU/Integrated GPU'
 		},
@@ -1230,342 +1244,328 @@ input, select {
 			},
 			type: 'GPU/NVMe'
 		},
-	    'B200': {
-		name: 'NVIDIA B200',
-		memoryGB: 192,
-		localBandwidthGBps: 4800,
-		networkBandwidthGBps: 900 / 8,
-		computeTFlops: {
-		    'float32': 950,
-		    'float16': 1900,
-		    'bfloat16': 1900,
-		    'int8': 3800,
-		    'q4': 5700
-		},
-		type: 'GPU'
-	    },
-	    'AMD MI300X': {
-		name: 'AMD MI300X',
-		memoryGB: 192,
-		localBandwidthGBps: 5200,
-		networkBandwidthGBps: 400 / 8,
-		computeTFlops: {
-		    'float32': 380,
-		    'float16': 760,
-		    'bfloat16': 760,
-		    'int8': 1520,
-		    'q4': 2280
-		},
-		type: 'GPU'
-	    },
-	    'Intel Gaudi3': {
-		name: 'Intel Gaudi3',
-		memoryGB: 128,
-		localBandwidthGBps: 3600,
-		networkBandwidthGBps: 400 / 8,
-		computeTFlops: {
-		    'float32': 320,
-		    'float16': 640,
-		    'bfloat16': 640,
-		    'int8': 1280,
-		    'q4': 1920
-		},
-		type: 'AI Accelerator'
-	    },
-	    'Google TPU v5p': {
-		name: 'Google TPU v5p',
-		memoryGB: 256,
-		localBandwidthGBps: 3200,
-		networkBandwidthGBps: 400 / 8,
-		computeTFlops: {
-		    'float32': 450,
-		    'float16': 900,
-		    'bfloat16': 900,
-		    'int8': 1800,
-		    'q4': 2700
-		},
-		type: 'AI Accelerator'
-	    },
-	    'Groq LPU-1': {
-		name: 'Groq LPU-1',
-		memoryGB: 80,
-		localBandwidthGBps: 2500,
-		networkBandwidthGBps: 200 / 8,
-		computeTFlops: {
-		    'float32': 300,
-		    'float16': 600,
-		    'bfloat16': 600,
-		    'int8': 1200,
-		    'q4': 1800
-		},
-		type: 'AI Accelerator'
-	    },
-	    'Cerebras WSE-3': {
-		name: 'Cerebras WSE-3',
-		memoryGB: 40000,
-		localBandwidthGBps: 20000,
-		networkBandwidthGBps: 800 / 8,
-		computeTFlops: {
-		    'float32': 2400,
-		    'float16': 4800,
-		    'bfloat16': 4800,
-		    'int8': 9600,
-		    'q4': 14400
-		},
-		type: 'Wafer-Scale AI'
-	    },
-	    'AWS Inferentia2': {
-		name: 'AWS Inferentia2',
-		memoryGB: 32,
-		localBandwidthGBps: 1000,
-		networkBandwidthGBps: 100 / 8,
-		computeTFlops: {
-		    'float32': 180,
-		    'float16': 360,
-		    'bfloat16': 360, 
-		    'int8': 720,
-		    'q4': 1080
-		},
-		type: 'AI Accelerator'
-	    },
-	    'Apple M4 Ultra': {
-		name: 'Apple M4 Ultra',
-		memoryGB: 512,
-		localBandwidthGBps: 1800,
-		networkBandwidthGBps: 40 / 8,
-		computeTFlops: {
-		    'float32': 60,
-		    'float16': 120,
-		    'bfloat16': 120,
-		    'int8': 240,
-		    'q4': 360
-		},
-		type: 'CPU/Integrated GPU'
-	    },
-	    'RTX 6000': {
-		name: 'NVIDIA RTX 6000',
-		memoryGB: 48,
-		localBandwidthGBps: 2000,
-		networkBandwidthGBps: 100 / 8,
-		computeTFlops: {
-		    'float32': 150,
-		    'float16': 300,
-		    'bfloat16': 300,
-		    'int8': 600,
-		    'q4': 900
-		},
-		type: 'GPU'
-	    },
-	    'Threadripper Pro 7995WX': {
-		name: 'AMD Threadripper Pro 7995WX',
-		memoryGB: 1024,
-		localBandwidthGBps: 300,
-		networkBandwidthGBps: 100 / 8,
-		computeTFlops: {
-		    'float32': 8,
-		    'float16': 16,
-		    'bfloat16': 16,
-		    'int8': 32,
-		    'q4': 48
-		},
-		type: 'CPU'
-	    },
-    'GTX 1060': {
-        name: 'NVIDIA GTX 1060 6GB',
-        memoryGB: 6,
-        localBandwidthGBps: 192,
-        networkBandwidthGBps: 16, // PCIe 3.0 x16
-        computeTFlops: {
-            'float32': 4.4,
-            'float16': 8.8,
-            'bfloat16': 4.4, // No native support, falls back to float32
-            'int8': 17.6,
-            'q4': 26
-        },
-        type: 'GPU'
-    },
-    'GTX 1650': {
-        name: 'NVIDIA GTX 1650 4GB',
-        memoryGB: 4,
-        localBandwidthGBps: 128,
-        networkBandwidthGBps: 16, // PCIe 3.0 x16
-        computeTFlops: {
-            'float32': 3,
-            'float16': 6,
-            'bfloat16': 3, // Falls back to float32
-            'int8': 12,
-            'q4': 18
-        },
-        type: 'GPU'
-    },
-    'RTX 2060': {
-        name: 'NVIDIA RTX 2060 6GB',
-        memoryGB: 6,
-        localBandwidthGBps: 336,
-        networkBandwidthGBps: 16, // PCIe 3.0 x16
-        computeTFlops: {
-            'float32': 6.5,
-            'float16': 13,
-            'bfloat16': 6.5, // Falls back to float32
-            'int8': 26,
-            'q4': 39
-        },
-        type: 'GPU'
-    },
-    'RTX 3050': {
-        name: 'NVIDIA RTX 3050 8GB',
-        memoryGB: 8,
-        localBandwidthGBps: 224,
-        networkBandwidthGBps: 16, // PCIe 4.0 x8
-        computeTFlops: {
-            'float32': 9,
-            'float16': 18,
-            'bfloat16': 18,
-            'int8': 36,
-            'q4': 54
-        },
-        type: 'GPU'
-    },
-    'RTX 3060': {
-        name: 'NVIDIA RTX 3060 12GB',
-        memoryGB: 12,
-        localBandwidthGBps: 360,
-        networkBandwidthGBps: 16, // PCIe 4.0 x8
-        computeTFlops: {
-            'float32': 13,
-            'float16': 26,
-            'bfloat16': 26,
-            'int8': 52,
-            'q4': 78
-        },
-        type: 'GPU'
-    },
-    'RTX 4060': {
-        name: 'NVIDIA RTX 4060 8GB',
-        memoryGB: 8,
-        localBandwidthGBps: 272,
-        networkBandwidthGBps: 16, // PCIe 4.0 x8
-        computeTFlops: {
-            'float32': 15,
-            'float16': 30,
-            'bfloat16': 30,
-            'int8': 60,
-            'q4': 90
-        },
-        type: 'GPU'
-    },
-    'RX 6600': {
-        name: 'AMD RX 6600 8GB',
-        memoryGB: 8,
-        localBandwidthGBps: 224,
-        networkBandwidthGBps: 16, // PCIe 4.0 x8
-        computeTFlops: {
-            'float32': 9.8,
-            'float16': 19.6,
-            'bfloat16': 9.8, // Limited support
-            'int8': 39.2,
-            'q4': 59
-        },
-        type: 'GPU'
-    },
-    'RX 7600': {
-        name: 'AMD RX 7600 8GB',
-        memoryGB: 8,
-        localBandwidthGBps: 288,
-        networkBandwidthGBps: 16, // PCIe 4.0 x8
-        computeTFlops: {
-            'float32': 11,
-            'float16': 22,
-            'bfloat16': 11, // Limited support
-            'int8': 44,
-            'q4': 66
-        },
-        type: 'GPU'
-    },
-    'RX 580': {
-        name: 'AMD RX 580 8GB',
-        memoryGB: 8,
-        localBandwidthGBps: 256,
-        networkBandwidthGBps: 16, // PCIe 3.0 x16
-        computeTFlops: {
-            'float32': 6.2,
-            'float16': 12.4,
-            'bfloat16': 6.2, // No native support
-            'int8': 24.8,
-            'q4': 37
-        },
-        type: 'GPU'
-    },
-    'RTX 4060 Mobile': {
-        name: 'NVIDIA RTX 4060 Mobile 8GB',
-        memoryGB: 8,
-        localBandwidthGBps: 168,
-        networkBandwidthGBps: 8, // PCIe 4.0 x4
-        computeTFlops: {
-            'float32': 10,
-            'float16': 20,
-            'bfloat16': 20,
-            'int8': 40,
-            'q4': 60
-        },
-        type: 'Mobile GPU'
-    },
-    'Arc A770': {
-        name: 'Intel Arc A770 16GB',
-        memoryGB: 16,
-        localBandwidthGBps: 560,
-        networkBandwidthGBps: 16, // PCIe 4.0 x8
-        computeTFlops: {
-            'float32': 8.5,
-            'float16': 17,
-            'bfloat16': 17,
-            'int8': 34,
-            'q4': 51
-        },
-        type: 'GPU'
-    },
-    'Arc A380': {
-        name: 'Intel Arc A380 6GB',
-        memoryGB: 6,
-        localBandwidthGBps: 192,
-        networkBandwidthGBps: 8, // PCIe 4.0 x8
-        computeTFlops: {
-            'float32': 3.2,
-            'float16': 6.4,
-            'bfloat16': 6.4,
-            'int8': 12.8,
-            'q4': 19.2
-        },
-        type: 'GPU'
-    },
-    'GT 730': {
-        name: 'NVIDIA GT 730 2GB',
-        memoryGB: 2,
-        localBandwidthGBps: 40,
-        networkBandwidthGBps: 5, // PCIe 2.0 x8
-        computeTFlops: {
-            'float32': 0.3,
-            'float16': 0.6,
-            'bfloat16': 0.3, // No native support
-            'int8': 1.2,
-            'q4': 1.8
-        },
-        type: 'GPU'
-    },
-	'Rockchip 3588': {
-	        name: 'RK3588',
-	        memoryGB: 32,
-	        localBandwidthGBps: 38.4,
-	        networkBandwidthGBps: 2.5/8,
-	        computeTFlops: {
-	            'float16': 0.9,
-	            'int8': 1.8,
-	            'q4': 6
-	        },
-	        type: 'SBC'
-	    }
-
-	};
+		    'B200': {
+			name: 'NVIDIA B200',
+			memoryGB: 192,
+			localBandwidthGBps: 4800,
+			networkBandwidthGBps: 900 / 8,
+			computeTFlops: {
+			    'float32': 950,
+			    'float16': 1900,
+			    'bfloat16': 1900,
+			    'int8': 3800,
+			    'q4': 5700
+			},
+			type: 'GPU'
+		    },
+		    'AMD MI300X': {
+			name: 'AMD MI300X',
+			memoryGB: 192,
+			localBandwidthGBps: 5200,
+			networkBandwidthGBps: 400 / 8,
+			computeTFlops: {
+			    'float32': 380,
+			    'float16': 760,
+			    'bfloat16': 760,
+			    'int8': 1520,
+			    'q4': 2280
+			},
+			type: 'GPU'
+		    },
+		    'Intel Gaudi3': {
+			name: 'Intel Gaudi3',
+			memoryGB: 128,
+			localBandwidthGBps: 3600,
+			networkBandwidthGBps: 400 / 8,
+			computeTFlops: {
+			    'float32': 320,
+			    'float16': 640,
+			    'bfloat16': 640,
+			    'int8': 1280,
+			    'q4': 1920
+			},
+			type: 'AI Accelerator'
+		    },
+		    'Google TPU v5p': {
+			name: 'Google TPU v5p',
+			memoryGB: 256,
+			localBandwidthGBps: 3200,
+			networkBandwidthGBps: 400 / 8,
+			computeTFlops: {
+			    'float32': 450,
+			    'float16': 900,
+			    'bfloat16': 900,
+			    'int8': 1800,
+			    'q4': 2700
+			},
+			type: 'AI Accelerator'
+		    },
+		    'Groq LPU-1': {
+			name: 'Groq LPU-1',
+			memoryGB: 80,
+			localBandwidthGBps: 2500,
+			networkBandwidthGBps: 200 / 8,
+			computeTFlops: {
+			    'float32': 300,
+			    'float16': 600,
+			    'bfloat16': 600,
+			    'int8': 1200,
+			    'q4': 1800
+			},
+			type: 'AI Accelerator'
+		    },
+		    'Cerebras WSE-3': {
+			name: 'Cerebras WSE-3',
+			memoryGB: 40000,
+			localBandwidthGBps: 20000,
+			networkBandwidthGBps: 800 / 8,
+			computeTFlops: {
+			    'float32': 2400,
+			    'float16': 4800,
+			    'bfloat16': 4800,
+			    'int8': 9600,
+			    'q4': 14400
+			},
+			type: 'Wafer-Scale AI'
+		    },
+		    'AWS Inferentia2': {
+			name: 'AWS Inferentia2',
+			memoryGB: 32,
+			localBandwidthGBps: 1000,
+			networkBandwidthGBps: 100 / 8,
+			computeTFlops: {
+			    'float32': 180,
+			    'float16': 360,
+			    'bfloat16': 360, 
+			    'int8': 720,
+			    'q4': 1080
+			},
+			type: 'AI Accelerator'
+		    },
+		    'RTX 6000': {
+			name: 'NVIDIA RTX 6000',
+			memoryGB: 48,
+			localBandwidthGBps: 2000,
+			networkBandwidthGBps: 100 / 8,
+			computeTFlops: {
+			    'float32': 150,
+			    'float16': 300,
+			    'bfloat16': 300,
+			    'int8': 600,
+			    'q4': 900
+			},
+			type: 'GPU'
+		    },
+		    'Threadripper Pro 7995WX': {
+			name: 'AMD Threadripper Pro 7995WX',
+			memoryGB: 1024,
+			localBandwidthGBps: 300,
+			networkBandwidthGBps: 100 / 8,
+			computeTFlops: {
+			    'float32': 8,
+			    'float16': 16,
+			    'bfloat16': 16,
+			    'int8': 32,
+			    'q4': 48
+			},
+			type: 'CPU'
+		    },
+		    'GTX 1060': {
+		        name: 'NVIDIA GTX 1060 6GB',
+		        memoryGB: 6,
+		        localBandwidthGBps: 192,
+		        networkBandwidthGBps: 16, // PCIe 3.0 x16
+		        computeTFlops: {
+		            'float32': 4.4,
+		            'float16': 8.8,
+		            'bfloat16': 4.4, // No native support, falls back to float32
+		            'int8': 17.6,
+		            'q4': 26
+		        },
+		        type: 'GPU'
+		    },
+		    'GTX 1650': {
+		        name: 'NVIDIA GTX 1650 4GB',
+		        memoryGB: 4,
+		        localBandwidthGBps: 128,
+		        networkBandwidthGBps: 16, // PCIe 3.0 x16
+		        computeTFlops: {
+		            'float32': 3,
+		            'float16': 6,
+		            'bfloat16': 3, // Falls back to float32
+		            'int8': 12,
+		            'q4': 18
+		        },
+		        type: 'GPU'
+		    },
+		    'RTX 2060': {
+		        name: 'NVIDIA RTX 2060 6GB',
+		        memoryGB: 6,
+		        localBandwidthGBps: 336,
+		        networkBandwidthGBps: 16, // PCIe 3.0 x16
+		        computeTFlops: {
+		            'float32': 6.5,
+		            'float16': 13,
+		            'bfloat16': 6.5, // Falls back to float32
+		            'int8': 26,
+		            'q4': 39
+		        },
+		        type: 'GPU'
+		    },
+		    'RTX 3050': {
+		        name: 'NVIDIA RTX 3050 8GB',
+		        memoryGB: 8,
+		        localBandwidthGBps: 224,
+		        networkBandwidthGBps: 16, // PCIe 4.0 x8
+		        computeTFlops: {
+		            'float32': 9,
+		            'float16': 18,
+		            'bfloat16': 18,
+		            'int8': 36,
+		            'q4': 54
+		        },
+		        type: 'GPU'
+		    },
+		    'RTX 3060': {
+		        name: 'NVIDIA RTX 3060 12GB',
+		        memoryGB: 12,
+		        localBandwidthGBps: 360,
+		        networkBandwidthGBps: 16, // PCIe 4.0 x8
+		        computeTFlops: {
+		            'float32': 13,
+		            'float16': 26,
+		            'bfloat16': 26,
+		            'int8': 52,
+		            'q4': 78
+		        },
+		        type: 'GPU'
+		    },
+		    'RTX 4060': {
+		        name: 'NVIDIA RTX 4060 8GB',
+		        memoryGB: 8,
+		        localBandwidthGBps: 272,
+		        networkBandwidthGBps: 16, // PCIe 4.0 x8
+		        computeTFlops: {
+		            'float32': 15,
+		            'float16': 30,
+		            'bfloat16': 30,
+		            'int8': 60,
+		            'q4': 90
+		        },
+		        type: 'GPU'
+		    },
+		    'RX 6600': {
+		        name: 'AMD RX 6600 8GB',
+		        memoryGB: 8,
+		        localBandwidthGBps: 224,
+		        networkBandwidthGBps: 16, // PCIe 4.0 x8
+		        computeTFlops: {
+		            'float32': 9.8,
+		            'float16': 19.6,
+		            'bfloat16': 9.8, // Limited support
+		            'int8': 39.2,
+		            'q4': 59
+		        },
+		        type: 'GPU'
+		    },
+		    'RX 7600': {
+		        name: 'AMD RX 7600 8GB',
+		        memoryGB: 8,
+		        localBandwidthGBps: 288,
+		        networkBandwidthGBps: 16, // PCIe 4.0 x8
+		        computeTFlops: {
+		            'float32': 11,
+		            'float16': 22,
+		            'bfloat16': 11, // Limited support
+		            'int8': 44,
+		            'q4': 66
+		        },
+		        type: 'GPU'
+		    },
+		    'RX 580': {
+		        name: 'AMD RX 580 8GB',
+		        memoryGB: 8,
+		        localBandwidthGBps: 256,
+		        networkBandwidthGBps: 16, // PCIe 3.0 x16
+		        computeTFlops: {
+		            'float32': 6.2,
+		            'float16': 12.4,
+		            'bfloat16': 6.2, // No native support
+		            'int8': 24.8,
+		            'q4': 37
+		        },
+		        type: 'GPU'
+		    },
+		    'RTX 4060 Mobile': {
+		        name: 'NVIDIA RTX 4060 Mobile 8GB',
+		        memoryGB: 8,
+		        localBandwidthGBps: 168,
+		        networkBandwidthGBps: 8, // PCIe 4.0 x4
+		        computeTFlops: {
+		            'float32': 10,
+		            'float16': 20,
+		            'bfloat16': 20,
+		            'int8': 40,
+		            'q4': 60
+		        },
+		        type: 'Mobile GPU'
+		    },
+		    'Arc A770': {
+		        name: 'Intel Arc A770 16GB',
+		        memoryGB: 16,
+		        localBandwidthGBps: 560,
+		        networkBandwidthGBps: 16, // PCIe 4.0 x8
+		        computeTFlops: {
+		            'float32': 8.5,
+		            'float16': 17,
+		            'bfloat16': 17,
+		            'int8': 34,
+		            'q4': 51
+		        },
+		        type: 'GPU'
+		    },
+		    'Arc A380': {
+		        name: 'Intel Arc A380 6GB',
+		        memoryGB: 6,
+		        localBandwidthGBps: 192,
+		        networkBandwidthGBps: 8, // PCIe 4.0 x8
+		        computeTFlops: {
+		            'float32': 3.2,
+		            'float16': 6.4,
+		            'bfloat16': 6.4,
+		            'int8': 12.8,
+		            'q4': 19.2
+		        },
+		        type: 'GPU'
+		    },
+		    'GT 730': {
+		        name: 'NVIDIA GT 730 2GB',
+		        memoryGB: 2,
+		        localBandwidthGBps: 40,
+		        networkBandwidthGBps: 5, // PCIe 2.0 x8
+		        computeTFlops: {
+		            'float32': 0.3,
+		            'float16': 0.6,
+		            'bfloat16': 0.3, // No native support
+		            'int8': 1.2,
+		            'q4': 1.8
+		        },
+		        type: 'GPU'
+		    },
+		'Rockchip 3588': {
+			name: 'RK3588',
+			memoryGB: 32,
+			localBandwidthGBps: 38.4,
+			networkBandwidthGBps: 2.5/8,
+			computeTFlops: {
+			    'float16': 0.9,
+			    'int8': 1.8,
+			    'q4': 6
+			},
+			type: 'SBC'
+		    }
+	
+		};
         let devices = [{
             id: 1,
             name: 'Device 1',
