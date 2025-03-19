@@ -824,42 +824,55 @@ input, select {
             'q4': 0.5
         };
 	const MODEL_PRESETS = {
-		'llama3_8b': {
-			totalParamsB: 8,
-			hiddenSize: 3072,
-			numLayers: 32,
-			numHeads: 32
-		},
-		'llama3_70b': {
-			totalParamsB: 70,
-			hiddenSize: 8192,
-			numLayers: 80,
-			numHeads: 64
-		},
-		'mistral_7b': {
-			totalParamsB: 7,
-			hiddenSize: 4096,
-			numLayers: 32,
-			numHeads: 32
-		},
-		'deepseek_v3': {
-			totalParamsB: 671,
-			hiddenSize: 8192,
-			numLayers: 64,
-			numHeads: 64
-		},
-		'large_model_400b': {
-			totalParamsB: 400,
-			hiddenSize: 16384,
-			numLayers: 120,
-			numHeads: 128
-		},
-		'very_large_model_1t': {
-			totalParamsB: 1000,
-			hiddenSize: 32768,
-			numLayers: 200,
-			numHeads: 256
-		}
+	    'llama3_8b': {
+	        totalParamsB: 8,
+	        hiddenSize: 3072,
+	        numLayers: 32,
+	        numHeads: 32
+	    },
+	    'llama3_70b': {
+	        totalParamsB: 70,
+	        hiddenSize: 8192,
+	        numLayers: 80,
+	        numHeads: 64
+	    },
+	    'mistral_7b': {
+	        totalParamsB: 7,
+	        hiddenSize: 4096,
+	        numLayers: 32,
+	        numHeads: 32
+	    },
+	    'mistral_small_3.1_24b': {
+	        totalParamsB: 24,
+	        hiddenSize: 5120,
+	        numLayers: 40,
+	        numHeads: 32,
+	        numKVHeads: 8,
+	        intermediateSize: 32768,
+	        maxPositionEmbeddings: 131072,
+	        hasVision: true,
+	        visionHiddenSize: 1024,
+	        visionNumLayers: 24,
+	        visionNumHeads: 16
+	    },
+	    'deepseek_v3': {
+	        totalParamsB: 671,
+	        hiddenSize: 8192,
+	        numLayers: 64,
+	        numHeads: 64
+	    },
+	    'large_model_400b': {
+	        totalParamsB: 400,
+	        hiddenSize: 16384,
+	        numLayers: 120,
+	        numHeads: 128
+	    },
+	    'very_large_model_1t': {
+	        totalParamsB: 1000,
+	        hiddenSize: 32768,
+	        numLayers: 200,
+	        numHeads: 256
+	    }
 	};
         const DEVICE_TEMPLATES = {
 		'Custom': {
