@@ -2457,13 +2457,32 @@ DeepSeek V3	FP16		NVIDIA H800 x 2048					https://www.infoq.com/news/2025/01/deep
         document.getElementById('quantizationFilter').addEventListener('input', filterTable);
 
 	document.addEventListener('DOMContentLoaded', function() {
-        	renderTable(data);
-		
-	        if(localStorage.getItem('savedDevices')) {
-	            document.getElementById('loadDevicesBtn').removeAttribute('disabled');
-	        } else {
-	            document.getElementById('loadDevicesBtn').setAttribute('disabled', true);
+	    const modelPresetSelect = document.getElementById('modelPreset');
+	    modelPresetSelect.innerHTML = '<option value="">Custom</option>';
+	    
+	    // Add options from MODEL_PRESETS object
+	    Object.keys(MODEL_PRESETS).forEach(key => {
+	        const option = document.createElement('option');
+	        option.value = key;
+	        option.textContent = MODEL_PRESETS[key].totalParamsB + 'B ' + key.split('_').map(word => 
+	            word.charAt(0).toUpperCase() + word.slice(1)
+	        ).join(' ').replace(/([0-9]+[a-z])/i, match => match.toUpperCase());
+	        
+	        // Set Llama 3 8B as selected by default
+	        if (key === 'llama3_8b') {
+	            option.selected = true;
 	        }
+	        
+	        modelPresetSelect.appendChild(option);
+	    });
+	    
+	    renderTable(data);
+	    
+	    if(localStorage.getItem('savedDevices')) {
+	        document.getElementById('loadDevicesBtn').removeAttribute('disabled');
+	    } else {
+	        document.getElementById('loadDevicesBtn').setAttribute('disabled', true);
+	    }
 	});
         
     </script>
