@@ -824,55 +824,188 @@ input, select {
             'q4': 0.5
         };
 	const MODEL_PRESETS = {
-	    'llama3_8b': {
-	        totalParamsB: 8,
-	        hiddenSize: 3072,
-	        numLayers: 32,
-	        numHeads: 32
-	    },
-	    'llama3_70b': {
-	        totalParamsB: 70,
-	        hiddenSize: 8192,
-	        numLayers: 80,
-	        numHeads: 64
-	    },
-	    'mistral_7b': {
-	        totalParamsB: 7,
-	        hiddenSize: 4096,
-	        numLayers: 32,
-	        numHeads: 32
-	    },
-	    'mistral_small_3.1_24b': {
-	        totalParamsB: 24,
-	        hiddenSize: 5120,
-	        numLayers: 40,
-	        numHeads: 32,
-	        numKVHeads: 8,
-	        intermediateSize: 32768,
-	        maxPositionEmbeddings: 131072,
-	        hasVision: true,
-	        visionHiddenSize: 1024,
-	        visionNumLayers: 24,
-	        visionNumHeads: 16
-	    },
-	    'deepseek_v3': {
-	        totalParamsB: 671,
-	        hiddenSize: 8192,
-	        numLayers: 64,
-	        numHeads: 64
-	    },
-	    'large_model_400b': {
-	        totalParamsB: 400,
-	        hiddenSize: 16384,
-	        numLayers: 120,
-	        numHeads: 128
-	    },
-	    'very_large_model_1t': {
-	        totalParamsB: 1000,
-	        hiddenSize: 32768,
-	        numLayers: 200,
-	        numHeads: 256
-	    }
+	  'llama3_8b': {
+	    totalParamsB: 8,
+	    hiddenSize: 3072,
+	    numLayers: 32,
+	    numHeads: 32
+	  },
+	  'llama3_70b': {
+	    totalParamsB: 70,
+	    hiddenSize: 8192,
+	    numLayers: 80,
+	    numHeads: 64
+	  },
+	  'mistral_7b': {
+	    totalParamsB: 7,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 32
+	  },
+	  'mistral_small_3.1_24b': {
+	    totalParamsB: 24,
+	    hiddenSize: 5120,
+	    numLayers: 40,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    intermediateSize: 32768,
+	    maxPositionEmbeddings: 131072,
+	    hasVision: true,
+	    visionHiddenSize: 1024,
+	    visionNumLayers: 24,
+	    visionNumHeads: 16
+	  },
+	  'deepseek_v3': {
+	    totalParamsB: 671,
+	    hiddenSize: 8192,
+	    numLayers: 64,
+	    numHeads: 64
+	  },
+	  'phi3_14b': {
+	    totalParamsB: 14,
+	    hiddenSize: 5120,
+	    numLayers: 32,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    intermediateSize: 20480
+	  },
+	  'phi3_3.8b': {
+	    totalParamsB: 3.8,
+	    hiddenSize: 3072,
+	    numLayers: 32,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    intermediateSize: 12288
+	  },
+	  'claude_3_opus': {
+	    totalParamsB: 175,
+	    hiddenSize: 16384,
+	    numLayers: 80,
+	    numHeads: 128,
+	    maxPositionEmbeddings: 128000,
+	    hasVision: true,
+	    visionHiddenSize: 1280,
+	    visionNumLayers: 32,
+	    visionNumHeads: 16
+	  },
+	  'claude_3_5_sonnet': {
+	    totalParamsB: 82,
+	    hiddenSize: 8192,
+	    numLayers: 40,
+	    numHeads: 64,
+	    maxPositionEmbeddings: 128000,
+	    hasVision: true,
+	    visionHiddenSize: 1024,
+	    visionNumLayers: 24,
+	    visionNumHeads: 16
+	  },
+	  'mixtral_8x7b': {
+	    totalParamsB: 47,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    numExperts: 8,
+	    activeExperts: 2
+	  },
+	  'mixtral_8x22b': {
+	    totalParamsB: 141,
+	    hiddenSize: 6144,
+	    numLayers: 56,
+	    numHeads: 48,
+	    numKVHeads: 8,
+	    numExperts: 8,
+	    activeExperts: 2
+	  },
+	  'gemma_7b': {
+	    totalParamsB: 8.5,
+	    hiddenSize: 3072,
+	    numLayers: 28,
+	    numHeads: 16,
+	    numKVHeads: 1,
+	    intermediateSize: 24576
+	  },
+	  'gemma_2b': {
+	    totalParamsB: 2.5,
+	    hiddenSize: 2048,
+	    numLayers: 18,
+	    numHeads: 8,
+	    numKVHeads: 1,
+	    intermediateSize: 16384
+	  },
+	  'gemma3_27b': {
+	    totalParamsB: 27,
+	    hiddenSize: 5376,
+	    numLayers: 62,
+	    numHeads: 32,
+	    numKVHeads: 16,
+	    intermediateSize: 21504,
+	    slidingWindow: 1024,
+	    hasVision: true,
+	    visionHiddenSize: 1152,
+	    visionNumLayers: 27,
+	    visionNumHeads: 16,
+	    imageSize: 896,
+	    ropeScalingFactor: 8.0
+	  },
+	  'yi_34b': {
+	    totalParamsB: 34,
+	    hiddenSize: 7168,
+	    numLayers: 60,
+	    numHeads: 56,
+	    numKVHeads: 8
+	  },
+	  'yi_large_200b': {
+	    totalParamsB: 200,
+	    hiddenSize: 12288,
+	    numLayers: 80,
+	    numHeads: 96,
+	    numKVHeads: 12
+	  },
+	  'falcon_40b': {
+	    totalParamsB: 40,
+	    hiddenSize: 8192,
+	    numLayers: 60,
+	    numHeads: 128,
+	    intermediateSize: 22016
+	  },
+	  'bloom_176b': {
+	    totalParamsB: 176,
+	    hiddenSize: 14336,
+	    numLayers: 70,
+	    numHeads: 112,
+	    intermediateSize: 57344
+	  },
+	  'gpt_neox_20b': {
+	    totalParamsB: 20,
+	    hiddenSize: 6144,
+	    numLayers: 44,
+	    numHeads: 64
+	  },
+	  'mpt_30b': {
+	    totalParamsB: 30,
+	    hiddenSize: 7168,
+	    numLayers: 48,
+	    numHeads: 64
+	  },
+	  'vicuna_13b': {
+	    totalParamsB: 13,
+	    hiddenSize: 5120,
+	    numLayers: 40,
+	    numHeads: 40
+	  },
+	  'large_model_400b': {
+	    totalParamsB: 400,
+	    hiddenSize: 16384,
+	    numLayers: 120,
+	    numHeads: 128
+	  },
+	  'very_large_model_1t': {
+	    totalParamsB: 1000,
+	    hiddenSize: 32768,
+	    numLayers: 200,
+	    numHeads: 256
+	  }
 	};
         const DEVICE_TEMPLATES = {
 		'Custom': {
