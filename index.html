@@ -2863,24 +2863,25 @@ const DEVICE_TEMPLATES = {
                 overflowBandwidthGBps = device.ddr5BandwidthGBps || OVERFLOW_BANDWIDTH['ddr5_7200'];
                 bottleneckReason = 'DDR5 RAM overflow';
             } else if (device.overflowTarget && typeof device.overflowTarget === 'number') {
-                // Overflow to another GPU via PCIe
+                // Overflow to another device via network/interconnect
                 const targetDevice = allDevices.find(d => d.id === device.overflowTarget);
                 if (targetDevice) {
-                    // Use the slower of the two PCIe connections
-                    const sourcePcie = PCIE_BANDWIDTH[`pcie${device.pcieGeneration || 4}`];
-                    const targetPcie = PCIE_BANDWIDTH[`pcie${targetDevice.pcieGeneration || 4}`];
-                    const sourceBw = sourcePcie ? sourcePcie[`x${device.pcieLanes || 16}`] : 32;
-                    const targetBw = targetPcie ? targetPcie[`x${targetDevice.pcieLanes || 16}`] : 32;
+                    // Use the slower of the two network bandwidths
+                    const sourceBw = device.networkBandwidthGBps || 32;
+                    const targetBw = targetDevice.networkBandwidthGBps || 32;
                     overflowBandwidthGBps = Math.min(sourceBw, targetBw);
-                    bottleneckReason = `PCIe to ${targetDevice.name}`;
+                    // Show interconnect type if available
+                    const interconnectLabel = device.interconnectType
+                        ? device.interconnectType.replace(/_/g, ' ')
+                        : `${overflowBandwidthGBps} GB/s`;
+                    bottleneckReason = `${interconnectLabel} to ${targetDevice.name}`;
                 } else {
-                    // Fallback: use device's own PCIe bandwidth
-                    const pcieBw = PCIE_BANDWIDTH[`pcie${device.pcieGeneration || 4}`];
-                    overflowBandwidthGBps = pcieBw ? pcieBw[`x${device.pcieLanes || 16}`] : 32;
-                    bottleneckReason = 'PCIe overflow';
+                    // Fallback: use device's own network bandwidth
+                    overflowBandwidthGBps = device.networkBandwidthGBps || 32;
+                    bottleneckReason = 'Network overflow';
                 }
             } else {
-                // Default: assume overflow to system RAM via PCIe
+                // Default: assume overflow to system RAM
                 // This represents the typical case where model doesn't fit in VRAM
                 overflowBandwidthGBps = OVERFLOW_BANDWIDTH['ddr5_7200'];
                 bottleneckReason = 'System RAM overflow (auto)';
@@ -2969,6 +2970,17 @@ const DEVICE_TEMPLATES = {
             return pcieBw ? pcieBw[`x${lanes || 16}`] : 32;
         }
 
+        /**
+         * Apply an interconnect preset to set network bandwidth
+         */
+        function applyInterconnectPreset(deviceId, presetKey) {
+            if (!presetKey || !INTERCONNECT_BANDWIDTH[presetKey]) return;
+
+            const bandwidth = INTERCONNECT_BANDWIDTH[presetKey];
+            updateDevice(deviceId, 'networkBandwidthGBps', bandwidth);
+            updateDevice(deviceId, 'interconnectType', presetKey);
+        }
+
 	// Load devices from localStorage
 	function loadDevices() {
 	    const savedDevices = localStorage.getItem('savedDevices');
@@ -3048,7 +3060,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'RTX 5090 (Primary)',
 	                    template: 'RTX 5090',
 	                    ...DEVICE_TEMPLATES['RTX 5090'],
-	                    pcieLanes: 16,
+	                    networkBandwidthGBps: 4,
+	                    interconnectType: 'pcie5_x1',
 	                    overflowTarget: 2
 	                },
 	                {
@@ -3056,7 +3069,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'RTX 5060 Ti (Secondary via x1)',
 	                    template: 'RTX 5060 Ti 16GB',
 	                    ...DEVICE_TEMPLATES['RTX 5060 Ti 16GB'],
-	                    pcieLanes: 1  // x1 slot = ~4 GB/s PCIe 5.0
+	                    networkBandwidthGBps: 4,
+	                    interconnectType: 'pcie5_x1'
 	                }
 	            ];
 	            break;
@@ -3068,7 +3082,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'RTX 5090 (x8)',
 	                    template: 'RTX 5090',
 	                    ...DEVICE_TEMPLATES['RTX 5090'],
-	                    pcieLanes: 8,
+	                    networkBandwidthGBps: 32,
+	                    interconnectType: 'pcie5_x8',
 	                    overflowTarget: 2
 	                },
 	                {
@@ -3076,7 +3091,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'RTX 5060 Ti (x8)',
 	                    template: 'RTX 5060 Ti 16GB',
 	                    ...DEVICE_TEMPLATES['RTX 5060 Ti 16GB'],
-	                    pcieLanes: 8
+	                    networkBandwidthGBps: 32,
+	                    interconnectType: 'pcie5_x8'
 	                }
 	            ];
 	            break;
@@ -3088,7 +3104,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'RTX 5090 (Primary)',
 	                    template: 'RTX 5090',
 	                    ...DEVICE_TEMPLATES['RTX 5090'],
-	                    pcieLanes: 16,
+	                    networkBandwidthGBps: 8,
+	                    interconnectType: 'oculink_x4',
 	                    overflowTarget: 2
 	                },
 	                {
@@ -3096,8 +3113,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'eGPU via Oculink (x4)',
 	                    template: 'RTX 5060 Ti 16GB',
 	                    ...DEVICE_TEMPLATES['RTX 5060 Ti 16GB'],
-	                    pcieGeneration: 4,  // Oculink is typically PCIe 4.0
-	                    pcieLanes: 4        // x4 = ~8 GB/s
+	                    networkBandwidthGBps: 8,
+	                    interconnectType: 'oculink_x4'
 	                }
 	            ];
 	            break;
@@ -3109,7 +3126,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'RTX 5090 #1',
 	                    template: 'RTX 5090',
 	                    ...DEVICE_TEMPLATES['RTX 5090'],
-	                    pcieLanes: 16,
+	                    networkBandwidthGBps: 64,
+	                    interconnectType: 'pcie5_x16',
 	                    overflowTarget: 2
 	                },
 	                {
@@ -3117,7 +3135,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'RTX 5090 #2',
 	                    template: 'RTX 5090',
 	                    ...DEVICE_TEMPLATES['RTX 5090'],
-	                    pcieLanes: 16
+	                    networkBandwidthGBps: 64,
+	                    interconnectType: 'pcie5_x16'
 	                }
 	            ];
 	            break;
@@ -3140,7 +3159,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'RTX 4090 (x8)',
 	                    template: 'RTX 4090',
 	                    ...DEVICE_TEMPLATES['RTX 4090'],
-	                    pcieLanes: 8,
+	                    networkBandwidthGBps: 16,
+	                    interconnectType: 'pcie4_x8',
 	                    overflowTarget: 2
 	                },
 	                {
@@ -3148,7 +3168,8 @@ const DEVICE_TEMPLATES = {
 	                    name: 'RTX 4080 (x8)',
 	                    template: 'RTX 4080',
 	                    ...DEVICE_TEMPLATES['RTX 4080'],
-	                    pcieLanes: 8
+	                    networkBandwidthGBps: 16,
+	                    interconnectType: 'pcie4_x8'
 	                }
 	            ];
 	            break;
@@ -3187,7 +3208,9 @@ const DEVICE_TEMPLATES = {
 	                    id: i,
 	                    name: `H100 #${i}`,
 	                    template: 'H100',
-	                    ...DEVICE_TEMPLATES['H100']
+	                    ...DEVICE_TEMPLATES['H100'],
+	                    networkBandwidthGBps: 450,
+	                    interconnectType: 'nvlink4'
 	                });
 	            }
 	            break;
@@ -3620,20 +3643,67 @@ const DEVICE_TEMPLATES = {
 	                           oninput="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
-	                    <label>PCIe Generation</label>
-	                    <select class="input" onchange="updateDevice(${device.id}, 'pcieGeneration', parseInt(this.value))">
-	                        <option value="3" ${(device.pcieGeneration || 4) === 3 ? 'selected' : ''}>Gen 3 (8 GT/s)</option>
-	                        <option value="4" ${(device.pcieGeneration || 4) === 4 ? 'selected' : ''}>Gen 4 (16 GT/s)</option>
-	                        <option value="5" ${(device.pcieGeneration || 4) === 5 ? 'selected' : ''}>Gen 5 (32 GT/s)</option>
-	                    </select>
+	                    <label>Network/Interconnect BW (GB/s)</label>
+	                    <input type="number" class="input" value="${device.networkBandwidthGBps || 32}"
+	                           onchange="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)"
+	                           oninput="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
-	                    <label>PCIe Lanes (${getPcieBandwidth(device.pcieGeneration, device.pcieLanes)} GB/s)</label>
-	                    <select class="input" onchange="updateDevice(${device.id}, 'pcieLanes', parseInt(this.value))">
-	                        <option value="1" ${(device.pcieLanes || 16) === 1 ? 'selected' : ''}>x1</option>
-	                        <option value="4" ${(device.pcieLanes || 16) === 4 ? 'selected' : ''}>x4</option>
-	                        <option value="8" ${(device.pcieLanes || 16) === 8 ? 'selected' : ''}>x8</option>
-	                        <option value="16" ${(device.pcieLanes || 16) === 16 ? 'selected' : ''}>x16</option>
+	                    <label>Interconnect Preset</label>
+	                    <select class="input" onchange="applyInterconnectPreset(${device.id}, this.value)">
+	                        <option value="">Custom</option>
+	                        <optgroup label="PCIe">
+	                            <option value="pcie3_x1">PCIe 3.0 x1 (1 GB/s)</option>
+	                            <option value="pcie3_x4">PCIe 3.0 x4 (4 GB/s)</option>
+	                            <option value="pcie3_x8">PCIe 3.0 x8 (8 GB/s)</option>
+	                            <option value="pcie3_x16">PCIe 3.0 x16 (16 GB/s)</option>
+	                            <option value="pcie4_x1">PCIe 4.0 x1 (2 GB/s)</option>
+	                            <option value="pcie4_x4">PCIe 4.0 x4 (8 GB/s)</option>
+	                            <option value="pcie4_x8">PCIe 4.0 x8 (16 GB/s)</option>
+	                            <option value="pcie4_x16">PCIe 4.0 x16 (32 GB/s)</option>
+	                            <option value="pcie5_x1">PCIe 5.0 x1 (4 GB/s)</option>
+	                            <option value="pcie5_x4">PCIe 5.0 x4 (16 GB/s)</option>
+	                            <option value="pcie5_x8">PCIe 5.0 x8 (32 GB/s)</option>
+	                            <option value="pcie5_x16">PCIe 5.0 x16 (64 GB/s)</option>
+	                            <option value="pcie6_x16">PCIe 6.0 x16 (128 GB/s)</option>
+	                        </optgroup>
+	                        <optgroup label="Thunderbolt / USB4">
+	                            <option value="thunderbolt3">Thunderbolt 3 (5 GB/s)</option>
+	                            <option value="thunderbolt4">Thunderbolt 4 (5 GB/s)</option>
+	                            <option value="thunderbolt5">Thunderbolt 5 (10 GB/s)</option>
+	                            <option value="usb4_40">USB4 40Gbps (5 GB/s)</option>
+	                            <option value="usb4_80">USB4 80Gbps (10 GB/s)</option>
+	                            <option value="usb4_120">USB4 120Gbps (15 GB/s)</option>
+	                        </optgroup>
+	                        <optgroup label="Oculink">
+	                            <option value="oculink_x4">Oculink x4 (8 GB/s)</option>
+	                            <option value="oculink_x8">Oculink x8 (16 GB/s)</option>
+	                        </optgroup>
+	                        <optgroup label="Ethernet">
+	                            <option value="1gbe">1 GbE (0.125 GB/s)</option>
+	                            <option value="10gbe">10 GbE (1.25 GB/s)</option>
+	                            <option value="25gbe">25 GbE (3.1 GB/s)</option>
+	                            <option value="40gbe">40 GbE (5 GB/s)</option>
+	                            <option value="100gbe">100 GbE (12.5 GB/s)</option>
+	                            <option value="200gbe">200 GbE (25 GB/s)</option>
+	                            <option value="400gbe">400 GbE (50 GB/s)</option>
+	                            <option value="800gbe">800 GbE (100 GB/s)</option>
+	                        </optgroup>
+	                        <optgroup label="InfiniBand">
+	                            <option value="ib_fdr">InfiniBand FDR (6.8 GB/s)</option>
+	                            <option value="ib_edr">InfiniBand EDR (12.5 GB/s)</option>
+	                            <option value="ib_hdr">InfiniBand HDR (25 GB/s)</option>
+	                            <option value="ib_ndr">InfiniBand NDR (50 GB/s)</option>
+	                            <option value="ib_xdr">InfiniBand XDR (100 GB/s)</option>
+	                        </optgroup>
+	                        <optgroup label="NVLink / Proprietary">
+	                            <option value="nvlink3">NVLink 3.0 A100 (300 GB/s)</option>
+	                            <option value="nvlink4">NVLink 4.0 H100 (450 GB/s)</option>
+	                            <option value="nvlink5">NVLink 5.0 B200 (900 GB/s)</option>
+	                            <option value="nvswitch">NVSwitch (450 GB/s)</option>
+	                            <option value="infinity_fabric">AMD Infinity Fabric (100 GB/s)</option>
+	                            <option value="ultrafusion">Apple UltraFusion (2500 GB/s)</option>
+	                        </optgroup>
 	                    </select>
 	                </div>
 	                <div>
@@ -4408,8 +4478,14 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                             targetY = targetNode.y;
                             targetW = targetNode.width;
                             targetH = targetNode.height;
-                            bandwidth = getPcieBandwidth(device.pcieGeneration, device.pcieLanes);
-                            label = `PCIe ${device.pcieGeneration || 4} x${device.pcieLanes || 16}`;
+                            // Use networkBandwidthGBps for connection bandwidth
+                            bandwidth = device.networkBandwidthGBps || 32;
+                            // Show interconnect type if available
+                            if (device.interconnectType) {
+                                label = device.interconnectType.replace(/_/g, ' ').toUpperCase();
+                            } else {
+                                label = `${bandwidth} GB/s`;
+                            }
                         } else {
                             return;
                         }
@@ -4495,11 +4571,14 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                 ctx.font = '11px system-ui';
                 ctx.fillText(`${device.memoryGB} GB | ${device.localBandwidthGBps} GB/s`, node.x + node.width/2, node.y + 55);
 
-                // PCIe info
-                if (device.pcieGeneration) {
+                // Network/Interconnect info
+                if (device.networkBandwidthGBps) {
                     ctx.font = '10px system-ui';
                     ctx.fillStyle = '#888';
-                    ctx.fillText(`PCIe ${device.pcieGeneration}.0 x${device.pcieLanes || 16}`, node.x + node.width/2, node.y + 72);
+                    const netInfo = device.interconnectType
+                        ? device.interconnectType.replace(/_/g, ' ')
+                        : `Network: ${device.networkBandwidthGBps} GB/s`;
+                    ctx.fillText(netInfo, node.x + node.width/2, node.y + 72);
                 }
 
                 // TFLOPs badge
