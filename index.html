@@ -670,6 +670,77 @@ input, select {
     font-size: 0.8rem;
 }
 
+/* Collapsible section styles */
+.collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    user-select: none;
+}
+.collapsible-header h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.collapsible-header .toggle-icon {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    transition: transform 0.2s ease;
+}
+.collapsible-header.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+.collapsible-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+}
+.collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+}
+
+/* Quick summary badge */
+.quick-summary {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: normal;
+}
+
+/* Improved card transitions */
+.card {
+    transition: all 0.2s ease;
+}
+.card:hover {
+    border-color: var(--primary);
+}
+
+/* Progress indicator */
+.progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ade80, #22c55e);
+    transition: width 0.3s ease;
+}
+.progress-bar-fill.warning {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+.progress-bar-fill.danger {
+    background: linear-gradient(90deg, #f87171, #ef4444);
+}
+
 @media (max-width: 768px) {
     body {
         padding: 1rem;
@@ -699,8 +770,11 @@ input, select {
 
     <div class="grid">
         <div class="card">
-            <h2>Model Configuration</h2>
-            <div id="modelConfig">
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <h2>Model Configuration <span class="toggle-icon">▼</span></h2>
+                <span class="quick-summary" id="modelSummary">Llama3 8b @ Q4</span>
+            </div>
+            <div class="collapsible-content" id="modelConfigContent">
                 <div class="inline-select-group">
                     <label for="modelPreset">Model Preset</label>
                     <select id="modelPreset" class="input">
@@ -758,9 +832,9 @@ input, select {
 
                     <label for="quantizationType">Quantization</label>
                     <select id="quantizationType" class="input">
-                        <option value="q4">Q4</option>
+                        <option value="q4" selected>Q4 (Recommended)</option>
                         <option value="int8">INT8</option>
-                        <option value="float16" selected>FP16</option>
+                        <option value="float16">FP16</option>
                         <option value="bfloat16">BF16</option>
                         <option value="float32">FP32</option>
                     </select>
@@ -787,14 +861,15 @@ input, select {
                 <label style="display: none;">Data Type</label>
                 <select id="dtype" class="input" style="display: none;">
                     <option value="float32">float32</option>
-                    <option value="bfloat16" selected>bfloat16</option>
+                    <option value="bfloat16">bfloat16</option>
                     <option value="float16">float16</option>
                     <option value="int8">int8</option>
-                    <option value="q4">q4</option>
+                    <option value="q4" selected>q4</option>
                 </select>
 
                 <label>Parallelism Strategy</label>
                 <select id="parallelismStrategy" class="input">
+                    <option value="auto">AUTO (Find Optimal)</option>
                     <option value="pipeline">Pipeline Parallelism (PP)</option>
                     <option value="tensor">Tensor Parallelism (TP)</option>
                     <option value="data">Data Parallelism (DP)</option>
@@ -812,6 +887,7 @@ input, select {
                     <option value="continuous_batching">Continuous Batching</option>
                     <option value="paged_attention">PagedAttention (vLLM)</option>
                     <option value="flash_attention">Flash Attention</option>
+                    <option value="exo_phase_split">EXO Phase Split (Prefill/Decode)</option>
                 </select>
 
                 <label>Batch Size</label>
@@ -824,6 +900,7 @@ input, select {
                     <option value="64">64 (Max throughput)</option>
                 </select>
             </div>
+        </div>
         </div>
 
 	<div class="card">
@@ -949,6 +1026,7 @@ input, select {
             'thunderbolt3': 5,       // TB3: 40 Gbps = ~5 GB/s usable
             'thunderbolt4': 5,       // TB4: 40 Gbps = ~5 GB/s usable
             'thunderbolt5': 10,      // TB5: 80 Gbps = ~10 GB/s usable
+            'thunderbolt5_rdma': 40, // TB5 with RDMA enabled (~40 GB/s, used by EXO)
             // Oculink
             'oculink_x4': 8,         // Oculink PCIe 4.0 x4
             'oculink_x8': 16,        // Oculink PCIe 4.0 x8
@@ -1041,9 +1119,14 @@ input, select {
 	  },
 	  'deepseek_v3_671b': {
 	    totalParamsB: 671,
-	    hiddenSize: 8192,
-	    numLayers: 64,
-	    numHeads: 64
+	    hiddenSize: 7168,
+	    numLayers: 61,
+	    numHeads: 128,
+	    numKVHeads: 128,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 37
 	  },
 	  'phi3_14b': {
 	    totalParamsB: 14,
@@ -1067,8 +1150,10 @@ input, select {
 	    numLayers: 32,
 	    numHeads: 32,
 	    numKVHeads: 8,
+	    isMoE: true,
 	    numExperts: 8,
-	    activeExperts: 2
+	    activeExperts: 2,
+	    activeParamsB: 12.9
 	  },
 	  'mixtral_8x22b': {
 	    totalParamsB: 141,
@@ -1076,8 +1161,10 @@ input, select {
 	    numLayers: 56,
 	    numHeads: 48,
 	    numKVHeads: 8,
+	    isMoE: true,
 	    numExperts: 8,
-	    activeExperts: 2
+	    activeExperts: 2,
+	    activeParamsB: 39
 	  },
 	  'gemma_7b': {
 	    totalParamsB: 8.5,
@@ -1646,6 +1733,31 @@ input, select {
 	    numLayers: 48,
 	    numHeads: 32,
 	    isAudioModel: true
+	  },
+	  // EXO-supported models
+	  'kimi_k2': {
+	    totalParamsB: 1000,
+	    hiddenSize: 8192,
+	    numLayers: 80,
+	    numHeads: 64,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 32
+	  },
+	  'llava_1.5_7b': {
+	    totalParamsB: 7,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 32,
+	    hasVision: true
+	  },
+	  'llava_1.5_13b': {
+	    totalParamsB: 13,
+	    hiddenSize: 5120,
+	    numLayers: 40,
+	    numHeads: 40,
+	    hasVision: true
 	  }
 	};
 const DEVICE_TEMPLATES = {
@@ -2701,7 +2813,7 @@ const DEVICE_TEMPLATES = {
 };
         let devices = [{
             id: 1,
-            name: 'Device 1',
+            name: 'NVIDIA RTX 5090',
             template: 'RTX 5090',
             ...DEVICE_TEMPLATES["RTX 5090"]
         }];
@@ -2799,8 +2911,8 @@ const DEVICE_TEMPLATES = {
             forwardFlops += batchSize * seqLength * hiddenSize * (4 * hiddenSize); // First layer
             forwardFlops += batchSize * seqLength * (4 * hiddenSize) * hiddenSize; // Second layer
 
-            // Multiply by number of layers and then by 3 for forward + backward pass
-            return forwardFlops * numLayers * 3;
+            // Inference only needs forward pass (not backward)
+            return forwardFlops * numLayers;
         }
 
         function calculateDecodeFlops(modelConfig) {
@@ -2927,11 +3039,12 @@ const DEVICE_TEMPLATES = {
             // tokens/sec = bandwidth / model_size
             const theoreticalTokensPerSec = (bandwidthInfo.effectiveBandwidthGBps * 1e9) / modelSizeBytes;
 
-            // Apply overhead factor for real-world conditions
+            // Apply efficiency factor for real-world conditions
             // This accounts for: kernel launch overhead, memory access patterns,
             // KV cache operations, attention computation, etc.
-            const overheadFactor = 0.7; // ~70% efficiency typical for LLM inference
-            const actualTokensPerSec = theoreticalTokensPerSec * overheadFactor;
+            // 0.80-0.85 efficiency is typical for well-optimized LLM inference (llama.cpp, vLLM)
+            const efficiencyFactor = 0.82;
+            const actualTokensPerSec = theoreticalTokensPerSec * efficiencyFactor;
 
             return {
                 tokensPerSecond: actualTokensPerSec,
@@ -2979,6 +3092,363 @@ const DEVICE_TEMPLATES = {
             const bandwidth = INTERCONNECT_BANDWIDTH[presetKey];
             updateDevice(deviceId, 'networkBandwidthGBps', bandwidth);
             updateDevice(deviceId, 'interconnectType', presetKey);
+        }
+
+        /**
+         * Find the optimal parallelism strategy for current configuration
+         * Returns: { strategy, reasoning, results: [{strategy, rate, valid, reason}] }
+         */
+        function findOptimalStrategy() {
+            const baseConfig = getModelConfig();
+            const modelPreset = MODEL_PRESETS[baseConfig.modelPreset] || {};
+            const deviceCount = devices.length;
+            const seqLength = baseConfig.seqLength || 2048;
+            const isMoE = modelPreset.isMoE || false;
+
+            // Define all strategies and their validity conditions
+            const strategies = [
+                {
+                    value: 'pipeline',
+                    name: 'Pipeline Parallelism (PP)',
+                    valid: true,
+                    reason: 'Valid for any configuration'
+                },
+                {
+                    value: 'tensor',
+                    name: 'Tensor Parallelism (TP)',
+                    valid: deviceCount >= 2,
+                    reason: deviceCount >= 2 ? 'Requires 2+ devices' : 'Need 2+ devices for tensor parallelism'
+                },
+                {
+                    value: 'data',
+                    name: 'Data Parallelism (DP)',
+                    valid: deviceCount >= 2,
+                    reason: deviceCount >= 2 ? 'Valid for multi-device throughput' : 'Need 2+ devices for data parallelism'
+                },
+                {
+                    value: 'expert',
+                    name: 'Expert Parallelism (EP)',
+                    valid: isMoE && deviceCount >= 2,
+                    reason: isMoE ? (deviceCount >= 2 ? 'Valid for MoE models' : 'Need 2+ devices') : 'Only valid for MoE models'
+                },
+                {
+                    value: 'sequence',
+                    name: 'Sequence Parallelism (SP)',
+                    valid: deviceCount >= 2 && seqLength > 4096,
+                    reason: (deviceCount >= 2 && seqLength > 4096) ? 'Valid for long sequences' : 'Need 2+ devices and seq_len > 4096'
+                },
+                {
+                    value: 'context',
+                    name: 'Context Parallelism (CP)',
+                    valid: deviceCount >= 2 && seqLength > 8192,
+                    reason: (deviceCount >= 2 && seqLength > 8192) ? 'Valid for very long contexts' : 'Need 2+ devices and seq_len > 8192'
+                },
+                {
+                    value: 'hybrid_tp_pp',
+                    name: 'Hybrid TP+PP',
+                    valid: deviceCount >= 4,
+                    reason: deviceCount >= 4 ? 'Valid for 4+ devices' : 'Need 4+ devices for hybrid TP+PP'
+                },
+                {
+                    value: 'hybrid_tp_dp',
+                    name: 'Hybrid TP+DP',
+                    valid: deviceCount >= 4,
+                    reason: deviceCount >= 4 ? 'Valid for 4+ devices' : 'Need 4+ devices for hybrid TP+DP'
+                }
+            ];
+
+            const results = [];
+            let bestStrategy = null;
+            let bestRate = -1;
+            let bestHasOverflow = true;
+
+            // Test each strategy
+            strategies.forEach(strat => {
+                if (!strat.valid) {
+                    results.push({
+                        strategy: strat.value,
+                        name: strat.name,
+                        rate: 0,
+                        valid: false,
+                        reason: strat.reason,
+                        hasOverflow: false
+                    });
+                    return;
+                }
+
+                // Temporarily set the strategy and calculate metrics
+                const tempConfig = { ...baseConfig, parallelismStrategy: strat.value };
+                const dtypeSize = DTYPE_SIZES[tempConfig.quantizationType];
+                const isPipeline = strat.value === 'pipeline';
+
+                // Calculate metrics for each device
+                let totalRate = 0;
+                let minRate = Infinity;
+                let hasOverflow = false;
+                let memoryOverflow = false;
+
+                devices.forEach((device, deviceIndex) => {
+                    const memoryBreakdown = calculateMemoryBreakdown(tempConfig, dtypeSize, deviceCount, isPipeline, deviceIndex);
+                    const modelPresetData = MODEL_PRESETS[tempConfig.modelPreset] || {};
+                    const extendedConfig = { ...tempConfig, ...modelPresetData };
+                    const tokenRateInfo = calculateDecodeTokenRate(device, extendedConfig, dtypeSize, devices);
+
+                    if (tokenRateInfo.hasOverflow) hasOverflow = true;
+                    if (memoryBreakdown.total > device.memoryGB * 1e9) memoryOverflow = true;
+
+                    totalRate += tokenRateInfo.tokensPerSecond;
+                    minRate = Math.min(minRate, tokenRateInfo.tokensPerSecond);
+                });
+
+                // Calculate system rate based on parallelism type
+                let systemRate;
+                if (strat.value === 'data') {
+                    // Data parallelism: each device handles separate requests
+                    systemRate = totalRate;
+                } else if (strat.value === 'tensor' || strat.value === 'hybrid_tp_pp' || strat.value === 'hybrid_tp_dp') {
+                    // Tensor parallelism: all devices work on same token
+                    systemRate = minRate;
+                } else if (strat.value === 'pipeline') {
+                    // Pipeline: for batch=1, limited by slowest; for batched, approaches sum
+                    const batchSize = tempConfig.batchSize || 1;
+                    systemRate = batchSize > 1 ? totalRate * 0.8 : minRate;
+                } else if (strat.value === 'expert') {
+                    // Expert parallelism: sum with routing overhead
+                    systemRate = totalRate * 0.9;
+                } else {
+                    // Sequence/Context parallelism: similar to tensor
+                    systemRate = minRate;
+                }
+
+                results.push({
+                    strategy: strat.value,
+                    name: strat.name,
+                    rate: systemRate,
+                    valid: true,
+                    reason: strat.reason,
+                    hasOverflow: hasOverflow,
+                    memoryOverflow: memoryOverflow
+                });
+
+                // Determine if this is the best strategy
+                // Prefer strategies without overflow, then highest rate
+                const isBetter =
+                    (!hasOverflow && bestHasOverflow) ||
+                    (hasOverflow === bestHasOverflow && systemRate > bestRate);
+
+                if (isBetter) {
+                    bestRate = systemRate;
+                    bestStrategy = strat.value;
+                    bestHasOverflow = hasOverflow;
+                }
+            });
+
+            // Generate reasoning
+            let reasoning = '';
+            if (deviceCount === 1) {
+                reasoning = 'Single device: parallelism has no effect';
+                bestStrategy = 'pipeline';
+            } else if (bestStrategy === 'data') {
+                reasoning = 'Data parallelism maximizes throughput for independent requests';
+            } else if (bestStrategy === 'tensor') {
+                reasoning = 'Tensor parallelism optimal for shared inference with high-bandwidth interconnect';
+            } else if (bestStrategy === 'expert' && isMoE) {
+                reasoning = 'Expert parallelism leverages MoE architecture for efficient distribution';
+            } else if (bestStrategy === 'hybrid_tp_pp') {
+                reasoning = 'Hybrid TP+PP balances memory and compute across many devices';
+            } else if (bestStrategy === 'pipeline') {
+                reasoning = 'Pipeline parallelism provides good throughput with lower interconnect requirements';
+            }
+
+            return {
+                strategy: bestStrategy,
+                reasoning: reasoning,
+                results: results.sort((a, b) => b.rate - a.rate)
+            };
+        }
+
+        // Global variable to store AUTO results for display
+        let lastAutoResults = null;
+
+        // Global variable to store EXO phase split results
+        let lastPhaseSplitResults = null;
+
+        /**
+         * Estimate TDP (Thermal Design Power) for a device
+         * Returns watts based on device template/name
+         */
+        function estimateDeviceTDP(device) {
+            const name = (device.template || device.name || '').toLowerCase();
+
+            // Datacenter GPUs
+            if (name.includes('b200')) return 700;
+            if (name.includes('h100')) return 700;
+            if (name.includes('h200')) return 700;
+            if (name.includes('a100')) return 400;
+            if (name.includes('l40s')) return 350;
+            if (name.includes('l40')) return 300;
+
+            // Consumer NVIDIA GPUs
+            if (name.includes('5090')) return 575;
+            if (name.includes('5080')) return 360;
+            if (name.includes('5070 ti')) return 300;
+            if (name.includes('5070')) return 250;
+            if (name.includes('5060 ti')) return 180;
+            if (name.includes('5060')) return 150;
+            if (name.includes('4090')) return 450;
+            if (name.includes('4080')) return 320;
+            if (name.includes('4070 ti')) return 285;
+            if (name.includes('4070')) return 200;
+            if (name.includes('4060 ti')) return 165;
+            if (name.includes('4060')) return 115;
+            if (name.includes('3090')) return 350;
+            if (name.includes('3080')) return 320;
+            if (name.includes('3070')) return 220;
+            if (name.includes('rtx 6000')) return 300;
+
+            // AMD GPUs
+            if (name.includes('mi300x')) return 750;
+            if (name.includes('mi250x')) return 500;
+            if (name.includes('7900 xtx')) return 355;
+            if (name.includes('7900 xt')) return 315;
+
+            // Apple Silicon (whole system estimate for inference load)
+            if (name.includes('m4 max') || name.includes('m3 max')) return 80;
+            if (name.includes('m4 pro') || name.includes('m3 pro')) return 50;
+            if (name.includes('m4 ultra') || name.includes('m3 ultra')) return 150;
+            if (name.includes('m4') || name.includes('m3')) return 25;
+            if (name.includes('m2 ultra')) return 150;
+            if (name.includes('m2 max')) return 70;
+            if (name.includes('m2')) return 22;
+            if (name.includes('m1 ultra')) return 120;
+            if (name.includes('m1 max')) return 60;
+            if (name.includes('m1')) return 20;
+
+            // Intel CPUs
+            if (name.includes('xeon')) return 350;
+            if (name.includes('core') && name.includes('ultra')) return 125;
+
+            // Default estimate based on compute capability
+            const tflops = device.computeTFlops?.float16 || device.computeTFlops?.float32 || 10;
+            // Rough estimate: ~0.3W per TFLOP for modern GPUs
+            return Math.max(50, Math.min(800, tflops * 0.3));
+        }
+
+        /**
+         * Calculate power draw and cost for a given configuration
+         * @param {Array} devicesArray - Array of device configurations
+         * @param {number} tokensPerSecond - Token generation rate
+         * @returns {Object} Power and cost estimates
+         */
+        function calculatePowerAndCost(devicesArray, tokensPerSecond) {
+            // Electricity cost per kWh (US average ~$0.12, datacenter ~$0.06)
+            const electricityCostPerKWh = 0.12;
+
+            let totalTDP = 0;
+            const devicePower = devicesArray.map(device => {
+                const tdp = estimateDeviceTDP(device);
+                totalTDP += tdp;
+                return { name: device.name || device.template, tdp };
+            });
+
+            // During inference, GPUs typically use 50-80% of TDP
+            const inferenceLoadFactor = 0.65;
+            const actualPowerWatts = totalTDP * inferenceLoadFactor;
+
+            // Cost calculations
+            const powerKW = actualPowerWatts / 1000;
+            const costPerHour = powerKW * electricityCostPerKWh;
+            const tokensPerHour = tokensPerSecond * 3600;
+            const costPer1KTokens = tokensPerHour > 0 ? (costPerHour / tokensPerHour) * 1000 : 0;
+            const costPer1MTokens = costPer1KTokens * 1000;
+
+            return {
+                totalTDP,
+                actualPowerWatts,
+                powerKW,
+                costPerHour,
+                costPer1KTokens,
+                costPer1MTokens,
+                devicePower,
+                tokensPerKWh: powerKW > 0 ? tokensPerHour / powerKW : 0
+            };
+        }
+
+        /**
+         * Calculate EXO-style phase split optimization
+         * Routes prefill to compute-heavy devices, decode to bandwidth-heavy devices
+         */
+        function calculateEXOPhaseSplit(devicesArray, modelConfig) {
+            if (devicesArray.length < 2) {
+                return null;
+            }
+
+            const dtypeSize = DTYPE_SIZES[modelConfig.quantizationType];
+
+            // Calculate compute-to-bandwidth ratio for each device
+            const deviceRatios = devicesArray.map((device, idx) => {
+                const tflops = device.computeTFlops?.[modelConfig.quantizationType] || device.computeTFlops?.float16 || 10;
+                const bandwidth = device.localBandwidthGBps || 100;
+                // Higher ratio = more compute-heavy (good for prefill)
+                // Lower ratio = more bandwidth-heavy (good for decode)
+                const ratio = tflops / bandwidth;
+
+                return {
+                    device,
+                    index: idx,
+                    tflops,
+                    bandwidth,
+                    ratio,
+                    name: device.name || device.template
+                };
+            });
+
+            // Sort by ratio (highest first = most compute-heavy)
+            const sorted = [...deviceRatios].sort((a, b) => b.ratio - a.ratio);
+
+            // Split: first half for prefill, second half for decode
+            const splitPoint = Math.ceil(sorted.length / 2);
+            const prefillDevices = sorted.slice(0, splitPoint);
+            const decodeDevices = sorted.slice(splitPoint).length > 0 ? sorted.slice(splitPoint) : sorted;
+
+            // Calculate prefill rate (compute-bound)
+            const modelPreset = MODEL_PRESETS[modelConfig.modelPreset] || {};
+            const extendedConfig = { ...modelConfig, ...modelPreset };
+            const totalPrefillFlops = calculateTransformerFlops(extendedConfig);
+
+            // Sum of prefill device TFLOPS
+            const prefillTflops = prefillDevices.reduce((sum, d) => sum + d.tflops, 0);
+            const prefillTimeSeconds = totalPrefillFlops / (prefillTflops * 1e12);
+            const prefillRate = (modelConfig.batchSize * modelConfig.seqLength) / prefillTimeSeconds;
+
+            // Calculate decode rate (bandwidth-bound)
+            const modelSizeBytes = (extendedConfig.activeParamsB || extendedConfig.totalParamsB) * 1e9 * dtypeSize;
+            const decodeBandwidth = decodeDevices.reduce((sum, d) => sum + d.bandwidth, 0);
+            const theoreticalDecodeRate = (decodeBandwidth * 1e9) / modelSizeBytes;
+            const decodeRate = theoreticalDecodeRate * 0.82; // Apply efficiency factor
+
+            // Calculate KV cache transfer overhead
+            const kvCacheSize = 2 * modelConfig.batchSize * modelConfig.seqLength *
+                (modelConfig.hiddenSize / modelConfig.numHeads) * modelConfig.numHeads *
+                dtypeSize * modelConfig.numLayers;
+
+            // Assume minimum network bandwidth between prefill and decode devices
+            const minNetworkBw = Math.min(
+                ...prefillDevices.map(d => d.device.networkBandwidthGBps || 10),
+                ...decodeDevices.map(d => d.device.networkBandwidthGBps || 10)
+            );
+            const kvTransferTime = kvCacheSize / (minNetworkBw * 1e9);
+
+            return {
+                prefillDevices: prefillDevices.map(d => d.name),
+                decodeDevices: decodeDevices.map(d => d.name),
+                prefillRate: prefillRate,
+                decodeRate: decodeRate,
+                kvTransferTimeMs: kvTransferTime * 1000,
+                totalPrefillTflops: prefillTflops,
+                totalDecodeBandwidth: decodeBandwidth,
+                reasoning: `Prefill on ${prefillDevices.map(d => d.name).join(', ')} (${prefillTflops.toFixed(0)} TFLOPS), Decode on ${decodeDevices.map(d => d.name).join(', ')} (${decodeBandwidth.toFixed(0)} GB/s)`
+            };
         }
 
 	// Load devices from localStorage
@@ -3284,7 +3754,25 @@ const DEVICE_TEMPLATES = {
 	    updateDeviceDisplay(); // Refresh to show updated library
 	}
         function calculateMetrics() {
-			const modelConfig = getModelConfig();
+			let modelConfig = getModelConfig();
+			const optimizationMode = document.getElementById('optimizationMode')?.value || 'none';
+
+			// Handle AUTO mode - find optimal strategy first
+			if (modelConfig.parallelismStrategy === 'auto') {
+				lastAutoResults = findOptimalStrategy();
+				// Use the optimal strategy for actual calculations
+				modelConfig = { ...modelConfig, parallelismStrategy: lastAutoResults.strategy };
+			} else {
+				lastAutoResults = null;
+			}
+
+			// Handle EXO Phase Split optimization
+			if (optimizationMode === 'exo_phase_split' && devices.length >= 2) {
+				lastPhaseSplitResults = calculateEXOPhaseSplit(devices, modelConfig);
+			} else {
+				lastPhaseSplitResults = null;
+			}
+
 			const dtypeSize = DTYPE_SIZES[modelConfig.quantizationType];
 			const isPipeline = modelConfig.parallelismStrategy === 'pipeline';
 			const deviceCount = devices.length;
@@ -3310,18 +3798,20 @@ const DEVICE_TEMPLATES = {
 				const networkTime = networkTraffic / (device.networkBandwidthGBps * 1e9);
 				
 				// Memory traffic calculation adjusted for distributed setup
-				const memoryTrafficScale = modelConfig.quantizationType === 'q4' ? 1.2 : 1.0; // Q4 has some overhead
+				// For inference, we only need forward pass (no gradients), so 1x activations not 3x
+				const memoryTrafficScale = modelConfig.quantizationType === 'q4' ? 1.15 : 1.0; // Q4 has some overhead
 				const totalPrefillMemoryTraffic = memoryTrafficScale * (
-					memoryBreakdown.paramsMemory + 
+					memoryBreakdown.paramsMemory +
 					(2 * memoryBreakdown.kvCacheMemory) +
-					(3 * memoryBreakdown.activationMemory) +
-					(2 * memoryBreakdown.attentionMemory)
+					(1 * memoryBreakdown.activationMemory) +  // Only forward pass, not backward
+					(1 * memoryBreakdown.attentionMemory)
 				);
 
 				const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic / (device.localBandwidthGBps * 1e9);
 
 				// Include network time in actual execution time
-				const overheadFactorPrefill = 1.05;
+				// Prefill overhead accounts for kernel launch, memory access patterns, etc.
+				const overheadFactorPrefill = 1.10;
 				const actualPrefillTime = Math.max(
 					theoreticalPrefillComputeTime,
 					prefillBandwidthLimitedTime,
@@ -3358,7 +3848,8 @@ const DEVICE_TEMPLATES = {
 				) / modelConfig.seqLength;
 
 				const decodeBandwidthLimitedTime = decodeMemoryTrafficPerToken / (device.localBandwidthGBps * 1e9);
-				const overheadFactorDecode = 1.5;
+				// Decode overhead factor: 1.3 is more realistic than 1.5 (was too pessimistic)
+				const overheadFactorDecode = 1.3;
 				const actualDecodeTime = Math.max(theoreticalDecodeTime, decodeBandwidthLimitedTime) *
 					overheadFactorDecode;
 
@@ -3507,7 +3998,9 @@ const DEVICE_TEMPLATES = {
             // Add System Total Summary
             if (metrics.length > 0) {
                 const modelConfig = getModelConfig();
-                const parallelism = modelConfig.parallelismStrategy || 'pipeline';
+                // Get effective parallelism (AUTO mode uses the selected strategy)
+                const isAutoMode = modelConfig.parallelismStrategy === 'auto';
+                const parallelism = isAutoMode && lastAutoResults ? lastAutoResults.strategy : (modelConfig.parallelismStrategy || 'pipeline');
                 const totalMemory = devices.reduce((sum, d) => sum + d.memoryGB, 0);
                 const isImageGen = metrics[0].isImageGen;
 
@@ -3543,6 +4036,10 @@ const DEVICE_TEMPLATES = {
                             systemRate = minRate;
                             rateExplanation = 'Pipeline (batch=1, limited by slowest stage)';
                         }
+                    } else if (parallelism === 'expert') {
+                        // Expert parallelism: sum with routing overhead
+                        systemRate = sumRate * 0.9;
+                        rateExplanation = 'Expert parallelism (~90% efficiency)';
                     } else {
                         // Default: use min for safety
                         systemRate = minRate;
@@ -3561,6 +4058,95 @@ const DEVICE_TEMPLATES = {
                 else if (avgMemUtil > 90) systemBottleneck = 'Memory Capacity';
                 else if (avgBwUtil > 80) systemBottleneck = 'Bandwidth';
 
+                // Build AUTO mode section if applicable
+                let autoModeHtml = '';
+                if (isAutoMode && lastAutoResults) {
+                    autoModeHtml = `
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(74, 222, 128, 0.1); border: 1px solid #4ade80; border-radius: 6px;">
+                            <div style="color: #4ade80; font-weight: 600; margin-bottom: 0.5rem;">
+                                🎯 AUTO Selected: ${parallelism.replace('_', ' ').toUpperCase()}
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                ${lastAutoResults.reasoning}
+                            </div>
+                            <details style="font-size: 0.75rem;">
+                                <summary style="cursor: pointer; color: var(--text-secondary);">View all strategies compared</summary>
+                                <div style="margin-top: 0.5rem; max-height: 200px; overflow-y: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem;">
+                                        <tr style="border-bottom: 1px solid var(--border);">
+                                            <th style="text-align: left; padding: 0.25rem;">Strategy</th>
+                                            <th style="text-align: right; padding: 0.25rem;">Rate</th>
+                                            <th style="text-align: left; padding: 0.25rem;">Status</th>
+                                        </tr>
+                                        ${lastAutoResults.results.map(r => `
+                                            <tr style="border-bottom: 1px solid var(--border); ${r.strategy === parallelism ? 'background: rgba(74, 222, 128, 0.15);' : ''}">
+                                                <td style="padding: 0.25rem;">${r.name}${r.strategy === parallelism ? ' ✓' : ''}</td>
+                                                <td style="text-align: right; padding: 0.25rem;">${r.valid ? r.rate.toFixed(1) + ' tok/s' : '-'}</td>
+                                                <td style="padding: 0.25rem; color: ${r.valid ? (r.hasOverflow ? '#fbbf24' : '#4ade80') : '#f87171'};">
+                                                    ${r.valid ? (r.hasOverflow ? 'Overflow' : 'OK') : r.reason}
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </table>
+                                </div>
+                            </details>
+                        </div>
+                    `;
+                }
+
+                // Build EXO Phase Split section if applicable
+                let phaseSplitHtml = '';
+                if (lastPhaseSplitResults) {
+                    phaseSplitHtml = `
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(168, 85, 247, 0.1); border: 1px solid #a855f7; border-radius: 6px;">
+                            <div style="color: #a855f7; font-weight: 600; margin-bottom: 0.5rem;">
+                                ⚡ EXO Phase Split Optimization
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem;">
+                                <div>
+                                    <strong>Prefill:</strong> ${lastPhaseSplitResults.prefillDevices.join(', ')}
+                                    <div style="color: #4ade80; font-size: 0.9rem;">${lastPhaseSplitResults.prefillRate.toFixed(0)} tok/s</div>
+                                </div>
+                                <div>
+                                    <strong>Decode:</strong> ${lastPhaseSplitResults.decodeDevices.join(', ')}
+                                    <div style="color: #4ade80; font-size: 0.9rem;">${lastPhaseSplitResults.decodeRate.toFixed(1)} tok/s</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                KV Cache Transfer: ~${lastPhaseSplitResults.kvTransferTimeMs.toFixed(1)} ms
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Calculate power and cost estimates
+                const powerCost = calculatePowerAndCost(devices, systemRate);
+                let powerCostHtml = '';
+                if (!isImageGen && systemRate > 0) {
+                    powerCostHtml = `
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24; border-radius: 6px;">
+                            <div style="color: #fbbf24; font-weight: 600; margin-bottom: 0.5rem;">
+                                ⚡ Power & Cost Estimate
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem;">
+                                <div>
+                                    <strong>Est. Power Draw:</strong>
+                                    <div style="color: #fff; font-size: 0.9rem;">${powerCost.actualPowerWatts.toFixed(0)} W</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.7rem;">TDP: ${powerCost.totalTDP} W</div>
+                                </div>
+                                <div>
+                                    <strong>Cost (@ $0.12/kWh):</strong>
+                                    <div style="color: #fff; font-size: 0.9rem;">$${powerCost.costPer1MTokens.toFixed(4)}/M tok</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.7rem;">$${powerCost.costPerHour.toFixed(3)}/hr</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                Efficiency: ${(powerCost.tokensPerKWh / 1000).toFixed(1)}K tok/kWh
+                            </div>
+                        </div>
+                    `;
+                }
+
                 systemAnalysisHtml += `
                     <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.1)); border-radius: var(--radius); border: 2px solid var(--primary);">
                         <h3 style="margin: 0 0 0.75rem 0; color: var(--primary);">📊 System Total</h3>
@@ -3572,13 +4158,16 @@ const DEVICE_TEMPLATES = {
                                 <span style="color: #4ade80; font-size: 1.25rem; font-weight: bold; margin-left: 0.5rem;">${systemRateLabel}</span>
                             </div>
                             <div style="grid-column: span 2; font-size: 0.8rem; color: var(--text-secondary);">
-                                ${rateExplanation} (${parallelism.replace('_', ' ').toUpperCase()})
+                                ${rateExplanation} (${isAutoMode ? 'AUTO → ' : ''}${parallelism.replace('_', ' ').toUpperCase()})
                             </div>
                             ${systemBottleneck !== 'None' ? `
                             <div style="grid-column: span 2; color: #fbbf24;">
                                 ⚠️ System Bottleneck: <strong>${systemBottleneck}</strong>
                             </div>` : ''}
                         </div>
+                        ${autoModeHtml}
+                        ${phaseSplitHtml}
+                        ${powerCostHtml}
                     </div>
                 `;
             }
@@ -3586,6 +4175,11 @@ const DEVICE_TEMPLATES = {
             analysisContainer.innerHTML = systemAnalysisHtml;
             updateAlerts(metrics);
             updateChart(metrics);
+
+            // Update model summary in collapsed header
+            if (typeof updateModelSummary === 'function') {
+                updateModelSummary();
+            }
         }
 	    
 	function updateDeviceDisplay() {
@@ -4338,6 +4932,41 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
         document.getElementById('hardwareFilter').addEventListener('input', filterTable);
         document.getElementById('quantizationFilter').addEventListener('input', filterTable);
 
+        // Collapsible section toggle function
+        function toggleCollapsible(header) {
+            header.classList.toggle('collapsed');
+            const content = header.nextElementSibling;
+            if (content && content.classList.contains('collapsible-content')) {
+                content.classList.toggle('collapsed');
+            }
+        }
+        // Make toggleCollapsible globally available
+        window.toggleCollapsible = toggleCollapsible;
+
+        // Update model summary in header
+        function updateModelSummary() {
+            const modelPreset = document.getElementById('modelPreset').value;
+            const quant = document.getElementById('quantizationType').value;
+            const totalParams = document.getElementById('totalParamsB').value;
+
+            let modelName = 'Custom';
+            if (modelPreset && MODEL_PRESETS[modelPreset]) {
+                // Format preset name
+                modelName = modelPreset.split('_').map(word =>
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ');
+            } else if (totalParams) {
+                modelName = `${totalParams}B`;
+            }
+
+            const summary = document.getElementById('modelSummary');
+            if (summary) {
+                summary.textContent = `${modelName} @ ${quant.toUpperCase()}`;
+            }
+        }
+        // Make updateModelSummary globally available
+        window.updateModelSummary = updateModelSummary;
+
 	document.addEventListener('DOMContentLoaded', function() {
 	    const modelPresetSelect = document.getElementById('modelPreset');
 	    modelPresetSelect.innerHTML = '<option value="">Custom</option>';
@@ -4351,9 +4980,10 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
 	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
-	        'Other MoE': ['dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],
+	        'Other MoE': ['dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b', 'kimi_k2'],
 	        'Falcon': ['falcon_40b', 'falcon2_180b', 'falcon2_11b'],
 	        'Code Models': ['starcoder2_15b', 'starcoder2_7b', 'starcoder2_3b'],
+	        'Vision Models': ['llava_1.5_7b', 'llava_1.5_13b'],
 	        'Open Source': ['olmo2_13b', 'olmo2_7b', 'glm4_9b', 'command_r_plus_104b', 'yi_34b', 'yi_large_200b', 'bloom_176b', 'gpt_neox_20b', 'mpt_30b', 'vicuna_13b'],
 	        'Image Generation': ['sdxl_base', 'flux1_dev', 'sd3_medium'],
 	        'Video Generation': ['sora_est', 'runway_gen3'],
@@ -4471,7 +5101,49 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                 };
             });
 
-            // Draw connections first
+            // Helper function to infer connection type between devices
+            function inferConnectionType(deviceA, deviceB) {
+                const nameA = (deviceA.template || deviceA.name || '').toLowerCase();
+                const nameB = (deviceB.template || deviceB.name || '').toLowerCase();
+
+                // Check for datacenter GPUs - likely NVLink
+                const isNvlinkDevice = (name) => /h100|a100|b200|h200|dgx/.test(name);
+                if (isNvlinkDevice(nameA) && isNvlinkDevice(nameB)) {
+                    return { type: 'nvlink4', bandwidth: 450 };
+                }
+
+                // Check for Apple Silicon - UltraFusion or network
+                const isApple = (name) => /mac|m[1-4]/.test(name);
+                if (isApple(nameA) && isApple(nameB)) {
+                    // If both are "Ultra" variants, could be UltraFusion
+                    if (nameA.includes('ultra') && nameB.includes('ultra')) {
+                        return { type: 'ultrafusion', bandwidth: 2500 };
+                    }
+                    return { type: '10gbe', bandwidth: 1.25 };
+                }
+
+                // Check for RTX 50xx (PCIe 5.0)
+                const isPcie5 = (name) => /rtx 50|5090|5080|5070|5060/.test(name);
+                if (isPcie5(nameA) || isPcie5(nameB)) {
+                    return { type: 'pcie5_x16', bandwidth: 64 };
+                }
+
+                // Default to PCIe 4.0 x16
+                return { type: 'pcie4_x16', bandwidth: 32 };
+            }
+
+            // Helper to get connection color
+            function getConnectionColor(bandwidth) {
+                if (bandwidth >= 300) return '#4ade80'; // Green for NVLink
+                if (bandwidth >= 32) return '#60a5fa';  // Blue for PCIe 5.0
+                if (bandwidth >= 8) return '#fbbf24';   // Yellow for PCIe 4.0
+                return '#f87171';                       // Red for slow
+            }
+
+            // Track drawn connections to avoid duplicates
+            const drawnConnections = new Set();
+
+            // Draw explicit connections (overflowTarget set)
             devices.forEach((device, i) => {
                 if (device.overflowTarget) {
                     const sourceNode = nodes[i];
@@ -4501,9 +5173,13 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                         ctx.fillText(label, targetX + targetW/2, targetY + 16);
                         ctx.font = '9px system-ui';
                         ctx.fillText(`${bandwidth} GB/s`, targetX + targetW/2, targetY + 30);
+
+                        // Mark as drawn
+                        drawnConnections.add(`${i}-ddr5`);
                     } else {
+                        const targetIdx = devices.findIndex(d => d.id === device.overflowTarget);
                         const targetNode = nodes.find(n => n.id === device.overflowTarget);
-                        if (targetNode) {
+                        if (targetNode && targetIdx !== -1) {
                             targetX = targetNode.x;
                             targetY = targetNode.y;
                             targetW = targetNode.width;
@@ -4516,48 +5192,113 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                             } else {
                                 label = `${bandwidth} GB/s`;
                             }
+
+                            // Mark as drawn (both directions)
+                            const connKey = [Math.min(i, targetIdx), Math.max(i, targetIdx)].join('-');
+                            drawnConnections.add(connKey);
                         } else {
                             return;
                         }
                     }
 
                     // Connection color based on bandwidth
-                    let color = '#f87171'; // Red for slow
-                    if (bandwidth >= 300) color = '#4ade80'; // Green for NVLink
-                    else if (bandwidth >= 32) color = '#60a5fa'; // Blue for PCIe 5
-                    else if (bandwidth >= 8) color = '#fbbf24'; // Yellow for PCIe 4
+                    const color = getConnectionColor(bandwidth);
 
-                    // Draw connection line
+                    // Draw connection line (solid for explicit connections)
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 3;
-                    ctx.setLineDash([8, 4]);
-                    ctx.beginPath();
+                    ctx.setLineDash([]); // Solid line for explicit
 
                     const sx = sourceNode.x + sourceNode.width;
                     const sy = sourceNode.y + sourceNode.height / 2;
                     const tx = targetX;
                     const ty = targetY + targetH / 2;
 
+                    ctx.beginPath();
                     ctx.moveTo(sx, sy);
                     // Curved line
                     const cpx = (sx + tx) / 2;
                     ctx.quadraticCurveTo(cpx, sy, cpx, (sy + ty) / 2);
                     ctx.quadraticCurveTo(cpx, ty, tx, ty);
                     ctx.stroke();
-                    ctx.setLineDash([]);
+
+                    // Draw arrow head
+                    const angle = Math.atan2(ty - (sy + ty) / 2, tx - cpx);
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(tx, ty);
+                    ctx.lineTo(tx - 10 * Math.cos(angle - Math.PI / 6), ty - 10 * Math.sin(angle - Math.PI / 6));
+                    ctx.lineTo(tx - 10 * Math.cos(angle + Math.PI / 6), ty - 10 * Math.sin(angle + Math.PI / 6));
+                    ctx.closePath();
+                    ctx.fill();
 
                     // Bandwidth label
-                    ctx.fillStyle = color;
-                    ctx.font = 'bold 9px system-ui';
-                    ctx.textAlign = 'center';
                     const midX = (sx + tx) / 2;
                     const midY = (sy + ty) / 2;
                     ctx.fillStyle = '#0f0f1a';
-                    ctx.fillRect(midX - 30, midY - 10, 60, 18);
+                    ctx.fillRect(midX - 35, midY - 10, 70, 18);
                     ctx.fillStyle = color;
+                    ctx.font = 'bold 9px system-ui';
+                    ctx.textAlign = 'center';
                     ctx.fillText(`${bandwidth} GB/s`, midX, midY + 3);
                 }
             });
+
+            // Auto-draw inferred connections for multi-device setups
+            if (devices.length > 1) {
+                for (let i = 0; i < devices.length; i++) {
+                    for (let j = i + 1; j < devices.length; j++) {
+                        const connKey = `${i}-${j}`;
+                        if (drawnConnections.has(connKey)) continue;
+
+                        const sourceNode = nodes[i];
+                        const targetNode = nodes[j];
+                        const deviceA = devices[i];
+                        const deviceB = devices[j];
+
+                        // Infer connection type
+                        const inferred = inferConnectionType(deviceA, deviceB);
+                        // Use actual network bandwidth if set, otherwise inferred
+                        const bandwidth = Math.min(
+                            deviceA.networkBandwidthGBps || inferred.bandwidth,
+                            deviceB.networkBandwidthGBps || inferred.bandwidth
+                        );
+                        const color = getConnectionColor(bandwidth);
+
+                        // Calculate connection points (center to center for mesh)
+                        const sx = sourceNode.x + sourceNode.width / 2;
+                        const sy = sourceNode.y + sourceNode.height / 2;
+                        const tx = targetNode.x + targetNode.width / 2;
+                        const ty = targetNode.y + targetNode.height / 2;
+
+                        // Draw dashed line for inferred connections
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 2;
+                        ctx.globalAlpha = 0.5;
+                        ctx.setLineDash([6, 4]);
+
+                        ctx.beginPath();
+                        ctx.moveTo(sx, sy);
+                        ctx.lineTo(tx, ty);
+                        ctx.stroke();
+
+                        ctx.setLineDash([]);
+                        ctx.globalAlpha = 1.0;
+
+                        // Small bandwidth label at midpoint
+                        const midX = (sx + tx) / 2;
+                        const midY = (sy + ty) / 2;
+                        ctx.fillStyle = 'rgba(15, 15, 26, 0.8)';
+                        ctx.fillRect(midX - 25, midY - 8, 50, 14);
+                        ctx.fillStyle = color;
+                        ctx.globalAlpha = 0.7;
+                        ctx.font = '8px system-ui';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`${bandwidth} GB/s`, midX, midY + 3);
+                        ctx.globalAlpha = 1.0;
+                    }
+                }
+            }
 
             // Draw nodes
             nodes.forEach((node) => {
@@ -4635,13 +5376,48 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                 }
             });
 
-            // Show hint if multiple devices but no connections
-            const hasConnections = devices.some(d => d.overflowTarget);
-            if (devices.length > 1 && !hasConnections) {
-                ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
-                ctx.font = 'italic 11px system-ui';
-                ctx.textAlign = 'center';
-                ctx.fillText('Tip: Set "Overflow Target" on a device to show connections', width/2, height - 10);
+            // Show legend for connection types
+            if (devices.length > 1) {
+                const hasExplicitConnections = devices.some(d => d.overflowTarget);
+                ctx.font = '9px system-ui';
+                ctx.textAlign = 'left';
+                const legendY = height - 15;
+                const legendX = 10;
+
+                // Connection legend
+                ctx.fillStyle = '#666';
+                ctx.fillText('Connections:', legendX, legendY);
+
+                // Solid = explicit
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.moveTo(legendX + 70, legendY - 4);
+                ctx.lineTo(legendX + 90, legendY - 4);
+                ctx.stroke();
+                ctx.fillStyle = '#888';
+                ctx.fillText('Explicit', legendX + 95, legendY);
+
+                // Dashed = inferred
+                ctx.strokeStyle = '#60a5fa';
+                ctx.globalAlpha = 0.5;
+                ctx.setLineDash([4, 3]);
+                ctx.beginPath();
+                ctx.moveTo(legendX + 145, legendY - 4);
+                ctx.lineTo(legendX + 165, legendY - 4);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.globalAlpha = 1.0;
+                ctx.fillStyle = '#888';
+                ctx.fillText('Inferred', legendX + 170, legendY);
+
+                if (!hasExplicitConnections) {
+                    ctx.fillStyle = '#666';
+                    ctx.font = 'italic 9px system-ui';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('Set "Overflow Target" for explicit data flow', width - 10, legendY);
+                }
             }
         }
 

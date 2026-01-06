@@ -1,0 +1,526 @@
+================================================================================
+ML BOTTLENECK ANALYZER - COMPREHENSIVE IMPROVEMENT TASK
+================================================================================
+
+OBJECTIVE
+---------
+Transform the ML System Bottleneck Analyzer (index.html) into a 10x better tool
+with accurate calculations, AUTO optimization mode, proper topology visualization,
+EXO 1.0 compatibility, and power/cost estimation.
+
+The tool is a single-file web application at: index.html
+Live site: https://mlbottleneck.com
+
+================================================================================
+PART 1: FIX CALCULATION ACCURACY
+================================================================================
+
+PROBLEM:
+Current calculations show unrealistic values. Example output for RTX 5090 with
+Llama 3 8B at FP16 shows:
+- Prefill Rate: 3.5 tok/s (should be ~100-150 tok/s)
+- Decode Rate: 31.7 tok/s (should be ~80-120 tok/s)
+
+ROOT CAUSES:
+1. calculateTransformerFlops() multiplies by 3 for forward+backward pass, but
+   inference only needs forward pass
+2. Memory traffic calculations include gradient computations not needed for inference
+3. Overhead factors (1.05 for prefill, 1.5 for decode) may be miscalibrated
+4. MoE models should use activeParamsB not totalParamsB for compute calculations
+
+REQUIRED CHANGES:
+
+1.1 Fix calculateTransformerFlops():
+    - Remove the "* 3" multiplier at the end (line ~2803)
+    - This function should return forward-pass-only FLOPs for inference
+    - Current: return forwardFlops * numLayers * 3;
+    - Fixed:   return forwardFlops * numLayers;
+
+1.2 Fix calculateDecodeFlops():
+    - Verify formula matches standard LLM decode calculation
+    - Decode is memory-bandwidth-bound, not compute-bound
+    - Primary formula: tokens/sec = memory_bandwidth_GB/s / model_size_GB
+
+1.3 Fix calculateMetrics():
+    - Remove training-specific memory traffic (gradients)
+    - Current totalPrefillMemoryTraffic includes 3x activations (for gradients)
+    - For inference: only need 1x forward activation pass
+    - Adjust quantSpeedFactor to match real-world observations
+
+1.4 Calibrate overhead factors:
+    - Prefill overhead: 1.05 -> 1.10 (more realistic)
+    - Decode overhead: 1.5 -> 1.3 (too pessimistic currently)
+    - Add efficiency factor for memory access patterns: 0.7-0.85
+
+1.5 Handle MoE models correctly:
+    - DeepSeek R1 has 671B total but only 37B active parameters
+    - Compute should use activeParamsB when available
+    - Memory should use totalParamsB (all experts loaded)
+
+VERIFICATION FOR PART 1:
+[ ] RTX 4090 + Llama 3 8B + Q4 shows 100-140 tok/s decode (benchmark: ~120)
+[ ] RTX 4090 + Llama 3 70B + Q4 shows 15-25 tok/s decode (benchmark: ~20)
+[ ] M3 Ultra 512GB + Llama 3 70B + Q4 shows 12-18 tok/s decode (benchmark: ~15)
+[ ] H100 + Llama 3 70B + FP16 shows 80-120 tok/s decode (benchmark: ~100)
+[ ] DeepSeek R1 671B shows reasonable rates using 37B active params for compute
+
+================================================================================
+PART 2: ADD AUTO OPTIMIZATION MODE
+================================================================================
+
+PROBLEM:
+Users must manually try each parallelism strategy to find the best one. EXO 1.0
+automatically determines optimal parallelism based on device topology.
+
+REQUIRED CHANGES:
+
+2.1 Add AUTO option to parallelism dropdown:
+    <option value="auto">AUTO (Find Optimal)</option>
+    Place this as the first option, selected by default for new users
+
+2.2 Create findOptimalStrategy() function:
+    - Iterate through all valid parallelism strategies
+    - For each strategy, temporarily set it and call calculateMetrics()
+    - Score each by: system decode rate (primary), memory efficiency (secondary)
+    - Disqualify strategies that cause overflow when others don't
+    - Return the best strategy with reasoning
+
+2.3 Strategy validity rules:
+    - 'expert' (EP): Only valid for MoE models (isMoE: true)
+    - 'tensor' (TP): Requires 2+ devices
+    - 'data' (DP): Valid for any multi-device setup
+    - 'pipeline' (PP): Valid for any setup
+    - 'hybrid_tp_pp': Requires 4+ devices
+    - 'hybrid_tp_dp': Requires 4+ devices
+    - 'sequence' (SP): Valid for long sequences (>4096)
+    - 'context' (CP): Valid for long sequences (>8192)
+
+2.4 System rate calculation by strategy:
+    - Pipeline (batch=1): min(device_rates) - limited by slowest stage
+    - Pipeline (batch>1): sum(device_rates) * 0.8 - pipelined throughput
+    - Tensor: min(device_rates) - all devices work on same token
+    - Data: sum(device_rates) - each device handles separate requests
+    - Expert: sum(device_rates) * 0.9 - expert routing overhead
+
+2.5 Display AUTO results in System Analysis section:
+    Show a box with:
+    - Selected strategy name and why
+    - Comparison table of all tested strategies with their rates
+    - Any strategies that were disqualified and why
+
+VERIFICATION FOR PART 2:
+[ ] Single device: AUTO selects "Pipeline" or "None" (no parallelism needed)
+[ ] 2 similar GPUs: AUTO selects "Tensor" for shared inference
+[ ] 2 GPUs + System RAM overflow: AUTO selects "Pipeline"
+[ ] 4+ H100s with NVLink: AUTO selects "Tensor" or "Hybrid TP+PP"
+[ ] MoE model (DeepSeek R1): AUTO considers "Expert" parallelism
+[ ] Heterogeneous setup (GPU + Mac): AUTO selects strategy that leverages strengths
+[ ] Results panel shows comparison of all strategies tested
+
+================================================================================
+PART 3: FIX TOPOLOGY VISUALIZATION
+================================================================================
+
+PROBLEM:
+The topology canvas only shows connections when overflowTarget is manually set.
+Multi-device setups should automatically show interconnections between devices.
+
+REQUIRED CHANGES:
+
+3.1 Auto-detect and draw connections:
+    In updateTopology(), after drawing nodes, add logic to:
+    - If devices.length > 1, draw connections between all device pairs
+    - Use networkBandwidthGBps to determine connection bandwidth
+    - Use interconnectType if set, otherwise infer from device types
+
+3.2 Connection inference logic:
+    function inferConnectionType(deviceA, deviceB) {
+        // Same high-end NVIDIA GPUs -> likely NVLink
+        if (both are H100/A100/B200) return 'nvlink4';
+        // Both Apple Silicon -> could be networked or UltraFusion
+        if (both are Mac) return 'ethernet' or 'ultrafusion';
+        // Mixed or consumer GPUs -> PCIe
+        return 'pcie4_x16' or 'pcie5_x16';
+    }
+
+3.3 Connection drawing styles:
+    - Explicit connections (overflowTarget set): Solid line, full color
+    - Inferred connections: Dashed line, 50% opacity
+    - Label shows bandwidth and type
+
+3.4 Connection color coding (keep existing):
+    - Green (#4ade80): NVLink, 300+ GB/s
+    - Blue (#60a5fa): PCIe 5.0, 32-64 GB/s
+    - Yellow (#fbbf24): PCIe 4.0, 8-32 GB/s
+    - Red (#f87171): Slow connections, <8 GB/s
+
+3.5 Show data flow direction:
+    - Add arrow heads on connection lines
+    - For pipeline: show sequential flow
+    - For tensor: show bidirectional
+
+3.6 Topology layout improvements:
+    - Better spacing for 4+ devices
+    - Option for different layouts: grid, ring, star
+    - Highlight bottleneck connections (pulse animation on constrained links)
+
+VERIFICATION FOR PART 3:
+[ ] 2 devices show a connection line automatically (no manual config needed)
+[ ] 4 devices show mesh of connections
+[ ] Connection bandwidth label matches device networkBandwidthGBps
+[ ] NVLink connections appear green
+[ ] PCIe connections appear blue/yellow based on generation
+[ ] Tooltip on connection shows bandwidth and latency estimate
+[ ] No errors in console when drawing topology
+
+================================================================================
+PART 4: EXO 1.0 COMPATIBILITY
+================================================================================
+
+BACKGROUND:
+EXO (https://github.com/exo-explore/exo) is a distributed LLM inference framework
+that enables running large models across heterogeneous devices. Key features:
+- Pipeline parallel inference (model sharded into layer groups)
+- Tensor parallelism (1.8x speedup on 2 devices, 3.2x on 4 devices)
+- Topology-aware auto-scheduling
+- Phase-aware optimization: prefill on compute-heavy, decode on bandwidth-heavy
+- RDMA over Thunderbolt 5 for 99% latency reduction
+- Peer-to-peer architecture (no master/worker)
+
+REQUIRED CHANGES:
+
+4.1 Add EXO-supported models to MODEL_PRESETS:
+    'kimi_k2': {
+        totalParamsB: 1000,
+        hiddenSize: 8192,
+        numLayers: 80,
+        numHeads: 64,
+        isMoE: true,
+        numExperts: 256,
+        activeExperts: 8,
+        activeParamsB: 32
+    },
+    'llava_1.5_7b': {
+        totalParamsB: 7,
+        hiddenSize: 4096,
+        numLayers: 32,
+        numHeads: 32,
+        hasVision: true
+    },
+    'llava_1.5_13b': {
+        totalParamsB: 13,
+        hiddenSize: 5120,
+        numLayers: 40,
+        numHeads: 40,
+        hasVision: true
+    }
+
+4.2 Add Thunderbolt 5 RDMA to INTERCONNECT_BANDWIDTH:
+    'thunderbolt5_rdma': 40,  // TB5 with RDMA enabled (~40 GB/s vs 10 standard)
+
+4.3 Add EXO-style phase optimization mode:
+    Add to optimization dropdown:
+    <option value="exo_phase_split">EXO Phase Split (Prefill/Decode)</option>
+
+    When selected:
+    - Identify compute-heavy devices (high TFLOPS, lower bandwidth)
+    - Identify bandwidth-heavy devices (high GB/s, lower TFLOPS)
+    - Route prefill to compute-heavy devices
+    - Route decode to bandwidth-heavy devices
+    - Calculate KV cache transfer overhead between phases
+
+4.4 Phase split calculation:
+    function calculateEXOPhaseSplit(devices, modelConfig) {
+        // Compute ratio = TFLOPS / (bandwidth in GB/s)
+        // High ratio = compute-heavy (good for prefill)
+        // Low ratio = bandwidth-heavy (good for decode)
+
+        const ratios = devices.map(d => ({
+            device: d,
+            ratio: d.computeTFlops.float16 / d.localBandwidthGBps
+        }));
+
+        // Sort and split
+        ratios.sort((a, b) => b.ratio - a.ratio);
+        const prefillDevices = ratios.slice(0, Math.ceil(ratios.length / 2));
+        const decodeDevices = ratios.slice(Math.floor(ratios.length / 2));
+
+        // Calculate rates for each phase
+        // Add KV cache streaming overhead
+    }
+
+4.5 Real-world EXO benchmark reference:
+    DGX Spark (100 TFLOPS, 273 GB/s) + M3 Ultra (26 TFLOPS, 819 GB/s)
+    Result: 2.8x performance improvement with Llama 3.1 8B FP16
+    - Spark handles prefill (compute-bound)
+    - M3 Ultra handles decode (bandwidth-bound)
+    - KV cache streamed over 10Gb Ethernet
+
+VERIFICATION FOR PART 4:
+[ ] Kimi K2 model preset available in dropdown
+[ ] LLaVA models available in dropdown
+[ ] Thunderbolt 5 RDMA option in interconnect presets (40 GB/s)
+[ ] EXO Phase Split optimization mode available
+[ ] DGX Spark + M3 Ultra scenario shows improved performance vs single device
+[ ] Phase split correctly identifies compute-heavy vs bandwidth-heavy devices
+[ ] System analysis shows which devices handle prefill vs decode
+
+================================================================================
+PART 5: POWER AND COST ESTIMATION
+================================================================================
+
+PROBLEM:
+Users have no visibility into power consumption or operating costs for their
+hardware configurations. This is critical for deployment decisions.
+
+REQUIRED CHANGES:
+
+5.1 Add DEVICE_POWER data structure:
+    const DEVICE_POWER = {
+        'RTX 5090': { tdp: 575, idle: 50 },
+        'RTX 5080': { tdp: 360, idle: 35 },
+        'RTX 5070 Ti': { tdp: 300, idle: 30 },
+        'RTX 5070': { tdp: 250, idle: 25 },
+        'RTX 5060 Ti 16GB': { tdp: 180, idle: 20 },
+        'RTX 5060 Ti 8GB': { tdp: 180, idle: 20 },
+        'RTX 4090': { tdp: 450, idle: 40 },
+        'RTX 4080 Super': { tdp: 320, idle: 30 },
+        'RTX 4080': { tdp: 320, idle: 30 },
+        'RTX 4070 Ti Super': { tdp: 285, idle: 25 },
+        'RTX 4070': { tdp: 200, idle: 20 },
+        'RTX 4060': { tdp: 115, idle: 15 },
+        'RTX 3090': { tdp: 350, idle: 35 },
+        'RTX 3080': { tdp: 320, idle: 30 },
+        'RTX 3060': { tdp: 170, idle: 20 },
+        'H100': { tdp: 700, idle: 100 },
+        'A100': { tdp: 400, idle: 80 },
+        'B200': { tdp: 1000, idle: 150 },
+        'AMD MI300X': { tdp: 750, idle: 100 },
+        'RX 7900 XTX': { tdp: 355, idle: 35 },
+        'RX 7900 XT': { tdp: 315, idle: 30 },
+        'Mac M4 Max (128)': { tdp: 75, idle: 10 },
+        'Mac M3 Ultra (512)': { tdp: 120, idle: 15 },
+        'Mac M2 Ultra (192GB)': { tdp: 100, idle: 12 },
+        'DGX Spark': { tdp: 1000, idle: 150 },
+        'Intel Gaudi3': { tdp: 600, idle: 80 },
+        'Google TPU v5p': { tdp: 450, idle: 70 },
+        'Custom': { tdp: 200, idle: 30 }
+    };
+
+5.2 Create estimatePower() function:
+    function estimatePower(devices, metrics) {
+        let totalPower = 0;
+
+        devices.forEach((device, i) => {
+            const powerSpec = DEVICE_POWER[device.template] || DEVICE_POWER['Custom'];
+
+            // Utilization from metrics (use highest of compute/bandwidth)
+            const utilization = Math.max(
+                metrics[i].computeUtilization,
+                metrics[i].localBandwidthUtilization,
+                metrics[i].memoryUtilization * 0.3  // Memory has less power impact
+            ) / 100;
+
+            // Power scales with utilization: P = idle + (tdp - idle) * util
+            const devicePower = powerSpec.idle + (powerSpec.tdp - powerSpec.idle) * utilization;
+            totalPower += devicePower;
+        });
+
+        return Math.round(totalPower);
+    }
+
+5.3 Create estimateCost() function:
+    function estimateCost(powerWatts, hoursPerDay, costPerKwh) {
+        const kWh = powerWatts / 1000;
+        const dailyCost = kWh * hoursPerDay * costPerKwh;
+        const monthlyCost = dailyCost * 30;
+        const yearlyCost = dailyCost * 365;
+
+        return { dailyCost, monthlyCost, yearlyCost };
+    }
+
+5.4 Create efficiency metrics:
+    function calculateEfficiency(metrics, powerWatts, costPerKwh) {
+        const systemRate = calculateSystemRate(metrics);
+        const tokensPerHour = systemRate * 3600;
+        const kWhPerHour = powerWatts / 1000;
+        const costPerHour = kWhPerHour * costPerKwh;
+
+        return {
+            tokensPerWatt: systemRate / powerWatts,
+            tokensPerDollar: tokensPerHour / costPerHour,
+            wattsPerToken: powerWatts / systemRate,
+            costPerMillionTokens: (costPerHour / tokensPerHour) * 1000000
+        };
+    }
+
+5.5 Add cost settings UI:
+    In the Model Configuration card, add:
+    <div class="inline-select-group">
+        <label>Hours/Day</label>
+        <input type="number" id="hoursPerDay" value="8" min="1" max="24">
+        <label>$/kWh</label>
+        <input type="number" id="costPerKwh" value="0.12" step="0.01" min="0.01">
+    </div>
+
+5.6 Add Power & Cost panel to System Analysis:
+    Display after System Total:
+    <div class="power-cost-panel">
+        <h3>Power & Cost</h3>
+        <div>System Power: XXX W</div>
+        <div>Daily Cost: $X.XX</div>
+        <div>Monthly Cost: $XX.XX</div>
+        <div>Efficiency: X,XXX tok/$ | X.XX tok/W</div>
+        <div>Cost per 1M tokens: $X.XX</div>
+    </div>
+
+VERIFICATION FOR PART 5:
+[ ] RTX 4090 at full load shows ~450W
+[ ] M3 Ultra at full load shows ~120W
+[ ] Idle system shows reduced power
+[ ] Cost updates when hours/day or $/kWh changes
+[ ] Tokens per dollar metric is calculated and displayed
+[ ] Cost per million tokens is shown
+[ ] Multi-device setup shows sum of all device power
+
+================================================================================
+PART 6: UI AND VISUAL IMPROVEMENTS
+================================================================================
+
+REQUIRED CHANGES:
+
+6.1 Better model dropdown organization:
+    Group models by category with clear optgroup labels:
+    - Llama (Meta)
+    - Qwen (Alibaba)
+    - DeepSeek
+    - Mistral
+    - Gemma (Google)
+    - Phi (Microsoft)
+    - Vision Models
+    - MoE Models
+    - Image Generation
+    - Audio Models
+    - Test Models
+
+6.2 Add model info tooltip:
+    When hovering over a model in dropdown, show:
+    - Total parameters
+    - Active parameters (if MoE)
+    - Context length
+    - Special features (vision, audio)
+
+6.3 Improve device card layout:
+    - Show device type icon (GPU, CPU, TPU, etc.)
+    - Show memory bar visualization
+    - Highlight when device is bottleneck
+
+6.4 Add benchmark reference panel:
+    Below the System Analysis, show:
+    "Reference: [Model] on [Hardware] typically achieves X tok/s (source)"
+    Pull from the existing benchmark table data
+
+6.5 Improve alerts:
+    - More specific recommendations
+    - Link to relevant settings to fix issues
+    - Severity levels (warning vs error)
+
+6.6 Add loading indicator:
+    When calculations are running (for AUTO mode), show spinner
+
+VERIFICATION FOR PART 6:
+[ ] Model dropdown shows organized categories
+[ ] Device cards show memory usage visually
+[ ] Benchmark reference appears when matching data exists
+[ ] Alerts provide actionable recommendations
+[ ] UI remains responsive during calculations
+
+================================================================================
+PART 7: BETTER DEFAULTS
+================================================================================
+
+REQUIRED CHANGES:
+
+7.1 Smarter default model selection:
+    - Default to Llama 3.2 3B (smaller, runs on most hardware)
+    - Or detect device memory and suggest appropriate model
+
+7.2 Smarter default quantization:
+    - If single consumer GPU (<24GB): default to Q4
+    - If datacenter GPU or Apple Silicon: default to FP16
+    - If model doesn't fit in memory: auto-suggest Q4
+
+7.3 Default parallelism to AUTO:
+    - New users should see AUTO selected
+    - Shows them the optimal strategy immediately
+
+7.4 Default scenario preset:
+    - If no saved config, show a reasonable starting point
+    - RTX 4090 or RTX 5090 single GPU is most common
+
+7.5 Warn on problematic configurations:
+    - Model too large for device memory
+    - Quantization not supported by device
+    - Network bandwidth too slow for selected parallelism
+
+VERIFICATION FOR PART 7:
+[ ] New user sees reasonable default config
+[ ] Default quantization matches device capability
+[ ] Warning appears if model doesn't fit
+[ ] AUTO is selected by default for parallelism
+
+================================================================================
+FINAL VERIFICATION CHECKLIST
+================================================================================
+
+ACCURACY:
+[ ] Llama 3 8B Q4 on RTX 4090: 100-140 tok/s (expected ~120)
+[ ] Llama 3 70B Q4 on RTX 4090: 15-25 tok/s (expected ~20)
+[ ] Llama 3 70B Q4 on M3 Ultra: 12-18 tok/s (expected ~15)
+[ ] Llama 3 70B FP16 on H100: 80-120 tok/s (expected ~100)
+[ ] DeepSeek R1 INT8 on H100: 25-40 tok/s (expected ~35)
+
+AUTO MODE:
+[ ] Single device selects appropriate strategy
+[ ] 2 devices selects Tensor or Pipeline based on interconnect
+[ ] 4+ devices considers hybrid strategies
+[ ] MoE models consider Expert parallelism
+[ ] Results show comparison of all tested strategies
+
+TOPOLOGY:
+[ ] Multi-device shows connections automatically
+[ ] Connection colors match bandwidth tiers
+[ ] Bandwidth labels are visible and correct
+[ ] No console errors during rendering
+
+EXO COMPATIBILITY:
+[ ] All EXO models available (Kimi K2, LLaVA, etc.)
+[ ] Thunderbolt 5 RDMA option available
+[ ] Phase split optimization works
+[ ] Heterogeneous setup (DGX Spark + Mac) shows improvement
+
+POWER/COST:
+[ ] Power estimates within 20% of TDP specs
+[ ] Cost calculation uses user-provided rates
+[ ] Efficiency metrics displayed
+[ ] Updates when configuration changes
+
+UI/UX:
+[ ] No JavaScript errors in console
+[ ] Responsive on mobile (375px width)
+[ ] All dropdowns organized clearly
+[ ] Loading states shown appropriately
+
+================================================================================
+IMPLEMENTATION ORDER
+================================================================================
+
+1. Fix calculation accuracy (Part 1) - Critical, foundation for everything else
+2. Add AUTO optimization mode (Part 2) - High value, builds on accurate calcs
+3. Fix topology visualization (Part 3) - Visual improvement, independent
+4. Add EXO compatibility (Part 4) - Feature addition
+5. Add power/cost estimation (Part 5) - Feature addition
+6. UI improvements (Part 6) - Polish
+7. Better defaults (Part 7) - Polish
+
+================================================================================
