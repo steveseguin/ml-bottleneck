@@ -705,12 +705,55 @@ input, select {
                     <label for="modelPreset">Model Preset</label>
                     <select id="modelPreset" class="input">
                         <option value="">Custom</option>
-                        <option value="llama3_8b" selected>Llama 3 8B</option>
-                        <option value="llama3_70b">Llama 3 70B</option>
-                        <option value="mistral_7b">Mistral 7B</option>
-                        <option value="deepseek_v3">DeepSeek V3 (700B)</option>
-                        <option value="large_model_400b">Large Model (400B+)</option>
-                        <option value="very_large_model_1t">Very Large Model (1T+)</option>
+                        <optgroup label="Llama">
+                            <option value="llama3_8b" selected>Llama 3 8B</option>
+                            <option value="llama3_70b">Llama 3 70B</option>
+                            <option value="llama3.3_70b">Llama 3.3 70B</option>
+                            <option value="llama3.2_3b">Llama 3.2 3B</option>
+                            <option value="llama3.2_1b">Llama 3.2 1B</option>
+                            <option value="llama3.2_90b_vision">Llama 3.2 90B Vision</option>
+                            <option value="llama3.2_11b_vision">Llama 3.2 11B Vision</option>
+                        </optgroup>
+                        <optgroup label="DeepSeek">
+                            <option value="deepseek_r1">DeepSeek R1 (671B MoE)</option>
+                            <option value="deepseek_v3_671b">DeepSeek V3 (671B)</option>
+                            <option value="deepseek_r1_distill_70b">DeepSeek R1 Distill 70B</option>
+                            <option value="deepseek_r1_distill_32b">DeepSeek R1 Distill 32B</option>
+                            <option value="deepseek_r1_distill_14b">DeepSeek R1 Distill 14B</option>
+                            <option value="deepseek_r1_distill_8b">DeepSeek R1 Distill 8B</option>
+                            <option value="deepseek_r1_distill_1.5b">DeepSeek R1 Distill 1.5B</option>
+                        </optgroup>
+                        <optgroup label="Qwen">
+                            <option value="qwen2.5_72b">Qwen 2.5 72B</option>
+                            <option value="qwen2.5_32b">Qwen 2.5 32B</option>
+                            <option value="qwen2.5_14b">Qwen 2.5 14B</option>
+                            <option value="qwen2.5_7b">Qwen 2.5 7B</option>
+                            <option value="qwen2.5_3b">Qwen 2.5 3B</option>
+                            <option value="qwen2.5_coder_32b">Qwen 2.5 Coder 32B</option>
+                        </optgroup>
+                        <optgroup label="Mistral">
+                            <option value="mistral_7b">Mistral 7B</option>
+                            <option value="mistral_large_2_123b">Mistral Large 2 (123B)</option>
+                            <option value="mistral_nemo_12b">Mistral Nemo 12B</option>
+                            <option value="mixtral_8x7b">Mixtral 8x7B</option>
+                            <option value="mixtral_8x22b">Mixtral 8x22B</option>
+                        </optgroup>
+                        <optgroup label="Other LLMs">
+                            <option value="glm4_9b">GLM-4 9B</option>
+                            <option value="command_r_plus_104b">Command R+ 104B</option>
+                            <option value="gemma3_27b">Gemma 3 27B</option>
+                            <option value="phi3_14b">Phi-3 14B</option>
+                            <option value="phi3_3.8b">Phi-3 3.8B</option>
+                        </optgroup>
+                        <optgroup label="Image Generation">
+                            <option value="sdxl_base">SDXL Base (3.5B)</option>
+                            <option value="flux1_dev">Flux.1 Dev (12B)</option>
+                            <option value="sd3_medium">SD3 Medium (2B)</option>
+                        </optgroup>
+                        <optgroup label="Test Models">
+                            <option value="large_model_400b">Large Model (400B+)</option>
+                            <option value="very_large_model_1kb">Very Large Model (1T+)</option>
+                        </optgroup>
                     </select>
 
                     <label for="quantizationType">Quantization</label>
@@ -761,6 +804,31 @@ input, select {
 	<div class="card">
 	    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
 	        <h2>Devices</h2>
+	    </div>
+	    <div style="margin-bottom: 1rem;">
+	        <label style="font-size: 0.875rem;">Quick Scenario Preset</label>
+	        <select id="scenarioPreset" class="input" onchange="loadScenarioPreset(this.value)" style="margin-bottom: 0;">
+	            <option value="">Custom Configuration</option>
+	            <optgroup label="RTX 50-Series Multi-GPU">
+	                <option value="5090_ddr5">RTX 5090 + DDR5 Overflow (36GB model)</option>
+	                <option value="5090_5060ti_x1">RTX 5090 x16 + RTX 5060 Ti x1 (slow PCIe)</option>
+	                <option value="5090_5060ti_x8">RTX 5090 x8 + RTX 5060 Ti x8 (balanced)</option>
+	                <option value="5090_oculink">RTX 5090 x16 + GPU via Oculink (x4)</option>
+	                <option value="dual_5090">2x RTX 5090 x16 (theoretical)</option>
+	            </optgroup>
+	            <optgroup label="RTX 40-Series">
+	                <option value="4090_ddr5">RTX 4090 + DDR5 Overflow</option>
+	                <option value="4090_4080">RTX 4090 + RTX 4080 (both x8)</option>
+	            </optgroup>
+	            <optgroup label="Apple Silicon">
+	                <option value="m4_max">Mac M4 Max (128GB)</option>
+	                <option value="m3_ultra">Mac M3 Ultra (512GB)</option>
+	            </optgroup>
+	            <optgroup label="Data Center">
+	                <option value="h100_single">Single H100</option>
+	                <option value="h100_x8">8x H100 (NVLink)</option>
+	            </optgroup>
+	        </select>
 	    </div>
 	    <div id="devices"></div>
 	</div>
@@ -823,6 +891,39 @@ input, select {
             'int8': 1,
             'q4': 0.5
         };
+
+        // PCIe bandwidth in GB/s per direction (theoretical max)
+        const PCIE_BANDWIDTH = {
+            'pcie3': { x1: 1.0, x4: 4.0, x8: 8.0, x16: 16.0 },
+            'pcie4': { x1: 2.0, x4: 8.0, x8: 16.0, x16: 32.0 },
+            'pcie5': { x1: 4.0, x4: 16.0, x8: 32.0, x16: 64.0 }
+        };
+
+        // Common overflow bandwidth scenarios in GB/s
+        const OVERFLOW_BANDWIDTH = {
+            'ddr5_7200': 115,      // Dual-channel DDR5-7200
+            'ddr5_6400': 102,      // Dual-channel DDR5-6400
+            'ddr5_5600': 90,       // Dual-channel DDR5-5600
+            'ddr4_3200': 51,       // Dual-channel DDR4-3200
+            'nvme_gen5': 14,       // PCIe 5.0 x4 NVMe
+            'nvme_gen4': 7,        // PCIe 4.0 x4 NVMe
+            'oculink': 8           // Oculink (PCIe 4.0 x4)
+        };
+
+        // Model types for different workloads
+        const MODEL_TYPES = {
+            'llm': {
+                name: 'Large Language Model',
+                metric: 'tokens/second',
+                bottleneck: 'memory_bandwidth'
+            },
+            'image_gen': {
+                name: 'Image Generation',
+                metric: 'images/second',
+                bottleneck: 'compute'
+            }
+        };
+
 	const MODEL_PRESETS = {
 	  'llama3_8b': {
 	    totalParamsB: 8,
@@ -983,6 +1084,194 @@ input, select {
 	    hiddenSize: 32768,
 	    numLayers: 200,
 	    numHeads: 256
+	  },
+	  // DeepSeek Family
+	  'deepseek_r1': {
+	    totalParamsB: 671,
+	    hiddenSize: 7168,
+	    numLayers: 61,
+	    numHeads: 128,
+	    numKVHeads: 128,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 37
+	  },
+	  'deepseek_r1_distill_70b': {
+	    totalParamsB: 70,
+	    hiddenSize: 8192,
+	    numLayers: 80,
+	    numHeads: 64,
+	    numKVHeads: 8
+	  },
+	  'deepseek_r1_distill_32b': {
+	    totalParamsB: 32,
+	    hiddenSize: 5120,
+	    numLayers: 64,
+	    numHeads: 40,
+	    numKVHeads: 8
+	  },
+	  'deepseek_r1_distill_14b': {
+	    totalParamsB: 14,
+	    hiddenSize: 5120,
+	    numLayers: 48,
+	    numHeads: 40,
+	    numKVHeads: 8
+	  },
+	  'deepseek_r1_distill_8b': {
+	    totalParamsB: 8,
+	    hiddenSize: 3584,
+	    numLayers: 28,
+	    numHeads: 28,
+	    numKVHeads: 4
+	  },
+	  'deepseek_r1_distill_1.5b': {
+	    totalParamsB: 1.5,
+	    hiddenSize: 1536,
+	    numLayers: 28,
+	    numHeads: 12,
+	    numKVHeads: 2
+	  },
+	  // Qwen 2.5 Family
+	  'qwen2.5_72b': {
+	    totalParamsB: 72,
+	    hiddenSize: 8192,
+	    numLayers: 80,
+	    numHeads: 64,
+	    numKVHeads: 8,
+	    intermediateSize: 29568
+	  },
+	  'qwen2.5_32b': {
+	    totalParamsB: 32,
+	    hiddenSize: 5120,
+	    numLayers: 64,
+	    numHeads: 40,
+	    numKVHeads: 8
+	  },
+	  'qwen2.5_14b': {
+	    totalParamsB: 14,
+	    hiddenSize: 5120,
+	    numLayers: 48,
+	    numHeads: 40,
+	    numKVHeads: 8
+	  },
+	  'qwen2.5_7b': {
+	    totalParamsB: 7,
+	    hiddenSize: 3584,
+	    numLayers: 28,
+	    numHeads: 28,
+	    numKVHeads: 4
+	  },
+	  'qwen2.5_3b': {
+	    totalParamsB: 3,
+	    hiddenSize: 2048,
+	    numLayers: 36,
+	    numHeads: 16,
+	    numKVHeads: 2
+	  },
+	  'qwen2.5_coder_32b': {
+	    totalParamsB: 32,
+	    hiddenSize: 5120,
+	    numLayers: 64,
+	    numHeads: 40,
+	    numKVHeads: 8
+	  },
+	  // Llama 3.2/3.3 Family
+	  'llama3.3_70b': {
+	    totalParamsB: 70,
+	    hiddenSize: 8192,
+	    numLayers: 80,
+	    numHeads: 64,
+	    numKVHeads: 8
+	  },
+	  'llama3.2_3b': {
+	    totalParamsB: 3,
+	    hiddenSize: 3072,
+	    numLayers: 28,
+	    numHeads: 24,
+	    numKVHeads: 8
+	  },
+	  'llama3.2_1b': {
+	    totalParamsB: 1,
+	    hiddenSize: 2048,
+	    numLayers: 16,
+	    numHeads: 32,
+	    numKVHeads: 8
+	  },
+	  'llama3.2_90b_vision': {
+	    totalParamsB: 90,
+	    hiddenSize: 8192,
+	    numLayers: 80,
+	    numHeads: 64,
+	    numKVHeads: 8,
+	    hasVision: true
+	  },
+	  'llama3.2_11b_vision': {
+	    totalParamsB: 11,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    hasVision: true
+	  },
+	  // Mistral Large 2 and others
+	  'mistral_large_2_123b': {
+	    totalParamsB: 123,
+	    hiddenSize: 12288,
+	    numLayers: 88,
+	    numHeads: 96,
+	    numKVHeads: 8
+	  },
+	  'mistral_nemo_12b': {
+	    totalParamsB: 12,
+	    hiddenSize: 5120,
+	    numLayers: 40,
+	    numHeads: 32,
+	    numKVHeads: 8
+	  },
+	  // GLM-4
+	  'glm4_9b': {
+	    totalParamsB: 9,
+	    hiddenSize: 4096,
+	    numLayers: 40,
+	    numHeads: 32,
+	    numKVHeads: 2
+	  },
+	  // Command R+
+	  'command_r_plus_104b': {
+	    totalParamsB: 104,
+	    hiddenSize: 12288,
+	    numLayers: 64,
+	    numHeads: 96,
+	    numKVHeads: 8
+	  },
+	  // Image Generation Models
+	  'sdxl_base': {
+	    totalParamsB: 3.5,
+	    hiddenSize: 2048,
+	    numLayers: 70,
+	    numHeads: 20,
+	    isImageGen: true,
+	    imageSize: 1024,
+	    flopsPerImage: 2.5e12
+	  },
+	  'flux1_dev': {
+	    totalParamsB: 12,
+	    hiddenSize: 3072,
+	    numLayers: 57,
+	    numHeads: 24,
+	    isImageGen: true,
+	    imageSize: 1024,
+	    flopsPerImage: 12e12
+	  },
+	  'sd3_medium': {
+	    totalParamsB: 2,
+	    hiddenSize: 1536,
+	    numLayers: 24,
+	    numHeads: 24,
+	    isImageGen: true,
+	    imageSize: 1024,
+	    flopsPerImage: 4e12
 	  }
 	};
 const DEVICE_TEMPLATES = {
@@ -1044,15 +1333,98 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'RTX 5090': {
-    name: 'RTX 5090',
+    name: 'NVIDIA RTX 5090',
     memoryGB: 32,
-    localBandwidthGBps: 1500,
+    localBandwidthGBps: 1792,    // GDDR7: 28 Gbps x 512-bit
     networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 105,
-      'float16': 210,
-      'int8': 420,
-      'q4': 630
+      'float16': 318,
+      'bfloat16': 318,
+      'int8': 636,
+      'q4': 954
+    },
+    type: 'GPU'
+  },
+  'RTX 5080': {
+    name: 'NVIDIA RTX 5080',
+    memoryGB: 16,
+    localBandwidthGBps: 960,     // GDDR7: 30 Gbps x 256-bit
+    networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 57,
+      'float16': 171,
+      'bfloat16': 171,
+      'int8': 342,
+      'q4': 513
+    },
+    type: 'GPU'
+  },
+  'RTX 5070 Ti': {
+    name: 'NVIDIA RTX 5070 Ti',
+    memoryGB: 16,
+    localBandwidthGBps: 896,     // GDDR7
+    networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 44,
+      'float16': 132,
+      'bfloat16': 132,
+      'int8': 264,
+      'q4': 396
+    },
+    type: 'GPU'
+  },
+  'RTX 5070': {
+    name: 'NVIDIA RTX 5070',
+    memoryGB: 12,
+    localBandwidthGBps: 672,     // GDDR7
+    networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 36,
+      'float16': 108,
+      'bfloat16': 108,
+      'int8': 216,
+      'q4': 324
+    },
+    type: 'GPU'
+  },
+  'RTX 5060 Ti 16GB': {
+    name: 'NVIDIA RTX 5060 Ti 16GB',
+    memoryGB: 16,
+    localBandwidthGBps: 448,     // GDDR7: 28 Gbps x 128-bit
+    networkBandwidthGBps: 32,
+    pcieGeneration: 5,
+    pcieLanes: 8,
+    computeTFlops: {
+      'float32': 25,
+      'float16': 75,
+      'bfloat16': 75,
+      'int8': 150,
+      'q4': 225
+    },
+    type: 'GPU'
+  },
+  'RTX 5060 Ti 8GB': {
+    name: 'NVIDIA RTX 5060 Ti 8GB',
+    memoryGB: 8,
+    localBandwidthGBps: 448,     // GDDR7: 28 Gbps x 128-bit
+    networkBandwidthGBps: 32,
+    pcieGeneration: 5,
+    pcieLanes: 8,
+    computeTFlops: {
+      'float32': 25,
+      'float16': 75,
+      'bfloat16': 75,
+      'int8': 150,
+      'q4': 225
     },
     type: 'GPU'
   },
@@ -1070,16 +1442,66 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'RTX 4090': {
-    name: 'RTX 4090',
+    name: 'NVIDIA RTX 4090',
     memoryGB: 24,
     localBandwidthGBps: 1008,
     networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 83,
       'float16': 166,
-      'bfloat16': 83,
+      'bfloat16': 166,
       'int8': 332,
       'q4': 500
+    },
+    type: 'GPU'
+  },
+  'RTX 4080 Super': {
+    name: 'NVIDIA RTX 4080 Super',
+    memoryGB: 16,
+    localBandwidthGBps: 736,     // GDDR6X: 23 Gbps x 256-bit
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 52,
+      'float16': 104,
+      'bfloat16': 104,
+      'int8': 208,
+      'q4': 312
+    },
+    type: 'GPU'
+  },
+  'RTX 4080': {
+    name: 'NVIDIA RTX 4080',
+    memoryGB: 16,
+    localBandwidthGBps: 717,     // GDDR6X: 22.4 Gbps x 256-bit
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 49,
+      'float16': 98,
+      'bfloat16': 98,
+      'int8': 196,
+      'q4': 294
+    },
+    type: 'GPU'
+  },
+  'RTX 4070 Ti Super': {
+    name: 'NVIDIA RTX 4070 Ti Super',
+    memoryGB: 16,
+    localBandwidthGBps: 672,     // GDDR6X: 21 Gbps x 256-bit
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 40,
+      'float16': 80,
+      'bfloat16': 80,
+      'int8': 160,
+      'q4': 240
     },
     type: 'GPU'
   },
@@ -1228,12 +1650,62 @@ const DEVICE_TEMPLATES = {
     memoryGB: 192,
     localBandwidthGBps: 5200,
     networkBandwidthGBps: 400 / 8,
+    pcieGeneration: 5,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 380,
       'float16': 760,
       'bfloat16': 760,
       'int8': 1520,
       'q4': 2280
+    },
+    type: 'GPU'
+  },
+  'RX 7900 XTX': {
+    name: 'AMD RX 7900 XTX',
+    memoryGB: 24,
+    localBandwidthGBps: 960,     // GDDR6: 20 Gbps x 384-bit
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 61,
+      'float16': 122,
+      'bfloat16': 61,
+      'int8': 244,
+      'q4': 366
+    },
+    type: 'GPU'
+  },
+  'RX 7900 XT': {
+    name: 'AMD RX 7900 XT',
+    memoryGB: 20,
+    localBandwidthGBps: 800,     // GDDR6: 20 Gbps x 320-bit
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 52,
+      'float16': 104,
+      'bfloat16': 52,
+      'int8': 208,
+      'q4': 312
+    },
+    type: 'GPU'
+  },
+  'RX 9070 XT': {
+    name: 'AMD RX 9070 XT',
+    memoryGB: 16,
+    localBandwidthGBps: 650,     // Estimated GDDR6
+    networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 32,
+      'float16': 64,
+      'bfloat16': 32,
+      'int8': 128,
+      'q4': 192
     },
     type: 'GPU'
   },
@@ -1572,14 +2044,66 @@ const DEVICE_TEMPLATES = {
   },
   
   // Custom
+  // System RAM Overflow Targets
+  'DDR5-7200 System RAM': {
+    name: 'DDR5-7200 System RAM',
+    memoryGB: 128,
+    localBandwidthGBps: 115,     // Dual-channel DDR5-7200
+    networkBandwidthGBps: 0,
+    pcieGeneration: 0,
+    pcieLanes: 0,
+    computeTFlops: {
+      'float32': 0,
+      'float16': 0,
+      'bfloat16': 0,
+      'int8': 0,
+      'q4': 0
+    },
+    type: 'System RAM'
+  },
+  'DDR5-6400 System RAM': {
+    name: 'DDR5-6400 System RAM',
+    memoryGB: 128,
+    localBandwidthGBps: 102,     // Dual-channel DDR5-6400
+    networkBandwidthGBps: 0,
+    pcieGeneration: 0,
+    pcieLanes: 0,
+    computeTFlops: {
+      'float32': 0,
+      'float16': 0,
+      'bfloat16': 0,
+      'int8': 0,
+      'q4': 0
+    },
+    type: 'System RAM'
+  },
+  'DDR5-5600 System RAM': {
+    name: 'DDR5-5600 System RAM',
+    memoryGB: 64,
+    localBandwidthGBps: 90,      // Dual-channel DDR5-5600
+    networkBandwidthGBps: 0,
+    pcieGeneration: 0,
+    pcieLanes: 0,
+    computeTFlops: {
+      'float32': 0,
+      'float16': 0,
+      'bfloat16': 0,
+      'int8': 0,
+      'q4': 0
+    },
+    type: 'System RAM'
+  },
   'Custom': {
     name: 'Custom Device',
     memoryGB: 192,
     localBandwidthGBps: 50,
     networkBandwidthGBps: 2.5 / 8,
+    pcieGeneration: 4,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 2,
       'float16': 4,
+      'bfloat16': 4,
       'int8': 8,
       'q4': 12
     },
@@ -1703,15 +2227,186 @@ const DEVICE_TEMPLATES = {
             decodeFlops += batchSize * hiddenSize * (4 * hiddenSize); // First layer
             decodeFlops += batchSize * (4 * hiddenSize) * hiddenSize; // Second layer
 
-            return decodeFlops * numLayers; 
+            return decodeFlops * numLayers;
         }
-	    
+
+        /**
+         * Calculate effective memory bandwidth considering PCIe overflow
+         *
+         * Key insight for LLM inference at batch=1:
+         * - Performance is dominated by memory bandwidth
+         * - tokens/sec ≈ memory_bandwidth / model_size_bytes
+         *
+         * When model overflows to secondary storage:
+         * time_per_token = (local_portion / local_bw) + (overflow_portion / overflow_bw)
+         */
+        function calculateEffectiveBandwidth(device, modelSizeBytes, allDevices, modelConfig) {
+            const deviceMemoryBytes = device.memoryGB * 1e9;
+
+            // For MoE models, use active parameters instead of total
+            let effectiveModelSize = modelSizeBytes;
+            if (modelConfig && modelConfig.activeParamsB) {
+                effectiveModelSize = modelConfig.activeParamsB * 1e9 * (modelSizeBytes / (modelConfig.totalParamsB * 1e9));
+            }
+
+            // Case 1: Model fits entirely in device memory
+            if (effectiveModelSize <= deviceMemoryBytes) {
+                return {
+                    effectiveBandwidthGBps: device.localBandwidthGBps,
+                    localPortion: effectiveModelSize,
+                    overflowPortion: 0,
+                    overflowBandwidthGBps: 0,
+                    bottleneckReason: 'none',
+                    hasOverflow: false
+                };
+            }
+
+            // Case 2: Model overflows - need to determine overflow bandwidth
+            const localPortion = deviceMemoryBytes;
+            const overflowPortion = effectiveModelSize - deviceMemoryBytes;
+
+            let overflowBandwidthGBps;
+            let bottleneckReason;
+
+            // Check if there's an overflow target specified
+            if (device.overflowTarget === 'ddr5') {
+                // Overflow to system DDR5 RAM
+                overflowBandwidthGBps = device.ddr5BandwidthGBps || OVERFLOW_BANDWIDTH['ddr5_7200'];
+                bottleneckReason = 'DDR5 RAM overflow';
+            } else if (device.overflowTarget && typeof device.overflowTarget === 'number') {
+                // Overflow to another GPU via PCIe
+                const targetDevice = allDevices.find(d => d.id === device.overflowTarget);
+                if (targetDevice) {
+                    // Use the slower of the two PCIe connections
+                    const sourcePcie = PCIE_BANDWIDTH[`pcie${device.pcieGeneration || 4}`];
+                    const targetPcie = PCIE_BANDWIDTH[`pcie${targetDevice.pcieGeneration || 4}`];
+                    const sourceBw = sourcePcie ? sourcePcie[`x${device.pcieLanes || 16}`] : 32;
+                    const targetBw = targetPcie ? targetPcie[`x${targetDevice.pcieLanes || 16}`] : 32;
+                    overflowBandwidthGBps = Math.min(sourceBw, targetBw);
+                    bottleneckReason = `PCIe to ${targetDevice.name}`;
+                } else {
+                    // Fallback: use device's own PCIe bandwidth
+                    const pcieBw = PCIE_BANDWIDTH[`pcie${device.pcieGeneration || 4}`];
+                    overflowBandwidthGBps = pcieBw ? pcieBw[`x${device.pcieLanes || 16}`] : 32;
+                    bottleneckReason = 'PCIe overflow';
+                }
+            } else {
+                // Default: assume overflow to system RAM via PCIe
+                // This represents the typical case where model doesn't fit in VRAM
+                overflowBandwidthGBps = OVERFLOW_BANDWIDTH['ddr5_7200'];
+                bottleneckReason = 'System RAM overflow (auto)';
+            }
+
+            // Calculate weighted effective bandwidth
+            // Time = (local_portion / local_bw) + (overflow_portion / overflow_bw)
+            // Effective_BW = total_size / time
+            const localTimeMs = (localPortion / (device.localBandwidthGBps * 1e9)) * 1000;
+            const overflowTimeMs = (overflowPortion / (overflowBandwidthGBps * 1e9)) * 1000;
+            const totalTimeMs = localTimeMs + overflowTimeMs;
+            const effectiveBandwidthGBps = (effectiveModelSize / (totalTimeMs / 1000)) / 1e9;
+
+            return {
+                effectiveBandwidthGBps,
+                localPortion,
+                overflowPortion,
+                overflowBandwidthGBps,
+                bottleneckReason,
+                localTimeMs,
+                overflowTimeMs,
+                totalTimeMs,
+                hasOverflow: true,
+                overflowGB: overflowPortion / 1e9
+            };
+        }
+
+        /**
+         * Calculate theoretical decode token rate for LLM inference
+         *
+         * Key insight: LLM inference at batch=1 is memory-bandwidth-bound
+         * tokens/sec = effective_bandwidth / bytes_per_token
+         *
+         * For autoregressive decoding, each token requires reading the model weights
+         * bytes_per_token ≈ model_size_bytes (must read all weights per token)
+         */
+        function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices) {
+            const modelSizeBytes = modelConfig.totalParamsB * 1e9 * dtypeSize;
+
+            const bandwidthInfo = calculateEffectiveBandwidth(device, modelSizeBytes, allDevices, modelConfig);
+
+            // For decode (batch=1): each token requires reading entire model
+            // tokens/sec = bandwidth / model_size
+            const theoreticalTokensPerSec = (bandwidthInfo.effectiveBandwidthGBps * 1e9) / modelSizeBytes;
+
+            // Apply overhead factor for real-world conditions
+            // This accounts for: kernel launch overhead, memory access patterns,
+            // KV cache operations, attention computation, etc.
+            const overheadFactor = 0.7; // ~70% efficiency typical for LLM inference
+            const actualTokensPerSec = theoreticalTokensPerSec * overheadFactor;
+
+            return {
+                tokensPerSecond: actualTokensPerSec,
+                theoreticalMax: theoreticalTokensPerSec,
+                modelSizeGB: modelSizeBytes / 1e9,
+                ...bandwidthInfo
+            };
+        }
+
+        /**
+         * Calculate image generation metrics (compute-bound, not memory-bound)
+         */
+        function calculateImageGenMetrics(device, modelConfig, dtypeSize) {
+            // Image generation is compute-bound, not memory-bound
+            // Time = compute_flops / device_tflops
+
+            const modelFlops = modelConfig.flopsPerImage || 2.5e12; // Default to SDXL
+            const deviceTflops = device.computeTFlops[dtypeSize] || device.computeTFlops['float16'] || 10;
+
+            const timePerImage = modelFlops / (deviceTflops * 1e12);
+            const imagesPerSecond = 1 / timePerImage;
+
+            return {
+                imagesPerSecond,
+                timePerImage,
+                bottleneck: 'compute',
+                computeUtilization: 100 // Image gen is compute-bound
+            };
+        }
+
+        /**
+         * Get PCIe bandwidth for a given generation and lane count
+         */
+        function getPcieBandwidth(gen, lanes) {
+            const pcieBw = PCIE_BANDWIDTH[`pcie${gen || 4}`];
+            return pcieBw ? pcieBw[`x${lanes || 16}`] : 32;
+        }
+
 	// Load devices from localStorage
 	function loadDevices() {
 	    const savedDevices = localStorage.getItem('savedDevices');
 	    if (savedDevices) {
 	        try {
-	            devices = JSON.parse(savedDevices);
+	            let loadedDevices = JSON.parse(savedDevices);
+
+	            // Migrate old devices to new schema with PCIe fields
+	            loadedDevices = loadedDevices.map(device => {
+	                // Add default PCIe fields if missing
+	                const migratedDevice = {
+	                    ...device,
+	                    pcieGeneration: device.pcieGeneration || 4,
+	                    pcieLanes: device.pcieLanes || 16,
+	                    overflowTarget: device.overflowTarget || null,
+	                    ddr5BandwidthGBps: device.ddr5BandwidthGBps || 115
+	                };
+
+	                // Ensure computeTFlops has bfloat16 entry
+	                if (migratedDevice.computeTFlops && !migratedDevice.computeTFlops.bfloat16) {
+	                    migratedDevice.computeTFlops.bfloat16 = migratedDevice.computeTFlops.float16 || migratedDevice.computeTFlops.float32 * 2;
+	                }
+
+	                return migratedDevice;
+	            });
+
+	            devices = loadedDevices;
 	            updateDeviceDisplay();
 	            updateSystemAnalysis();
 	        } catch (e) {
@@ -1740,7 +2435,184 @@ const DEVICE_TEMPLATES = {
 	    updateSystemAnalysis();
 	    saveDevices();
 	}
-	
+
+	// Load scenario preset configurations
+	function loadScenarioPreset(scenario) {
+	    if (!scenario) return;
+
+	    switch(scenario) {
+	        case '5090_ddr5':
+	            devices = [{
+	                id: 1,
+	                name: 'RTX 5090 (Primary)',
+	                template: 'RTX 5090',
+	                ...DEVICE_TEMPLATES['RTX 5090'],
+	                overflowTarget: 'ddr5',
+	                ddr5BandwidthGBps: 115
+	            }];
+	            break;
+
+	        case '5090_5060ti_x1':
+	            devices = [
+	                {
+	                    id: 1,
+	                    name: 'RTX 5090 (Primary)',
+	                    template: 'RTX 5090',
+	                    ...DEVICE_TEMPLATES['RTX 5090'],
+	                    pcieLanes: 16,
+	                    overflowTarget: 2
+	                },
+	                {
+	                    id: 2,
+	                    name: 'RTX 5060 Ti (Secondary via x1)',
+	                    template: 'RTX 5060 Ti 16GB',
+	                    ...DEVICE_TEMPLATES['RTX 5060 Ti 16GB'],
+	                    pcieLanes: 1  // x1 slot = ~4 GB/s PCIe 5.0
+	                }
+	            ];
+	            break;
+
+	        case '5090_5060ti_x8':
+	            devices = [
+	                {
+	                    id: 1,
+	                    name: 'RTX 5090 (x8)',
+	                    template: 'RTX 5090',
+	                    ...DEVICE_TEMPLATES['RTX 5090'],
+	                    pcieLanes: 8,
+	                    overflowTarget: 2
+	                },
+	                {
+	                    id: 2,
+	                    name: 'RTX 5060 Ti (x8)',
+	                    template: 'RTX 5060 Ti 16GB',
+	                    ...DEVICE_TEMPLATES['RTX 5060 Ti 16GB'],
+	                    pcieLanes: 8
+	                }
+	            ];
+	            break;
+
+	        case '5090_oculink':
+	            devices = [
+	                {
+	                    id: 1,
+	                    name: 'RTX 5090 (Primary)',
+	                    template: 'RTX 5090',
+	                    ...DEVICE_TEMPLATES['RTX 5090'],
+	                    pcieLanes: 16,
+	                    overflowTarget: 2
+	                },
+	                {
+	                    id: 2,
+	                    name: 'eGPU via Oculink (x4)',
+	                    template: 'RTX 5060 Ti 16GB',
+	                    ...DEVICE_TEMPLATES['RTX 5060 Ti 16GB'],
+	                    pcieGeneration: 4,  // Oculink is typically PCIe 4.0
+	                    pcieLanes: 4        // x4 = ~8 GB/s
+	                }
+	            ];
+	            break;
+
+	        case 'dual_5090':
+	            devices = [
+	                {
+	                    id: 1,
+	                    name: 'RTX 5090 #1',
+	                    template: 'RTX 5090',
+	                    ...DEVICE_TEMPLATES['RTX 5090'],
+	                    pcieLanes: 16,
+	                    overflowTarget: 2
+	                },
+	                {
+	                    id: 2,
+	                    name: 'RTX 5090 #2',
+	                    template: 'RTX 5090',
+	                    ...DEVICE_TEMPLATES['RTX 5090'],
+	                    pcieLanes: 16
+	                }
+	            ];
+	            break;
+
+	        case '4090_ddr5':
+	            devices = [{
+	                id: 1,
+	                name: 'RTX 4090 (Primary)',
+	                template: 'RTX 4090',
+	                ...DEVICE_TEMPLATES['RTX 4090'],
+	                overflowTarget: 'ddr5',
+	                ddr5BandwidthGBps: 115
+	            }];
+	            break;
+
+	        case '4090_4080':
+	            devices = [
+	                {
+	                    id: 1,
+	                    name: 'RTX 4090 (x8)',
+	                    template: 'RTX 4090',
+	                    ...DEVICE_TEMPLATES['RTX 4090'],
+	                    pcieLanes: 8,
+	                    overflowTarget: 2
+	                },
+	                {
+	                    id: 2,
+	                    name: 'RTX 4080 (x8)',
+	                    template: 'RTX 4080',
+	                    ...DEVICE_TEMPLATES['RTX 4080'],
+	                    pcieLanes: 8
+	                }
+	            ];
+	            break;
+
+	        case 'm4_max':
+	            devices = [{
+	                id: 1,
+	                name: 'Mac M4 Max',
+	                template: 'Mac M4 Max (128)',
+	                ...DEVICE_TEMPLATES['Mac M4 Max (128)']
+	            }];
+	            break;
+
+	        case 'm3_ultra':
+	            devices = [{
+	                id: 1,
+	                name: 'Mac M3 Ultra',
+	                template: 'Mac M3 Ultra (512)',
+	                ...DEVICE_TEMPLATES['Mac M3 Ultra (512)']
+	            }];
+	            break;
+
+	        case 'h100_single':
+	            devices = [{
+	                id: 1,
+	                name: 'NVIDIA H100',
+	                template: 'H100',
+	                ...DEVICE_TEMPLATES['H100']
+	            }];
+	            break;
+
+	        case 'h100_x8':
+	            devices = [];
+	            for (let i = 1; i <= 8; i++) {
+	                devices.push({
+	                    id: i,
+	                    name: `H100 #${i}`,
+	                    template: 'H100',
+	                    ...DEVICE_TEMPLATES['H100']
+	                });
+	            }
+	            break;
+
+	        default:
+	            return;
+	    }
+
+	    updateDeviceDisplay();
+	    updateSystemAnalysis();
+	    saveDevices();
+	    document.getElementById('scenarioPreset').value = '';  // Reset dropdown
+	}
+
 	// Clone an existing device
 	function cloneDevice(id) {
 	    const sourceDevice = devices.find(d => d.id === id);
@@ -1933,8 +2805,20 @@ const DEVICE_TEMPLATES = {
 
 				const decodeBandwidthLimitedTime = decodeMemoryTrafficPerToken / (device.localBandwidthGBps * 1e9);
 				const overheadFactorDecode = 1.5;
-				const actualDecodeTime = Math.max(theoreticalDecodeTime, decodeBandwidthLimitedTime) * 
+				const actualDecodeTime = Math.max(theoreticalDecodeTime, decodeBandwidthLimitedTime) *
 					overheadFactorDecode;
+
+				// NEW: Calculate overflow-aware token rate using the new bandwidth model
+				const modelPreset = MODEL_PRESETS[modelConfig.modelPreset] || {};
+				const extendedModelConfig = { ...modelConfig, ...modelPreset };
+				const tokenRateInfo = calculateDecodeTokenRate(device, extendedModelConfig, dtypeSize, devices);
+
+				// Check if this is an image generation model
+				const isImageGen = modelPreset.isImageGen || false;
+				let imageGenInfo = null;
+				if (isImageGen) {
+					imageGenInfo = calculateImageGenMetrics(device, extendedModelConfig, modelConfig.quantizationType);
+				}
 
 				return {
 					name: device.name,
@@ -1949,13 +2833,25 @@ const DEVICE_TEMPLATES = {
 					bottleneckFactor,
 					isBottleneck: bottleneckFactor > 1,
 					prefillTokensPerSecond,
-					decodeTokensPerSecond: modelConfig.batchSize / actualDecodeTime,
+					decodeTokensPerSecond: tokenRateInfo.tokensPerSecond,
+					theoreticalMaxTokensPerSecond: tokenRateInfo.theoreticalMax,
 					decodeComputeUtilization: (theoreticalDecodeTime / actualDecodeTime) * 100,
 					decodeLocalBandwidthUtilization: (decodeBandwidthLimitedTime / actualDecodeTime) * 100,
 					decodeBottleneckFactor: Math.max(
 						theoreticalDecodeTime / actualDecodeTime,
 						decodeBandwidthLimitedTime / actualDecodeTime
-					)
+					),
+					// NEW: Overflow information
+					hasOverflow: tokenRateInfo.hasOverflow,
+					overflowGB: tokenRateInfo.overflowGB || 0,
+					overflowBandwidthGBps: tokenRateInfo.overflowBandwidthGBps || 0,
+					effectiveBandwidthGBps: tokenRateInfo.effectiveBandwidthGBps,
+					overflowBottleneckReason: tokenRateInfo.bottleneckReason || 'none',
+					modelSizeGB: tokenRateInfo.modelSizeGB,
+					// Image generation info
+					isImageGen,
+					imagesPerSecond: imageGenInfo ? imageGenInfo.imagesPerSecond : null,
+					timePerImage: imageGenInfo ? imageGenInfo.timePerImage : null
 				};
 			});
 		}
@@ -1965,19 +2861,52 @@ const DEVICE_TEMPLATES = {
             console.log(metrics);
             const analysisContainer = document.getElementById('systemAnalysis');
             let systemAnalysisHtml = '';
-            metrics.forEach(m => {
+            metrics.forEach((m, idx) => {
+                const device = devices[idx];
                 systemAnalysisHtml += `
-                    <div style="margin-bottom: 1rem;">
-                        <h3>${m.name}</h3>
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background); border-radius: var(--radius); border: 1px solid var(--border);">
+                        <h3 style="margin-top: 0;">${m.name}</h3>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Model Size: ${m.modelSizeGB ? m.modelSizeGB.toFixed(1) : 'N/A'} GB | Device Memory: ${device.memoryGB} GB
+                        </div>
                         <div class="device-grid" style="font-size: 0.875rem;">
                             <div>Memory Usage: ${m.memoryUtilization.toFixed(1)}%</div>
                             <div>Compute Usage: ${m.computeUtilization.toFixed(1)}%</div>
                             <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%</div>
                             <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%</div>
-                            <div><strong>Prefill Token Rate (approx.):</strong> ${m.prefillTokensPerSecond.toFixed(2)} tokens/second</div>
-                            <div><strong>Decode Token Rate (approx.):</strong> ${m.decodeTokensPerSecond.toFixed(2)} tokens/second</div>
-                        </div>
                 `;
+
+                // Show image gen metrics if applicable
+                if (m.isImageGen && m.imagesPerSecond) {
+                    systemAnalysisHtml += `
+                            <div style="grid-column: span 2;"><strong>🖼️ Images/Second:</strong> ${m.imagesPerSecond.toFixed(2)}</div>
+                            <div style="grid-column: span 2;"><strong>Time per Image:</strong> ${m.timePerImage.toFixed(2)}s</div>
+                    `;
+                } else {
+                    systemAnalysisHtml += `
+                            <div><strong>Prefill Rate:</strong> ${m.prefillTokensPerSecond.toFixed(1)} tok/s</div>
+                            <div><strong>Decode Rate:</strong> ${m.decodeTokensPerSecond.toFixed(1)} tok/s</div>
+                    `;
+                }
+
+                systemAnalysisHtml += `</div>`;
+
+                // Show overflow warning if applicable
+                if (m.hasOverflow) {
+                    systemAnalysisHtml += `
+                        <div style="background: rgba(255, 165, 0, 0.15); border: 1px solid #ffa500; border-radius: 4px; padding: 0.75rem; margin-top: 0.75rem;">
+                            <div style="color: #ffa500; font-weight: 600; margin-bottom: 0.25rem;">
+                                ⚠️ Memory Overflow Detected
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                <strong>${m.overflowGB.toFixed(1)} GB</strong> overflows to ${m.overflowBottleneckReason}<br>
+                                Overflow bandwidth: <strong>${m.overflowBandwidthGBps.toFixed(1)} GB/s</strong><br>
+                                Effective bandwidth: <strong>${m.effectiveBandwidthGBps.toFixed(1)} GB/s</strong> (vs ${device.localBandwidthGBps} GB/s local)
+                            </div>
+                        </div>
+                    `;
+                }
+
                 // Determine bottleneck for reporting
                 let bottleneckType = "None";
                 let bottleneckValue = 1;
@@ -2000,12 +2929,12 @@ const DEVICE_TEMPLATES = {
                     }
                     systemAnalysisHtml += `
                         <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem;">
-                            Prefill performance limited by <strong><span class="math-inline">${bottleneckType}</strong\> constraints (</span>${m.bottleneckFactor.toFixed(1)}x slower)
+                            ⛔ Prefill limited by <strong>${bottleneckType}</strong> (${m.bottleneckFactor.toFixed(1)}x slower)
                         </div>
                     `;
                 }
                 // Decode bottleneck (simplified for reporting)
-                if (m.decodeBottleneckFactor > 1) {
+                if (m.decodeBottleneckFactor > 1 && !m.isImageGen) {
                     let decodeBottleneckType = "None";
                     if (m.decodeComputeUtilization > m.decodeLocalBandwidthUtilization) {
                         decodeBottleneckType = "Compute";
@@ -2013,8 +2942,8 @@ const DEVICE_TEMPLATES = {
                         decodeBottleneckType = "Local Bandwidth";
                     }
                     systemAnalysisHtml += `
-                        <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem;">
-                            Decode performance limited by <strong><span class="math-inline">\{decodeBottleneckType\}</strong\> constraints \(</span>{m.decodeBottleneckFactor.toFixed(1)}x slower)
+                        <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                            ⛔ Decode limited by <strong>${decodeBottleneckType}</strong> (${m.decodeBottleneckFactor.toFixed(1)}x slower)
                         </div>
                     `;
                 }
@@ -2096,22 +3025,45 @@ const DEVICE_TEMPLATES = {
 	                           oninput="updateDevice(${device.id}, 'memoryGB', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
-	                    <label>Local Bandwidth GBps</label>
+	                    <label>Local Bandwidth GB/s</label>
 	                    <input type="number" class="input" value="${device.localBandwidthGBps}"
 	                           onchange="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)"
 	                           oninput="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
-	                    <label>Network Bandwidth GBps</label>
-	                    <input type="number" class="input" value="${device.networkBandwidthGBps}"
-	                           onchange="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)"
-	                           oninput="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)">
+	                    <label>PCIe Generation</label>
+	                    <select class="input" onchange="updateDevice(${device.id}, 'pcieGeneration', parseInt(this.value))">
+	                        <option value="3" ${(device.pcieGeneration || 4) === 3 ? 'selected' : ''}>Gen 3 (8 GT/s)</option>
+	                        <option value="4" ${(device.pcieGeneration || 4) === 4 ? 'selected' : ''}>Gen 4 (16 GT/s)</option>
+	                        <option value="5" ${(device.pcieGeneration || 4) === 5 ? 'selected' : ''}>Gen 5 (32 GT/s)</option>
+	                    </select>
+	                </div>
+	                <div>
+	                    <label>PCIe Lanes (${getPcieBandwidth(device.pcieGeneration, device.pcieLanes)} GB/s)</label>
+	                    <select class="input" onchange="updateDevice(${device.id}, 'pcieLanes', parseInt(this.value))">
+	                        <option value="1" ${(device.pcieLanes || 16) === 1 ? 'selected' : ''}>x1</option>
+	                        <option value="4" ${(device.pcieLanes || 16) === 4 ? 'selected' : ''}>x4</option>
+	                        <option value="8" ${(device.pcieLanes || 16) === 8 ? 'selected' : ''}>x8</option>
+	                        <option value="16" ${(device.pcieLanes || 16) === 16 ? 'selected' : ''}>x16</option>
+	                    </select>
 	                </div>
 	                <div>
 	                    <label>Compute TFlops (${currentQuant})</label>
 	                    <input type="number" class="input" value="${device.computeTFlops[currentQuant]}"
 	                           onchange="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)"
 	                           oninput="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)">
+	                </div>
+	                <div>
+	                    <label>Overflow Target</label>
+	                    <select class="input" onchange="updateDevice(${device.id}, 'overflowTarget', this.value === 'none' ? null : (this.value === 'ddr5' ? 'ddr5' : parseInt(this.value)))">
+	                        <option value="none" ${!device.overflowTarget ? 'selected' : ''}>None (model must fit)</option>
+	                        <option value="ddr5" ${device.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 System RAM (~115 GB/s)</option>
+	                        ${devices.filter(d => d.id !== device.id).map(d =>
+	                            `<option value="${d.id}" ${device.overflowTarget === d.id ? 'selected' : ''}>
+	                                ${d.name} (via PCIe)
+	                            </option>`
+	                        ).join('')}
+	                    </select>
 	                </div>
 	            </div>
 	        </div>
@@ -2419,7 +3371,74 @@ Llama 2 7B	FP16	vLLM	NVIDIA A100	1	2048	500 t/s		https://blog.ori.co/benchmarkin
 GPT-J 6B	FP8	TensorRT-LLM	NVIDIA H100	64	128	10,907 t/s		https://nvidia.github.io/TensorRT-LLM/blogs/H100vsA100.html
 GPT-J 6B	FP16	TensorRT-LLM	NVIDIA A100	64	128	3,679 t/s		https://nvidia.github.io/TensorRT-LLM/blogs/H100vsA100.html
 DeepSeek V3	INT8	Exo	2 x Mac M3 Ultra 512GB				11 t/s	https://x.com/alexocheema/status/1899735281781411907
-DeepSeek V3	FP16		NVIDIA H800 x 2048					https://www.infoq.com/news/2025/01/deepseek-v3-llm/`;
+DeepSeek V3	FP16		NVIDIA H800 x 2048					https://www.infoq.com/news/2025/01/deepseek-v3-llm/
+RTX 5090 Benchmarks
+Llama 3.1 8B	Q4	llama.cpp	RTX 5090				213 t/s	https://localllm.in/blog/best-gpus-llm-inference-2025
+Llama 3.1 8B	FP16	llama.cpp	RTX 5090	1	128		213 t/s	https://www.phoronix.com/review/nvidia-rtx5090-llama-cpp/2
+Llama 3 8B	Q4	llama.cpp	RTX 5090	1	128		213 t/s	https://www.runpod.io/blog/rtx-5090-llm-benchmarks
+DeepSeek R1 32B	Q4	Ollama	RTX 5090				61 t/s	https://www.databasemart.com/blog/ollama-gpu-benchmark-rtx5090
+Qwen2-0.5B	FP16	vLLM	RTX 5090	1024		65000 t/s		https://www.runpod.io/blog/rtx-5090-llm-benchmarks
+Phi-3 Mini 4K	FP16	vLLM	RTX 5090	1024		6400 t/s		https://www.runpod.io/blog/rtx-5090-llm-benchmarks
+Llama 3.3 70B	Q4	Ollama	2 x RTX 5090				27 t/s	https://www.databasemart.com/blog/ollama-gpu-benchmark-rtx5090-2
+Llama 3.3 70B	Q4	Ollama	RTX 5090 + DDR5				~15 t/s	https://localllm.in/blog/best-gpus-llm-inference-2025
+RTX 5090 vs RTX 4090 Comparison
+Llama 3.1 8B	Q4	llama.cpp	RTX 4090				127 t/s	https://localllm.in/blog/best-gpus-llm-inference-2025
+Llama 3.1 8B	Q4	llama.cpp	RTX 4090				140 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Llama 3 8B	Q4	TensorRT-LLM	RTX 4090				150 t/s	https://developer.nvidia.com/blog/accelerating-llms-with-llama-cpp-on-nvidia-rtx-systems/
+Llama 3 70B	IQ2_XS	Ollama	RTX 4090				60 t/s	https://www.ubaada.com/post/1b867b28
+Llama 3 70B	Q4	llama.cpp	2 x RTX 4090				~35 t/s	https://www.arsturn.com/blog/multi-gpu-showdown-benchmarking-vllm-llama-cpp-ollama-for-maximum-performance
+RTX 40-Series Mid-Range
+Mistral 7B	Q4	llama.cpp	RTX 4080 Super				72 t/s	https://www.pugetsystems.com/labs/articles/llm-inference-consumer-gpu-performance/
+Llama 3 8B	Q4	llama.cpp	RTX 4080 Super				~85 t/s	https://www.hardware-corner.net/gpu-ranking-local-llm/
+Llama 3 8B	Q4	llama.cpp	RTX 4080				106 t/s	https://www.hardware-corner.net/gpu-ranking-local-llm/
+Llama 3 8B	Q4	llama.cpp	RTX 4070 Ti Super				~80 t/s	https://www.hardware-corner.net/gpu-ranking-local-llm/
+Llama 3 8B	Q4	llama.cpp	RTX 4070 Ti				82 t/s	https://www.hardware-corner.net/gpu-ranking-local-llm/
+DeepSeek R1 Benchmarks
+DeepSeek R1 671B	FP8	TensorRT-LLM	8 x Blackwell		30000 t/s		https://developer.nvidia.com/blog/nvidia-blackwell-delivers-world-record-deepseek-r1-inference-performance/
+DeepSeek R1 671B	FP8	TensorRT-LLM	8 x Blackwell				250 t/s	https://developer.nvidia.com/blog/nvidia-blackwell-delivers-world-record-deepseek-r1-inference-performance/
+DeepSeek R1 671B	FP8	SambaNova	SambaNova Cloud				198 t/s	https://sambanova.ai/press/fastest-deepseek-r1-671b-with-highest-efficiency
+DeepSeek R1 671B	FP8	vLLM	16 x NVIDIA H100	1	2048		~54x slower than 8B	https://techcommunity.microsoft.com/blog/azurehighperformancecomputingblog/performance-analysis-of-deepseek-r1-ai-inference-using-vllm-on-nd-h100-v5/4449351
+DeepSeek R1 671B	1.58bit	llama.cpp	2 x H100 80GB				14 t/s	https://unsloth.ai/blog/deepseekr1-dynamic
+DeepSeek R1 671B	1.58bit	llama.cpp	Consumer GPU + CPU				9 t/s	https://github.com/ggml-org/llama.cpp/issues/11474
+DeepSeek R1 Distill 7B	Q4	Ollama	M2 Pro MacBook				19.9 t/s	https://dev.to/ocodista/deepseek-r1-7bs-performance-on-a-developers-macbook-3mg2
+DeepSeek R1 Distill 7B	Q4		Raspberry Pi 5				200 t/s	https://www.nextbigfuture.com/2025/01/open-source-deepseek-r1-runs-at-200-tokens-per-second-on-raspberry-pi.html
+Apple Silicon Benchmarks
+Llama 3 8B	Q4_K_M	MLX	M4 Max				96-100 t/s	https://github.com/ggml-org/llama.cpp/discussions/4167
+Llama 3 8B	Q4_K_M	MLX	M3 Ultra				76 t/s	https://github.com/ggml-org/llama.cpp/discussions/4167
+Llama 3.1 70B	Q4	MLX	M4 Max 128GB				30-45 t/s	https://introl.com/blog/local-llm-hardware-pricing-guide-2025
+Llama 3.1 70B	Q4	MLX	M3 Ultra				~35 t/s	https://scalastic.io/en/apple-silicon-vs-nvidia-cuda-ai-2025/
+Mistral 7B	Q4	llama.cpp	M1 Ultra				70 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4	llama.cpp	M1 Max				58 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+Mistral 7B	Q4	llama.cpp	M1				12 t/s	https://dmatora.github.io/LLM-inference-speed-benchmarks/
+CodeLlama 34B	Q4	MLX	M4 Max 64GB				~25 t/s	https://forums.macrumors.com/threads/m4-max-studio-128gb-llm-testing.2453816/
+AMD GPU Benchmarks
+Llama 3 8B	Q4	ROCm	RX 7900 XTX				78 t/s	https://github.com/ggml-org/llama.cpp/discussions/10879
+Llama 2 7B	Q4_0	llama.cpp	RX 7900 XTX + RX 7900 XT				107 t/s	https://github.com/ggml-org/llama.cpp/discussions/10879
+Llama 2 7B	Q4_0	llama.cpp	RX 7900 XTX	1	3968	2408 t/s		https://github.com/ggml-org/llama.cpp/discussions/10879
+Llama 3 70B	Q4	llama.cpp	2 x RX 7900 XTX				17 t/s	https://huggingface.co/abacusai/Smaug-Llama-3-70B-Instruct/discussions/8
+Llama 3 70B	Q4	llama.cpp	2 x RX 7900 XTX (no offload)				122 t/s	https://www.techreviewer.com/tech-specs/amd-rx-7900-xtx-gpu-for-llms/
+NVIDIA H100 Enterprise Benchmarks
+Llama 3.1 8B	FP16	vLLM	H100 SXM	1	2048	1000 t/s		https://www.ori.co/blog/benchmarking-llama-3.1-8b-instruct-on-nvidia-h100-and-a100-chips-with-the-vllm-inferencing-engine
+Llama 3.1 8B	FP8	vLLM	H100				~12500 t/s	https://research.aimultiple.com/inference-engines/
+Llama 3.3 70B	FP16	Ollama	H100 80GB				20 t/s	https://www.databasemart.com/blog/ollama-gpu-benchmark-h100
+Llama 3.3 70B	Q4_K_M	llama.cpp	H100 PCIe 80GB				25 t/s	https://github.com/XiongjieDai/GPU-Benchmarks-on-LLM-Inference
+Llama 2 70B	FP16	vLLM	4 x H100	1	2048		5+ t/s	https://developer.nvidia.com/blog/achieving-top-inference-performance-with-the-nvidia-h100-tensor-core-gpu-and-nvidia-tensorrt-llm/
+Llama 2 70B	FP16	vLLM	8 x H100 DGX		5+ infer/s		https://developer.nvidia.com/blog/achieving-top-inference-performance-with-the-nvidia-h100-tensor-core-gpu-and-nvidia-tensorrt-llm/
+NVIDIA A100 Benchmarks
+Llama 3.1 8B	FP16	vLLM	A100	1	2048	500 t/s		https://www.ori.co/blog/benchmarking-llama-3.1-8b-instruct-on-nvidia-h100-and-a100-chips-with-the-vllm-inferencing-engine
+Llama 3.3 70B	Q4	Ollama	2 x A100 40GB				~18 t/s	https://www.databasemart.com/blog/ollama-gpu-benchmark-rtx5090-2
+Mistral Large Benchmarks
+Mistral Large 123B	Q5_K_M	llama.cpp	AMD EPYC 9554 (CPU)				3.75 t/s	https://ahelpme.com/ai/llamacpp-ai/llama-bench-the-mistral-large-123b-and-amd-epyc-9554-cpu/
+Mistral Large 123B	FP16	Cerebras	Cerebras WSE				1100 t/s	https://www.cerebras.ai/blog/mistral-le-chat
+Mistral Large 123B	INT4	TensorRT-LLM	RTX 4090				~200 t/s	https://www.johal.in/mistral-large-2-123b-frontier-model-2025/
+Qwen 2.5 Benchmarks
+Qwen 2.5 72B	Q4	vLLM	4 x A6000		449 t/s		https://www.databasemart.com/blog/vllm-gpu-benchmark-a6000-4
+Qwen 2.5 72B	Q4	Ollama	2 x RTX 5090				~25 t/s	https://www.databasemart.com/blog/ollama-gpu-benchmark-rtx5090-2
+Qwen 2.5 Coder 32B	FP16		H100				25.5 t/s	https://medium.com/@wltsankalpa/benchmarking-qwen-models-across-nvidia-gpus-t4-l4-h100-architectures-finding-your-sweet-spot-a59a0adf9043
+Framework Comparisons
+Llama 3 8B	FP16	TensorRT-LLM	RTX 4090				~255 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
+Llama 3 8B	FP16	llama.cpp	RTX 4090				~150 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
+Llama 3 8B	FP16	vLLM	RTX 4090				~130 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm`;
 
         const data = rawData.split('\n')
             .filter(line => line.trim())
