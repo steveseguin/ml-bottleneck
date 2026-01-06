@@ -4521,15 +4521,14 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                 ctx.font = '11px system-ui';
                 ctx.fillText(`${device.memoryGB} GB | ${device.localBandwidthGBps} GB/s`, node.x + node.width/2, node.y + 55);
 
-                // Network/Interconnect info
-                if (device.networkBandwidthGBps) {
-                    ctx.font = '10px system-ui';
-                    ctx.fillStyle = '#888';
-                    const netInfo = device.interconnectType
-                        ? device.interconnectType.replace(/_/g, ' ')
-                        : `Network: ${device.networkBandwidthGBps} GB/s`;
-                    ctx.fillText(netInfo, node.x + node.width/2, node.y + 72);
-                }
+                // Network/Interconnect info - always show
+                ctx.font = '10px system-ui';
+                ctx.fillStyle = '#888';
+                const netBw = device.networkBandwidthGBps || 32;
+                const netInfo = device.interconnectType
+                    ? `${device.interconnectType.replace(/_/g, ' ')} (${netBw} GB/s)`
+                    : `Net: ${netBw} GB/s`;
+                ctx.fillText(netInfo, node.x + node.width/2, node.y + 72)
 
                 // TFLOPs badge
                 if (tflops > 0) {
@@ -4555,6 +4554,15 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                     ctx.fill();
                 }
             });
+
+            // Show hint if multiple devices but no connections
+            const hasConnections = devices.some(d => d.overflowTarget);
+            if (devices.length > 1 && !hasConnections) {
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
+                ctx.font = 'italic 11px system-ui';
+                ctx.textAlign = 'center';
+                ctx.fillText('Tip: Set "Overflow Target" on a device to show connections', width/2, height - 10);
+            }
         }
 
         // Override updateDeviceDisplay to also update topology
