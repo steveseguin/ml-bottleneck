@@ -3503,6 +3503,86 @@ const DEVICE_TEMPLATES = {
                 }
                 systemAnalysisHtml += `</div>`;
             });
+
+            // Add System Total Summary
+            if (metrics.length > 0) {
+                const modelConfig = getModelConfig();
+                const parallelism = modelConfig.parallelismStrategy || 'pipeline';
+                const totalMemory = devices.reduce((sum, d) => sum + d.memoryGB, 0);
+                const isImageGen = metrics[0].isImageGen;
+
+                let systemRate, systemRateLabel, rateExplanation;
+
+                if (isImageGen) {
+                    // Image gen: sum for throughput
+                    systemRate = metrics.reduce((sum, m) => sum + (m.imagesPerSecond || 0), 0);
+                    systemRateLabel = `${systemRate.toFixed(2)} img/s`;
+                    rateExplanation = 'Combined throughput';
+                } else {
+                    // LLM inference
+                    const decodeRates = metrics.map(m => m.decodeTokensPerSecond || 0);
+                    const minRate = Math.min(...decodeRates);
+                    const sumRate = decodeRates.reduce((a, b) => a + b, 0);
+
+                    if (parallelism === 'data') {
+                        // Data Parallelism: each device handles different requests
+                        systemRate = sumRate;
+                        rateExplanation = 'Sum (each device handles separate requests)';
+                    } else if (parallelism === 'tensor' || parallelism === 'hybrid_tp_pp' || parallelism === 'hybrid_tp_dp') {
+                        // Tensor Parallelism: all devices work on same inference
+                        systemRate = minRate;
+                        rateExplanation = 'Shared inference (limited by slowest device)';
+                    } else if (parallelism === 'pipeline') {
+                        // Pipeline: throughput can approach sum, latency is sum of stages
+                        // For interactive (batch=1), limited by slowest; for batched, approaches sum
+                        const batchSize = parseFloat(modelConfig.batchSize) || 1;
+                        if (batchSize > 1) {
+                            systemRate = sumRate * 0.8; // ~80% efficiency with pipelining
+                            rateExplanation = 'Pipeline throughput (~80% efficiency)';
+                        } else {
+                            systemRate = minRate;
+                            rateExplanation = 'Pipeline (batch=1, limited by slowest stage)';
+                        }
+                    } else {
+                        // Default: use min for safety
+                        systemRate = minRate;
+                        rateExplanation = 'Limited by slowest device';
+                    }
+                    systemRateLabel = `${systemRate.toFixed(1)} tok/s`;
+                }
+
+                // Find system bottleneck
+                let systemBottleneck = 'None';
+                const avgMemUtil = metrics.reduce((sum, m) => sum + m.memoryUtilization, 0) / metrics.length;
+                const avgBwUtil = metrics.reduce((sum, m) => sum + m.localBandwidthUtilization, 0) / metrics.length;
+                const anyOverflow = metrics.some(m => m.hasOverflow);
+
+                if (anyOverflow) systemBottleneck = 'Memory Overflow';
+                else if (avgMemUtil > 90) systemBottleneck = 'Memory Capacity';
+                else if (avgBwUtil > 80) systemBottleneck = 'Bandwidth';
+
+                systemAnalysisHtml += `
+                    <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.1)); border-radius: var(--radius); border: 2px solid var(--primary);">
+                        <h3 style="margin: 0 0 0.75rem 0; color: var(--primary);">📊 System Total</h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.9rem;">
+                            <div><strong>Total Memory:</strong> ${totalMemory} GB</div>
+                            <div><strong>Devices:</strong> ${devices.length}</div>
+                            <div style="grid-column: span 2;">
+                                <strong>${isImageGen ? 'System Throughput:' : 'System Decode Rate:'}</strong>
+                                <span style="color: #4ade80; font-size: 1.25rem; font-weight: bold; margin-left: 0.5rem;">${systemRateLabel}</span>
+                            </div>
+                            <div style="grid-column: span 2; font-size: 0.8rem; color: var(--text-secondary);">
+                                ${rateExplanation} (${parallelism.replace('_', ' ').toUpperCase()})
+                            </div>
+                            ${systemBottleneck !== 'None' ? `
+                            <div style="grid-column: span 2; color: #fbbf24;">
+                                ⚠️ System Bottleneck: <strong>${systemBottleneck}</strong>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
             analysisContainer.innerHTML = systemAnalysisHtml;
             updateAlerts(metrics);
             updateChart(metrics);
