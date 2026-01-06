@@ -795,8 +795,33 @@ input, select {
 
                 <label>Parallelism Strategy</label>
                 <select id="parallelismStrategy" class="input">
-                    <option value="pipeline">Pipeline Parallelism</option>
-                    <option value="tensor">Tensor Parallelism</option>
+                    <option value="pipeline">Pipeline Parallelism (PP)</option>
+                    <option value="tensor">Tensor Parallelism (TP)</option>
+                    <option value="data">Data Parallelism (DP)</option>
+                    <option value="expert">Expert Parallelism (EP - MoE)</option>
+                    <option value="sequence">Sequence Parallelism (SP)</option>
+                    <option value="context">Context Parallelism (CP)</option>
+                    <option value="hybrid_tp_pp">Hybrid TP+PP</option>
+                    <option value="hybrid_tp_dp">Hybrid TP+DP</option>
+                </select>
+
+                <label>Optimization</label>
+                <select id="optimizationMode" class="input">
+                    <option value="none">Standard Inference</option>
+                    <option value="speculative">Speculative Decoding (2-3x speedup)</option>
+                    <option value="continuous_batching">Continuous Batching</option>
+                    <option value="paged_attention">PagedAttention (vLLM)</option>
+                    <option value="flash_attention">Flash Attention</option>
+                </select>
+
+                <label>Batch Size</label>
+                <select id="batchSize" class="input">
+                    <option value="1">1 (Interactive)</option>
+                    <option value="4">4 (Small batch)</option>
+                    <option value="8">8 (Medium batch)</option>
+                    <option value="16">16 (Large batch)</option>
+                    <option value="32">32 (High throughput)</option>
+                    <option value="64">64 (Max throughput)</option>
                 </select>
             </div>
         </div>
@@ -850,6 +875,20 @@ input, select {
         </div>
     </div>
 
+    <!-- Topology Visualization -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h2>System Topology <small>(Connection diagram)</small></h2>
+        <div id="topologyContainer" style="position: relative; min-height: 300px; background: var(--background); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;">
+            <canvas id="topologyCanvas" style="width: 100%; height: 100%;"></canvas>
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--text-secondary);">
+            <div><span style="display: inline-block; width: 20px; height: 3px; background: #4ade80; margin-right: 4px;"></span>NVLink (300+ GB/s)</div>
+            <div><span style="display: inline-block; width: 20px; height: 3px; background: #60a5fa; margin-right: 4px;"></span>PCIe 5.0 (32-64 GB/s)</div>
+            <div><span style="display: inline-block; width: 20px; height: 3px; background: #fbbf24; margin-right: 4px;"></span>PCIe 4.0 (8-32 GB/s)</div>
+            <div><span style="display: inline-block; width: 20px; height: 3px; background: #f87171; margin-right: 4px;"></span>PCIe 3.0/DDR5 (&lt;16 GB/s)</div>
+        </div>
+    </div>
+
     <h1>Real-world results are below for reference</h1>
     <div class="filters">
         <div class="filter-group">
@@ -897,6 +936,50 @@ input, select {
             'pcie3': { x1: 1.0, x4: 4.0, x8: 8.0, x16: 16.0 },
             'pcie4': { x1: 2.0, x4: 8.0, x8: 16.0, x16: 32.0 },
             'pcie5': { x1: 4.0, x4: 16.0, x8: 32.0, x16: 64.0 }
+        };
+
+        // All interconnect types with bandwidth in GB/s
+        const INTERCONNECT_BANDWIDTH = {
+            // PCIe Variants
+            'pcie3_x1': 1, 'pcie3_x4': 4, 'pcie3_x8': 8, 'pcie3_x16': 16,
+            'pcie4_x1': 2, 'pcie4_x4': 8, 'pcie4_x8': 16, 'pcie4_x16': 32,
+            'pcie5_x1': 4, 'pcie5_x4': 16, 'pcie5_x8': 32, 'pcie5_x16': 64,
+            'pcie6_x16': 128,
+            // Thunderbolt
+            'thunderbolt3': 5,       // TB3: 40 Gbps = ~5 GB/s usable
+            'thunderbolt4': 5,       // TB4: 40 Gbps = ~5 GB/s usable
+            'thunderbolt5': 10,      // TB5: 80 Gbps = ~10 GB/s usable
+            // Oculink
+            'oculink_x4': 8,         // Oculink PCIe 4.0 x4
+            'oculink_x8': 16,        // Oculink PCIe 4.0 x8
+            // USB4
+            'usb4_40': 5,            // USB4 40 Gbps
+            'usb4_80': 10,           // USB4 80 Gbps
+            'usb4_120': 15,          // USB4 120 Gbps (asymmetric)
+            // Ethernet / Network
+            '1gbe': 0.125,           // 1 Gbps
+            '10gbe': 1.25,           // 10 Gbps
+            '25gbe': 3.125,          // 25 Gbps
+            '40gbe': 5,              // 40 Gbps
+            '100gbe': 12.5,          // 100 Gbps
+            '200gbe': 25,            // 200 Gbps
+            '400gbe': 50,            // 400 Gbps
+            '800gbe': 100,           // 800 Gbps
+            // InfiniBand
+            'ib_fdr': 6.8,           // FDR 56 Gbps
+            'ib_edr': 12.5,          // EDR 100 Gbps
+            'ib_hdr': 25,            // HDR 200 Gbps
+            'ib_ndr': 50,            // NDR 400 Gbps
+            'ib_xdr': 100,           // XDR 800 Gbps
+            // NVLink / Proprietary
+            'nvlink3': 300,          // NVLink 3.0 (A100): 600 GB/s bidirectional
+            'nvlink4': 450,          // NVLink 4.0 (H100): 900 GB/s bidirectional
+            'nvlink5': 900,          // NVLink 5.0 (B200): 1.8 TB/s bidirectional
+            'nvswitch': 450,         // Through NVSwitch
+            'infinity_fabric': 100,  // AMD Infinity Fabric (approx)
+            'ultrapath': 600,        // Intel Ultrapath Interconnect
+            // Apple Specific
+            'ultrafusion': 2500      // Apple UltraFusion (M1/M2/M3 Ultra)
         };
 
         // Common overflow bandwidth scenarios in GB/s
@@ -1272,6 +1355,297 @@ input, select {
 	    isImageGen: true,
 	    imageSize: 1024,
 	    flopsPerImage: 4e12
+	  },
+	  // Gemma 3 Family
+	  'gemma3_27b': {
+	    totalParamsB: 27,
+	    hiddenSize: 4608,
+	    numLayers: 46,
+	    numHeads: 32,
+	    numKVHeads: 16,
+	    contextLength: 128000,
+	    hasVision: true
+	  },
+	  'gemma3_12b': {
+	    totalParamsB: 12,
+	    hiddenSize: 3840,
+	    numLayers: 34,
+	    numHeads: 16,
+	    numKVHeads: 8,
+	    contextLength: 128000,
+	    hasVision: true
+	  },
+	  'gemma3_4b': {
+	    totalParamsB: 4,
+	    hiddenSize: 2560,
+	    numLayers: 26,
+	    numHeads: 8,
+	    numKVHeads: 4,
+	    contextLength: 128000,
+	    hasVision: true
+	  },
+	  'gemma3_1b': {
+	    totalParamsB: 1,
+	    hiddenSize: 1536,
+	    numLayers: 18,
+	    numHeads: 8,
+	    numKVHeads: 4,
+	    contextLength: 32000
+	  },
+	  // Gemma 2 Family
+	  'gemma2_27b': {
+	    totalParamsB: 27,
+	    hiddenSize: 4608,
+	    numLayers: 46,
+	    numHeads: 32,
+	    numKVHeads: 16
+	  },
+	  'gemma2_9b': {
+	    totalParamsB: 9,
+	    hiddenSize: 3584,
+	    numLayers: 42,
+	    numHeads: 16,
+	    numKVHeads: 8
+	  },
+	  'gemma2_2b': {
+	    totalParamsB: 2,
+	    hiddenSize: 2304,
+	    numLayers: 26,
+	    numHeads: 8,
+	    numKVHeads: 4
+	  },
+	  // Phi-4 Family
+	  'phi4_14b': {
+	    totalParamsB: 14,
+	    hiddenSize: 5120,
+	    numLayers: 40,
+	    numHeads: 40,
+	    numKVHeads: 10,
+	    contextLength: 16000
+	  },
+	  'phi4_mini_3.8b': {
+	    totalParamsB: 3.8,
+	    hiddenSize: 3072,
+	    numLayers: 32,
+	    numHeads: 24,
+	    numKVHeads: 8,
+	    contextLength: 128000
+	  },
+	  'phi4_multimodal_5.6b': {
+	    totalParamsB: 5.6,
+	    hiddenSize: 3072,
+	    numLayers: 32,
+	    numHeads: 24,
+	    numKVHeads: 8,
+	    hasVision: true,
+	    hasAudio: true,
+	    contextLength: 128000
+	  },
+	  // Phi-3 Family
+	  'phi3_medium_14b': {
+	    totalParamsB: 14,
+	    hiddenSize: 5120,
+	    numLayers: 40,
+	    numHeads: 40,
+	    numKVHeads: 10
+	  },
+	  'phi3_small_7b': {
+	    totalParamsB: 7,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 32,
+	    numKVHeads: 8
+	  },
+	  'phi3_mini_3.8b': {
+	    totalParamsB: 3.8,
+	    hiddenSize: 3072,
+	    numLayers: 32,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    contextLength: 128000
+	  },
+	  // Mixtral 8x22B (MoE)
+	  'mixtral_8x22b': {
+	    totalParamsB: 176,
+	    hiddenSize: 6144,
+	    numLayers: 56,
+	    numHeads: 48,
+	    numKVHeads: 8,
+	    isMoE: true,
+	    numExperts: 8,
+	    activeExperts: 2,
+	    activeParamsB: 44,
+	    contextLength: 65000
+	  },
+	  'mixtral_8x7b': {
+	    totalParamsB: 56,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    isMoE: true,
+	    numExperts: 8,
+	    activeExperts: 2,
+	    activeParamsB: 14
+	  },
+	  // DBRX (Databricks MoE)
+	  'dbrx_132b': {
+	    totalParamsB: 132,
+	    hiddenSize: 6144,
+	    numLayers: 40,
+	    numHeads: 48,
+	    numKVHeads: 8,
+	    isMoE: true,
+	    numExperts: 16,
+	    activeExperts: 4,
+	    activeParamsB: 36
+	  },
+	  // Arctic (Snowflake MoE)
+	  'arctic_480b': {
+	    totalParamsB: 480,
+	    hiddenSize: 7168,
+	    numLayers: 128,
+	    numHeads: 56,
+	    numKVHeads: 8,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 2,
+	    activeParamsB: 17
+	  },
+	  // Falcon 2 Family
+	  'falcon2_180b': {
+	    totalParamsB: 180,
+	    hiddenSize: 14848,
+	    numLayers: 80,
+	    numHeads: 232,
+	    numKVHeads: 8
+	  },
+	  'falcon2_11b': {
+	    totalParamsB: 11,
+	    hiddenSize: 4096,
+	    numLayers: 60,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    hasVision: true
+	  },
+	  // StarCoder 2
+	  'starcoder2_15b': {
+	    totalParamsB: 15,
+	    hiddenSize: 6144,
+	    numLayers: 40,
+	    numHeads: 48,
+	    numKVHeads: 4,
+	    contextLength: 16000
+	  },
+	  'starcoder2_7b': {
+	    totalParamsB: 7,
+	    hiddenSize: 4608,
+	    numLayers: 32,
+	    numHeads: 36,
+	    numKVHeads: 4,
+	    contextLength: 16000
+	  },
+	  'starcoder2_3b': {
+	    totalParamsB: 3,
+	    hiddenSize: 3072,
+	    numLayers: 30,
+	    numHeads: 24,
+	    numKVHeads: 2,
+	    contextLength: 16000
+	  },
+	  // Jamba (AI21 Mamba-Transformer Hybrid)
+	  'jamba_1.5_large_398b': {
+	    totalParamsB: 398,
+	    hiddenSize: 8192,
+	    numLayers: 88,
+	    numHeads: 64,
+	    numKVHeads: 8,
+	    isMoE: true,
+	    numExperts: 16,
+	    activeExperts: 2,
+	    activeParamsB: 94,
+	    contextLength: 256000,
+	    isMambaHybrid: true
+	  },
+	  'jamba_1.5_mini_52b': {
+	    totalParamsB: 52,
+	    hiddenSize: 4096,
+	    numLayers: 60,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    isMoE: true,
+	    numExperts: 16,
+	    activeExperts: 2,
+	    activeParamsB: 12,
+	    contextLength: 256000,
+	    isMambaHybrid: true
+	  },
+	  // OLMo (AI2 Open Models)
+	  'olmo2_13b': {
+	    totalParamsB: 13,
+	    hiddenSize: 5120,
+	    numLayers: 40,
+	    numHeads: 40,
+	    numKVHeads: 40
+	  },
+	  'olmo2_7b': {
+	    totalParamsB: 7,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 32,
+	    numKVHeads: 32
+	  },
+	  // Mistral Small (24B)
+	  'mistral_small_24b': {
+	    totalParamsB: 24,
+	    hiddenSize: 5120,
+	    numLayers: 56,
+	    numHeads: 32,
+	    numKVHeads: 8
+	  },
+	  // Qwen3 MoE
+	  'qwen3_235b_moe': {
+	    totalParamsB: 235,
+	    hiddenSize: 5120,
+	    numLayers: 94,
+	    numHeads: 64,
+	    numKVHeads: 4,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 8,
+	    activeParamsB: 22
+	  },
+	  // Video Generation Models
+	  'sora_est': {
+	    totalParamsB: 3,
+	    hiddenSize: 2048,
+	    numLayers: 48,
+	    numHeads: 16,
+	    isVideoGen: true,
+	    flopsPerSecondVideo: 100e12
+	  },
+	  'runway_gen3': {
+	    totalParamsB: 2.5,
+	    hiddenSize: 1920,
+	    numLayers: 36,
+	    numHeads: 16,
+	    isVideoGen: true,
+	    flopsPerSecondVideo: 80e12
+	  },
+	  // Audio Models
+	  'whisper_large_v3': {
+	    totalParamsB: 1.5,
+	    hiddenSize: 1280,
+	    numLayers: 32,
+	    numHeads: 20,
+	    isAudioModel: true
+	  },
+	  'musicgen_large': {
+	    totalParamsB: 3.3,
+	    hiddenSize: 2048,
+	    numLayers: 48,
+	    numHeads: 32,
+	    isAudioModel: true
 	  }
 	};
 const DEVICE_TEMPLATES = {
@@ -1793,7 +2167,222 @@ const DEVICE_TEMPLATES = {
     },
     type: 'Integrated GPU'
   },
-  
+  'AMD Strix Halo (Ryzen AI Max+ 395)': {
+    name: 'AMD Strix Halo (Ryzen AI Max+ 395)',
+    memoryGB: 128,
+    localBandwidthGBps: 256,            // 256-bit LPDDR5X ~256 GB/s
+    networkBandwidthGBps: 10 / 8,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 14,                     // RDNA 3.5 40 CUs
+      'float16': 28,
+      'bfloat16': 28,
+      'int8': 56,
+      'q4': 84
+    },
+    npuTops: 50,                         // XDNA 2 NPU
+    type: 'APU'
+  },
+  'AMD Strix Halo (Ryzen AI Max+ 388)': {
+    name: 'AMD Strix Halo (Ryzen AI Max+ 388)',
+    memoryGB: 96,
+    localBandwidthGBps: 256,
+    networkBandwidthGBps: 10 / 8,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 14,
+      'float16': 28,
+      'bfloat16': 28,
+      'int8': 56,
+      'q4': 84
+    },
+    npuTops: 50,
+    type: 'APU'
+  },
+  'AMD Strix Point (Ryzen AI 9 HX 370)': {
+    name: 'AMD Strix Point (Ryzen AI 9 HX 370)',
+    memoryGB: 64,
+    localBandwidthGBps: 120,            // LPDDR5X-7500
+    networkBandwidthGBps: 2.5 / 8,
+    computeTFlops: {
+      'float32': 5,                      // RDNA 3.5 16 CUs
+      'float16': 10,
+      'bfloat16': 10,
+      'int8': 20,
+      'q4': 30
+    },
+    npuTops: 50,
+    type: 'APU'
+  },
+
+  // Intel
+  'Intel Arc B580': {
+    name: 'Intel Arc B580 12GB',
+    memoryGB: 12,
+    localBandwidthGBps: 456,            // GDDR6 19 Gbps x 192-bit
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 8,
+    computeTFlops: {
+      'float32': 11,
+      'float16': 22,
+      'bfloat16': 22,
+      'int8': 44,
+      'q4': 66
+    },
+    type: 'GPU'
+  },
+  'Intel Arc A770': {
+    name: 'Intel Arc A770 16GB',
+    memoryGB: 16,
+    localBandwidthGBps: 560,            // GDDR6 17.5 Gbps x 256-bit
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 20,
+      'float16': 40,
+      'bfloat16': 40,
+      'int8': 80,
+      'q4': 120
+    },
+    type: 'GPU'
+  },
+  'Intel Arc A750': {
+    name: 'Intel Arc A750 8GB',
+    memoryGB: 8,
+    localBandwidthGBps: 512,
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 17,
+      'float16': 34,
+      'bfloat16': 34,
+      'int8': 68,
+      'q4': 102
+    },
+    type: 'GPU'
+  },
+
+  // NVIDIA DGX / AI PCs
+  'NVIDIA DGX Spark (GB10)': {
+    name: 'NVIDIA DGX Spark (GB10)',
+    memoryGB: 128,
+    localBandwidthGBps: 273,            // LPDDR5X-9400 unified memory
+    networkBandwidthGBps: 10 / 8,
+    computeTFlops: {
+      'float32': 125,                    // Grace Blackwell Superchip
+      'float16': 250,
+      'bfloat16': 250,
+      'int8': 500,
+      'q4': 1000                         // 1 PFLOP at FP4
+    },
+    type: 'AI PC'
+  },
+  'NVIDIA DGX Station (GB300)': {
+    name: 'NVIDIA DGX Station (GB300)',
+    memoryGB: 768,
+    localBandwidthGBps: 16000,          // HBM3e across 4 GPUs
+    networkBandwidthGBps: 400 / 8,
+    computeTFlops: {
+      'float32': 800,
+      'float16': 1600,
+      'bfloat16': 1600,
+      'int8': 3200,
+      'q4': 4800
+    },
+    type: 'AI Workstation'
+  },
+
+  // Cloud / Inference Accelerators
+  'Groq LPU Rack (Llama 70B)': {
+    name: 'Groq LPU Rack (576 chips)',
+    memoryGB: 576,                       // ~1GB per chip
+    localBandwidthGBps: 46080,           // 80 TB/s per chip x 576
+    networkBandwidthGBps: 100,
+    computeTFlops: {
+      'float32': 450,
+      'float16': 900,
+      'bfloat16': 900,
+      'int8': 1800,
+      'q4': 2700
+    },
+    type: 'LPU Rack'
+  },
+  'Cerebras CS-3 (WSE-3)': {
+    name: 'Cerebras CS-3 (WSE-3)',
+    memoryGB: 44,                        // 44GB on-chip SRAM
+    localBandwidthGBps: 21000,           // 21 PB/s on-chip
+    networkBandwidthGBps: 2400 / 8,      // 12x 200G links
+    computeTFlops: {
+      'float32': 125,
+      'float16': 250,
+      'bfloat16': 250,
+      'int8': 500,
+      'q4': 750
+    },
+    type: 'Wafer Scale'
+  },
+  'AWS Inferentia2 (inf2.xlarge)': {
+    name: 'AWS Inferentia2 (inf2.xlarge)',
+    memoryGB: 32,
+    localBandwidthGBps: 820,
+    networkBandwidthGBps: 25 / 8,
+    computeTFlops: {
+      'float32': 47,
+      'float16': 190,
+      'bfloat16': 190,
+      'int8': 380,
+      'q4': 570
+    },
+    type: 'Cloud Accelerator'
+  },
+  'AWS Trainium2 (trn2.xlarge)': {
+    name: 'AWS Trainium2 (trn2.xlarge)',
+    memoryGB: 64,
+    localBandwidthGBps: 1600,
+    networkBandwidthGBps: 100 / 8,
+    computeTFlops: {
+      'float32': 95,
+      'float16': 380,
+      'bfloat16': 380,
+      'int8': 760,
+      'q4': 1140
+    },
+    type: 'Cloud Accelerator'
+  },
+  'Google TPU v5e': {
+    name: 'Google TPU v5e',
+    memoryGB: 16,
+    localBandwidthGBps: 820,
+    networkBandwidthGBps: 50 / 8,
+    computeTFlops: {
+      'float32': 98,
+      'float16': 197,
+      'bfloat16': 197,
+      'int8': 394,
+      'q4': 591
+    },
+    type: 'TPU'
+  },
+  'Google TPU v5p': {
+    name: 'Google TPU v5p',
+    memoryGB: 95,
+    localBandwidthGBps: 2765,
+    networkBandwidthGBps: 100 / 8,
+    computeTFlops: {
+      'float32': 230,
+      'float16': 459,
+      'bfloat16': 459,
+      'int8': 918,
+      'q4': 1377
+    },
+    type: 'TPU'
+  },
+
   // Apple
   'Mac M3 Ultra (512)': {
     name: 'Mac M3 Ultra (512GB)',
@@ -3438,7 +4027,51 @@ Qwen 2.5 Coder 32B	FP16		H100				25.5 t/s	https://medium.com/@wltsankalpa/benchm
 Framework Comparisons
 Llama 3 8B	FP16	TensorRT-LLM	RTX 4090				~255 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
 Llama 3 8B	FP16	llama.cpp	RTX 4090				~150 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
-Llama 3 8B	FP16	vLLM	RTX 4090				~130 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm`;
+Llama 3 8B	FP16	vLLM	RTX 4090				~130 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
+Groq LPU Benchmarks
+Llama 3 70B	FP16	Groq LPU	Groq Rack (576 chips)				284 t/s	https://groq.com/blog/groq-lpu-inference-engine-crushes-first-public-llm-benchmark
+Llama 3.3 70B	FP16	Groq LPU	Groq Rack				276 t/s	https://groq.com/blog/new-ai-inference-speed-benchmark-for-llama-3-3-70b-powered-by-groq
+Llama 3.3 70B	FP16	Groq LPU + SpecDec	Groq Rack				1660 t/s	https://groq.com/blog/groq-first-generation-14nm-chip-just-got-a-6x-speed-boost-introducing-llama-3-1-70b-speculative-decoding-on-groqcloud
+Mixtral 8x7B	FP16	Groq LPU	Groq Rack				~500 t/s	https://groq.com/blog/groq-lpu-inference-engine-crushes-first-public-llm-benchmark
+AMD MI300X Benchmarks
+Llama 3.1 70B	FP16	vLLM	8 x MI300X				38.7 t/s	https://rocm.docs.amd.com/en/latest/how-to/performance-validation/mi300x/vllm-benchmark.html
+Llama 3.1 70B	FP8	vLLM	8 x MI300X				144 t/s	https://blogs.oracle.com/cloud-infrastructure/llm-performance-results-amd-instinct-mi300x-gpus
+Llama 3.1 70B	FP8	vLLM + SpecDec	8 x MI300X				~300 t/s	https://rocm.blogs.amd.com/artificial-intelligence/spec_decode_mi300x/README.html
+DeepSeek R1 671B	FP8	vLLM	8 x MI300X				~15 t/s	https://rocm.blogs.amd.com/software-tools-optimization/llama4-performance-b/README.html
+Qwen 2.5 72B	FP16	vLLM	8 x MI300X				~25 t/s	https://rocm.docs.amd.com/en/latest/how-to/performance-validation/mi300x/vllm-benchmark.html
+NVIDIA DGX Spark (GB10) Benchmarks
+Llama 3.1 8B	Q4	llama.cpp	DGX Spark (GB10)				~50 t/s	https://www.nvidia.com/en-us/products/workstations/dgx-spark/
+DeepSeek R1 32B	Q4	Ollama	DGX Spark (GB10)				~18 t/s	https://robert-mcdermott.medium.com/the-nvidia-dgx-spark-0e2ca7833c2c
+Llama 3.1 70B	Q4	llama.cpp	DGX Spark (GB10)				~12 t/s	https://intuitionlabs.ai/articles/nvidia-dgx-spark-review
+AMD Strix Halo Benchmarks
+Llama 3.1 8B	Q4	llama.cpp	Ryzen AI Max+ 395				~65 t/s	https://wccftech.com/amd-ryzen-ai-max-395-strix-halo-mini-pc-tested-powerful-apu-up-to-140w-power-128-gb-variable-memory-igpu/
+Llama 3.1 70B	Q4	llama.cpp	Ryzen AI Max+ 395 (128GB)				~8 t/s	https://www.amd.com/en/blogs/2025/amd-ryzen-ai-max-395-processor-breakthrough-ai-.html
+DeepSeek R1 32B	Q4	llama.cpp	Ryzen AI Max+ 395				~20 t/s	https://www.theregister.com/2025/12/25/amd_strix_halo_nvidia_spark/
+Intel Arc B580 Benchmarks
+Llama 3 8B	Q4	IPEX-LLM	Arc B580				20 t/s	https://www.techreviewer.com/tech-specs/intel-b580-gpu-for-llms/
+Llama 2 7B	INT4	IPEX-LLM	Arc B580				~18 t/s	https://github.com/intel/ipex-llm
+Mistral 7B	Q4	IPEX-LLM	Arc B580				~15 t/s	https://www.propelrc.com/intel-arc-b580-and-a770-for-local-ai-software/
+Gemma 3 Benchmarks
+Gemma 3 27B	Q4	Ollama	RTX 5090				50 t/s	https://github.com/ollama/ollama/issues/9701
+Gemma 3 27B	Q4	Ollama	RTX 4090				~35 t/s	https://huggingface.co/google/gemma-3-27b-it/discussions/39
+Gemma 3 12B	Q4	Ollama	RTX 5090				~80 t/s	https://github.com/ollama/ollama/issues/9701
+Gemma 2 27B	Q4	Ollama	RTX 5090				76 t/s	https://github.com/ollama/ollama/issues/9701
+Gemma 2 9B	Q4	Ollama	RTX 5090				150 t/s	https://github.com/ollama/ollama/issues/9701
+Phi-4 Benchmarks
+Phi-4 14B	Q4	llama.cpp	RTX 4090				~55 t/s	https://ollama.com/library/phi4
+Phi-4 Mini 3.8B	Q4	llama.cpp	RTX 4090				~120 t/s	https://huggingface.co/microsoft/phi-4
+Phi-4 Mini 3.8B	Q4	llama.cpp	M4 Max				~80 t/s	https://huggingface.co/microsoft/Phi-4-mini-instruct
+Mixtral 8x22B Benchmarks
+Mixtral 8x22B	FP16	vLLM	4 x H100				46.5 t/s	https://artificialanalysis.ai/models/mistral-8x22b-instruct
+Mixtral 8x22B	Q4	llama.cpp	2 x RTX 4090				~12 t/s	https://huggingface.co/mistralai/Mixtral-8x22B-v0.1
+Mixtral 8x22B	Q4	Ollama	RTX 5090 + DDR5				~8 t/s	https://localllm.in/blog/best-gpus-llm-inference-2025
+Cerebras / Specialized Hardware
+Mistral Large 123B	FP16	Cerebras	Cerebras CS-3 (WSE-3)				1100 t/s	https://www.cerebras.ai/blog/mistral-le-chat
+Llama 3.1 70B	FP16	SambaNova	SambaNova Cloud				~200 t/s	https://sambanova.ai/press/fastest-deepseek-r1-671b-with-highest-efficiency
+Speculative Decoding Comparisons
+Llama 3.1 70B	FP16	vLLM + SpecDec	H100				~80 t/s	https://developer.nvidia.com/blog/an-introduction-to-speculative-decoding-for-reducing-latency-in-ai-inference/
+Llama 3.1 70B	FP16	vLLM	H100				~35 t/s	https://developer.nvidia.com/blog/an-introduction-to-speculative-decoding-for-reducing-latency-in-ai-inference/
+Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/developer/resources/technical-articles/2025/speculative-llm-inference-on-the-5th-gen-amd-epyc-processors-wit.html`;
 
         const data = rawData.split('\n')
             .filter(line => line.trim())
@@ -3612,32 +4245,299 @@ Llama 3 8B	FP16	vLLM	RTX 4090				~130 t/s	https://www.jan.ai/post/benchmarking-n
 	document.addEventListener('DOMContentLoaded', function() {
 	    const modelPresetSelect = document.getElementById('modelPreset');
 	    modelPresetSelect.innerHTML = '<option value="">Custom</option>';
-	    
-	    // Add options from MODEL_PRESETS object
-	    Object.keys(MODEL_PRESETS).forEach(key => {
-	        const option = document.createElement('option');
-	        option.value = key;
-	        option.textContent = key.split('_').map(word => 
-	            word.charAt(0).toUpperCase() + word.slice(1)
-	        ).join(' ').replace(/([0-9]+[a-z])/i, match => match.toUpperCase());
-	        
-	        // Set Llama 3 8B as selected by default
-	        if (key === 'llama3_8b') {
-	            option.selected = true;
+
+	    // Organize models into categories for better UX
+	    const modelCategories = {
+	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision'],
+	        'DeepSeek': ['deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
+	        'Qwen': ['qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_235b_moe'],
+	        'Gemma': ['gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
+	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
+	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
+	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
+	        'Other MoE': ['dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],
+	        'Falcon': ['falcon_40b', 'falcon2_180b', 'falcon2_11b'],
+	        'Code Models': ['starcoder2_15b', 'starcoder2_7b', 'starcoder2_3b'],
+	        'Open Source': ['olmo2_13b', 'olmo2_7b', 'glm4_9b', 'command_r_plus_104b', 'yi_34b', 'yi_large_200b', 'bloom_176b', 'gpt_neox_20b', 'mpt_30b', 'vicuna_13b'],
+	        'Image Generation': ['sdxl_base', 'flux1_dev', 'sd3_medium'],
+	        'Video Generation': ['sora_est', 'runway_gen3'],
+	        'Audio Models': ['whisper_large_v3', 'musicgen_large'],
+	        'Test Models': ['large_model_400b', 'very_large_model_1kb']
+	    };
+
+	    const formatName = (key) => key.split('_').map(word =>
+	        word.charAt(0).toUpperCase() + word.slice(1)
+	    ).join(' ').replace(/([0-9]+[a-z])/i, match => match.toUpperCase());
+
+	    // Track which models we've added to avoid duplicates
+	    const addedModels = new Set();
+
+	    // Add categorized models
+	    Object.entries(modelCategories).forEach(([category, modelKeys]) => {
+	        const optgroup = document.createElement('optgroup');
+	        optgroup.label = category;
+
+	        modelKeys.forEach(key => {
+	            if (MODEL_PRESETS[key] && !addedModels.has(key)) {
+	                addedModels.add(key);
+	                const option = document.createElement('option');
+	                option.value = key;
+	                option.textContent = formatName(key);
+	                if (key === 'llama3_8b') option.selected = true;
+	                optgroup.appendChild(option);
+	            }
+	        });
+
+	        if (optgroup.children.length > 0) {
+	            modelPresetSelect.appendChild(optgroup);
 	        }
-	        
-	        modelPresetSelect.appendChild(option);
 	    });
+
+	    // Add any remaining models not in categories
+	    const uncategorized = Object.keys(MODEL_PRESETS).filter(key => !addedModels.has(key));
+	    if (uncategorized.length > 0) {
+	        const optgroup = document.createElement('optgroup');
+	        optgroup.label = 'Other';
+	        uncategorized.forEach(key => {
+	            const option = document.createElement('option');
+	            option.value = key;
+	            option.textContent = formatName(key);
+	            optgroup.appendChild(option);
+	        });
+	        modelPresetSelect.appendChild(optgroup);
+	    }
 	    
 	    renderTable(data);
-	    
+
 	    if(localStorage.getItem('savedDevices')) {
 	        document.getElementById('loadDevicesBtn').removeAttribute('disabled');
 	    } else {
 	        document.getElementById('loadDevicesBtn').setAttribute('disabled', true);
 	    }
+
+	    // Initial topology draw
+	    setTimeout(updateTopology, 100);
 	});
-        
+
+        // Topology Visualization
+        function updateTopology() {
+            const canvas = document.getElementById('topologyCanvas');
+            const container = document.getElementById('topologyContainer');
+            if (!canvas || !container) return;
+
+            // Set canvas size
+            const rect = container.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const height = Math.max(300, devices.length * 100 + 60);
+            canvas.width = rect.width * dpr;
+            canvas.height = height * dpr;
+            canvas.style.height = height + 'px';
+
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+
+            // Clear with dark background
+            ctx.fillStyle = '#0f0f1a';
+            ctx.fillRect(0, 0, width, height);
+
+            if (devices.length === 0) {
+                ctx.fillStyle = '#666';
+                ctx.font = '14px system-ui';
+                ctx.textAlign = 'center';
+                ctx.fillText('Add devices to see topology', width/2, height/2);
+                return;
+            }
+
+            // Calculate node positions - arrange in a grid
+            const nodeWidth = 200;
+            const nodeHeight = 90;
+            const cols = Math.min(3, devices.length);
+            const rows = Math.ceil(devices.length / cols);
+            const hGap = (width - cols * nodeWidth) / (cols + 1);
+            const vGap = 30;
+
+            const nodes = devices.map((device, i) => {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                return {
+                    id: device.id,
+                    x: hGap + col * (nodeWidth + hGap),
+                    y: 30 + row * (nodeHeight + vGap),
+                    width: nodeWidth,
+                    height: nodeHeight,
+                    device: device
+                };
+            });
+
+            // Draw connections first
+            devices.forEach((device, i) => {
+                if (device.overflowTarget) {
+                    const sourceNode = nodes[i];
+                    let targetX, targetY, targetW = 80, targetH = 40;
+                    let bandwidth = 115;
+                    let label = 'DDR5';
+
+                    if (device.overflowTarget === 'ddr5') {
+                        // Draw to virtual DDR5 node to the right
+                        targetX = sourceNode.x + sourceNode.width + 20;
+                        targetY = sourceNode.y + (sourceNode.height - targetH) / 2;
+                        bandwidth = device.ddr5BandwidthGBps || 115;
+                        label = 'DDR5 RAM';
+
+                        // Draw DDR5 box
+                        ctx.fillStyle = 'rgba(248, 113, 113, 0.15)';
+                        ctx.strokeStyle = '#f87171';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.roundRect(targetX, targetY, targetW, targetH, 6);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.fillStyle = '#f87171';
+                        ctx.font = 'bold 10px system-ui';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(label, targetX + targetW/2, targetY + 16);
+                        ctx.font = '9px system-ui';
+                        ctx.fillText(`${bandwidth} GB/s`, targetX + targetW/2, targetY + 30);
+                    } else {
+                        const targetNode = nodes.find(n => n.id === device.overflowTarget);
+                        if (targetNode) {
+                            targetX = targetNode.x;
+                            targetY = targetNode.y;
+                            targetW = targetNode.width;
+                            targetH = targetNode.height;
+                            bandwidth = getPcieBandwidth(device.pcieGeneration, device.pcieLanes);
+                            label = `PCIe ${device.pcieGeneration || 4} x${device.pcieLanes || 16}`;
+                        } else {
+                            return;
+                        }
+                    }
+
+                    // Connection color based on bandwidth
+                    let color = '#f87171'; // Red for slow
+                    if (bandwidth >= 300) color = '#4ade80'; // Green for NVLink
+                    else if (bandwidth >= 32) color = '#60a5fa'; // Blue for PCIe 5
+                    else if (bandwidth >= 8) color = '#fbbf24'; // Yellow for PCIe 4
+
+                    // Draw connection line
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([8, 4]);
+                    ctx.beginPath();
+
+                    const sx = sourceNode.x + sourceNode.width;
+                    const sy = sourceNode.y + sourceNode.height / 2;
+                    const tx = targetX;
+                    const ty = targetY + targetH / 2;
+
+                    ctx.moveTo(sx, sy);
+                    // Curved line
+                    const cpx = (sx + tx) / 2;
+                    ctx.quadraticCurveTo(cpx, sy, cpx, (sy + ty) / 2);
+                    ctx.quadraticCurveTo(cpx, ty, tx, ty);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Bandwidth label
+                    ctx.fillStyle = color;
+                    ctx.font = 'bold 9px system-ui';
+                    ctx.textAlign = 'center';
+                    const midX = (sx + tx) / 2;
+                    const midY = (sy + ty) / 2;
+                    ctx.fillStyle = '#0f0f1a';
+                    ctx.fillRect(midX - 30, midY - 10, 60, 18);
+                    ctx.fillStyle = color;
+                    ctx.fillText(`${bandwidth} GB/s`, midX, midY + 3);
+                }
+            });
+
+            // Draw nodes
+            nodes.forEach((node) => {
+                const device = node.device;
+                const template = DEVICE_TEMPLATES[device.template] || {};
+                const currentQuant = document.getElementById('quantizationType')?.value || 'q4';
+                const tflops = device.computeTFlops?.[currentQuant] || 0;
+
+                // Gradient background
+                const gradient = ctx.createLinearGradient(node.x, node.y, node.x, node.y + node.height);
+                gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+                gradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
+                ctx.fillStyle = gradient;
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(node.x, node.y, node.width, node.height, 10);
+                ctx.fill();
+                ctx.stroke();
+
+                // Device icon/type badge
+                const typeLabel = template.type || 'Custom';
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                ctx.beginPath();
+                ctx.roundRect(node.x + 8, node.y + 8, 50, 16, 4);
+                ctx.fill();
+                ctx.fillStyle = '#888';
+                ctx.font = '9px system-ui';
+                ctx.textAlign = 'left';
+                ctx.fillText(typeLabel.substring(0, 8), node.x + 12, node.y + 19);
+
+                // Device name
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 13px system-ui';
+                ctx.textAlign = 'center';
+                const displayName = device.name.length > 24 ? device.name.substring(0, 22) + '...' : device.name;
+                ctx.fillText(displayName, node.x + node.width/2, node.y + 38);
+
+                // Specs line
+                ctx.fillStyle = '#aaa';
+                ctx.font = '11px system-ui';
+                ctx.fillText(`${device.memoryGB} GB | ${device.localBandwidthGBps} GB/s`, node.x + node.width/2, node.y + 55);
+
+                // PCIe info
+                if (device.pcieGeneration) {
+                    ctx.font = '10px system-ui';
+                    ctx.fillStyle = '#888';
+                    ctx.fillText(`PCIe ${device.pcieGeneration}.0 x${device.pcieLanes || 16}`, node.x + node.width/2, node.y + 72);
+                }
+
+                // TFLOPs badge
+                if (tflops > 0) {
+                    ctx.fillStyle = 'rgba(74, 222, 128, 0.2)';
+                    ctx.beginPath();
+                    ctx.roundRect(node.x + node.width - 55, node.y + 8, 47, 16, 4);
+                    ctx.fill();
+                    ctx.fillStyle = '#4ade80';
+                    ctx.font = 'bold 9px system-ui';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`${tflops}T`, node.x + node.width - 32, node.y + 19);
+                }
+
+                // Overflow indicator
+                if (device.overflowTarget) {
+                    ctx.fillStyle = 'rgba(251, 191, 36, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(node.x + node.width - 10, node.y + node.height - 10, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.beginPath();
+                    ctx.arc(node.x + node.width - 10, node.y + node.height - 10, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        // Override updateDeviceDisplay to also update topology
+        const _originalUpdateDeviceDisplay = updateDeviceDisplay;
+        updateDeviceDisplay = function() {
+            _originalUpdateDeviceDisplay();
+            setTimeout(updateTopology, 50);
+        };
+
+        // Handle window resize
+        window.addEventListener('resize', () => setTimeout(updateTopology, 100));
+
     </script>
 </body>
 </html>
