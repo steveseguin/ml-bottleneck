@@ -351,7 +351,7 @@ test('recommended setup html surfaces confidence, strategy, and bottleneck reaso
   assert.match(html, /Thunderbolt 5 RDMA/);
 });
 
-test('system analysis renders recommendation first and collapses per-device details', () => {
+test('system analysis leads with decode rate and collapses breakdown', () => {
   const app = loadApp();
   app.hooks.setDevices([cloneTemplate(app.hooks, 'RTX 4090')]);
   setLlmDefaults(app, {
@@ -366,9 +366,15 @@ test('system analysis renders recommendation first and collapses per-device deta
   app.hooks.updateSystemAnalysis();
   const html = app.elements.get('systemAnalysis').innerHTML;
 
-  assert.ok(html.indexOf('Recommended Setup') >= 0);
-  assert.ok(html.indexOf('System Total') > html.indexOf('Recommended Setup'));
-  assert.match(html, /Per-device details and bottlenecks/);
+  // Primary result hero must come before the collapsed breakdown
+  const heroIdx = html.indexOf('result-hero');
+  const breakdownIdx = html.indexOf('Breakdown &amp; details');
+  const recommendationIdx = html.indexOf('Recommended Setup');
+  assert.ok(heroIdx >= 0, 'result hero should render at top');
+  assert.ok(breakdownIdx > heroIdx, 'breakdown accordion should come after hero');
+  assert.ok(recommendationIdx > breakdownIdx, 'recommendation should be inside collapsed breakdown');
+  assert.match(html, /System decode rate/);
+  assert.match(html, /Per-device/);
 });
 
 test('calculateEffectiveBandwidth honors overflow target device bandwidth', () => {

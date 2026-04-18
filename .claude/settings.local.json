@@ -11,7 +11,8 @@
       "Bash(cat:*)",
       "Skill(ralph-wiggum:ralph-loop)",
       "Bash(npm test *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(node --test tests/*.test.mjs)"
     ]
   }
 }
