@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(/root/.claude/plugins/cache/claude-plugins-official/ralph-wiggum:*)",
+      "Bash(/root/.claude/plugins/cache/claude-code-plugins/ralph-wiggum:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(cat:*)",
+      "Skill(ralph-wiggum:ralph-loop)"
+    ]
+  }
+}

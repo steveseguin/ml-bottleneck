@@ -834,6 +834,7 @@ input, select {
                     <select id="quantizationType" class="input">
                         <option value="q4" selected>Q4 (Recommended)</option>
                         <option value="int8">INT8</option>
+                        <option value="fp8">FP8</option>
                         <option value="float16">FP16</option>
                         <option value="bfloat16">BF16</option>
                         <option value="float32">FP32</option>
@@ -842,9 +843,6 @@ input, select {
 
                 <label>Total Parameters (B)</label>
                 <input type="number" id="totalParamsB" class="input" value="400">
-
-                <label>Batch Size</label>
-                <input type="number" id="batchSize" class="input" value="1">
 
                 <label>Sequence Length</label>
                 <input type="number" id="seqLength" class="input" value="2048">
@@ -858,12 +856,70 @@ input, select {
                 <label>Number of Heads</label>
                 <input type="number" id="numHeads" class="input" value="128">
 
+                <label>Architecture Family</label>
+                <select id="architectureType" class="input">
+                    <option value="transformer">Transformer</option>
+                    <option value="dense_transformer">Dense Transformer</option>
+                    <option value="moe_transformer">MoE Transformer</option>
+                    <option value="hybrid_ssm_transformer">Hybrid SSM + Transformer</option>
+                    <option value="state_space">State Space / Mamba-like</option>
+                    <option value="encoder_decoder">Encoder-Decoder</option>
+                    <option value="multimodal_transformer">Multimodal Transformer</option>
+                    <option value="diffusion_transformer">Diffusion / DiT</option>
+                    <option value="audio_transformer">Audio / Speech Transformer</option>
+                </select>
+
+                <div class="device-grid">
+                    <div>
+                        <label>KV Heads</label>
+                        <input type="number" id="numKVHeads" class="input" value="8" min="1">
+                    </div>
+                    <div>
+                        <label>Intermediate Size</label>
+                        <input type="number" id="intermediateSize" class="input" value="32768" min="1">
+                    </div>
+                    <div>
+                        <label>Active Params (B)</label>
+                        <input type="number" id="activeParamsB" class="input" value="400" min="0" step="0.1">
+                    </div>
+                    <div>
+                        <label>Experts</label>
+                        <input type="number" id="numExperts" class="input" value="1" min="1">
+                    </div>
+                    <div>
+                        <label>Active Experts</label>
+                        <input type="number" id="activeExperts" class="input" value="1" min="1">
+                    </div>
+                    <div>
+                        <label>Routing</label>
+                        <select id="routingType" class="input">
+                            <option value="auto">Auto</option>
+                            <option value="dense">Dense</option>
+                            <option value="moe">MoE</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Attention</label>
+                        <select id="attentionMechanism" class="input">
+                            <option value="auto">Auto</option>
+                            <option value="standard">Standard</option>
+                            <option value="grouped_query">Grouped-Query</option>
+                            <option value="multi_query">Multi-Query</option>
+                            <option value="mla">MLA</option>
+                            <option value="hybrid_linear">Hybrid Linear</option>
+                            <option value="sliding_window">Sliding Window</option>
+                            <option value="hybrid_ssm">Hybrid SSM</option>
+                        </select>
+                    </div>
+                </div>
+
                 <label style="display: none;">Data Type</label>
                 <select id="dtype" class="input" style="display: none;">
                     <option value="float32">float32</option>
                     <option value="bfloat16">bfloat16</option>
                     <option value="float16">float16</option>
                     <option value="int8">int8</option>
+                    <option value="fp8">fp8</option>
                     <option value="q4" selected>q4</option>
                 </select>
 
@@ -890,6 +946,18 @@ input, select {
                     <option value="exo_phase_split">EXO Phase Split (Prefill/Decode)</option>
                 </select>
 
+                <label>Runtime Framework</label>
+                <select id="runtimeFramework" class="input">
+                    <option value="auto" selected>AUTO (Match hardware)</option>
+                    <option value="llama_cpp">llama.cpp</option>
+                    <option value="mlx">MLX / MLX-LM</option>
+                    <option value="ollama">Ollama</option>
+                    <option value="vllm">vLLM</option>
+                    <option value="sglang">SGLang</option>
+                    <option value="tensorrt_llm">TensorRT-LLM</option>
+                    <option value="exo">EXO / MLX Distributed</option>
+                </select>
+
                 <label>Batch Size</label>
                 <select id="batchSize" class="input">
                     <option value="1">1 (Interactive)</option>
@@ -899,6 +967,14 @@ input, select {
                     <option value="32">32 (High throughput)</option>
                     <option value="64">64 (Max throughput)</option>
                 </select>
+
+                <div class="inline-select-group">
+                    <label for="hoursPerDay">Hours/Day</label>
+                    <input type="number" id="hoursPerDay" class="input" value="8" min="1" max="24" step="1">
+
+                    <label for="costPerKwh">$/kWh</label>
+                    <input type="number" id="costPerKwh" class="input" value="0.12" min="0.01" step="0.01">
+                </div>
             </div>
         </div>
         </div>
@@ -925,6 +1001,8 @@ input, select {
 	            <optgroup label="Apple Silicon">
 	                <option value="m4_max">Mac M4 Max (128GB)</option>
 	                <option value="m3_ultra">Mac M3 Ultra (512GB)</option>
+	                <option value="m3_ultra_x4_tb5">4x Mac M3 Ultra (Thunderbolt 5)</option>
+	                <option value="m3_ultra_x4_tb5_rdma">4x Mac M3 Ultra (TB5 RDMA)</option>
 	            </optgroup>
 	            <optgroup label="Data Center">
 	                <option value="h100_single">Single H100</option>
@@ -1005,6 +1083,7 @@ input, select {
             'bfloat16': 2,
             'float16': 2,
             'int8': 1,
+            'fp8': 1,
             'q4': 0.5
         };
 
@@ -1071,6 +1150,287 @@ input, select {
             'oculink': 8           // Oculink (PCIe 4.0 x4)
         };
 
+        const FRAMEWORK_PROFILES = {
+            auto: {
+                label: 'AUTO',
+                decodeEfficiency: 0.74,
+                prefillEfficiency: 0.72,
+                bandwidthEfficiency: 0.80,
+                speculativeMultiplier: 1.45,
+                batchingMultiplier: 1.18,
+                pagedAttentionMultiplier: 1.07,
+                flashAttentionMultiplier: 1.16
+            },
+            llama_cpp: {
+                label: 'llama.cpp',
+                decodeEfficiency: 0.70,
+                prefillEfficiency: 0.76,
+                bandwidthEfficiency: 0.78,
+                speculativeMultiplier: 1.32,
+                batchingMultiplier: 1.10,
+                pagedAttentionMultiplier: 1.03,
+                flashAttentionMultiplier: 1.08
+            },
+            mlx: {
+                label: 'MLX / MLX-LM',
+                decodeEfficiency: 0.84,
+                prefillEfficiency: 0.80,
+                bandwidthEfficiency: 0.86,
+                speculativeMultiplier: 1.22,
+                batchingMultiplier: 1.08,
+                pagedAttentionMultiplier: 1.00,
+                flashAttentionMultiplier: 1.05
+            },
+            ollama: {
+                label: 'Ollama',
+                decodeEfficiency: 0.62,
+                prefillEfficiency: 0.70,
+                bandwidthEfficiency: 0.76,
+                speculativeMultiplier: 1.18,
+                batchingMultiplier: 1.05,
+                pagedAttentionMultiplier: 1.00,
+                flashAttentionMultiplier: 1.04
+            },
+            vllm: {
+                label: 'vLLM',
+                decodeEfficiency: 0.76,
+                prefillEfficiency: 0.80,
+                bandwidthEfficiency: 0.83,
+                speculativeMultiplier: 1.60,
+                batchingMultiplier: 1.26,
+                pagedAttentionMultiplier: 1.12,
+                flashAttentionMultiplier: 1.18
+            },
+            sglang: {
+                label: 'SGLang',
+                decodeEfficiency: 0.80,
+                prefillEfficiency: 0.83,
+                bandwidthEfficiency: 0.85,
+                speculativeMultiplier: 1.70,
+                batchingMultiplier: 1.28,
+                pagedAttentionMultiplier: 1.12,
+                flashAttentionMultiplier: 1.20
+            },
+            tensorrt_llm: {
+                label: 'TensorRT-LLM',
+                decodeEfficiency: 0.72,
+                prefillEfficiency: 0.86,
+                bandwidthEfficiency: 0.82,
+                speculativeMultiplier: 1.85,
+                batchingMultiplier: 1.30,
+                pagedAttentionMultiplier: 1.10,
+                flashAttentionMultiplier: 1.16
+            },
+            exo: {
+                label: 'EXO',
+                decodeEfficiency: 0.77,
+                prefillEfficiency: 0.74,
+                bandwidthEfficiency: 0.78,
+                speculativeMultiplier: 1.05,
+                batchingMultiplier: 1.06,
+                pagedAttentionMultiplier: 1.00,
+                flashAttentionMultiplier: 1.02
+            }
+        };
+
+        const PROFILE_MULTIPLIER_KEYS = [
+            'kvCacheMultiplier',
+            'attentionMemoryMultiplier',
+            'activationMultiplier',
+            'prefillAttentionMultiplier',
+            'decodeAttentionMultiplier',
+            'feedForwardMultiplier',
+            'decodeWeightAccessMultiplier',
+            'networkTrafficMultiplier'
+        ];
+
+        const LEGACY_ARCHITECTURE_ALIASES = {
+            dense_transformer: 'transformer',
+            moe_transformer: 'transformer'
+        };
+
+        const ARCHITECTURE_PROFILES = {
+            transformer: {
+                label: 'Transformer',
+                kvCacheMultiplier: 1,
+                attentionMemoryMultiplier: 1,
+                activationMultiplier: 1,
+                prefillAttentionMultiplier: 1,
+                decodeAttentionMultiplier: 1,
+                feedForwardMultiplier: 1,
+                decodeWeightAccessMultiplier: 1,
+                networkTrafficMultiplier: 1
+            },
+            dense_transformer: {
+                label: 'Dense Transformer',
+                kvCacheMultiplier: 1,
+                attentionMemoryMultiplier: 1,
+                activationMultiplier: 1,
+                prefillAttentionMultiplier: 1,
+                decodeAttentionMultiplier: 1,
+                feedForwardMultiplier: 1,
+                decodeWeightAccessMultiplier: 1,
+                networkTrafficMultiplier: 1
+            },
+            moe_transformer: {
+                label: 'MoE Transformer',
+                kvCacheMultiplier: 1,
+                attentionMemoryMultiplier: 1,
+                activationMultiplier: 1,
+                prefillAttentionMultiplier: 1,
+                decodeAttentionMultiplier: 1,
+                feedForwardMultiplier: 1,
+                decodeWeightAccessMultiplier: 1,
+                networkTrafficMultiplier: 1
+            },
+            hybrid_ssm_transformer: {
+                label: 'Hybrid SSM + Transformer',
+                kvCacheMultiplier: 0.40,
+                attentionMemoryMultiplier: 0.55,
+                activationMultiplier: 0.85,
+                prefillAttentionMultiplier: 0.75,
+                decodeAttentionMultiplier: 0.45,
+                feedForwardMultiplier: 0.82,
+                decodeWeightAccessMultiplier: 0.78,
+                networkTrafficMultiplier: 0.80
+            },
+            state_space: {
+                label: 'State Space / Mamba-like',
+                kvCacheMultiplier: 0.05,
+                attentionMemoryMultiplier: 0.12,
+                activationMultiplier: 0.72,
+                prefillAttentionMultiplier: 0.18,
+                decodeAttentionMultiplier: 0.08,
+                feedForwardMultiplier: 0.78,
+                decodeWeightAccessMultiplier: 0.68,
+                networkTrafficMultiplier: 0.75
+            },
+            encoder_decoder: {
+                label: 'Encoder-Decoder',
+                kvCacheMultiplier: 1.15,
+                attentionMemoryMultiplier: 1.15,
+                activationMultiplier: 1.10,
+                prefillAttentionMultiplier: 1.18,
+                decodeAttentionMultiplier: 1.15,
+                feedForwardMultiplier: 1.0,
+                decodeWeightAccessMultiplier: 1.08,
+                networkTrafficMultiplier: 1.10
+            },
+            multimodal_transformer: {
+                label: 'Multimodal Transformer',
+                kvCacheMultiplier: 1,
+                attentionMemoryMultiplier: 1.08,
+                activationMultiplier: 1.10,
+                prefillAttentionMultiplier: 1.08,
+                decodeAttentionMultiplier: 1.0,
+                feedForwardMultiplier: 1.0,
+                decodeWeightAccessMultiplier: 1.03,
+                networkTrafficMultiplier: 1.05
+            },
+            diffusion_transformer: {
+                label: 'Diffusion / DiT',
+                kvCacheMultiplier: 0,
+                attentionMemoryMultiplier: 0.25,
+                activationMultiplier: 1.35,
+                prefillAttentionMultiplier: 0.5,
+                decodeAttentionMultiplier: 0.5,
+                feedForwardMultiplier: 1.2,
+                decodeWeightAccessMultiplier: 1,
+                networkTrafficMultiplier: 1
+            },
+            audio_transformer: {
+                label: 'Audio / Speech Transformer',
+                kvCacheMultiplier: 0.8,
+                attentionMemoryMultiplier: 0.75,
+                activationMultiplier: 0.9,
+                prefillAttentionMultiplier: 0.85,
+                decodeAttentionMultiplier: 0.8,
+                feedForwardMultiplier: 0.9,
+                decodeWeightAccessMultiplier: 0.92,
+                networkTrafficMultiplier: 0.90
+            }
+        };
+
+        const ATTENTION_MECHANISM_PROFILES = {
+            standard: {
+                label: 'Standard Attention',
+                kvCacheMultiplier: 1,
+                attentionMemoryMultiplier: 1,
+                activationMultiplier: 1,
+                prefillAttentionMultiplier: 1,
+                decodeAttentionMultiplier: 1,
+                feedForwardMultiplier: 1,
+                decodeWeightAccessMultiplier: 1,
+                networkTrafficMultiplier: 1
+            },
+            grouped_query: {
+                label: 'Grouped-Query Attention',
+                kvCacheMultiplier: 0.62,
+                attentionMemoryMultiplier: 0.94,
+                activationMultiplier: 0.98,
+                prefillAttentionMultiplier: 0.98,
+                decodeAttentionMultiplier: 0.92,
+                feedForwardMultiplier: 1,
+                decodeWeightAccessMultiplier: 1,
+                networkTrafficMultiplier: 0.94
+            },
+            multi_query: {
+                label: 'Multi-Query Attention',
+                kvCacheMultiplier: 0.24,
+                attentionMemoryMultiplier: 0.88,
+                activationMultiplier: 0.96,
+                prefillAttentionMultiplier: 0.94,
+                decodeAttentionMultiplier: 0.86,
+                feedForwardMultiplier: 1,
+                decodeWeightAccessMultiplier: 1,
+                networkTrafficMultiplier: 0.90
+            },
+            mla: {
+                label: 'MLA',
+                kvCacheMultiplier: 0.18,
+                attentionMemoryMultiplier: 0.46,
+                activationMultiplier: 0.92,
+                prefillAttentionMultiplier: 0.84,
+                decodeAttentionMultiplier: 0.70,
+                feedForwardMultiplier: 1,
+                decodeWeightAccessMultiplier: 0.96,
+                networkTrafficMultiplier: 0.80
+            },
+            hybrid_linear: {
+                label: 'Hybrid Linear Attention',
+                kvCacheMultiplier: 0.30,
+                attentionMemoryMultiplier: 0.42,
+                activationMultiplier: 0.86,
+                prefillAttentionMultiplier: 0.62,
+                decodeAttentionMultiplier: 0.34,
+                feedForwardMultiplier: 1,
+                decodeWeightAccessMultiplier: 0.82,
+                networkTrafficMultiplier: 0.76
+            },
+            sliding_window: {
+                label: 'Sliding Window Attention',
+                kvCacheMultiplier: 0.78,
+                attentionMemoryMultiplier: 0.58,
+                activationMultiplier: 0.94,
+                prefillAttentionMultiplier: 0.70,
+                decodeAttentionMultiplier: 0.78,
+                feedForwardMultiplier: 1,
+                decodeWeightAccessMultiplier: 1,
+                networkTrafficMultiplier: 0.88
+            },
+            hybrid_ssm: {
+                label: 'Hybrid SSM Attention',
+                kvCacheMultiplier: 0.36,
+                attentionMemoryMultiplier: 0.52,
+                activationMultiplier: 0.86,
+                prefillAttentionMultiplier: 0.74,
+                decodeAttentionMultiplier: 0.44,
+                feedForwardMultiplier: 0.84,
+                decodeWeightAccessMultiplier: 0.78,
+                networkTrafficMultiplier: 0.80
+            }
+        };
+
         // Model types for different workloads
         const MODEL_TYPES = {
             'llm': {
@@ -1097,6 +1457,32 @@ input, select {
 	    hiddenSize: 8192,
 	    numLayers: 80,
 	    numHeads: 64
+	  },
+	  'llama4_scout': {
+	    totalParamsB: 109,
+	    hiddenSize: 5120,
+	    numLayers: 48,
+	    numHeads: 40,
+	    numKVHeads: 8,
+	    isMoE: true,
+	    numExperts: 16,
+	    activeExperts: 1,
+	    activeParamsB: 17,
+	    contextLength: 10000000,
+	    hasVision: true
+	  },
+	  'llama4_maverick': {
+	    totalParamsB: 400,
+	    hiddenSize: 5120,
+	    numLayers: 48,
+	    numHeads: 40,
+	    numKVHeads: 8,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 1,
+	    activeParamsB: 17,
+	    contextLength: 1000000,
+	    hasVision: true
 	  },
 	  'mistral_7b': {
 	    totalParamsB: 7,
@@ -1126,7 +1512,9 @@ input, select {
 	    isMoE: true,
 	    numExperts: 256,
 	    activeExperts: 8,
-	    activeParamsB: 37
+	    activeParamsB: 37,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla'
 	  },
 	  'phi3_14b': {
 	    totalParamsB: 14,
@@ -1265,7 +1653,9 @@ input, select {
 	    isMoE: true,
 	    numExperts: 256,
 	    activeExperts: 8,
-	    activeParamsB: 37
+	    activeParamsB: 37,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla'
 	  },
 	  'deepseek_r1_distill_70b': {
 	    totalParamsB: 70,
@@ -1346,6 +1736,122 @@ input, select {
 	    numHeads: 40,
 	    numKVHeads: 8
 	  },
+	  'qwen3_8b': {
+	    label: 'Qwen 3 8B',
+	    totalParamsB: 8,
+	    hiddenSize: 4096,
+	    numLayers: 36,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    routingType: 'dense',
+	    attentionMechanism: 'grouped_query',
+	    contextLength: 128000
+	  },
+	  'qwen3_30b_a3b': {
+	    label: 'Qwen 3 30B A3B',
+	    totalParamsB: 30,
+	    hiddenSize: 4096,
+	    numLayers: 48,
+	    numHeads: 32,
+	    numKVHeads: 4,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 8,
+	    activeParamsB: 3,
+	    routingType: 'moe',
+	    attentionMechanism: 'grouped_query',
+	    contextLength: 128000
+	  },
+	  'qwen3.5_9b': {
+	    label: 'Qwen 3.5 9B',
+	    totalParamsB: 9,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 16,
+	    numKVHeads: 4,
+	    intermediateSize: 12288,
+	    routingType: 'dense',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    contextLength: 262144
+	  },
+	  'qwen3.5_27b': {
+	    label: 'Qwen 3.5 27B',
+	    totalParamsB: 27,
+	    hiddenSize: 5120,
+	    numLayers: 64,
+	    numHeads: 24,
+	    numKVHeads: 4,
+	    intermediateSize: 17408,
+	    routingType: 'dense',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    contextLength: 262144
+	  },
+	  'qwen3.5_35b_a3b': {
+	    label: 'Qwen 3.5 35B A3B',
+	    totalParamsB: 35,
+	    hiddenSize: 2048,
+	    numLayers: 40,
+	    numHeads: 16,
+	    numKVHeads: 2,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 3,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    contextLength: 262144
+	  },
+	  'qwen3.5_122b_a10b': {
+	    label: 'Qwen 3.5 122B A10B',
+	    totalParamsB: 122,
+	    hiddenSize: 3072,
+	    numLayers: 48,
+	    numHeads: 32,
+	    numKVHeads: 2,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 10,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    contextLength: 262144
+	  },
+	  'qwen3.5_397b_a17b': {
+	    label: 'Qwen 3.5 397B A17B',
+	    totalParamsB: 397,
+	    hiddenSize: 4096,
+	    numLayers: 60,
+	    numHeads: 32,
+	    numKVHeads: 2,
+	    isMoE: true,
+	    numExperts: 512,
+	    activeExperts: 10,
+	    activeParamsB: 17,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    contextLength: 262144
+	  },
+	  'qwen3.6_35b_a3b': {
+	    label: 'Qwen 3.6 35B A3B',
+	    totalParamsB: 35,
+	    hiddenSize: 2048,
+	    numLayers: 40,
+	    numHeads: 16,
+	    numKVHeads: 2,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 3,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    contextLength: 262144
+	  },
 	  // Llama 3.2/3.3 Family
 	  'llama3.3_70b': {
 	    totalParamsB: 70,
@@ -1401,11 +1907,50 @@ input, select {
 	  },
 	  // GLM-4
 	  'glm4_9b': {
+	    label: 'GLM 4 9B',
 	    totalParamsB: 9,
 	    hiddenSize: 4096,
 	    numLayers: 40,
 	    numHeads: 32,
-	    numKVHeads: 2
+	    numKVHeads: 2,
+	    routingType: 'dense',
+	    attentionMechanism: 'grouped_query'
+	  },
+	  'glm5': {
+	    label: 'GLM 5 744B A40B',
+	    totalParamsB: 744,
+	    hiddenSize: 6144,
+	    numLayers: 78,
+	    numHeads: 64,
+	    numKVHeads: 64,
+	    intermediateSize: 12288,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 40,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla',
+	    contextLength: 202752,
+	    kvLoraRank: 512,
+	    qLoraRank: 2048
+	  },
+	  'glm5_1': {
+	    label: 'GLM 5.1 744B A40B',
+	    totalParamsB: 744,
+	    hiddenSize: 6144,
+	    numLayers: 78,
+	    numHeads: 64,
+	    numKVHeads: 64,
+	    intermediateSize: 12288,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 40,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla',
+	    contextLength: 202752,
+	    kvLoraRank: 512,
+	    qLoraRank: 2048
 	  },
 	  // Command R+
 	  'command_r_plus_104b': {
@@ -1692,6 +2237,7 @@ input, select {
 	  },
 	  // Qwen3 MoE
 	  'qwen3_235b_moe': {
+	    label: 'Qwen 3 235B A22B',
 	    totalParamsB: 235,
 	    hiddenSize: 5120,
 	    numLayers: 94,
@@ -1700,7 +2246,42 @@ input, select {
 	    isMoE: true,
 	    numExperts: 128,
 	    activeExperts: 8,
-	    activeParamsB: 22
+	    activeParamsB: 22,
+	    routingType: 'moe',
+	    attentionMechanism: 'grouped_query'
+	  },
+	  // MiniMax M2 Family
+	  'minimax_m2': {
+	    label: 'MiniMax M2 230B A10B',
+	    totalParamsB: 230,
+	    hiddenSize: 3072,
+	    numLayers: 62,
+	    numHeads: 48,
+	    numKVHeads: 8,
+	    intermediateSize: 1536,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 10,
+	    routingType: 'moe',
+	    attentionMechanism: 'grouped_query',
+	    contextLength: 196608
+	  },
+	  'minimax_m2.5': {
+	    label: 'MiniMax M2.5 229B A10B',
+	    totalParamsB: 229,
+	    hiddenSize: 3072,
+	    numLayers: 62,
+	    numHeads: 48,
+	    numKVHeads: 8,
+	    intermediateSize: 1536,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 10,
+	    routingType: 'moe',
+	    attentionMechanism: 'grouped_query',
+	    contextLength: 196608
 	  },
 	  // Video Generation Models
 	  'sora_est': {
@@ -1736,14 +2317,37 @@ input, select {
 	  },
 	  // EXO-supported models
 	  'kimi_k2': {
+	    label: 'Kimi K2 1T A32B',
 	    totalParamsB: 1000,
-	    hiddenSize: 8192,
-	    numLayers: 80,
+	    hiddenSize: 7168,
+	    numLayers: 61,
 	    numHeads: 64,
+	    numKVHeads: 64,
+	    intermediateSize: 18432,
 	    isMoE: true,
-	    numExperts: 256,
+	    numExperts: 384,
 	    activeExperts: 8,
-	    activeParamsB: 32
+	    activeParamsB: 32,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla',
+	    contextLength: 128000
+	  },
+	  'kimi_k2.5': {
+	    label: 'Kimi K2.5 1T A32B',
+	    totalParamsB: 1000,
+	    hiddenSize: 7168,
+	    numLayers: 61,
+	    numHeads: 64,
+	    numKVHeads: 64,
+	    intermediateSize: 18432,
+	    isMoE: true,
+	    numExperts: 384,
+	    activeExperts: 8,
+	    activeParamsB: 32,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla',
+	    contextLength: 262144,
+	    hasVision: true
 	  },
 	  'llava_1.5_7b': {
 	    totalParamsB: 7,
@@ -1790,6 +2394,20 @@ const DEVICE_TEMPLATES = {
     },
     type: 'GPU'
   },
+  'H200': {
+    name: 'NVIDIA H200',
+    memoryGB: 141,
+    localBandwidthGBps: 4800,
+    networkBandwidthGBps: 450,
+    computeTFlops: {
+      'float32': 500,
+      'float16': 989,
+      'bfloat16': 989,
+      'int8': 1979,
+      'q4': 2960
+    },
+    type: 'GPU'
+  },
   'A100': {
     name: 'NVIDIA A100',
     memoryGB: 80,
@@ -1815,6 +2433,22 @@ const DEVICE_TEMPLATES = {
       'bfloat16': 300,
       'int8': 600,
       'q4': 900
+    },
+    type: 'GPU'
+  },
+  'RTX PRO 6000 Blackwell': {
+    name: 'NVIDIA RTX PRO 6000 Blackwell',
+    memoryGB: 96,
+    localBandwidthGBps: 1597,
+    networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 120,
+      'float16': 1000,
+      'bfloat16': 1000,
+      'int8': 2000,
+      'q4': 4000
     },
     type: 'GPU'
   },
@@ -2144,6 +2778,22 @@ const DEVICE_TEMPLATES = {
       'bfloat16': 760,
       'int8': 1520,
       'q4': 2280
+    },
+    type: 'GPU'
+  },
+  'AMD MI355X': {
+    name: 'AMD MI355X',
+    memoryGB: 288,
+    localBandwidthGBps: 8000,
+    networkBandwidthGBps: 400 / 8,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 450,
+      'float16': 1800,
+      'bfloat16': 1800,
+      'int8': 3600,
+      'q4': 7200
     },
     type: 'GPU'
   },
@@ -2818,7 +3468,26 @@ const DEVICE_TEMPLATES = {
             ...DEVICE_TEMPLATES["RTX 5090"]
         }];
 	    
-        let utilizationChart = null;
+	    let utilizationChart = null;
+        function parseOptionalNumber(id) {
+            const value = parseFloat(document.getElementById(id)?.value);
+            return Number.isFinite(value) ? value : null;
+        }
+
+        function hasModelOverrideValue(value) {
+            return value !== undefined && value !== null && value !== '';
+        }
+
+        function mergeModelConfig(baseConfig = {}, overrideConfig = {}) {
+            const merged = { ...baseConfig };
+            Object.entries(overrideConfig).forEach(([key, value]) => {
+                if (hasModelOverrideValue(value)) {
+                    merged[key] = value;
+                }
+            });
+            return merged;
+        }
+
         function getModelConfig() {
             return {
                 modelPreset: document.getElementById('modelPreset').value,
@@ -2829,39 +3498,333 @@ const DEVICE_TEMPLATES = {
                 hiddenSize: parseFloat(document.getElementById('hiddenSize').value),
                 numLayers: parseFloat(document.getElementById('numLayers').value),
                 numHeads: parseFloat(document.getElementById('numHeads').value),
+                numKVHeads: parseOptionalNumber('numKVHeads'),
+                intermediateSize: parseOptionalNumber('intermediateSize'),
+                architectureType: document.getElementById('architectureType')?.value || 'transformer',
+                activeParamsB: parseOptionalNumber('activeParamsB'),
+                numExperts: parseOptionalNumber('numExperts'),
+                activeExperts: parseOptionalNumber('activeExperts'),
+                routingType: document.getElementById('routingType')?.value || 'auto',
+                attentionMechanism: document.getElementById('attentionMechanism')?.value || 'auto',
                 dtype: document.getElementById('dtype').value,
-                parallelismStrategy: document.getElementById('parallelismStrategy').value
+                parallelismStrategy: document.getElementById('parallelismStrategy').value,
+                optimizationMode: document.getElementById('optimizationMode')?.value || 'none',
+                runtimeFramework: document.getElementById('runtimeFramework')?.value || 'auto'
             };
         }
+
+        function resolveArchitectureType(value) {
+            const normalizedValue = LEGACY_ARCHITECTURE_ALIASES[value] || value;
+            return ARCHITECTURE_PROFILES[normalizedValue] ? normalizedValue : 'transformer';
+        }
+
+        function inferArchitectureType(modelConfig) {
+            if (modelConfig.architectureType && ARCHITECTURE_PROFILES[modelConfig.architectureType]) {
+                return resolveArchitectureType(modelConfig.architectureType);
+            }
+
+            if (modelConfig.isImageGen) return 'diffusion_transformer';
+            if (modelConfig.isAudioModel) return 'audio_transformer';
+            if (modelConfig.isMambaHybrid) return 'hybrid_ssm_transformer';
+            if (modelConfig.isStateSpaceModel) return 'state_space';
+            if (modelConfig.isEncoderDecoder) return 'encoder_decoder';
+            if (modelConfig.hasVision || modelConfig.hasAudio) return 'multimodal_transformer';
+
+            return 'transformer';
+        }
+
+        function isMoEModel(modelConfig) {
+            return Boolean(
+                modelConfig.isMoE ||
+                (modelConfig.numExperts && modelConfig.numExperts > 1) ||
+                (modelConfig.activeParamsB && modelConfig.totalParamsB && modelConfig.activeParamsB < modelConfig.totalParamsB)
+            );
+        }
+
+        function inferRoutingType(modelConfig) {
+            if (modelConfig.routingType === 'dense' || modelConfig.routingType === 'moe') {
+                return modelConfig.routingType;
+            }
+
+            if (modelConfig.architectureType === 'dense_transformer') return 'dense';
+            if (modelConfig.architectureType === 'moe_transformer') return 'moe';
+
+            return isMoEModel(modelConfig) ? 'moe' : 'dense';
+        }
+
+        function inferAttentionMechanism(modelConfig) {
+            if (modelConfig.attentionMechanism && modelConfig.attentionMechanism !== 'auto' && ATTENTION_MECHANISM_PROFILES[modelConfig.attentionMechanism]) {
+                return modelConfig.attentionMechanism;
+            }
+
+            if (modelConfig.isMambaHybrid) return 'standard';
+            if (modelConfig.hasHybridLinearAttention || modelConfig.fullAttentionInterval || (Array.isArray(modelConfig.layerTypes) && modelConfig.layerTypes.some(type => type === 'linear_attention'))) {
+                return 'hybrid_linear';
+            }
+            if (modelConfig.isMLA || modelConfig.kvLoraRank || modelConfig.qLoraRank) {
+                return 'mla';
+            }
+
+            const numHeads = modelConfig.numHeads || 1;
+            const kvHeads = modelConfig.numKVHeads || numHeads;
+            if (kvHeads === 1) return 'multi_query';
+            if (kvHeads < numHeads) return 'grouped_query';
+
+            return 'standard';
+        }
+
+        function normalizeModelConfig(modelConfig) {
+            const architectureType = inferArchitectureType(modelConfig);
+            const routingType = inferRoutingType(modelConfig);
+            const isMoE = routingType === 'moe';
+            const numHeads = modelConfig.numHeads || 1;
+            const numExperts = modelConfig.numExperts || (isMoE ? 8 : 1);
+            const activeExperts = modelConfig.activeExperts || (isMoE ? Math.min(2, numExperts) : 1);
+            const inferredActiveParamsB = isMoE
+                ? Math.max(0.1, modelConfig.totalParamsB * (activeExperts / numExperts))
+                : modelConfig.totalParamsB;
+            const attentionMechanism = inferAttentionMechanism(modelConfig);
+
+            return {
+                ...modelConfig,
+                architectureType,
+                routingType,
+                attentionMechanism,
+                isMoE,
+                numExperts,
+                activeExperts,
+                numKVHeads: modelConfig.numKVHeads || numHeads,
+                intermediateSize: modelConfig.intermediateSize || (4 * modelConfig.hiddenSize),
+                activeParamsB: isMoE ? (modelConfig.activeParamsB || inferredActiveParamsB) : modelConfig.totalParamsB
+            };
+        }
+
+        function buildEffectiveModelConfig(baseConfig = getModelConfig(), options = {}) {
+            const { preferUserOverrides = true } = options;
+            const presetConfig = MODEL_PRESETS[baseConfig.modelPreset] || {};
+            const merged = preferUserOverrides
+                ? mergeModelConfig(presetConfig, baseConfig)
+                : mergeModelConfig(baseConfig, presetConfig);
+
+            return normalizeModelConfig(merged);
+        }
+
+        function getArchitectureProfile(modelConfig) {
+            const normalizedConfig = normalizeModelConfig(modelConfig);
+            const baseProfile = ARCHITECTURE_PROFILES[normalizedConfig.architectureType] || ARCHITECTURE_PROFILES.transformer;
+            const attentionProfile = ATTENTION_MECHANISM_PROFILES[normalizedConfig.attentionMechanism] || ATTENTION_MECHANISM_PROFILES.standard;
+            const multipliers = PROFILE_MULTIPLIER_KEYS.reduce((result, key) => {
+                result[key] = (baseProfile[key] || 1) * (attentionProfile[key] || 1);
+                return result;
+            }, {});
+            return {
+                key: normalizedConfig.architectureType,
+                attentionKey: normalizedConfig.attentionMechanism,
+                routingKey: normalizedConfig.routingType,
+                familyLabel: baseProfile.label,
+                attentionLabel: attentionProfile.label,
+                label: `${baseProfile.label} • ${attentionProfile.label} • ${normalizedConfig.routingType === 'moe' ? 'MoE' : 'Dense'}`,
+                ...multipliers
+            };
+        }
+
+        function getKVHeads(modelConfig) {
+            return modelConfig.numKVHeads || modelConfig.numHeads || 1;
+        }
+
+        function getActiveParamsB(modelConfig) {
+            const normalizedConfig = normalizeModelConfig(modelConfig);
+            return normalizedConfig.activeParamsB || normalizedConfig.totalParamsB;
+        }
+
+        function getDeviceComputeTflops(device, quantizationType) {
+            if (quantizationType === 'fp8') {
+                return device.computeTFlops?.fp8 ||
+                    device.computeTFlops?.int8 ||
+                    (device.computeTFlops?.float16 ? device.computeTFlops.float16 * 2 : null) ||
+                    device.computeTFlops?.bfloat16 ||
+                    device.computeTFlops?.float32 ||
+                    1;
+            }
+
+            return device.computeTFlops?.[quantizationType] ||
+                device.computeTFlops?.float16 ||
+                device.computeTFlops?.bfloat16 ||
+                device.computeTFlops?.float32 ||
+                1;
+        }
+
+        function getDefaultFrameworkForDevice(device) {
+            const name = (device.template || device.name || '').toLowerCase();
+            if (/mac|m[1-5]/.test(name)) return 'mlx';
+            if (/h100|h200|b200|rtx pro 6000|5090|4090|4080|4070|3090|a100/.test(name)) return 'tensorrt_llm';
+            if (/mi355|mi300|gaudi|tpu/.test(name)) return 'sglang';
+            if (/rx 79|arc|strix halo|ryzen ai/.test(name)) return 'llama_cpp';
+            return 'llama_cpp';
+        }
+
+        function getFrameworkProfile(modelConfig, devicesArray = devices) {
+            let frameworkKey = modelConfig.runtimeFramework || 'auto';
+
+            if (frameworkKey === 'auto') {
+                frameworkKey = devicesArray.length > 0
+                    ? getDefaultFrameworkForDevice(devicesArray[0])
+                    : 'llama_cpp';
+            }
+
+            return {
+                key: frameworkKey,
+                ...(FRAMEWORK_PROFILES[frameworkKey] || FRAMEWORK_PROFILES.auto)
+            };
+        }
+
+        function getOptimizationAdjustments(modelConfig) {
+            const mode = modelConfig.optimizationMode || 'none';
+            const batchSize = modelConfig.batchSize || 1;
+            const seqLength = modelConfig.seqLength || 2048;
+
+            const adjustments = {
+                decodeMultiplier: 1,
+                prefillMultiplier: 1,
+                prefillTrafficMultiplier: 1,
+                decodeTrafficMultiplier: 1,
+                networkMultiplier: 1,
+                label: 'Standard inference'
+            };
+
+            if (mode === 'speculative') {
+                adjustments.decodeMultiplier = batchSize > 1 ? 1.35 : 1.65;
+                adjustments.networkMultiplier = 1.05;
+                adjustments.label = 'Speculative decoding';
+            } else if (mode === 'continuous_batching') {
+                adjustments.decodeMultiplier = batchSize > 1 ? 1.18 : 1.05;
+                adjustments.prefillMultiplier = batchSize > 1 ? 1.08 : 1.0;
+                adjustments.label = 'Continuous batching';
+            } else if (mode === 'paged_attention') {
+                adjustments.decodeMultiplier = seqLength >= 8192 ? 1.12 : 1.06;
+                adjustments.decodeTrafficMultiplier = seqLength >= 8192 ? 0.88 : 0.94;
+                adjustments.prefillTrafficMultiplier = 0.96;
+                adjustments.label = 'Paged attention';
+            } else if (mode === 'flash_attention') {
+                adjustments.prefillMultiplier = seqLength >= 4096 ? 1.20 : 1.10;
+                adjustments.prefillTrafficMultiplier = seqLength >= 4096 ? 0.90 : 0.95;
+                adjustments.label = 'Flash attention';
+            }
+
+            return adjustments;
+        }
+
+        function calculateDecodeCoordinationTimeSeconds(modelConfig, devicesArray) {
+            if (!devicesArray || devicesArray.length <= 1) return 0;
+
+            const frameworkProfile = getFrameworkProfile(modelConfig, devicesArray);
+            const strategy = modelConfig.parallelismStrategy || 'pipeline';
+            if (!['tensor', 'hybrid_tp_pp', 'hybrid_tp_dp', 'expert', 'sequence', 'context'].includes(strategy)) {
+                return 0;
+            }
+
+            if (frameworkProfile.key !== 'exo') {
+                return 0;
+            }
+
+            const minInterconnectBandwidth = Math.max(1, getMinInterconnectBandwidth(devicesArray));
+            const baseLatencyMs = ((devicesArray.length - 1) * 6) + (modelConfig.isMoE ? 4 : 0);
+            const rdmaReferenceBandwidth = INTERCONNECT_BANDWIDTH.thunderbolt5_rdma;
+            const scaledLatencyMs = baseLatencyMs * (rdmaReferenceBandwidth / minInterconnectBandwidth);
+
+            return scaledLatencyMs / 1000;
+        }
+        function getMemoryProportion(devicesArray, deviceIndex) {
+            const totalSystemMemory = devicesArray.reduce((sum, device) => sum + device.memoryGB * 1e9, 0);
+            const deviceMemory = devicesArray[deviceIndex]?.memoryGB * 1e9 || 0;
+            return totalSystemMemory > 0 ? deviceMemory / totalSystemMemory : 1;
+        }
+
+        function getParallelismScales(modelConfig, devicesArray, deviceIndex) {
+            const deviceCount = Math.max(devicesArray.length, 1);
+            const strategy = modelConfig.parallelismStrategy || 'pipeline';
+            const memoryProportion = getMemoryProportion(devicesArray, deviceIndex);
+
+            if (strategy === 'tensor' || strategy === 'hybrid_tp_pp' || strategy === 'hybrid_tp_dp') {
+                return { residentScale: 1 / deviceCount, accessedScale: 1 / deviceCount, kvScale: 1 / deviceCount, activationScale: 1 / deviceCount };
+            }
+
+            if (strategy === 'pipeline') {
+                return { residentScale: memoryProportion, accessedScale: memoryProportion, kvScale: memoryProportion, activationScale: memoryProportion };
+            }
+
+            if (strategy === 'expert') {
+                const participatingDevices = Math.min(deviceCount, Math.max(modelConfig.activeExperts || 1, 1));
+                return { residentScale: 1 / deviceCount, accessedScale: 1 / participatingDevices, kvScale: 1, activationScale: 1 };
+            }
+
+            if (strategy === 'sequence' || strategy === 'context') {
+                return { residentScale: 1, accessedScale: 1, kvScale: 1 / deviceCount, activationScale: 1 / deviceCount };
+            }
+
+            return { residentScale: 1, accessedScale: 1, kvScale: 1, activationScale: 1 };
+        }
+
+        function getTensorCommunicationEfficiency(devicesArray) {
+            if (devicesArray.length <= 1) return 1;
+
+            const minBw = Math.min(...devicesArray.map(device => device.networkBandwidthGBps || 0));
+
+            if (minBw >= 300) return 0.96;
+            if (minBw >= 64) return 0.92;
+            if (minBw >= 32) return 0.88;
+            if (minBw >= 16) return 0.80;
+            return 0.68;
+        }
+
+        function calculateSystemRateFromDeviceRates(deviceRates, strategy, batchSize, devicesArray) {
+            const validRates = deviceRates.filter(rate => Number.isFinite(rate) && rate > 0);
+            if (validRates.length === 0) return 0;
+
+            const minRate = Math.min(...validRates);
+            const sumRate = validRates.reduce((sum, rate) => sum + rate, 0);
+            const stageTimes = validRates.map(rate => 1 / rate);
+
+            if (strategy === 'data') {
+                return sumRate;
+            }
+
+            if (strategy === 'tensor' || strategy === 'hybrid_tp_pp' || strategy === 'hybrid_tp_dp') {
+                return minRate * getTensorCommunicationEfficiency(devicesArray);
+            }
+
+            if (strategy === 'pipeline') {
+                return batchSize > 1
+                    ? (1 / Math.max(...stageTimes)) * 0.85
+                    : 1 / stageTimes.reduce((sum, value) => sum + value, 0);
+            }
+
+            if (strategy === 'expert') {
+                return minRate * 0.9;
+            }
+
+            return minRate * 0.92;
+        }
 	function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex ) {
+		const architectureProfile = getArchitectureProfile(modelConfig);
+		const parallelScales = getParallelismScales(modelConfig, devices, deviceIndex);
 		const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
+		const kvHeads = getKVHeads(modelConfig);
 		const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength * 
 			(modelConfig.hiddenSize / modelConfig.numHeads) * 
-			modelConfig.numHeads * dtypeSize;
-		const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers;
+			kvHeads * dtypeSize;
+		const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers * architectureProfile.kvCacheMultiplier;
+		const intermediateSize = modelConfig.intermediateSize || (4 * modelConfig.hiddenSize);
 		const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength * 
-			modelConfig.hiddenSize * dtypeSize;
+			(modelConfig.hiddenSize + intermediateSize * 0.35) * dtypeSize * architectureProfile.activationMultiplier;
 		const activationMemory = activationSizePerLayer * modelConfig.numLayers;
 		const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) * 
-			modelConfig.numHeads * dtypeSize;
+			modelConfig.numHeads * dtypeSize * architectureProfile.attentionMemoryMultiplier;
 
-		// Calculate total available memory across all devices
-		const totalSystemMemory = devices.reduce((sum, device) => sum + device.memoryGB * 1e9, 0);
-		
-		// Get this device's memory capacity
-		const deviceMemory = devices[deviceIndex].memoryGB * 1e9;
-		
-		// Calculate proportion of total memory for this device
-		const memoryProportion = deviceMemory / totalSystemMemory;
-
-		// Adjust memory allocation based on device's proportion of total memory
-		const adjustedParamsMemory = isPipeline ? 
-			paramsMemory * memoryProportion : // Pipeline: divide based on memory proportion
-			paramsMemory; // Tensor: replicate most params
-			
-		const adjustedKVCacheMemory = kvCacheMemory * memoryProportion;
-		const adjustedActivationMemory = activationMemory * memoryProportion;
-		const adjustedAttentionMemory = attentionMemory * memoryProportion;
+		const adjustedParamsMemory = paramsMemory * parallelScales.residentScale;
+		const adjustedKVCacheMemory = kvCacheMemory * parallelScales.kvScale;
+		const adjustedActivationMemory = activationMemory * parallelScales.activationScale;
+		const adjustedAttentionMemory = attentionMemory * parallelScales.activationScale;
 
 		return {
 			paramsMemory: adjustedParamsMemory,
@@ -2876,40 +3839,39 @@ const DEVICE_TEMPLATES = {
 	function calculateNetworkTraffic(modelConfig, dtypeSize, deviceCount, isPipeline) {
 		if (deviceCount <= 1) return 0;
 
+		const architectureProfile = getArchitectureProfile(modelConfig);
 		const batchSize = modelConfig.batchSize;
 		const seqLength = modelConfig.seqLength;
 		const hiddenSize = modelConfig.hiddenSize;
 		
 		if (isPipeline) {
-			// Pipeline parallelism: Forward and backward activation passing
+			// Pipeline parallelism: activation handoff between stages during inference
 			const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
-			// Each layer boundary requires passing activations forward and gradients back
-			return activationSize * 2 * (deviceCount - 1);
+			return activationSize * (deviceCount - 1) * architectureProfile.networkTrafficMultiplier;
 		} else {
-			// Tensor parallelism: All-reduce for gradients and activations
-			const gradientSize = modelConfig.totalParamsB * 1e9 * dtypeSize / deviceCount;
+			// Tensor parallelism: activation collectives for each forward step
 			const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
-			// All-reduce communication pattern: (n-1)/n * data_size * 2
-			return (deviceCount - 1) * (gradientSize + activationSize) * 2 / deviceCount;
+			return activationSize * 2 * (deviceCount - 1) / deviceCount * architectureProfile.networkTrafficMultiplier;
 		}
 	}
 
         // Improved FLOPs calculation (more accurate for forward and backward pass)
         function calculateTransformerFlops(modelConfig) {
             const { batchSize, seqLength, hiddenSize, numLayers, numHeads } = modelConfig;
+            const architectureProfile = getArchitectureProfile(modelConfig);
+            const headDim = hiddenSize / numHeads;
+            const intermediateSize = modelConfig.intermediateSize || (4 * hiddenSize);
+            const activeRatio = Math.min(1, getActiveParamsB(modelConfig) / modelConfig.totalParamsB);
 
-            // Forward pass FLOPs for one layer
             let forwardFlops = 0;
 
-            // Self-Attention
-            forwardFlops += 3 * (batchSize * seqLength * hiddenSize * hiddenSize); // Q, K, V projections
-            forwardFlops += batchSize * numHeads * seqLength * seqLength * (hiddenSize / numHeads); // Attention scores
-            forwardFlops += batchSize * numHeads * seqLength * (hiddenSize / numHeads) * (hiddenSize / numHeads); // Weighted sum
-            forwardFlops += batchSize * seqLength * hiddenSize * hiddenSize; // Output projection
+            // Attention projections and attention math.
+            forwardFlops += architectureProfile.prefillAttentionMultiplier * 6 * batchSize * seqLength * hiddenSize * hiddenSize;
+            forwardFlops += architectureProfile.prefillAttentionMultiplier * 4 * batchSize * numHeads * seqLength * seqLength * headDim;
+            forwardFlops += architectureProfile.prefillAttentionMultiplier * 2 * batchSize * seqLength * hiddenSize * hiddenSize;
 
-            // Feed-Forward Network
-            forwardFlops += batchSize * seqLength * hiddenSize * (4 * hiddenSize); // First layer
-            forwardFlops += batchSize * seqLength * (4 * hiddenSize) * hiddenSize; // Second layer
+            // Feed-forward compute scales down for MoE because only active experts execute per token.
+            forwardFlops += architectureProfile.feedForwardMultiplier * 4 * batchSize * seqLength * hiddenSize * intermediateSize * activeRatio;
 
             // Inference only needs forward pass (not backward)
             return forwardFlops * numLayers;
@@ -2917,16 +3879,17 @@ const DEVICE_TEMPLATES = {
 
         function calculateDecodeFlops(modelConfig) {
             const { batchSize, seqLength, hiddenSize, numLayers, numHeads } = modelConfig;
+            const architectureProfile = getArchitectureProfile(modelConfig);
+            const headDim = hiddenSize / numHeads;
+            const kvHeads = getKVHeads(modelConfig);
+            const intermediateSize = modelConfig.intermediateSize || (4 * hiddenSize);
+            const activeRatio = Math.min(1, getActiveParamsB(modelConfig) / modelConfig.totalParamsB);
 
-            // Decode FLOPs are dominated by KV cache interactions and are roughly:
             let decodeFlops = 0;
 
-            // KV Cache interaction in self-attention (per layer)
-            decodeFlops += 2 * batchSize * seqLength * hiddenSize * hiddenSize; 
-
-            // Feed-Forward Network (remains similar to prefill per token)
-            decodeFlops += batchSize * hiddenSize * (4 * hiddenSize); // First layer
-            decodeFlops += batchSize * (4 * hiddenSize) * hiddenSize; // Second layer
+            decodeFlops += architectureProfile.decodeAttentionMultiplier * 8 * batchSize * hiddenSize * hiddenSize;
+            decodeFlops += architectureProfile.decodeAttentionMultiplier * 4 * batchSize * kvHeads * seqLength * headDim;
+            decodeFlops += architectureProfile.feedForwardMultiplier * 4 * batchSize * hiddenSize * intermediateSize * activeRatio;
 
             return decodeFlops * numLayers;
         }
@@ -2941,30 +3904,34 @@ const DEVICE_TEMPLATES = {
          * When model overflows to secondary storage:
          * time_per_token = (local_portion / local_bw) + (overflow_portion / overflow_bw)
          */
-        function calculateEffectiveBandwidth(device, modelSizeBytes, allDevices, modelConfig) {
+        function calculateEffectiveBandwidth(device, modelSizeBytes, allDevices, modelConfig, deviceIndex = 0) {
             const deviceMemoryBytes = device.memoryGB * 1e9;
-
-            // For MoE models, use active parameters instead of total
-            let effectiveModelSize = modelSizeBytes;
-            if (modelConfig && modelConfig.activeParamsB) {
-                effectiveModelSize = modelConfig.activeParamsB * 1e9 * (modelSizeBytes / (modelConfig.totalParamsB * 1e9));
-            }
-
+            const architectureProfile = modelConfig ? getArchitectureProfile(modelConfig) : ARCHITECTURE_PROFILES.transformer;
+            const parallelScales = modelConfig
+                ? getParallelismScales(modelConfig, allDevices, deviceIndex)
+                : { residentScale: 1, accessedScale: 1 };
+            const residentModelSizeBytes = modelSizeBytes * parallelScales.residentScale;
+            const accessedModelSizeBytes = modelConfig
+                ? getActiveParamsB(modelConfig) * 1e9 * (modelSizeBytes / (modelConfig.totalParamsB * 1e9)) * parallelScales.accessedScale * architectureProfile.decodeWeightAccessMultiplier
+                : modelSizeBytes;
             // Case 1: Model fits entirely in device memory
-            if (effectiveModelSize <= deviceMemoryBytes) {
+            if (residentModelSizeBytes <= deviceMemoryBytes) {
                 return {
                     effectiveBandwidthGBps: device.localBandwidthGBps,
-                    localPortion: effectiveModelSize,
+                    localPortion: residentModelSizeBytes,
                     overflowPortion: 0,
                     overflowBandwidthGBps: 0,
                     bottleneckReason: 'none',
-                    hasOverflow: false
+                    hasOverflow: false,
+                    accessedModelSizeBytes
                 };
             }
 
             // Case 2: Model overflows - need to determine overflow bandwidth
             const localPortion = deviceMemoryBytes;
-            const overflowPortion = effectiveModelSize - deviceMemoryBytes;
+            const overflowPortion = residentModelSizeBytes - deviceMemoryBytes;
+            const localAccessBytes = accessedModelSizeBytes * (localPortion / residentModelSizeBytes);
+            const overflowAccessBytes = Math.max(0, accessedModelSizeBytes - localAccessBytes);
 
             let overflowBandwidthGBps;
             let bottleneckReason;
@@ -3002,10 +3969,10 @@ const DEVICE_TEMPLATES = {
             // Calculate weighted effective bandwidth
             // Time = (local_portion / local_bw) + (overflow_portion / overflow_bw)
             // Effective_BW = total_size / time
-            const localTimeMs = (localPortion / (device.localBandwidthGBps * 1e9)) * 1000;
-            const overflowTimeMs = (overflowPortion / (overflowBandwidthGBps * 1e9)) * 1000;
+            const localTimeMs = (localAccessBytes / (device.localBandwidthGBps * 1e9)) * 1000;
+            const overflowTimeMs = (overflowAccessBytes / (overflowBandwidthGBps * 1e9)) * 1000;
             const totalTimeMs = localTimeMs + overflowTimeMs;
-            const effectiveBandwidthGBps = (effectiveModelSize / (totalTimeMs / 1000)) / 1e9;
+            const effectiveBandwidthGBps = (accessedModelSizeBytes / (totalTimeMs / 1000)) / 1e9;
 
             return {
                 effectiveBandwidthGBps,
@@ -3017,7 +3984,8 @@ const DEVICE_TEMPLATES = {
                 overflowTimeMs,
                 totalTimeMs,
                 hasOverflow: true,
-                overflowGB: overflowPortion / 1e9
+                overflowGB: overflowPortion / 1e9,
+                accessedModelSizeBytes
             };
         }
 
@@ -3030,26 +3998,32 @@ const DEVICE_TEMPLATES = {
          * For autoregressive decoding, each token requires reading the model weights
          * bytes_per_token ≈ model_size_bytes (must read all weights per token)
          */
-        function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices) {
+        function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, deviceIndex = 0) {
             const modelSizeBytes = modelConfig.totalParamsB * 1e9 * dtypeSize;
+            const frameworkProfile = getFrameworkProfile(modelConfig, allDevices);
+            const optimization = getOptimizationAdjustments(modelConfig);
 
-            const bandwidthInfo = calculateEffectiveBandwidth(device, modelSizeBytes, allDevices, modelConfig);
+            const bandwidthInfo = calculateEffectiveBandwidth(device, modelSizeBytes, allDevices, modelConfig, deviceIndex);
 
-            // For decode (batch=1): each token requires reading entire model
+            // For decode (batch=1): each token requires reading the active weight set.
             // tokens/sec = bandwidth / model_size
-            const theoreticalTokensPerSec = (bandwidthInfo.effectiveBandwidthGBps * 1e9) / modelSizeBytes;
+            const theoreticalTokensPerSec = (bandwidthInfo.effectiveBandwidthGBps * 1e9) /
+                bandwidthInfo.accessedModelSizeBytes;
 
-            // Apply efficiency factor for real-world conditions
-            // This accounts for: kernel launch overhead, memory access patterns,
-            // KV cache operations, attention computation, etc.
-            // 0.80-0.85 efficiency is typical for well-optimized LLM inference (llama.cpp, vLLM)
-            const efficiencyFactor = 0.82;
+            const efficiencyFactor = Math.min(
+                0.97,
+                frameworkProfile.decodeEfficiency *
+                frameworkProfile.bandwidthEfficiency *
+                optimization.decodeMultiplier
+            );
             const actualTokensPerSec = theoreticalTokensPerSec * efficiencyFactor;
 
             return {
                 tokensPerSecond: actualTokensPerSec,
                 theoreticalMax: theoreticalTokensPerSec,
                 modelSizeGB: modelSizeBytes / 1e9,
+                activeModelSizeGB: bandwidthInfo.accessedModelSizeBytes / 1e9,
+                frameworkLabel: frameworkProfile.label,
                 ...bandwidthInfo
             };
         }
@@ -3062,7 +4036,7 @@ const DEVICE_TEMPLATES = {
             // Time = compute_flops / device_tflops
 
             const modelFlops = modelConfig.flopsPerImage || 2.5e12; // Default to SDXL
-            const deviceTflops = device.computeTFlops[dtypeSize] || device.computeTFlops['float16'] || 10;
+            const deviceTflops = getDeviceComputeTflops(device, dtypeSize);
 
             const timePerImage = modelFlops / (deviceTflops * 1e12);
             const imagesPerSecond = 1 / timePerImage;
@@ -3099,11 +4073,18 @@ const DEVICE_TEMPLATES = {
          * Returns: { strategy, reasoning, results: [{strategy, rate, valid, reason}] }
          */
         function findOptimalStrategy() {
-            const baseConfig = getModelConfig();
-            const modelPreset = MODEL_PRESETS[baseConfig.modelPreset] || {};
+            const baseConfig = buildEffectiveModelConfig();
             const deviceCount = devices.length;
             const seqLength = baseConfig.seqLength || 2048;
-            const isMoE = modelPreset.isMoE || false;
+            const batchSize = baseConfig.batchSize || 1;
+            const isMoE = isMoEModel(baseConfig);
+            const networkFloor = devices.length > 1
+                ? Math.min(...devices.map(device => device.networkBandwidthGBps || 0))
+                : Infinity;
+            const computeValues = devices.map(device => getDeviceComputeTflops(device, baseConfig.quantizationType));
+            const minCompute = computeValues.length ? Math.min(...computeValues) : 1;
+            const maxCompute = computeValues.length ? Math.max(...computeValues) : 1;
+            const areDevicesSimilar = maxCompute > 0 ? (maxCompute / minCompute) <= 1.25 : true;
 
             // Define all strategies and their validity conditions
             const strategies = [
@@ -3160,6 +4141,7 @@ const DEVICE_TEMPLATES = {
             const results = [];
             let bestStrategy = null;
             let bestRate = -1;
+            let bestScore = -1;
             let bestHasOverflow = true;
 
             // Test each strategy
@@ -3177,7 +4159,7 @@ const DEVICE_TEMPLATES = {
                 }
 
                 // Temporarily set the strategy and calculate metrics
-                const tempConfig = { ...baseConfig, parallelismStrategy: strat.value };
+                const tempConfig = normalizeModelConfig({ ...baseConfig, parallelismStrategy: strat.value });
                 const dtypeSize = DTYPE_SIZES[tempConfig.quantizationType];
                 const isPipeline = strat.value === 'pipeline';
 
@@ -3186,46 +4168,54 @@ const DEVICE_TEMPLATES = {
                 let minRate = Infinity;
                 let hasOverflow = false;
                 let memoryOverflow = false;
+                const deviceRates = [];
 
                 devices.forEach((device, deviceIndex) => {
                     const memoryBreakdown = calculateMemoryBreakdown(tempConfig, dtypeSize, deviceCount, isPipeline, deviceIndex);
-                    const modelPresetData = MODEL_PRESETS[tempConfig.modelPreset] || {};
-                    const extendedConfig = { ...tempConfig, ...modelPresetData };
-                    const tokenRateInfo = calculateDecodeTokenRate(device, extendedConfig, dtypeSize, devices);
+                    const tokenRateInfo = calculateDecodeTokenRate(device, tempConfig, dtypeSize, devices, deviceIndex);
 
                     if (tokenRateInfo.hasOverflow) hasOverflow = true;
                     if (memoryBreakdown.total > device.memoryGB * 1e9) memoryOverflow = true;
 
                     totalRate += tokenRateInfo.tokensPerSecond;
                     minRate = Math.min(minRate, tokenRateInfo.tokensPerSecond);
+                    deviceRates.push(tokenRateInfo.tokensPerSecond);
                 });
 
-                // Calculate system rate based on parallelism type
-                let systemRate;
-                if (strat.value === 'data') {
-                    // Data parallelism: each device handles separate requests
-                    systemRate = totalRate;
-                } else if (strat.value === 'tensor' || strat.value === 'hybrid_tp_pp' || strat.value === 'hybrid_tp_dp') {
-                    // Tensor parallelism: all devices work on same token
-                    systemRate = minRate;
-                } else if (strat.value === 'pipeline') {
-                    // Pipeline: for batch=1, limited by slowest; for batched, approaches sum
-                    const batchSize = tempConfig.batchSize || 1;
-                    systemRate = batchSize > 1 ? totalRate * 0.8 : minRate;
-                } else if (strat.value === 'expert') {
-                    // Expert parallelism: sum with routing overhead
-                    systemRate = totalRate * 0.9;
-                } else {
-                    // Sequence/Context parallelism: similar to tensor
-                    systemRate = minRate;
+                const systemRate = calculateSystemRateFromDeviceRates(deviceRates, strat.value, batchSize, devices);
+
+                let strategyScore = systemRate;
+                let scoreReason = strat.reason;
+
+                if (batchSize <= 1 && strat.value === 'data') {
+                    strategyScore *= 0.50;
+                    scoreReason = 'Data parallelism boosts aggregate throughput, but not single-request latency';
+                }
+
+                if (batchSize <= 1 && strat.value === 'expert') {
+                    strategyScore *= 0.90;
+                }
+
+                if ((strat.value === 'tensor' || strat.value === 'hybrid_tp_pp' || strat.value === 'hybrid_tp_dp') && networkFloor < 16) {
+                    strategyScore *= 0.72;
+                    scoreReason = `Tensor-style parallelism penalized by low interconnect (${networkFloor.toFixed(1)} GB/s)`;
+                }
+
+                if (strat.value === 'tensor' && areDevicesSimilar && networkFloor >= 32) {
+                    strategyScore *= 1.08;
+                }
+
+                if (memoryOverflow) {
+                    strategyScore *= 0.5;
                 }
 
                 results.push({
                     strategy: strat.value,
                     name: strat.name,
                     rate: systemRate,
+                    score: strategyScore,
                     valid: true,
-                    reason: strat.reason,
+                    reason: scoreReason,
                     hasOverflow: hasOverflow,
                     memoryOverflow: memoryOverflow
                 });
@@ -3234,10 +4224,12 @@ const DEVICE_TEMPLATES = {
                 // Prefer strategies without overflow, then highest rate
                 const isBetter =
                     (!hasOverflow && bestHasOverflow) ||
-                    (hasOverflow === bestHasOverflow && systemRate > bestRate);
+                    (hasOverflow === bestHasOverflow && strategyScore > bestScore) ||
+                    (hasOverflow === bestHasOverflow && strategyScore === bestScore && systemRate > bestRate);
 
                 if (isBetter) {
                     bestRate = systemRate;
+                    bestScore = strategyScore;
                     bestStrategy = strat.value;
                     bestHasOverflow = hasOverflow;
                 }
@@ -3263,7 +4255,7 @@ const DEVICE_TEMPLATES = {
             return {
                 strategy: bestStrategy,
                 reasoning: reasoning,
-                results: results.sort((a, b) => b.rate - a.rate)
+                results: results.sort((a, b) => b.score - a.score)
             };
         }
 
@@ -3272,6 +4264,243 @@ const DEVICE_TEMPLATES = {
 
         // Global variable to store EXO phase split results
         let lastPhaseSplitResults = null;
+
+        // Global benchmark reference rows used by the table and the recommendation panel.
+        let benchmarkData = [];
+        const OFFICIAL_BENCHMARK_HOSTS = [
+            'docs.nvidia.com',
+            'developer.nvidia.com',
+            'nvidia.github.io',
+            'docs.sglang.ai',
+            'blog.vllm.ai',
+            'rocm.docs.amd.com',
+            'rocm.blogs.amd.com',
+            'amd.com',
+            'apple.com',
+            'jan.ai',
+            'github.com/ggml-org',
+            'github.com/MoonshotAI',
+            'github.com/moonshotai',
+            'github.com/QwenLM',
+            'github.com/zai-org',
+            'github.com/MiniMax-AI'
+        ];
+
+        function normalizeReferenceText(value) {
+            return (value || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim();
+        }
+
+        function formatModelPresetName(value) {
+            return (value || '')
+                .replace(/_/g, ' ')
+                .replace(/\bglm\b/gi, 'GLM')
+                .replace(/\bqwen\b/gi, 'Qwen')
+                .replace(/\bllama\b/gi, 'Llama')
+                .replace(/\bkimi\b/gi, 'Kimi')
+                .replace(/\bminimax\b/gi, 'MiniMax')
+                .replace(/\bmoe\b/gi, 'MoE')
+                .replace(/\ba(\d+(?:\.\d+)?)b\b/gi, (_, size) => `A${size}B`)
+                .replace(/\b(\d+(?:\.\d+)?)b\b/gi, (_, size) => `${size}B`)
+                .replace(/\b([a-z])/g, match => match.toUpperCase());
+        }
+
+        function getModelPresetLabel(modelPreset) {
+            if (!modelPreset || !MODEL_PRESETS[modelPreset]) return '';
+            return MODEL_PRESETS[modelPreset].label || formatModelPresetName(modelPreset);
+        }
+
+        function getBenchmarkSourceTier(source) {
+            const normalizedSource = (source || '').toLowerCase();
+            return OFFICIAL_BENCHMARK_HOSTS.some(host => normalizedSource.includes(host.toLowerCase())) ? 2 : 1;
+        }
+
+        function parseBenchmarkRate(value) {
+            const text = (value || '').replace(/,/g, '');
+            const matches = [...text.matchAll(/(\d+(?:\.\d+)?)/g)].map(match => parseFloat(match[1]));
+            if (!matches.length) return null;
+            if (text.includes('-') && matches.length >= 2) {
+                return (matches[0] + matches[1]) / 2;
+            }
+            return matches[0];
+        }
+
+        function extractBenchmarkNumbers(value) {
+            return [...((value || '').replace(/,/g, '').matchAll(/(\d+(?:\.\d+)?)/g))]
+                .map(match => parseFloat(match[1]))
+                .filter(Number.isFinite);
+        }
+
+        function isAppleCluster(devicesArray) {
+            return devicesArray.length > 1 && devicesArray.every(device => /mac|m[1-5]/i.test(device.template || device.name || ''));
+        }
+
+        function getMinInterconnectBandwidth(devicesArray) {
+            return devicesArray.length > 1
+                ? Math.min(...devicesArray.map(device => device.networkBandwidthGBps || 0))
+                : Infinity;
+        }
+
+        function getFrameworkMismatchReason(match, frameworkProfile) {
+            if (!match.framework) return null;
+
+            const referenceFramework = normalizeReferenceText(match.framework);
+            const currentFramework = normalizeReferenceText(frameworkProfile.label);
+            if (!referenceFramework || !currentFramework || referenceFramework.includes(currentFramework) || currentFramework.includes(referenceFramework)) {
+                return null;
+            }
+
+            if (referenceFramework.includes('nvidia nim')) {
+                return 'Reference uses NVIDIA NIM; kernel fusion and scheduler behavior can differ from the selected runtime.';
+            }
+
+            if (referenceFramework.includes('exo')) {
+                return 'Reference uses EXO/MLX distributed rather than the selected runtime stack.';
+            }
+
+            return `Reference uses ${match.framework} instead of ${frameworkProfile.label}.`;
+        }
+
+        function getBenchmarkAlignmentSummary(modelConfig, devicesArray, metrics, systemRate) {
+            const matches = findBenchmarkMatches(modelConfig, devicesArray);
+            const frameworkProfile = getFrameworkProfile(modelConfig, devicesArray);
+            const minInterconnectBandwidth = getMinInterconnectBandwidth(devicesArray);
+            const hasOverflow = metrics.some(metric => metric.hasOverflow);
+            const usesRdma = devicesArray.some(device => (device.interconnectType || '') === 'thunderbolt5_rdma');
+            const isExoRuntime = frameworkProfile.key === 'exo';
+            const appleCluster = isAppleCluster(devicesArray);
+
+            return matches
+                .map(match => {
+                    const referenceRate = parseBenchmarkRate(match.tokenRateSingle || match.tokenRateBatch);
+                    if (!Number.isFinite(referenceRate) || referenceRate <= 0) return null;
+
+                    const deltaPct = ((systemRate - referenceRate) / referenceRate) * 100;
+                    const reasons = [];
+
+                    if (hasOverflow) {
+                        reasons.push('Current configuration overflows resident weights, so effective bandwidth drops below in-memory runs.');
+                    }
+
+                    const frameworkReason = getFrameworkMismatchReason(match, frameworkProfile);
+                    if (frameworkReason) {
+                        reasons.push(frameworkReason);
+                    }
+
+                    if (match.quantization) {
+                        const referenceQuant = normalizeReferenceText(match.quantization);
+                        const currentQuant = normalizeReferenceText(modelConfig.quantizationType);
+                        if (referenceQuant && currentQuant && !referenceQuant.includes(currentQuant) && !currentQuant.includes(referenceQuant)) {
+                            reasons.push(`Reference uses ${match.quantization}, while the current config uses ${modelConfig.quantizationType.toUpperCase()}.`);
+                        }
+                    }
+
+                    const referenceBatch = parseBenchmarkRate(match.batchSize);
+                    if (referenceBatch && Math.abs(referenceBatch - (modelConfig.batchSize || 1)) >= 1) {
+                        reasons.push(`Reference batch size is ${match.batchSize}; current batch size is ${modelConfig.batchSize}.`);
+                    }
+
+                    const referenceSeqNumbers = extractBenchmarkNumbers(match.seqLength);
+                    if (referenceSeqNumbers.length > 0 && Number.isFinite(modelConfig.seqLength) && modelConfig.seqLength > 0) {
+                        const referenceSeq = Math.max(...referenceSeqNumbers);
+                        const seqRatio = Math.max(referenceSeq, modelConfig.seqLength) / Math.max(1, Math.min(referenceSeq, modelConfig.seqLength));
+                        if (seqRatio >= 2) {
+                            reasons.push(`Reference sequence setting is ${match.seqLength}; current sequence length is ${modelConfig.seqLength}.`);
+                        }
+                    }
+
+                    if (devicesArray.length > 1 && minInterconnectBandwidth < 16) {
+                        reasons.push(`Current interconnect floor is ${minInterconnectBandwidth.toFixed(1)} GB/s, which is low for sharded decode.`);
+                    }
+
+                    if ((normalizeReferenceText(match.framework).includes('exo') || isExoRuntime) && appleCluster) {
+                        if (!usesRdma || minInterconnectBandwidth < INTERCONNECT_BANDWIDTH.thunderbolt5_rdma) {
+                            reasons.push('EXO multi-Mac benchmarks assume Thunderbolt 5 RDMA on macOS 26.2+; lower-bandwidth links materially reduce scaling.');
+                        }
+                    }
+
+                    if (isExoRuntime && devicesArray.length > 1 && !appleCluster) {
+                        reasons.push('EXO is currently GPU-accelerated on macOS; Linux support is still CPU-only in the upstream project.');
+                    }
+
+                    if (normalizeReferenceText(match.hardware).includes('aggregate') && devicesArray.length !== extractBenchmarkNumbers(match.hardware)[0]) {
+                        reasons.push('Reference reports aggregate throughput for a different device count.');
+                    }
+
+                    const status = Math.abs(deltaPct) <= 15 ? 'aligned' : (Math.abs(deltaPct) <= 35 ? 'nearby' : 'mismatch');
+
+                    return {
+                        ...match,
+                        referenceRate,
+                        deltaPct,
+                        status,
+                        reasons: [...new Set(reasons)].slice(0, 3)
+                    };
+                })
+                .filter(Boolean)
+                .slice(0, 3);
+        }
+
+        function getSelectedModelLabel(modelConfig) {
+            if (modelConfig.modelPreset) {
+                return getModelPresetLabel(modelConfig.modelPreset) || formatModelPresetName(modelConfig.modelPreset);
+            }
+
+            return `${modelConfig.totalParamsB || '?'}B Custom`;
+        }
+
+        function findBenchmarkMatches(modelConfig, devicesArray) {
+            if (!benchmarkData.length || !devicesArray.length) return [];
+
+            const compact = value => normalizeReferenceText(value).replace(/\s+/g, '');
+            const frameworkProfile = getFrameworkProfile(modelConfig, devicesArray);
+            const modelText = normalizeReferenceText(getSelectedModelLabel(modelConfig));
+            const compactModelText = compact(getSelectedModelLabel(modelConfig));
+            const quantText = normalizeReferenceText(modelConfig.quantizationType);
+            const frameworkText = normalizeReferenceText(frameworkProfile.label);
+            const deviceTexts = devicesArray.flatMap(device => [
+                normalizeReferenceText(device.name),
+                normalizeReferenceText(device.template)
+            ].filter(Boolean));
+            const deviceCountText = devicesArray.length > 1 ? `${devicesArray.length} x` : '1 x';
+
+            return benchmarkData
+                .map(row => {
+                    const model = normalizeReferenceText(row.model);
+                    const compactModel = compact(row.model);
+                    const hardware = normalizeReferenceText(row.hardware);
+                    const quant = normalizeReferenceText(row.quantization);
+                    const framework = normalizeReferenceText(row.framework);
+
+                    let score = 0;
+                    let modelScore = 0;
+                    if (model && (
+                        model.includes(modelText) ||
+                        modelText.includes(model) ||
+                        compactModel.includes(compactModelText) ||
+                        compactModelText.includes(compactModel)
+                    )) {
+                        modelScore = 5;
+                        score += modelScore;
+                    }
+                    if (quant && quantText && (quant.includes(quantText) || quantText.includes(quant))) score += 2;
+                    if (framework && frameworkText && (framework.includes(frameworkText) || frameworkText.includes(framework))) score += 2;
+                    if (hardware && hardware.includes(deviceCountText)) score += 1;
+                    if (deviceTexts.some(deviceText => hardware.includes(deviceText) || deviceText.includes(hardware))) score += 4;
+
+                    return {
+                        ...row,
+                        modelScore,
+                        score,
+                        sourceTier: getBenchmarkSourceTier(row.source)
+                    };
+                })
+                .filter(row => row.modelScore >= 5 && row.score >= 7)
+                .sort((a, b) => (b.sourceTier - a.sourceTier) || (b.score - a.score))
+                .slice(0, 3);
+        }
 
         /**
          * Estimate TDP (Thermal Design Power) for a device
@@ -3340,24 +4569,44 @@ const DEVICE_TEMPLATES = {
          * @param {number} tokensPerSecond - Token generation rate
          * @returns {Object} Power and cost estimates
          */
-        function calculatePowerAndCost(devicesArray, tokensPerSecond) {
-            // Electricity cost per kWh (US average ~$0.12, datacenter ~$0.06)
-            const electricityCostPerKWh = 0.12;
+        function calculatePowerAndCost(devicesArray, tokensPerSecond, metricsArray = []) {
+            const electricityCostPerKWh = parseFloat(document.getElementById('costPerKwh')?.value) || 0.12;
+            const hoursPerDay = parseFloat(document.getElementById('hoursPerDay')?.value) || 8;
 
             let totalTDP = 0;
-            const devicePower = devicesArray.map(device => {
+            let actualPowerWatts = 0;
+            const devicePower = devicesArray.map((device, index) => {
                 const tdp = estimateDeviceTDP(device);
-                totalTDP += tdp;
-                return { name: device.name || device.template, tdp };
-            });
+                const idlePower = Math.max(10, tdp * 0.12);
+                const metric = metricsArray[index];
+                const utilization = metric ? Math.min(
+                    1,
+                    Math.max(
+                        metric.computeUtilization || 0,
+                        metric.localBandwidthUtilization || 0,
+                        metric.decodeLocalBandwidthUtilization || 0,
+                        metric.decodeComputeUtilization || 0,
+                        (metric.memoryUtilization || 0) * 0.3
+                    ) / 100
+                ) : 0.65;
+                const estimatedPower = idlePower + ((tdp - idlePower) * utilization);
 
-            // During inference, GPUs typically use 50-80% of TDP
-            const inferenceLoadFactor = 0.65;
-            const actualPowerWatts = totalTDP * inferenceLoadFactor;
+                totalTDP += tdp;
+                actualPowerWatts += estimatedPower;
+
+                return {
+                    name: device.name || device.template,
+                    tdp,
+                    estimatedPower
+                };
+            });
 
             // Cost calculations
             const powerKW = actualPowerWatts / 1000;
             const costPerHour = powerKW * electricityCostPerKWh;
+            const dailyCost = costPerHour * hoursPerDay;
+            const monthlyCost = dailyCost * 30;
+            const yearlyCost = dailyCost * 365;
             const tokensPerHour = tokensPerSecond * 3600;
             const costPer1KTokens = tokensPerHour > 0 ? (costPerHour / tokensPerHour) * 1000 : 0;
             const costPer1MTokens = costPer1KTokens * 1000;
@@ -3367,6 +4616,11 @@ const DEVICE_TEMPLATES = {
                 actualPowerWatts,
                 powerKW,
                 costPerHour,
+                dailyCost,
+                monthlyCost,
+                yearlyCost,
+                costPerKwh: electricityCostPerKWh,
+                hoursPerDay,
                 costPer1KTokens,
                 costPer1MTokens,
                 devicePower,
@@ -3383,11 +4637,13 @@ const DEVICE_TEMPLATES = {
                 return null;
             }
 
-            const dtypeSize = DTYPE_SIZES[modelConfig.quantizationType];
+            const effectiveConfig = normalizeModelConfig(modelConfig);
+            const architectureProfile = getArchitectureProfile(effectiveConfig);
+            const dtypeSize = DTYPE_SIZES[effectiveConfig.quantizationType];
 
             // Calculate compute-to-bandwidth ratio for each device
             const deviceRatios = devicesArray.map((device, idx) => {
-                const tflops = device.computeTFlops?.[modelConfig.quantizationType] || device.computeTFlops?.float16 || 10;
+                const tflops = getDeviceComputeTflops(device, effectiveConfig.quantizationType);
                 const bandwidth = device.localBandwidthGBps || 100;
                 // Higher ratio = more compute-heavy (good for prefill)
                 // Lower ratio = more bandwidth-heavy (good for decode)
@@ -3412,25 +4668,24 @@ const DEVICE_TEMPLATES = {
             const decodeDevices = sorted.slice(splitPoint).length > 0 ? sorted.slice(splitPoint) : sorted;
 
             // Calculate prefill rate (compute-bound)
-            const modelPreset = MODEL_PRESETS[modelConfig.modelPreset] || {};
-            const extendedConfig = { ...modelConfig, ...modelPreset };
-            const totalPrefillFlops = calculateTransformerFlops(extendedConfig);
+            const totalPrefillFlops = calculateTransformerFlops(effectiveConfig);
 
             // Sum of prefill device TFLOPS
             const prefillTflops = prefillDevices.reduce((sum, d) => sum + d.tflops, 0);
             const prefillTimeSeconds = totalPrefillFlops / (prefillTflops * 1e12);
-            const prefillRate = (modelConfig.batchSize * modelConfig.seqLength) / prefillTimeSeconds;
+            const prefillRate = (effectiveConfig.batchSize * effectiveConfig.seqLength) / prefillTimeSeconds;
 
             // Calculate decode rate (bandwidth-bound)
-            const modelSizeBytes = (extendedConfig.activeParamsB || extendedConfig.totalParamsB) * 1e9 * dtypeSize;
+            const modelSizeBytes = getActiveParamsB(effectiveConfig) * 1e9 * dtypeSize * architectureProfile.decodeWeightAccessMultiplier;
             const decodeBandwidth = decodeDevices.reduce((sum, d) => sum + d.bandwidth, 0);
             const theoreticalDecodeRate = (decodeBandwidth * 1e9) / modelSizeBytes;
-            const decodeRate = theoreticalDecodeRate * 0.82; // Apply efficiency factor
+            const frameworkProfile = getFrameworkProfile(effectiveConfig, devicesArray);
+            const decodeRate = theoreticalDecodeRate * frameworkProfile.decodeEfficiency * frameworkProfile.bandwidthEfficiency;
 
             // Calculate KV cache transfer overhead
-            const kvCacheSize = 2 * modelConfig.batchSize * modelConfig.seqLength *
-                (modelConfig.hiddenSize / modelConfig.numHeads) * modelConfig.numHeads *
-                dtypeSize * modelConfig.numLayers;
+            const kvCacheSize = 2 * effectiveConfig.batchSize * effectiveConfig.seqLength *
+                (effectiveConfig.hiddenSize / effectiveConfig.numHeads) * getKVHeads(effectiveConfig) *
+                dtypeSize * effectiveConfig.numLayers * architectureProfile.kvCacheMultiplier;
 
             // Assume minimum network bandwidth between prefill and decode devices
             const minNetworkBw = Math.min(
@@ -3662,6 +4917,34 @@ const DEVICE_TEMPLATES = {
 	            }];
 	            break;
 
+	        case 'm3_ultra_x4_tb5':
+	            devices = [];
+	            for (let i = 1; i <= 4; i++) {
+	                devices.push({
+	                    id: i,
+	                    name: `Mac M3 Ultra #${i}`,
+	                    template: 'Mac M3 Ultra (512)',
+	                    ...DEVICE_TEMPLATES['Mac M3 Ultra (512)'],
+	                    networkBandwidthGBps: INTERCONNECT_BANDWIDTH.thunderbolt5,
+	                    interconnectType: 'thunderbolt5'
+	                });
+	            }
+	            break;
+
+	        case 'm3_ultra_x4_tb5_rdma':
+	            devices = [];
+	            for (let i = 1; i <= 4; i++) {
+	                devices.push({
+	                    id: i,
+	                    name: `Mac M3 Ultra #${i}`,
+	                    template: 'Mac M3 Ultra (512)',
+	                    ...DEVICE_TEMPLATES['Mac M3 Ultra (512)'],
+	                    networkBandwidthGBps: INTERCONNECT_BANDWIDTH.thunderbolt5_rdma,
+	                    interconnectType: 'thunderbolt5_rdma'
+	                });
+	            }
+	            break;
+
 	        case 'h100_single':
 	            devices = [{
 	                id: 1,
@@ -3754,8 +5037,11 @@ const DEVICE_TEMPLATES = {
 	    updateDeviceDisplay(); // Refresh to show updated library
 	}
         function calculateMetrics() {
-			let modelConfig = getModelConfig();
-			const optimizationMode = document.getElementById('optimizationMode')?.value || 'none';
+			let modelConfig = buildEffectiveModelConfig();
+			const architectureProfile = getArchitectureProfile(modelConfig);
+			const optimizationMode = modelConfig.optimizationMode || 'none';
+			const frameworkProfile = getFrameworkProfile(modelConfig, devices);
+			const optimization = getOptimizationAdjustments(modelConfig);
 
 			// Handle AUTO mode - find optimal strategy first
 			if (modelConfig.parallelismStrategy === 'auto') {
@@ -3781,42 +5067,45 @@ const DEVICE_TEMPLATES = {
 				// Calculate per-device memory and network requirements
 				const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex);
 				const networkTraffic = calculateNetworkTraffic(modelConfig, dtypeSize, deviceCount, isPipeline);
+				const deviceTflops = getDeviceComputeTflops(device, modelConfig.quantizationType);
 				
 				const quantSpeedFactor = {
-					'float32': 1.0,
-					'bfloat16': 2.0,
-					'float16': 2.0,
-					'int8': 2.5,
-					'q4': 3.0
+					'float32': 0.5,
+					'bfloat16': 1.0,
+					'float16': 1.0,
+					'int8': 1.2,
+					'fp8': 1.1,
+					'q4': 1.45
 				}[modelConfig.quantizationType] || 1.0;
 
 				const totalPrefillFlops = calculateTransformerFlops(modelConfig) / (deviceCount * quantSpeedFactor);
-				const theoreticalPrefillComputeTime = totalPrefillFlops / (device.computeTFlops[modelConfig.quantizationType] * 1e12);
+				const theoreticalPrefillComputeTime = totalPrefillFlops / (deviceTflops * 1e12);
 
 
 				// Network time calculation
-				const networkTime = networkTraffic / (device.networkBandwidthGBps * 1e9);
+				const networkTime = (networkTraffic * optimization.networkMultiplier) /
+					(Math.max(device.networkBandwidthGBps || 0.1, 0.1) * 1e9);
 				
 				// Memory traffic calculation adjusted for distributed setup
 				// For inference, we only need forward pass (no gradients), so 1x activations not 3x
-				const memoryTrafficScale = modelConfig.quantizationType === 'q4' ? 1.15 : 1.0; // Q4 has some overhead
-				const totalPrefillMemoryTraffic = memoryTrafficScale * (
+				const memoryTrafficScale = modelConfig.quantizationType === 'q4' ? 1.10 : (modelConfig.quantizationType === 'fp8' ? 1.03 : 1.0);
+				const totalPrefillMemoryTraffic = optimization.prefillTrafficMultiplier * memoryTrafficScale * (
 					memoryBreakdown.paramsMemory +
 					(2 * memoryBreakdown.kvCacheMemory) +
-					(1 * memoryBreakdown.activationMemory) +  // Only forward pass, not backward
+					(1 * memoryBreakdown.activationMemory) +
 					(1 * memoryBreakdown.attentionMemory)
 				);
 
-				const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic / (device.localBandwidthGBps * 1e9);
+				const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic /
+					(Math.max(device.localBandwidthGBps * frameworkProfile.bandwidthEfficiency, 1) * 1e9);
 
 				// Include network time in actual execution time
 				// Prefill overhead accounts for kernel launch, memory access patterns, etc.
-				const overheadFactorPrefill = 1.10;
 				const actualPrefillTime = Math.max(
 					theoreticalPrefillComputeTime,
 					prefillBandwidthLimitedTime,
 					networkTime
-				) * overheadFactorPrefill;
+				) / Math.max(frameworkProfile.prefillEfficiency * optimization.prefillMultiplier, 0.25);
 
 				// Calculate utilizations
 				const prefillComputeUtilization = (theoreticalPrefillComputeTime / actualPrefillTime) * 100;
@@ -3833,40 +5122,38 @@ const DEVICE_TEMPLATES = {
 					networkBandwidthUtilization / 100
 				);
 
-				// Calculate token throughput
-				const prefillTokensPerSecond = modelConfig.batchSize * modelConfig.seqLength / actualPrefillTime;
-
-				// Decode calculations remain similar but scaled by device count
+				// Decode calculations
 				const decodeFlops = calculateDecodeFlops(modelConfig) / deviceCount;
-				const theoreticalDecodeTime = decodeFlops / (device.computeTFlops[modelConfig.quantizationType] * 1e12);
-
-				const decodeMemoryTrafficPerToken = (
-					memoryBreakdown.paramsMemory + 
-					(2 * modelConfig.seqLength * (modelConfig.hiddenSize / modelConfig.numHeads) * 
-					 modelConfig.numHeads * dtypeSize) * modelConfig.numLayers / deviceCount + 
-					(4 * modelConfig.hiddenSize * dtypeSize) * modelConfig.numLayers / deviceCount
-				) / modelConfig.seqLength;
-
-				const decodeBandwidthLimitedTime = decodeMemoryTrafficPerToken / (device.localBandwidthGBps * 1e9);
-				// Decode overhead factor: 1.3 is more realistic than 1.5 (was too pessimistic)
-				const overheadFactorDecode = 1.3;
-				const actualDecodeTime = Math.max(theoreticalDecodeTime, decodeBandwidthLimitedTime) *
-					overheadFactorDecode;
+				const theoreticalDecodeTime = decodeFlops / (deviceTflops * 1e12);
+				const decodeCoordinationTime = calculateDecodeCoordinationTimeSeconds(modelConfig, devices);
 
 				// NEW: Calculate overflow-aware token rate using the new bandwidth model
-				const modelPreset = MODEL_PRESETS[modelConfig.modelPreset] || {};
-				const extendedModelConfig = { ...modelConfig, ...modelPreset };
-				const tokenRateInfo = calculateDecodeTokenRate(device, extendedModelConfig, dtypeSize, devices);
+				const tokenRateInfo = calculateDecodeTokenRate(device, modelConfig, dtypeSize, devices, deviceIndex);
+				const localDecodeTime = tokenRateInfo.tokensPerSecond > 0
+					? 1 / tokenRateInfo.tokensPerSecond
+					: Infinity;
+				const actualDecodeTime = localDecodeTime + decodeCoordinationTime;
+				const decodeBandwidthLimitedTime = tokenRateInfo.accessedModelSizeBytes /
+					(Math.max(device.localBandwidthGBps * frameworkProfile.bandwidthEfficiency, 1) * 1e9);
+				const rawPrefillTokensPerSecond = modelConfig.batchSize * modelConfig.seqLength / actualPrefillTime;
+				const maxPrefillToDecodeRatio = Math.min(32, 4 + (Math.log2(modelConfig.seqLength || 1) * 2.5));
+				const decodeTokensPerSecond = Number.isFinite(actualDecodeTime) && actualDecodeTime > 0
+					? 1 / actualDecodeTime
+					: 0;
+				const prefillTokensPerSecond = decodeTokensPerSecond > 0
+					? Math.min(rawPrefillTokensPerSecond, decodeTokensPerSecond * maxPrefillToDecodeRatio)
+					: rawPrefillTokensPerSecond;
 
 				// Check if this is an image generation model
-				const isImageGen = modelPreset.isImageGen || false;
+				const isImageGen = modelConfig.isImageGen || architectureProfile.key === 'diffusion_transformer';
 				let imageGenInfo = null;
 				if (isImageGen) {
-					imageGenInfo = calculateImageGenMetrics(device, extendedModelConfig, modelConfig.quantizationType);
+					imageGenInfo = calculateImageGenMetrics(device, modelConfig, modelConfig.quantizationType);
 				}
 
 				return {
 					name: device.name,
+					framework: frameworkProfile.label,
 					memoryUtilization,
 					localBandwidthUtilization: prefillLocalBandwidthUtilization,
 					networkBandwidthUtilization,
@@ -3878,10 +5165,11 @@ const DEVICE_TEMPLATES = {
 					bottleneckFactor,
 					isBottleneck: bottleneckFactor > 1,
 					prefillTokensPerSecond,
-					decodeTokensPerSecond: tokenRateInfo.tokensPerSecond,
+					decodeTokensPerSecond,
 					theoreticalMaxTokensPerSecond: tokenRateInfo.theoreticalMax,
 					decodeComputeUtilization: (theoreticalDecodeTime / actualDecodeTime) * 100,
 					decodeLocalBandwidthUtilization: (decodeBandwidthLimitedTime / actualDecodeTime) * 100,
+					decodeCoordinationTimeMs: decodeCoordinationTime * 1000,
 					decodeBottleneckFactor: Math.max(
 						theoreticalDecodeTime / actualDecodeTime,
 						decodeBandwidthLimitedTime / actualDecodeTime
@@ -3893,6 +5181,7 @@ const DEVICE_TEMPLATES = {
 					effectiveBandwidthGBps: tokenRateInfo.effectiveBandwidthGBps,
 					overflowBottleneckReason: tokenRateInfo.bottleneckReason || 'none',
 					modelSizeGB: tokenRateInfo.modelSizeGB,
+					activeModelSizeGB: tokenRateInfo.activeModelSizeGB,
 					// Image generation info
 					isImageGen,
 					imagesPerSecond: imageGenInfo ? imageGenInfo.imagesPerSecond : null,
@@ -3903,7 +5192,6 @@ const DEVICE_TEMPLATES = {
 
         function updateSystemAnalysis() {
             const metrics = calculateMetrics();
-            console.log(metrics);
             const analysisContainer = document.getElementById('systemAnalysis');
             let systemAnalysisHtml = '';
             metrics.forEach((m, idx) => {
@@ -3912,7 +5200,7 @@ const DEVICE_TEMPLATES = {
                     <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background); border-radius: var(--radius); border: 1px solid var(--border);">
                         <h3 style="margin-top: 0;">${m.name}</h3>
                         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                            Model Size: ${m.modelSizeGB ? m.modelSizeGB.toFixed(1) : 'N/A'} GB | Device Memory: ${device.memoryGB} GB
+                            Framework: ${m.framework} | Resident Weights: ${m.modelSizeGB ? m.modelSizeGB.toFixed(1) : 'N/A'} GB | Active Weights: ${m.activeModelSizeGB ? m.activeModelSizeGB.toFixed(1) : 'N/A'} GB | Device Memory: ${device.memoryGB} GB
                         </div>
                         <div class="device-grid" style="font-size: 0.875rem;">
                             <div>Memory Usage: ${m.memoryUtilization.toFixed(1)}%</div>
@@ -3932,6 +5220,13 @@ const DEVICE_TEMPLATES = {
                             <div><strong>Prefill Rate:</strong> ${m.prefillTokensPerSecond.toFixed(1)} tok/s</div>
                             <div><strong>Decode Rate:</strong> ${m.decodeTokensPerSecond.toFixed(1)} tok/s</div>
                     `;
+                    if (m.decodeCoordinationTimeMs > 0) {
+                        systemAnalysisHtml += `
+                            <div style="grid-column: span 2; color: var(--text-secondary);">
+                                Decode coordination overhead: ${m.decodeCoordinationTimeMs.toFixed(1)} ms/token
+                            </div>
+                        `;
+                    }
                 }
 
                 systemAnalysisHtml += `</div>`;
@@ -3997,7 +5292,7 @@ const DEVICE_TEMPLATES = {
 
             // Add System Total Summary
             if (metrics.length > 0) {
-                const modelConfig = getModelConfig();
+                const modelConfig = buildEffectiveModelConfig();
                 // Get effective parallelism (AUTO mode uses the selected strategy)
                 const isAutoMode = modelConfig.parallelismStrategy === 'auto';
                 const parallelism = isAutoMode && lastAutoResults ? lastAutoResults.strategy : (modelConfig.parallelismStrategy || 'pipeline');
@@ -4014,37 +5309,16 @@ const DEVICE_TEMPLATES = {
                 } else {
                     // LLM inference
                     const decodeRates = metrics.map(m => m.decodeTokensPerSecond || 0);
-                    const minRate = Math.min(...decodeRates);
-                    const sumRate = decodeRates.reduce((a, b) => a + b, 0);
+                    systemRate = calculateSystemRateFromDeviceRates(decodeRates, parallelism, parseFloat(modelConfig.batchSize) || 1, devices);
 
-                    if (parallelism === 'data') {
-                        // Data Parallelism: each device handles different requests
-                        systemRate = sumRate;
-                        rateExplanation = 'Sum (each device handles separate requests)';
-                    } else if (parallelism === 'tensor' || parallelism === 'hybrid_tp_pp' || parallelism === 'hybrid_tp_dp') {
-                        // Tensor Parallelism: all devices work on same inference
-                        systemRate = minRate;
-                        rateExplanation = 'Shared inference (limited by slowest device)';
-                    } else if (parallelism === 'pipeline') {
-                        // Pipeline: throughput can approach sum, latency is sum of stages
-                        // For interactive (batch=1), limited by slowest; for batched, approaches sum
-                        const batchSize = parseFloat(modelConfig.batchSize) || 1;
-                        if (batchSize > 1) {
-                            systemRate = sumRate * 0.8; // ~80% efficiency with pipelining
-                            rateExplanation = 'Pipeline throughput (~80% efficiency)';
-                        } else {
-                            systemRate = minRate;
-                            rateExplanation = 'Pipeline (batch=1, limited by slowest stage)';
-                        }
-                    } else if (parallelism === 'expert') {
-                        // Expert parallelism: sum with routing overhead
-                        systemRate = sumRate * 0.9;
-                        rateExplanation = 'Expert parallelism (~90% efficiency)';
-                    } else {
-                        // Default: use min for safety
-                        systemRate = minRate;
-                        rateExplanation = 'Limited by slowest device';
-                    }
+                    if (parallelism === 'data') rateExplanation = 'Sum (each device handles separate requests)';
+                    else if (parallelism === 'tensor' || parallelism === 'hybrid_tp_pp' || parallelism === 'hybrid_tp_dp') rateExplanation = 'Shared inference on sharded weights (communication-adjusted)';
+                    else if (parallelism === 'pipeline') rateExplanation = (parseFloat(modelConfig.batchSize) || 1) > 1
+                        ? 'Pipeline throughput after warmup (~85% of the slowest stage)'
+                        : 'Pipeline latency path (sum of stage times)';
+                    else if (parallelism === 'expert') rateExplanation = 'Expert parallelism with routing overhead';
+                    else rateExplanation = 'Activation-sharded inference with coordination overhead';
+
                     systemRateLabel = `${systemRate.toFixed(1)} tok/s`;
                 }
 
@@ -4120,7 +5394,7 @@ const DEVICE_TEMPLATES = {
                 }
 
                 // Calculate power and cost estimates
-                const powerCost = calculatePowerAndCost(devices, systemRate);
+                const powerCost = calculatePowerAndCost(devices, systemRate, metrics);
                 let powerCostHtml = '';
                 if (!isImageGen && systemRate > 0) {
                     powerCostHtml = `
@@ -4135,14 +5409,59 @@ const DEVICE_TEMPLATES = {
                                     <div style="color: var(--text-secondary); font-size: 0.7rem;">TDP: ${powerCost.totalTDP} W</div>
                                 </div>
                                 <div>
-                                    <strong>Cost (@ $0.12/kWh):</strong>
+                                    <strong>Cost (@ $${powerCost.costPerKwh.toFixed(2)}/kWh):</strong>
                                     <div style="color: #fff; font-size: 0.9rem;">$${powerCost.costPer1MTokens.toFixed(4)}/M tok</div>
                                     <div style="color: var(--text-secondary); font-size: 0.7rem;">$${powerCost.costPerHour.toFixed(3)}/hr</div>
                                 </div>
                             </div>
                             <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.25rem;">
-                                Efficiency: ${(powerCost.tokensPerKWh / 1000).toFixed(1)}K tok/kWh
+                                Daily: $${powerCost.dailyCost.toFixed(2)} | Monthly: $${powerCost.monthlyCost.toFixed(2)} | Efficiency: ${(powerCost.tokensPerKWh / 1000).toFixed(1)}K tok/kWh
                             </div>
+                        </div>
+                    `;
+                }
+
+                const benchmarkMatches = findBenchmarkMatches(modelConfig, devices);
+                const benchmarkAlignment = getBenchmarkAlignmentSummary(modelConfig, devices, metrics, systemRate);
+                let benchmarkHtml = '';
+                if (benchmarkMatches.length > 0) {
+                    benchmarkHtml = `
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(96, 165, 250, 0.08); border: 1px solid #60a5fa; border-radius: 6px;">
+                            <div style="color: #60a5fa; font-weight: 600; margin-bottom: 0.5rem;">
+                                Benchmark References
+                            </div>
+                            ${benchmarkMatches.map(match => `
+                                <div style="font-size: 0.8rem; margin-bottom: 0.5rem;">
+                                    <strong>${match.model}</strong> on <strong>${match.hardware}</strong>
+                                    <span style="color: var(--text-secondary);">(${match.framework || 'n/a'}, ${match.quantization || 'n/a'})</span>
+                                    ${match.sourceTier > 1 ? '<span style="margin-left: 0.35rem; color: #60a5fa;">Official</span>' : ''}<br>
+                                    <span style="color: #4ade80;">${match.tokenRateSingle || match.tokenRateBatch || 'n/a'}</span>
+                                    <a href="${match.source}" target="_blank" rel="noopener noreferrer" style="margin-left: 0.5rem;">Source</a>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                let benchmarkAlignmentHtml = '';
+                if (benchmarkAlignment.length > 0) {
+                    benchmarkAlignmentHtml = `
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(34, 197, 94, 0.08); border: 1px solid #22c55e; border-radius: 6px;">
+                            <div style="color: #22c55e; font-weight: 600; margin-bottom: 0.5rem;">
+                                Benchmark Alignment
+                            </div>
+                            ${benchmarkAlignment.map(match => `
+                                <div style="font-size: 0.8rem; margin-bottom: 0.65rem;">
+                                    <strong>${match.model}</strong> on <strong>${match.hardware}</strong><br>
+                                    Predicted: <strong>${systemRate.toFixed(1)} tok/s</strong> vs reference <strong>${match.referenceRate.toFixed(1)} tok/s</strong>
+                                    <span style="color: ${Math.abs(match.deltaPct) <= 15 ? '#4ade80' : (Math.abs(match.deltaPct) <= 35 ? '#fbbf24' : '#f87171')};">
+                                        (${match.deltaPct >= 0 ? '+' : ''}${match.deltaPct.toFixed(1)}%)
+                                    </span><br>
+                                    ${match.reasons.length > 0
+                                        ? `<span style="color: var(--text-secondary);">Why it differs: ${match.reasons.join(' ')}</span>`
+                                        : `<span style="color: var(--text-secondary);">Prediction is within normal runtime/benchmark variance for this reference.</span>`}
+                                </div>
+                            `).join('')}
                         </div>
                     `;
                 }
@@ -4168,6 +5487,8 @@ const DEVICE_TEMPLATES = {
                         ${autoModeHtml}
                         ${phaseSplitHtml}
                         ${powerCostHtml}
+                        ${benchmarkHtml}
+                        ${benchmarkAlignmentHtml}
                     </div>
                 `;
             }
@@ -4287,6 +5608,7 @@ const DEVICE_TEMPLATES = {
 	                            <option value="thunderbolt3">Thunderbolt 3 (5 GB/s)</option>
 	                            <option value="thunderbolt4">Thunderbolt 4 (5 GB/s)</option>
 	                            <option value="thunderbolt5">Thunderbolt 5 (10 GB/s)</option>
+	                            <option value="thunderbolt5_rdma">Thunderbolt 5 RDMA (40 GB/s)</option>
 	                            <option value="usb4_40">USB4 40Gbps (5 GB/s)</option>
 	                            <option value="usb4_80">USB4 80Gbps (10 GB/s)</option>
 	                            <option value="usb4_120">USB4 120Gbps (15 GB/s)</option>
@@ -4324,7 +5646,7 @@ const DEVICE_TEMPLATES = {
 	                </div>
 	                <div>
 	                    <label>Compute TFlops (${currentQuant})</label>
-	                    <input type="number" class="input" value="${device.computeTFlops[currentQuant]}"
+	                    <input type="number" class="input" value="${getDeviceComputeTflops(device, currentQuant)}"
 	                           onchange="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)"
 	                           oninput="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)">
 	                </div>
@@ -4501,7 +5823,7 @@ const DEVICE_TEMPLATES = {
 
 	    if (field === 'computeTFlops') {
 	        const currentQuant = document.getElementById('quantizationType').value;
-	        valueChanged = device.computeTFlops[currentQuant] !== value;
+	        valueChanged = getDeviceComputeTflops(device, currentQuant) !== value;
 	    } else if (!isConnectionField) {
 	        valueChanged = device[field] !== value;
 	    }
@@ -4534,6 +5856,7 @@ const DEVICE_TEMPLATES = {
 	                'bfloat16': 2,
 	                'float16': 2,
 	                'int8': 4,
+	                'fp8': 4,
 	                'q4': 6
 	            }[currentQuant];
 
@@ -4542,6 +5865,7 @@ const DEVICE_TEMPLATES = {
 	                'bfloat16': baseValue * 2,
 	                'float16': baseValue * 2,
 	                'int8': baseValue * 4,
+	                'fp8': baseValue * 4,
 	                'q4': baseValue * 6
 	            };
 
@@ -4577,7 +5901,20 @@ const DEVICE_TEMPLATES = {
 	function updateModelConfigFromPreset() {
 		const modelPresetId = document.getElementById('modelPreset').value;
 		if (modelPresetId && MODEL_PRESETS[modelPresetId]) {
-			const preset = MODEL_PRESETS[modelPresetId];
+			const currentConfig = getModelConfig();
+			const preset = buildEffectiveModelConfig({
+				modelPreset: modelPresetId,
+				quantizationType: currentConfig.quantizationType,
+				batchSize: currentConfig.batchSize,
+				seqLength: currentConfig.seqLength,
+				dtype: currentConfig.dtype,
+				parallelismStrategy: currentConfig.parallelismStrategy,
+				optimizationMode: currentConfig.optimizationMode,
+				runtimeFramework: currentConfig.runtimeFramework,
+				architectureType: 'transformer',
+				routingType: 'auto',
+				attentionMechanism: 'auto'
+			}, { preferUserOverrides: false });
 			for (const key in preset) {
 				if (document.getElementById(key)) {
 					document.getElementById(key).value = preset[key];
@@ -4585,12 +5922,21 @@ const DEVICE_TEMPLATES = {
 			}
 		} else if (modelPresetId === "") {
 			// Reset to empty values if no preset selected
-			const defaultKeys = ['totalParamsB', 'hiddenSize', 'numLayers', 'numHeads'];
+			const defaultKeys = ['totalParamsB', 'hiddenSize', 'numLayers', 'numHeads', 'numKVHeads', 'intermediateSize', 'activeParamsB', 'numExperts', 'activeExperts'];
 			defaultKeys.forEach(key => {
 				if (document.getElementById(key)) {
 					document.getElementById(key).value = '';
 				}
 			});
+			if (document.getElementById('architectureType')) {
+				document.getElementById('architectureType').value = 'transformer';
+			}
+			if (document.getElementById('routingType')) {
+				document.getElementById('routingType').value = 'auto';
+			}
+			if (document.getElementById('attentionMechanism')) {
+				document.getElementById('attentionMechanism').value = 'auto';
+			}
 		}
 		updateSystemAnalysis();
 	}
@@ -4602,7 +5948,7 @@ const DEVICE_TEMPLATES = {
 			updateDeviceDisplay();
 			updateSystemAnalysis();
 		});
-        document.querySelectorAll('#modelConfig input, #modelConfig select').forEach(input => {
+        document.querySelectorAll('#modelConfigContent input, #modelConfigContent select').forEach(input => {
             if (input.id !== 'modelPreset' && input.id !== 'quantizationType' && input.id !== 'dtype') {
                 input.addEventListener('change', updateSystemAnalysis);
             }
@@ -4611,7 +5957,41 @@ const DEVICE_TEMPLATES = {
         updateDeviceDisplay();
         updateSystemAnalysis();
 		
+        function parseBenchmarkData(rawData) {
+            return rawData.split('\n')
+                .filter(line => line.trim() && line.includes('\t') && !line.startsWith('Model\t'))
+                .map(line => {
+                    const [model, quantization, framework, hardware, batchSize, seqLength, tokenRateBatch, tokenRateSingle, source] = line.split('\t');
+                    return {
+                        model: (model || '').trim(),
+                        quantization: (quantization || '').trim(),
+                        framework: (framework || '').trim(),
+                        hardware: (hardware || '').trim(),
+                        batchSize: (batchSize || '').trim(),
+                        seqLength: (seqLength || '').trim(),
+                        tokenRateBatch: (tokenRateBatch || '').trim(),
+                        tokenRateSingle: (tokenRateSingle || '').trim(),
+                        source: (source || '').trim()
+                    };
+                })
+                .filter(row => row.model && row.hardware && row.source.startsWith('https://'));
+        }
+
 		        const rawData = `Model	Quantization	Framework	Hardware	Batch Size	Sequence Length	Token Rate (Batch)	Token Rate (Single)	Source
+Llama 3.1 8B	FP8	NVIDIA NIM	1 x H100 80G	1	200/200		214.56 t/s	https://docs.nvidia.com/nim/benchmarking/llm/1.0.0/performance.html
+Llama 3.3 70B	FP8	NVIDIA NIM	2 x H100 80G	1	5000/500		51.67 t/s	https://docs.nvidia.com/nim/benchmarking/llm/1.0.0/performance.html
+Llama 3.1 8B	FP8	SGLang	H100	1	MT Bench		158.34 t/s	https://docs.sglang.ai/advanced_features/speculative_decoding.html
+Llama 3.1 8B	FP8	SGLang + EAGLE-2	H100	1	MT Bench		244.10 t/s	https://docs.sglang.ai/advanced_features/speculative_decoding.html
+Llama 3.1 8B	FP8	SGLang + EAGLE-3	H100	1	MT Bench		373.25 t/s	https://docs.sglang.ai/advanced_features/speculative_decoding.html
+Llama 3.3 70B	BF16	AMD MaxText	8 x MI355X (aggregate)	10	8192	18,712 t/s		https://www.amd.com/es/developer/resources/rocm-hub/dev-ai/performance-results.html
+Llama 3.1 405B	FP8	AMD MaxText	8 x MI355X (aggregate)	4	8192	5,264 t/s		https://www.amd.com/es/developer/resources/rocm-hub/dev-ai/performance-results.html
+Mixtral 8x7B	BF16	AMD Primus	8 x MI355X (aggregate)	4	4096	110,352 t/s		https://www.amd.com/es/developer/resources/rocm-hub/dev-ai/performance-results.html
+Mistral 7B	INT4	TensorRT-LLM	RTX 4090	1	2048		170.63 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
+Mistral 7B	Q4_K_M	llama.cpp	RTX 4090	1	2048		100.43 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
+Mistral 7B	INT4	TensorRT-LLM	RTX 3090	1	2048		144.19 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
+Mistral 7B	Q4_K_M	llama.cpp	RTX 3090	1	2048		88.70 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
+Llama 3.1 70B	FP16	vLLM + SpecDec	H100	1			~80 t/s	https://developer.nvidia.com/blog/an-introduction-to-speculative-decoding-for-reducing-latency-in-ai-inference/
+Llama 3.1 70B	FP16	vLLM	H100	1			~35 t/s	https://developer.nvidia.com/blog/an-introduction-to-speculative-decoding-for-reducing-latency-in-ai-inference/
 Llama 3.1 8b	FP16		Groq				100 t/s	https://www.vellum.ai/llm-leaderboard
 Llama 3.1 70b	FP16		Groq				40 t/s	https://www.vellum.ai/llm-leaderboard
 Llama 3.1 405b	FP16		Groq				10 t/s	https://www.vellum.ai/llm-leaderboard
@@ -4650,6 +6030,9 @@ Llama 2 7B	FP16	vLLM	NVIDIA A100	1	2048	500 t/s		https://blog.ori.co/benchmarkin
 GPT-J 6B	FP8	TensorRT-LLM	NVIDIA H100	64	128	10,907 t/s		https://nvidia.github.io/TensorRT-LLM/blogs/H100vsA100.html
 GPT-J 6B	FP16	TensorRT-LLM	NVIDIA A100	64	128	3,679 t/s		https://nvidia.github.io/TensorRT-LLM/blogs/H100vsA100.html
 DeepSeek V3	INT8	Exo	2 x Mac M3 Ultra 512GB				11 t/s	https://x.com/alexocheema/status/1899735281781411907
+Qwen 3 235B A22B	INT8	Exo	4 x M3 Ultra Mac Studio (TB5 RDMA)	1			~32 t/s	https://www.jeffgeerling.com/blog/2025/15-tb-vram-on-mac-studio-rdma-over-thunderbolt-5
+Kimi K2 Thinking	Q4	Exo	4 x M3 Ultra Mac Studio (TB5 RDMA)	1			~30 t/s	https://www.jeffgeerling.com/blog/2025/15-tb-vram-on-mac-studio-rdma-over-thunderbolt-5
+Qwen 3.5 35B A3B	Q8_0	llama.cpp	M3 Ultra 96GB	1	tg128		73.43 t/s	https://github.com/ggml-org/llama.cpp/issues/21494
 DeepSeek V3	FP16		NVIDIA H800 x 2048					https://www.infoq.com/news/2025/01/deepseek-v3-llm/
 RTX 5090 Benchmarks
 Llama 3.1 8B	Q4	llama.cpp	RTX 5090				213 t/s	https://localllm.in/blog/best-gpus-llm-inference-2025
@@ -4763,15 +6146,9 @@ Llama 3.1 70B	FP16	vLLM + SpecDec	H100				~80 t/s	https://developer.nvidia.com/b
 Llama 3.1 70B	FP16	vLLM	H100				~35 t/s	https://developer.nvidia.com/blog/an-introduction-to-speculative-decoding-for-reducing-latency-in-ai-inference/
 Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/developer/resources/technical-articles/2025/speculative-llm-inference-on-the-5th-gen-amd-epyc-processors-wit.html`;
 
-        const data = rawData.split('\n')
-            .filter(line => line.trim())
-            .map(line => {
-                const [model, quantization, framework, hardware, batchSize, seqLength, tokenRateBatch, tokenRateSingle, source] = line.split('\t');
-                return {
-                    model, quantization, framework, hardware, batchSize, 
-                    seqLength, tokenRateBatch, tokenRateSingle, source
-                };
-            });
+        benchmarkData = parseBenchmarkData(rawData);
+
+        const data = benchmarkData;
 
         // Function to render the table
         const renderTable = (data) => {
@@ -4947,21 +6324,19 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
         function updateModelSummary() {
             const modelPreset = document.getElementById('modelPreset').value;
             const quant = document.getElementById('quantizationType').value;
+            const framework = getFrameworkProfile(buildEffectiveModelConfig(), devices).label;
             const totalParams = document.getElementById('totalParamsB').value;
 
             let modelName = 'Custom';
             if (modelPreset && MODEL_PRESETS[modelPreset]) {
-                // Format preset name
-                modelName = modelPreset.split('_').map(word =>
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                ).join(' ');
+                modelName = getModelPresetLabel(modelPreset);
             } else if (totalParams) {
                 modelName = `${totalParams}B`;
             }
 
             const summary = document.getElementById('modelSummary');
             if (summary) {
-                summary.textContent = `${modelName} @ ${quant.toUpperCase()}`;
+                summary.textContent = `${modelName} @ ${quant.toUpperCase()} • ${framework}`;
             }
         }
         // Make updateModelSummary globally available
@@ -4973,27 +6348,28 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
 
 	    // Organize models into categories for better UX
 	    const modelCategories = {
-	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision'],
+	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision', 'llama4_scout', 'llama4_maverick'],
 	        'DeepSeek': ['deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
-	        'Qwen': ['qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_235b_moe'],
+	        'Qwen': ['qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b', 'qwen3.6_35b_a3b'],
 	        'Gemma': ['gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
 	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
-	        'Other MoE': ['dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b', 'kimi_k2'],
+	        'Kimi': ['kimi_k2', 'kimi_k2.5'],
+	        'MiniMax': ['minimax_m2', 'minimax_m2.5'],
+	        'GLM': ['glm5', 'glm5_1', 'glm4_9b'],
+	        'Other MoE': ['dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],
 	        'Falcon': ['falcon_40b', 'falcon2_180b', 'falcon2_11b'],
 	        'Code Models': ['starcoder2_15b', 'starcoder2_7b', 'starcoder2_3b'],
 	        'Vision Models': ['llava_1.5_7b', 'llava_1.5_13b'],
-	        'Open Source': ['olmo2_13b', 'olmo2_7b', 'glm4_9b', 'command_r_plus_104b', 'yi_34b', 'yi_large_200b', 'bloom_176b', 'gpt_neox_20b', 'mpt_30b', 'vicuna_13b'],
+	        'Open Source': ['olmo2_13b', 'olmo2_7b', 'command_r_plus_104b', 'yi_34b', 'yi_large_200b', 'bloom_176b', 'gpt_neox_20b', 'mpt_30b', 'vicuna_13b'],
 	        'Image Generation': ['sdxl_base', 'flux1_dev', 'sd3_medium'],
 	        'Video Generation': ['sora_est', 'runway_gen3'],
 	        'Audio Models': ['whisper_large_v3', 'musicgen_large'],
 	        'Test Models': ['large_model_400b', 'very_large_model_1kb']
 	    };
 
-	    const formatName = (key) => key.split('_').map(word =>
-	        word.charAt(0).toUpperCase() + word.slice(1)
-	    ).join(' ').replace(/([0-9]+[a-z])/i, match => match.toUpperCase());
+	    const formatName = (key) => getModelPresetLabel(key) || formatModelPresetName(key);
 
 	    // Track which models we've added to avoid duplicates
 	    const addedModels = new Set();
@@ -5034,6 +6410,7 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
 	    }
 	    
 	    renderTable(data);
+	    updateSystemAnalysis();
 
 	    // Check for load devices button (may not exist)
 	    const loadBtn = document.getElementById('loadDevicesBtn');
@@ -5305,7 +6682,7 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                 const device = node.device;
                 const template = DEVICE_TEMPLATES[device.template] || {};
                 const currentQuant = document.getElementById('quantizationType')?.value || 'q4';
-                const tflops = device.computeTFlops?.[currentQuant] || 0;
+                const tflops = getDeviceComputeTflops(device, currentQuant);
 
                 // Gradient background
                 const gradient = ctx.createLinearGradient(node.x, node.y, node.x, node.y + node.height);
@@ -5430,6 +6807,38 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
 
         // Handle window resize
         window.addEventListener('resize', () => setTimeout(updateTopology, 100));
+
+        window.__mlBottleneckTestHooks = {
+            MODEL_PRESETS,
+            DEVICE_TEMPLATES,
+            FRAMEWORK_PROFILES,
+            ARCHITECTURE_PROFILES,
+            ATTENTION_MECHANISM_PROFILES,
+            parseBenchmarkData,
+            parseBenchmarkRate,
+            getBenchmarkAlignmentSummary,
+            buildEffectiveModelConfig,
+            normalizeModelConfig,
+            getArchitectureProfile,
+            getFrameworkProfile,
+            calculateMemoryBreakdown,
+            calculateEffectiveBandwidth,
+            calculateDecodeTokenRate,
+            calculateDecodeCoordinationTimeSeconds,
+            calculateMetrics,
+            calculateSystemRateFromDeviceRates,
+            findOptimalStrategy,
+            findBenchmarkMatches,
+            calculateEXOPhaseSplit,
+            loadScenarioPreset,
+            getBenchmarkData: () => benchmarkData,
+            getDevices: () => devices,
+            setDevices: (nextDevices) => {
+                devices = nextDevices.map(device => ({ ...device }));
+            },
+            getModelConfig,
+            updateModelConfigFromPreset
+        };
 
     </script>
 </body>
