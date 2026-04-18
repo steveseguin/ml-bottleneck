@@ -865,46 +865,72 @@ input, select {
 
 /* Primary result panel */
 .result-hero {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 1.5rem;
     padding: 1.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--background);
-    text-align: center;
+}
+.result-hero-main {
+    min-width: 0;
+}
+.result-hero-side {
+    min-width: 0;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--border);
+}
+.result-hero .rate-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+.result-hero .rate-value {
+    line-height: 1;
+    white-space: nowrap;
 }
 .result-hero .rate-number {
-    font-size: 2.75rem;
+    font-size: 3rem;
     font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
+    letter-spacing: -0.03em;
     color: var(--text);
 }
 .result-hero .rate-units {
-    font-size: 1rem;
+    font-size: 1.1rem;
     color: var(--text-secondary);
-    margin-left: 0.35rem;
+    margin-left: 0.4rem;
     font-weight: 500;
 }
-.result-hero .rate-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-secondary);
-    margin-bottom: 0.35rem;
-}
 .result-hero .bottleneck-line {
-    margin-top: 0.75rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-.result-hero .bottleneck-line strong {
+    font-size: 0.95rem;
     color: var(--text);
-    font-weight: 600;
+    font-weight: 500;
 }
-.result-hero .bottleneck-line.is-warning strong {
-    color: #f59e0b;
+.result-hero .bottleneck-line.is-good { color: #22c55e; }
+.result-hero .bottleneck-line.is-warning { color: #f59e0b; }
+.result-hero .bottleneck-line.is-error { color: var(--destructive); }
+.result-hero .result-hero-meta {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
 }
-.result-hero .bottleneck-line.is-error strong {
-    color: var(--destructive);
+@media (max-width: 560px) {
+    .result-hero {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .result-hero-side {
+        padding-left: 0;
+        padding-top: 1rem;
+        border-left: none;
+        border-top: 1px solid var(--border);
+    }
+    .result-hero .rate-number { font-size: 2.5rem; }
 }
 
 /* Progress indicator */
@@ -5875,25 +5901,22 @@ const DEVICE_TEMPLATES = {
                 }
 
                 // Build primary bottleneck line (system-level)
-                let bottleneckLineClass = '';
-                let bottleneckText = '';
+                let bottleneckLineClass = 'is-good';
+                let bottleneckText = 'No single resource is saturated';
                 if (systemBottleneck !== 'None') {
                     bottleneckLineClass = 'is-warning';
-                    bottleneckText = `Bottleneck: <strong>${systemBottleneck}</strong>`;
+                    bottleneckText = `Bottleneck: ${systemBottleneck}`;
                 } else {
-                    // Find per-device bottleneck if any device reports one
                     const hasDecodeBottleneck = metrics.some(m => !m.isImageGen && m.decodeBottleneckFactor > 1);
                     const hasPrefillBottleneck = metrics.some(m => m.isBottleneck);
                     if (hasDecodeBottleneck) {
                         const worst = metrics.reduce((a, b) => (b.decodeBottleneckFactor || 0) > (a.decodeBottleneckFactor || 0) ? b : a);
                         const typ = (worst.decodeComputeUtilization || 0) > (worst.decodeLocalBandwidthUtilization || 0) ? 'Compute' : 'Memory bandwidth';
                         bottleneckLineClass = 'is-warning';
-                        bottleneckText = `Decode bottleneck: <strong>${typ}</strong>`;
+                        bottleneckText = `Decode bottleneck: ${typ}`;
                     } else if (hasPrefillBottleneck) {
                         bottleneckLineClass = 'is-error';
-                        bottleneckText = `Prefill over capacity — see breakdown`;
-                    } else {
-                        bottleneckText = `No single resource is saturated.`;
+                        bottleneckText = 'Prefill over capacity — see breakdown';
                     }
                 }
 
@@ -5904,11 +5927,13 @@ const DEVICE_TEMPLATES = {
 
                 systemAnalysisHtml += `
                     <div class="result-hero">
-                        <div class="rate-label">${isImageGen ? 'System throughput' : 'System decode rate'}</div>
-                        <div><span class="rate-number">${rateNum}</span><span class="rate-units">${rateUnits}</span></div>
-                        <div class="bottleneck-line ${bottleneckLineClass}">${bottleneckText}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
-                            ${devices.length} device${devices.length > 1 ? 's' : ''} · ${totalMemory} GB total · ${isAutoMode ? 'AUTO → ' : ''}${parallelismPretty}
+                        <div class="result-hero-main">
+                            <div class="rate-label">${isImageGen ? 'System throughput' : 'System decode rate'}</div>
+                            <div class="rate-value"><span class="rate-number">${rateNum}</span><span class="rate-units">${rateUnits}</span></div>
+                        </div>
+                        <div class="result-hero-side">
+                            <div class="bottleneck-line ${bottleneckLineClass}">${bottleneckText}</div>
+                            <div class="result-hero-meta">${devices.length} device${devices.length > 1 ? 's' : ''} · ${totalMemory} GB total · ${isAutoMode ? 'AUTO → ' : ''}${parallelismPretty}</div>
                         </div>
                     </div>
 
