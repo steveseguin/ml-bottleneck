@@ -306,6 +306,71 @@ test('benchmark alignment explains EXO RDMA mismatches on low-bandwidth Thunderb
   assert.ok(alignment[0].reasons.some(reason => reason.includes('Thunderbolt 5 RDMA')));
 });
 
+test('confidence summary distinguishes aligned, nearby, and unsupported estimates', () => {
+  const app = loadApp();
+
+  assert.equal(app.hooks.getConfidenceSummary([{ sourceTier: 2, deltaPct: 8 }]).label, 'High');
+  assert.equal(app.hooks.getConfidenceSummary([{ sourceTier: 1, deltaPct: 20 }]).label, 'Medium');
+  assert.equal(app.hooks.getConfidenceSummary([{ sourceTier: 1, deltaPct: 80 }]).label, 'Low');
+  assert.equal(app.hooks.getConfidenceSummary([]).label, 'Low');
+});
+
+test('recommended setup html surfaces confidence, strategy, and bottleneck reasons', () => {
+  const app = loadApp();
+  app.hooks.setDevices([
+    cloneMacClusterNode(app.hooks, 1, { bandwidth: 10, interconnectType: 'thunderbolt5' }),
+    cloneMacClusterNode(app.hooks, 2, { bandwidth: 10, interconnectType: 'thunderbolt5' }),
+    cloneMacClusterNode(app.hooks, 3, { bandwidth: 10, interconnectType: 'thunderbolt5' }),
+    cloneMacClusterNode(app.hooks, 4, { bandwidth: 10, interconnectType: 'thunderbolt5' })
+  ]);
+  setLlmDefaults(app, {
+    preset: 'qwen3_235b_moe',
+    quant: 'int8',
+    framework: 'exo',
+    strategy: 'tensor',
+    batchSize: 1,
+    seqLength: 2048
+  });
+
+  const metrics = app.hooks.calculateMetrics();
+  const systemRate = app.hooks.calculateSystemRateFromDeviceRates(metrics.map(metric => metric.decodeTokensPerSecond), 'tensor', 1, app.hooks.getDevices());
+  const alignment = app.hooks.getBenchmarkAlignmentSummary(app.hooks.buildEffectiveModelConfig(), app.hooks.getDevices(), metrics, systemRate);
+  const html = app.hooks.buildRecommendedSetupHtml(
+    app.hooks.buildEffectiveModelConfig(),
+    app.hooks.getDevices(),
+    metrics,
+    systemRate,
+    'tensor',
+    alignment,
+    `${systemRate.toFixed(1)} tok/s`
+  );
+
+  assert.match(html, /Recommended Setup/);
+  assert.match(html, /Tensor Parallel/);
+  assert.match(html, /confidence-low/);
+  assert.match(html, /Thunderbolt 5 RDMA/);
+});
+
+test('system analysis renders recommendation first and collapses per-device details', () => {
+  const app = loadApp();
+  app.hooks.setDevices([cloneTemplate(app.hooks, 'RTX 4090')]);
+  setLlmDefaults(app, {
+    preset: 'llama3_8b',
+    quant: 'q4',
+    framework: 'llama_cpp',
+    strategy: 'pipeline',
+    batchSize: 1,
+    seqLength: 2048
+  });
+
+  app.hooks.updateSystemAnalysis();
+  const html = app.elements.get('systemAnalysis').innerHTML;
+
+  assert.ok(html.indexOf('Recommended Setup') >= 0);
+  assert.ok(html.indexOf('System Total') > html.indexOf('Recommended Setup'));
+  assert.match(html, /Per-device details and bottlenecks/);
+});
+
 test('calculateEffectiveBandwidth honors overflow target device bandwidth', () => {
   const app = loadApp();
   const devices = [

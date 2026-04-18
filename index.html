@@ -713,6 +713,96 @@ input, select {
     font-weight: normal;
 }
 
+.advanced-settings {
+    margin: 0.75rem 0;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.03);
+}
+.advanced-settings summary {
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+.advanced-settings[open] summary {
+    margin-bottom: 0.75rem;
+    color: var(--primary);
+}
+.recommendation-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 2px solid #22c55e;
+    border-radius: var(--radius);
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 34%),
+        linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(96, 165, 250, 0.08));
+}
+.recommendation-card h3 {
+    margin: 0 0 0.75rem 0;
+    color: #4ade80;
+}
+.recommendation-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+.recommendation-metric {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.recommendation-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.2rem;
+}
+.recommendation-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+.confidence-pill {
+    display: inline-block;
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+.confidence-high {
+    color: #052e16;
+    background: #4ade80;
+}
+.confidence-medium {
+    color: #422006;
+    background: #fbbf24;
+}
+.confidence-low {
+    color: #450a0a;
+    background: #f87171;
+}
+.recommendation-reasons {
+    margin: 0.75rem 0 0 0;
+    padding-left: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+}
+.details-disclosure {
+    margin-top: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.03);
+}
+.details-disclosure summary {
+    cursor: pointer;
+    padding: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+.details-disclosure-content {
+    padding: 0 0.75rem 0.75rem 0.75rem;
+}
+
 /* Improved card transitions */
 .card {
     transition: all 0.2s ease;
@@ -761,6 +851,10 @@ input, select {
 
     .inline-select-group select {
         width: 100%;
+    }
+
+    .recommendation-grid {
+        grid-template-columns: 1fr;
     }
 }
 </style>
@@ -841,11 +935,14 @@ input, select {
                     </select>
                 </div>
 
-                <label>Total Parameters (B)</label>
-                <input type="number" id="totalParamsB" class="input" value="400">
-
                 <label>Sequence Length</label>
                 <input type="number" id="seqLength" class="input" value="2048">
+
+                <details class="advanced-settings">
+                    <summary>Advanced model internals</summary>
+
+                <label>Total Parameters (B)</label>
+                <input type="number" id="totalParamsB" class="input" value="400">
 
                 <label>Hidden Size</label>
                 <input type="number" id="hiddenSize" class="input" value="16384">
@@ -912,6 +1009,7 @@ input, select {
                         </select>
                     </div>
                 </div>
+                </details>
 
                 <label style="display: none;">Data Type</label>
                 <select id="dtype" class="input" style="display: none;">
@@ -5190,6 +5288,141 @@ const DEVICE_TEMPLATES = {
 			});
 		}
 
+        function formatStrategyLabel(strategy) {
+            const labels = {
+                auto: 'AUTO',
+                pipeline: 'Pipeline',
+                tensor: 'Tensor Parallel',
+                data: 'Data Parallel',
+                expert: 'Expert Parallel',
+                sequence: 'Sequence Parallel',
+                context: 'Context Parallel',
+                hybrid_tp_pp: 'Hybrid TP+PP',
+                hybrid_tp_dp: 'Hybrid TP+DP'
+            };
+            return labels[strategy] || (strategy || 'pipeline').replace(/_/g, ' ').toUpperCase();
+        }
+
+        function getConfidenceSummary(benchmarkAlignment) {
+            if (!benchmarkAlignment || benchmarkAlignment.length === 0) {
+                return {
+                    label: 'Low',
+                    className: 'confidence-low',
+                    reason: 'No close benchmark reference for this exact model, hardware, quantization, and runtime.'
+                };
+            }
+
+            const best = benchmarkAlignment[0];
+            const absDelta = Math.abs(best.deltaPct);
+
+            if (best.sourceTier > 1 && absDelta <= 15) {
+                return {
+                    label: 'High',
+                    className: 'confidence-high',
+                    reason: 'Closest official benchmark is within normal runtime variance.'
+                };
+            }
+
+            if (absDelta <= 25 || best.sourceTier > 1) {
+                return {
+                    label: 'Medium',
+                    className: 'confidence-medium',
+                    reason: 'A nearby benchmark exists, but at least one setup detail differs.'
+                };
+            }
+
+            return {
+                label: 'Low',
+                className: 'confidence-low',
+                reason: 'Closest benchmark diverges materially; use the explanation below before trusting the number.'
+            };
+        }
+
+        function getTopRecommendationReasons(modelConfig, devicesArray, metrics, benchmarkAlignment, parallelism) {
+            const reasons = [];
+            const avgMemoryUtilization = metrics.reduce((sum, metric) => sum + metric.memoryUtilization, 0) / Math.max(metrics.length, 1);
+            const avgLocalBandwidthUtilization = metrics.reduce((sum, metric) => sum + metric.localBandwidthUtilization, 0) / Math.max(metrics.length, 1);
+            const avgNetworkUtilization = metrics.reduce((sum, metric) => sum + metric.networkBandwidthUtilization, 0) / Math.max(metrics.length, 1);
+            const maxCoordinationMs = Math.max(...metrics.map(metric => metric.decodeCoordinationTimeMs || 0), 0);
+
+            if (metrics.some(metric => metric.hasOverflow)) {
+                reasons.push('Weights overflow local memory; capacity and overflow bandwidth dominate the estimate.');
+            }
+
+            if (avgMemoryUtilization > 90) {
+                reasons.push('Memory capacity is tight; lowering precision or sharding weights should help most.');
+            } else if (avgLocalBandwidthUtilization > 70) {
+                reasons.push('Decode is mostly memory-bandwidth bound; faster VRAM/unified memory matters more than TFLOPs.');
+            }
+
+            if (avgNetworkUtilization > 60 || maxCoordinationMs > 15) {
+                reasons.push('Distributed decode is paying interconnect/coordination overhead; RDMA or fewer shards may improve latency.');
+            }
+
+            if (parallelism === 'data' && (modelConfig.batchSize || 1) <= 1) {
+                reasons.push('Data parallelism improves aggregate throughput, but not single-user latency.');
+            }
+
+            const bestAlignment = benchmarkAlignment?.[0];
+            if (bestAlignment?.reasons?.length) {
+                reasons.push(...bestAlignment.reasons);
+            } else if (bestAlignment) {
+                reasons.push('Nearest benchmark is close enough that normal kernel/runtime variance likely explains the delta.');
+            }
+
+            if (!reasons.length && devicesArray.length === 1) {
+                reasons.push('Single-device setup is straightforward; the estimate is mainly bandwidth and runtime efficiency.');
+            }
+
+            return [...new Set(reasons)].slice(0, 4);
+        }
+
+        function buildRecommendedSetupHtml(modelConfig, devicesArray, metrics, systemRate, parallelism, benchmarkAlignment, systemRateLabel) {
+            if (!metrics.length) return '';
+
+            const confidence = getConfidenceSummary(benchmarkAlignment);
+            const frameworkProfile = getFrameworkProfile(modelConfig, devicesArray);
+            const architectureProfile = getArchitectureProfile(modelConfig);
+            const reasons = getTopRecommendationReasons(modelConfig, devicesArray, metrics, benchmarkAlignment, parallelism);
+            const activeWeights = Math.max(...metrics.map(metric => metric.activeModelSizeGB || 0));
+            const residentWeights = Math.max(...metrics.map(metric => metric.modelSizeGB || 0));
+            const benchmarkHint = benchmarkAlignment?.[0]
+                ? `${benchmarkAlignment[0].referenceRate.toFixed(1)} tok/s reference, ${benchmarkAlignment[0].deltaPct >= 0 ? '+' : ''}${benchmarkAlignment[0].deltaPct.toFixed(1)}% delta`
+                : 'No close reference';
+
+            return `
+                <div class="recommendation-card">
+                    <h3>Recommended Setup</h3>
+                    <div class="recommendation-grid">
+                        <div class="recommendation-metric">
+                            <div class="recommendation-label">Expected Output</div>
+                            <div class="recommendation-value">${systemRateLabel}</div>
+                        </div>
+                        <div class="recommendation-metric">
+                            <div class="recommendation-label">Strategy</div>
+                            <div class="recommendation-value">${formatStrategyLabel(parallelism)}</div>
+                        </div>
+                        <div class="recommendation-metric">
+                            <div class="recommendation-label">Runtime</div>
+                            <div class="recommendation-value">${frameworkProfile.label}</div>
+                        </div>
+                        <div class="recommendation-metric">
+                            <div class="recommendation-label">Confidence</div>
+                            <div class="recommendation-value"><span class="confidence-pill ${confidence.className}">${confidence.label}</span></div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0.75rem; font-size: 0.84rem; color: var(--text-secondary);">
+                        ${getSelectedModelLabel(modelConfig)} • ${modelConfig.quantizationType.toUpperCase()} • ${architectureProfile.label}<br>
+                        Active weights: ${activeWeights.toFixed(1)} GB • Resident weights: ${residentWeights.toFixed(1)} GB • Benchmark: ${benchmarkHint}<br>
+                        ${confidence.reason}
+                    </div>
+                    <ul class="recommendation-reasons">
+                        ${reasons.map(reason => `<li>${reason}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
         function updateSystemAnalysis() {
             const metrics = calculateMetrics();
             const analysisContainer = document.getElementById('systemAnalysis');
@@ -5289,6 +5522,9 @@ const DEVICE_TEMPLATES = {
                 }
                 systemAnalysisHtml += `</div>`;
             });
+
+            const deviceDetailsHtml = systemAnalysisHtml;
+            systemAnalysisHtml = '';
 
             // Add System Total Summary
             if (metrics.length > 0) {
@@ -5423,6 +5659,7 @@ const DEVICE_TEMPLATES = {
 
                 const benchmarkMatches = findBenchmarkMatches(modelConfig, devices);
                 const benchmarkAlignment = getBenchmarkAlignmentSummary(modelConfig, devices, metrics, systemRate);
+                const recommendationHtml = buildRecommendedSetupHtml(modelConfig, devices, metrics, systemRate, parallelism, benchmarkAlignment, systemRateLabel);
                 let benchmarkHtml = '';
                 if (benchmarkMatches.length > 0) {
                     benchmarkHtml = `
@@ -5467,6 +5704,7 @@ const DEVICE_TEMPLATES = {
                 }
 
                 systemAnalysisHtml += `
+                    ${recommendationHtml}
                     <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.1)); border-radius: var(--radius); border: 2px solid var(--primary);">
                         <h3 style="margin: 0 0 0.75rem 0; color: var(--primary);">📊 System Total</h3>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.9rem;">
@@ -5490,6 +5728,12 @@ const DEVICE_TEMPLATES = {
                         ${benchmarkHtml}
                         ${benchmarkAlignmentHtml}
                     </div>
+                    <details class="details-disclosure">
+                        <summary>Per-device details and bottlenecks</summary>
+                        <div class="details-disclosure-content">
+                            ${deviceDetailsHtml}
+                        </div>
+                    </details>
                 `;
             }
 
@@ -6817,6 +7061,10 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
             parseBenchmarkData,
             parseBenchmarkRate,
             getBenchmarkAlignmentSummary,
+            getConfidenceSummary,
+            getTopRecommendationReasons,
+            buildRecommendedSetupHtml,
+            formatStrategyLabel,
             buildEffectiveModelConfig,
             normalizeModelConfig,
             getArchitectureProfile,
@@ -6837,6 +7085,7 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
                 devices = nextDevices.map(device => ({ ...device }));
             },
             getModelConfig,
+            updateSystemAnalysis,
             updateModelConfigFromPreset
         };
 
