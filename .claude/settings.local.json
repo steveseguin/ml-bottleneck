@@ -9,7 +9,9 @@
       "Bash(git commit:*)",
       "WebFetch(domain:github.com)",
       "Bash(cat:*)",
-      "Skill(ralph-wiggum:ralph-loop)"
+      "Skill(ralph-wiggum:ralph-loop)",
+      "Bash(npm test *)",
+      "Bash(python3 *)"
     ]
   }
 }

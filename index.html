@@ -811,6 +811,139 @@ input, select {
     border-color: var(--primary);
 }
 
+/* Field groups within a card */
+.field-section {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+}
+.field-section:first-of-type {
+    margin-top: 0.5rem;
+    padding-top: 0;
+    border-top: none;
+}
+.field-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem 0;
+}
+.field-help {
+    display: block;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Pill chip row (e.g. sequence length presets) */
+.chip-row {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin: -0.25rem 0 0.6rem 0;
+}
+.chip {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.chip:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.chip.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+/* Quick Start hero row */
+.quick-start {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.25rem;
+    background:
+        radial-gradient(circle at top right, rgba(99, 102, 241, 0.18), transparent 40%),
+        linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(79, 70, 229, 0.06));
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: var(--radius);
+    flex-wrap: wrap;
+}
+.quick-start-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin: 0;
+    flex-shrink: 0;
+}
+.quick-start-hint {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 0;
+    flex-shrink: 0;
+}
+.quick-start select {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 220px;
+}
+@media (max-width: 640px) {
+    .quick-start { flex-direction: column; align-items: stretch; }
+    .quick-start-hint { display: none; }
+}
+
+/* Icon-style small button for device actions */
+.icon-button {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: var(--transition);
+    line-height: 1;
+}
+.icon-button:hover { border-color: var(--primary); color: var(--primary); }
+.icon-button.destructive:hover { border-color: var(--destructive); color: var(--destructive); }
+.icon-button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Hero headline and subtitle */
+.app-header {
+    margin: 1.5rem 0 0.25rem 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.app-header h1 { margin: 0; }
+.app-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0 0 1.25rem 0;
+}
+
+/* Make the System Total card stand out as the headline result */
+.headline-result h2 {
+    font-size: 1.35rem;
+}
+
 /* Progress indicator */
 .progress-bar {
     height: 4px;
@@ -860,17 +993,51 @@ input, select {
 </style>
 </head>
 <body>
-    <h1>ML System Bottleneck Analyzer</h1>
+    <div class="app-header">
+        <h1>ML System Bottleneck Analyzer</h1>
+    </div>
+    <p class="app-subtitle">Pick a model, pick the hardware, and see where the system will bottleneck and how many tokens/sec to expect.</p>
+
+    <div class="quick-start">
+        <span class="quick-start-label">Quick start</span>
+        <select id="scenarioPreset" class="input" onchange="loadScenarioPreset(this.value)">
+            <option value="">Start from a preset configuration&hellip;</option>
+            <optgroup label="RTX 50-Series Multi-GPU">
+                <option value="5090_ddr5">RTX 5090 + DDR5 Overflow (36GB model)</option>
+                <option value="5090_5060ti_x1">RTX 5090 x16 + RTX 5060 Ti x1 (slow PCIe)</option>
+                <option value="5090_5060ti_x8">RTX 5090 x8 + RTX 5060 Ti x8 (balanced)</option>
+                <option value="5090_oculink">RTX 5090 x16 + GPU via Oculink (x4)</option>
+                <option value="dual_5090">2x RTX 5090 x16 (theoretical)</option>
+            </optgroup>
+            <optgroup label="RTX 40-Series">
+                <option value="4090_ddr5">RTX 4090 + DDR5 Overflow</option>
+                <option value="4090_4080">RTX 4090 + RTX 4080 (both x8)</option>
+            </optgroup>
+            <optgroup label="Apple Silicon">
+                <option value="m4_max">Mac M4 Max (128GB)</option>
+                <option value="m3_ultra">Mac M3 Ultra (512GB)</option>
+                <option value="m3_ultra_x4_tb5">4x Mac M3 Ultra (Thunderbolt 5)</option>
+                <option value="m3_ultra_x4_tb5_rdma">4x Mac M3 Ultra (TB5 RDMA)</option>
+            </optgroup>
+            <optgroup label="Data Center">
+                <option value="h100_single">Single H100</option>
+                <option value="h100_x8">8x H100 (NVLink)</option>
+            </optgroup>
+        </select>
+        <span class="quick-start-hint">or configure manually below</span>
+    </div>
 
     <div class="grid">
         <div class="card">
             <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                <h2>Model Configuration <span class="toggle-icon">▼</span></h2>
+                <h2>Model &amp; workload <span class="toggle-icon">▼</span></h2>
                 <span class="quick-summary" id="modelSummary">Llama3 8b @ Q4</span>
             </div>
             <div class="collapsible-content" id="modelConfigContent">
+                <div class="field-section">
+                    <div class="field-section-title">Model</div>
                 <div class="inline-select-group">
-                    <label for="modelPreset">Model Preset</label>
+                    <label for="modelPreset">Preset</label>
                     <select id="modelPreset" class="input">
                         <option value="">Custom</option>
                         <optgroup label="Llama">
@@ -934,9 +1101,24 @@ input, select {
                         <option value="float32">FP32</option>
                     </select>
                 </div>
+                <small class="field-help">Weight precision. Lower = smaller memory, faster decode, slight accuracy loss.</small>
+                </div>
 
-                <label>Sequence Length</label>
+                <div class="field-section">
+                    <div class="field-section-title">Workload</div>
+
+                <label for="seqLength">Sequence length (tokens)</label>
+                <div class="chip-row" id="seqLengthChips">
+                    <button type="button" class="chip" data-seqlen="512">512</button>
+                    <button type="button" class="chip" data-seqlen="1024">1K</button>
+                    <button type="button" class="chip active" data-seqlen="2048">2K</button>
+                    <button type="button" class="chip" data-seqlen="4096">4K</button>
+                    <button type="button" class="chip" data-seqlen="8192">8K</button>
+                    <button type="button" class="chip" data-seqlen="16384">16K</button>
+                    <button type="button" class="chip" data-seqlen="32768">32K</button>
+                </div>
                 <input type="number" id="seqLength" class="input" value="2048">
+                <small class="field-help">Total prompt + generated tokens per request. Click a preset or type a custom value.</small>
 
                 <details class="advanced-settings">
                     <summary>Advanced model internals</summary>
@@ -1021,32 +1203,48 @@ input, select {
                     <option value="q4" selected>q4</option>
                 </select>
 
-                <label>Parallelism Strategy</label>
+                <label for="batchSize">Batch size</label>
+                <select id="batchSize" class="input">
+                    <option value="1">1 &mdash; interactive (single user)</option>
+                    <option value="4">4 &mdash; small batch</option>
+                    <option value="8">8 &mdash; medium batch</option>
+                    <option value="16">16 &mdash; large batch</option>
+                    <option value="32">32 &mdash; high throughput</option>
+                    <option value="64">64 &mdash; max throughput</option>
+                </select>
+                <small class="field-help">Concurrent requests processed together. Higher = better GPU utilization but more memory.</small>
+                </div>
+
+                <div class="field-section">
+                    <div class="field-section-title">Distribution &amp; runtime</div>
+
+                <label for="parallelismStrategy">How to distribute across devices</label>
                 <select id="parallelismStrategy" class="input">
-                    <option value="auto">AUTO (Find Optimal)</option>
-                    <option value="pipeline">Pipeline Parallelism (PP)</option>
-                    <option value="tensor">Tensor Parallelism (TP)</option>
-                    <option value="data">Data Parallelism (DP)</option>
-                    <option value="expert">Expert Parallelism (EP - MoE)</option>
-                    <option value="sequence">Sequence Parallelism (SP)</option>
-                    <option value="context">Context Parallelism (CP)</option>
+                    <option value="auto">AUTO &mdash; pick the best strategy</option>
+                    <option value="pipeline">Pipeline (layers split across devices)</option>
+                    <option value="tensor">Tensor (each layer split across devices)</option>
+                    <option value="data">Data (replica per device, separate requests)</option>
+                    <option value="expert">Expert (MoE experts split across devices)</option>
+                    <option value="sequence">Sequence parallelism</option>
+                    <option value="context">Context parallelism</option>
                     <option value="hybrid_tp_pp">Hybrid TP+PP</option>
                     <option value="hybrid_tp_dp">Hybrid TP+DP</option>
                 </select>
+                <small class="field-help">AUTO enumerates all valid strategies and picks the highest decode rate.</small>
 
-                <label>Optimization</label>
+                <label for="optimizationMode">Inference optimization</label>
                 <select id="optimizationMode" class="input">
-                    <option value="none">Standard Inference</option>
-                    <option value="speculative">Speculative Decoding (2-3x speedup)</option>
-                    <option value="continuous_batching">Continuous Batching</option>
+                    <option value="none">Standard inference</option>
+                    <option value="speculative">Speculative decoding (2&ndash;3x speedup)</option>
+                    <option value="continuous_batching">Continuous batching</option>
                     <option value="paged_attention">PagedAttention (vLLM)</option>
                     <option value="flash_attention">Flash Attention</option>
-                    <option value="exo_phase_split">EXO Phase Split (Prefill/Decode)</option>
+                    <option value="exo_phase_split">EXO phase split (prefill/decode)</option>
                 </select>
 
-                <label>Runtime Framework</label>
+                <label for="runtimeFramework">Runtime framework</label>
                 <select id="runtimeFramework" class="input">
-                    <option value="auto" selected>AUTO (Match hardware)</option>
+                    <option value="auto" selected>AUTO &mdash; match hardware</option>
                     <option value="llama_cpp">llama.cpp</option>
                     <option value="mlx">MLX / MLX-LM</option>
                     <option value="ollama">Ollama</option>
@@ -1055,82 +1253,47 @@ input, select {
                     <option value="tensorrt_llm">TensorRT-LLM</option>
                     <option value="exo">EXO / MLX Distributed</option>
                 </select>
-
-                <label>Batch Size</label>
-                <select id="batchSize" class="input">
-                    <option value="1">1 (Interactive)</option>
-                    <option value="4">4 (Small batch)</option>
-                    <option value="8">8 (Medium batch)</option>
-                    <option value="16">16 (Large batch)</option>
-                    <option value="32">32 (High throughput)</option>
-                    <option value="64">64 (Max throughput)</option>
-                </select>
-
-                <div class="inline-select-group">
-                    <label for="hoursPerDay">Hours/Day</label>
-                    <input type="number" id="hoursPerDay" class="input" value="8" min="1" max="24" step="1">
-
-                    <label for="costPerKwh">$/kWh</label>
-                    <input type="number" id="costPerKwh" class="input" value="0.12" min="0.01" step="0.01">
                 </div>
+
+                <details class="advanced-settings" id="costAssumptions">
+                    <summary>Cost assumptions (power pricing)</summary>
+                    <div class="inline-select-group">
+                        <label for="hoursPerDay">Hours/day</label>
+                        <input type="number" id="hoursPerDay" class="input" value="8" min="1" max="24" step="1">
+
+                        <label for="costPerKwh">$/kWh</label>
+                        <input type="number" id="costPerKwh" class="input" value="0.12" min="0.01" step="0.01">
+                    </div>
+                    <small class="field-help">Used only for the daily/monthly cost estimate in the System Total panel.</small>
+                </details>
             </div>
         </div>
-        </div>
 
-	<div class="card">
-	    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-	        <h2>Devices</h2>
-	    </div>
-	    <div style="margin-bottom: 1rem;">
-	        <label style="font-size: 0.875rem;">Quick Scenario Preset</label>
-	        <select id="scenarioPreset" class="input" onchange="loadScenarioPreset(this.value)" style="margin-bottom: 0;">
-	            <option value="">Custom Configuration</option>
-	            <optgroup label="RTX 50-Series Multi-GPU">
-	                <option value="5090_ddr5">RTX 5090 + DDR5 Overflow (36GB model)</option>
-	                <option value="5090_5060ti_x1">RTX 5090 x16 + RTX 5060 Ti x1 (slow PCIe)</option>
-	                <option value="5090_5060ti_x8">RTX 5090 x8 + RTX 5060 Ti x8 (balanced)</option>
-	                <option value="5090_oculink">RTX 5090 x16 + GPU via Oculink (x4)</option>
-	                <option value="dual_5090">2x RTX 5090 x16 (theoretical)</option>
-	            </optgroup>
-	            <optgroup label="RTX 40-Series">
-	                <option value="4090_ddr5">RTX 4090 + DDR5 Overflow</option>
-	                <option value="4090_4080">RTX 4090 + RTX 4080 (both x8)</option>
-	            </optgroup>
-	            <optgroup label="Apple Silicon">
-	                <option value="m4_max">Mac M4 Max (128GB)</option>
-	                <option value="m3_ultra">Mac M3 Ultra (512GB)</option>
-	                <option value="m3_ultra_x4_tb5">4x Mac M3 Ultra (Thunderbolt 5)</option>
-	                <option value="m3_ultra_x4_tb5_rdma">4x Mac M3 Ultra (TB5 RDMA)</option>
-	            </optgroup>
-	            <optgroup label="Data Center">
-	                <option value="h100_single">Single H100</option>
-	                <option value="h100_x8">8x H100 (NVLink)</option>
-	            </optgroup>
-	        </select>
-	    </div>
-	    <div id="devices"></div>
-	</div>
+        <div class="card">
+            <h2 style="margin-top: 0;">Hardware</h2>
+            <p class="field-help" style="margin-top: -0.75rem;">
+                Pick a template per device, or edit any field to create a custom spec. The device library saves custom builds for reuse.
+            </p>
+            <div id="devices"></div>
+        </div>
     </div>
-	
-    <div id="alerts"></div>
 
-    <div class="grid">
-        <div class="card">
-            <h2>Resource Utilization</h2>
-            <div class="chart-container">
-                <canvas id="utilizationChart"></canvas>
-            </div>
-        </div>
+    <div class="card headline-result" style="margin-top: 0;">
+        <h2 style="margin-top: 0;">System analysis <small style="font-weight: 400; color: var(--text-secondary);">— token rates are approximations</small></h2>
+        <div id="alerts"></div>
+        <div id="systemAnalysis"></div>
+    </div>
 
-        <div class="card">
-            <h2>System Analysis <small>(Token rates are approximations)</small></h2>
-            <div id="systemAnalysis"></div>
+    <div class="card">
+        <h2 style="margin-top: 0;">Resource utilization</h2>
+        <div class="chart-container">
+            <canvas id="utilizationChart"></canvas>
         </div>
     </div>
 
     <!-- Topology Visualization -->
     <div class="card" style="margin-bottom: 2rem;">
-        <h2>System Topology <small>(Connection diagram)</small></h2>
+        <h2 style="margin-top: 0;">System topology <small style="font-weight: 400; color: var(--text-secondary);">— connection diagram</small></h2>
         <div id="topologyContainer" style="position: relative; min-height: 300px; background: var(--background); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;">
             <canvas id="topologyCanvas" style="width: 100%; height: 100%;"></canvas>
         </div>
@@ -1142,23 +1305,29 @@ input, select {
         </div>
     </div>
 
-    <h1>Real-world results are below for reference</h1>
-    <div class="filters">
-        <div class="filter-group">
-            <label for="modelFilter">Model:</label>
-            <input type="text" id="modelFilter" placeholder="Filter models...">
+    <details class="card" style="margin-bottom: 2rem;">
+        <summary style="cursor: pointer; font-size: 1.25rem; font-weight: 600; list-style: none;">
+            📚 Published benchmarks for reference <small style="font-weight: 400; color: var(--text-secondary); margin-left: 0.5rem;">— click to expand</small>
+        </summary>
+        <p class="field-help" style="margin: 0.75rem 0 1rem 0;">
+            Real-world token rates from vendor, community, and research sources. Use the filters to find a reference close to your configuration.
+        </p>
+        <div class="filters">
+            <div class="filter-group">
+                <label for="modelFilter">Model</label>
+                <input type="text" id="modelFilter" placeholder="e.g. llama 3">
+            </div>
+            <div class="filter-group">
+                <label for="hardwareFilter">Hardware</label>
+                <input type="text" id="hardwareFilter" placeholder="e.g. RTX 5090">
+            </div>
+            <div class="filter-group">
+                <label for="quantizationFilter">Quantization</label>
+                <input type="text" id="quantizationFilter" placeholder="e.g. Q4">
+            </div>
         </div>
-        <div class="filter-group">
-            <label for="hardwareFilter">Hardware:</label>
-            <input type="text" id="hardwareFilter" placeholder="Filter hardware...">
-        </div>
-        <div class="filter-group">
-            <label for="quantizationFilter">Quantization:</label>
-            <input type="text" id="quantizationFilter" placeholder="Filter quantization...">
-        </div>
-    </div>
 
-    <table id="llmTable">
+        <table id="llmTable">
         <thead>
             <tr>
                 <th data-sort="model">Model</th>
@@ -1173,7 +1342,8 @@ input, select {
             </tr>
         </thead>
         <tbody></tbody>
-    </table>
+        </table>
+    </details>
 
     <script>
         const DTYPE_SIZES = {
@@ -5770,28 +5940,29 @@ const DEVICE_TEMPLATES = {
 	    devicesContainer.innerHTML = devices.map(device => `
 	        <div class="device ${device.template === 'Custom' || device.isEdited ? 'custom-device' : ''}">
 	            ${device.template === 'Custom' || device.isEdited ? '<div class="custom-badge">Custom</div>' : ''}
-	            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-	                <input class="input" title="Give this device a name" style="width: auto; flex-grow: 1; margin-right: 0.5rem;" value="${device.name}"
+	            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center; gap: 0.5rem;">
+	                <input class="input" title="Give this device a name" style="margin-bottom: 0; flex: 1;" value="${device.name}"
 	                       onchange="updateDevice(${device.id}, 'name', this.value)">
 	                <div class="device-actions">
-	                    <button class="button" 
+	                    <button class="icon-button"
 	                            onclick="cloneDevice(${device.id})"
-	                            title="Clone this device">
-	                        Clone
+	                            title="Duplicate this device">
+	                        ⎘ Clone
 	                    </button>
-	                    <button class="button" 
+	                    <button class="icon-button"
 	                            onclick="saveToLibrary(${device.id})"
-	                            title="Save to library">
-	                        Save
+	                            title="Save this spec to your library for reuse">
+	                        ☆ Save
 	                    </button>
-	                    <button class="button button-destructive"
+	                    <button class="icon-button destructive"
 	                            onclick="removeDevice(${device.id})"
 	                            ${devices.length === 1 ? 'disabled' : ''}
 	                            title="Remove this device">
-	                        Remove
+	                        ✕
 	                    </button>
 	                </div>
 	            </div>
+	            <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.25rem;">Hardware template</label>
 	            <select class="input" onchange="handleDeviceTemplateChange(${device.id}, this)">
 	                <option value="Custom" ${device.template === 'Custom' ? 'selected' : ''}>
 	                    Custom Device
@@ -5812,25 +5983,25 @@ const DEVICE_TEMPLATES = {
 	            </select>
 	            <div class="device-grid">
 	                <div>
-	                    <label>Memory GB</label>
+	                    <label title="Total GPU/unified memory on the device">Memory (GB)</label>
 	                    <input type="number" class="input" value="${device.memoryGB}"
 	                           onchange="updateDevice(${device.id}, 'memoryGB', parseFloat(this.value) || 0)"
 	                           oninput="updateDevice(${device.id}, 'memoryGB', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
-	                    <label>Local Bandwidth GB/s</label>
+	                    <label title="How fast the device can read weights/KV cache from its own memory">Memory BW (GB/s)</label>
 	                    <input type="number" class="input" value="${device.localBandwidthGBps}"
 	                           onchange="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)"
 	                           oninput="updateDevice(${device.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
-	                    <label>Network/Interconnect BW (GB/s)</label>
+	                    <label title="Bandwidth to other devices (PCIe/NVLink/Ethernet/Thunderbolt)">Interconnect BW (GB/s)</label>
 	                    <input type="number" class="input" value="${device.networkBandwidthGBps || 32}"
 	                           onchange="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)"
 	                           oninput="updateDevice(${device.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
-	                    <label>Interconnect Preset</label>
+	                    <label title="Pick a common interconnect to auto-fill the bandwidth above">Interconnect type</label>
 	                    <select class="input" onchange="applyInterconnectPreset(${device.id}, this.value)">
 	                        <option value="">Custom</option>
 	                        <optgroup label="PCIe">
@@ -5889,16 +6060,16 @@ const DEVICE_TEMPLATES = {
 	                    </select>
 	                </div>
 	                <div>
-	                    <label>Compute TFlops (${currentQuant})</label>
+	                    <label title="Effective compute throughput for the current quantization">Compute TFLOPs (${currentQuant})</label>
 	                    <input type="number" class="input" value="${getDeviceComputeTflops(device, currentQuant)}"
 	                           onchange="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)"
 	                           oninput="updateDevice(${device.id}, 'computeTFlops', parseFloat(this.value) || 0)">
 	                </div>
 	                <div>
-	                    <label>Overflow Target</label>
+	                    <label title="If the model exceeds this device's memory, where to spill the overflow">If memory overflows → spill to</label>
 	                    <select class="input" onchange="updateDevice(${device.id}, 'overflowTarget', this.value === 'none' ? null : (this.value === 'ddr5' ? 'ddr5' : parseInt(this.value)))">
-	                        <option value="none" ${!device.overflowTarget ? 'selected' : ''}>None (model must fit)</option>
-	                        <option value="ddr5" ${device.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 System RAM (~115 GB/s)</option>
+	                        <option value="none" ${!device.overflowTarget ? 'selected' : ''}>Nothing — model must fit</option>
+	                        <option value="ddr5" ${device.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 system RAM (~115 GB/s)</option>
 	                        ${devices.filter(d => d.id !== device.id).map(d =>
 	                            `<option value="${d.id}" ${device.overflowTarget === d.id ? 'selected' : ''}>
 	                                ${d.name} (via PCIe)
@@ -6182,6 +6353,9 @@ const DEVICE_TEMPLATES = {
 				document.getElementById('attentionMechanism').value = 'auto';
 			}
 		}
+		if (typeof window.__syncSeqLengthChips === 'function') {
+			window.__syncSeqLengthChips();
+		}
 		updateSystemAnalysis();
 	}
 
@@ -6192,6 +6366,29 @@ const DEVICE_TEMPLATES = {
 			updateDeviceDisplay();
 			updateSystemAnalysis();
 		});
+
+        // Sequence length: sync chip row <-> number input
+        (function wireSeqLengthChips() {
+            const input = document.getElementById('seqLength');
+            const chips = document.querySelectorAll('#seqLengthChips .chip');
+            if (!input || !chips.length) return;
+
+            function syncChips() {
+                const current = String(parseInt(input.value, 10) || 0);
+                chips.forEach(c => c.classList.toggle('active', c.dataset.seqlen === current));
+            }
+
+            chips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    input.value = chip.dataset.seqlen;
+                    syncChips();
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            });
+            input.addEventListener('input', syncChips);
+            window.__syncSeqLengthChips = syncChips;
+            syncChips();
+        })();
         document.querySelectorAll('#modelConfigContent input, #modelConfigContent select').forEach(input => {
             if (input.id !== 'modelPreset' && input.id !== 'quantizationType' && input.id !== 'dtype') {
                 input.addEventListener('change', updateSystemAnalysis);
