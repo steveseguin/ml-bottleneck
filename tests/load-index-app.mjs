@@ -181,7 +181,7 @@ function createDocument(defaultValues) {
     'modelPreset', 'quantizationType', 'totalParamsB', 'batchSize', 'seqLength', 'hiddenSize', 'numLayers',
     'numHeads', 'numKVHeads', 'intermediateSize', 'architectureType', 'activeParamsB', 'numExperts',
     'activeExperts', 'routingType', 'attentionMechanism', 'dtype', 'parallelismStrategy', 'optimizationMode',
-    'runtimeFramework', 'hoursPerDay', 'costPerKwh', 'systemAnalysis', 'alerts', 'utilizationChart',
+    'kvCacheCompression', 'runtimeFramework', 'hoursPerDay', 'costPerKwh', 'systemAnalysis', 'alerts', 'utilizationChart',
     'devices', 'llmTable', '__llmTableTbody', 'modelFilter', 'hardwareFilter', 'quantizationFilter',
     'modelSummary', 'topologyCanvas', 'topologyContainer', 'loadDevicesBtn', 'scenarioPreset'
   ];
@@ -220,6 +220,7 @@ export function loadApp() {
     dtype: 'q4',
     parallelismStrategy: 'auto',
     optimizationMode: 'none',
+    kvCacheCompression: 'none',
     runtimeFramework: 'auto',
     hoursPerDay: '8',
     costPerKwh: '0.12',

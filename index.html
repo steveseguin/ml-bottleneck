@@ -1376,6 +1376,41 @@ option {
     padding: 0.85rem;
 }
 
+.hardware-preset-row {
+    display: grid;
+    gap: 0.3rem;
+}
+
+.hardware-advanced {
+    margin-top: 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-muted);
+}
+
+.hardware-advanced > summary {
+    padding: 0.55rem 0.7rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    font-weight: 700;
+    list-style: none;
+}
+
+.hardware-advanced > summary::before {
+    content: "> ";
+}
+
+.hardware-advanced > summary::-webkit-details-marker,
+.hardware-advanced > summary::marker {
+    display: none;
+    content: "";
+}
+
+.hardware-advanced-content {
+    padding: 0 0.7rem 0.7rem;
+}
+
 .device-grid {
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 0.55rem 0.75rem;
@@ -1829,6 +1864,14 @@ td {
                         <option value="flash_attention">Flash Attention</option>
                         <option value="exo_phase_split">EXO phase split (prefill/decode)</option>
                     </select>
+
+                    <label for="kvCacheCompression">KV cache compression</label>
+                    <select id="kvCacheCompression" class="input">
+                        <option value="none" selected>None</option>
+                        <option value="turboquant_3_5">TurboQuant 3.5-bit</option>
+                        <option value="turboquant_2_5">TurboQuant 2.5-bit</option>
+                    </select>
+                    <small class="field-help">Applies to KV cache only; most useful for long contexts or memory overflow.</small>
 
                     <label for="runtimeFramework">Runtime framework</label>
                     <select id="runtimeFramework" class="input">
@@ -3418,7 +3461,7 @@ const DEVICE_TEMPLATES = {
   'RTX PRO 6000 Blackwell': {
     name: 'NVIDIA RTX PRO 6000 Blackwell',
     memoryGB: 96,
-    localBandwidthGBps: 1597,
+    localBandwidthGBps: 1792,
     networkBandwidthGBps: 64,
     pcieGeneration: 5,
     pcieLanes: 16,
@@ -3428,6 +3471,22 @@ const DEVICE_TEMPLATES = {
       'bfloat16': 1000,
       'int8': 2000,
       'q4': 4000
+    },
+    type: 'GPU'
+  },
+  'RTX 5090 SUPRIM SOC': {
+    name: 'MSI GeForce RTX 5090 SUPRIM SOC',
+    memoryGB: 32,
+    localBandwidthGBps: 1792,
+    networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 112,
+      'float16': 340,
+      'bfloat16': 340,
+      'int8': 680,
+      'q4': 1020
     },
     type: 'GPU'
   },
@@ -4559,6 +4618,7 @@ const DEVICE_TEMPLATES = {
                 dtype: document.getElementById('dtype').value,
                 parallelismStrategy: document.getElementById('parallelismStrategy').value,
                 optimizationMode: document.getElementById('optimizationMode')?.value || 'none',
+                kvCacheCompression: document.getElementById('kvCacheCompression')?.value || 'none',
                 runtimeFramework: document.getElementById('runtimeFramework')?.value || 'auto'
             };
         }
@@ -4685,6 +4745,44 @@ const DEVICE_TEMPLATES = {
         function getActiveParamsB(modelConfig) {
             const normalizedConfig = normalizeModelConfig(modelConfig);
             return normalizedConfig.activeParamsB || normalizedConfig.totalParamsB;
+        }
+
+        const KV_CACHE_COMPRESSION_PROFILES = {
+            none: {
+                label: 'No KV compression',
+                bitsPerChannel: null,
+                quality: 'baseline'
+            },
+            turboquant_3_5: {
+                label: 'TurboQuant 3.5-bit KV',
+                bitsPerChannel: 3.5,
+                quality: 'quality-neutral'
+            },
+            turboquant_2_5: {
+                label: 'TurboQuant 2.5-bit KV',
+                bitsPerChannel: 2.5,
+                quality: 'slight quality risk'
+            }
+        };
+
+        function getKVCacheCompressionProfile(modelConfig, dtypeSize = 2) {
+            const mode = modelConfig?.kvCacheCompression || 'none';
+            const profile = KV_CACHE_COMPRESSION_PROFILES[mode] || KV_CACHE_COMPRESSION_PROFILES.none;
+            if (!profile.bitsPerChannel) {
+                return {
+                    key: 'none',
+                    ...profile,
+                    kvByteMultiplier: 1
+                };
+            }
+
+            const sourceBytesPerChannel = Math.max(parseFloat(dtypeSize) || 2, 0.125);
+            const compressedBytesPerChannel = profile.bitsPerChannel / 8;
+            return {
+                key: mode,
+                ...profile,
+                kvByteMultiplier: Math.min(1, compressedBytesPerChannel / sourceBytesPerChannel)
+            };
         }
 
         function getDeviceComputeTflops(device, quantizationType) {
@@ -4858,12 +4956,13 @@ const DEVICE_TEMPLATES = {
 	function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex ) {
 		const architectureProfile = getArchitectureProfile(modelConfig);
 		const parallelScales = getParallelismScales(modelConfig, devices, deviceIndex);
+		const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, dtypeSize);
 		const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
 		const kvHeads = getKVHeads(modelConfig);
 		const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength * 
 			(modelConfig.hiddenSize / modelConfig.numHeads) * 
 			kvHeads * dtypeSize;
-		const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers * architectureProfile.kvCacheMultiplier;
+		const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers * architectureProfile.kvCacheMultiplier * kvCompressionProfile.kvByteMultiplier;
 		const intermediateSize = modelConfig.intermediateSize || (4 * modelConfig.hiddenSize);
 		const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength * 
 			(modelConfig.hiddenSize + intermediateSize * 0.35) * dtypeSize * architectureProfile.activationMultiplier;
@@ -4946,6 +5045,7 @@ const DEVICE_TEMPLATES = {
 
         function calculateDecodeKVCacheBytes(modelConfig, dtypeSize, kvScale = 1) {
             const architectureProfile = getArchitectureProfile(modelConfig);
+            const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, dtypeSize);
             const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
             const seqLength = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
             const hiddenSize = Math.max(parseFloat(modelConfig.hiddenSize) || 1, 1);
@@ -4963,6 +5063,7 @@ const DEVICE_TEMPLATES = {
                 numLayers *
                 architectureProfile.kvCacheMultiplier *
                 architectureProfile.decodeAttentionMultiplier *
+                kvCompressionProfile.kvByteMultiplier *
                 kvScale;
         }
 
@@ -5620,6 +5721,7 @@ const DEVICE_TEMPLATES = {
             if (name.includes('l40')) return 300;
 
             // Consumer NVIDIA GPUs
+            if (name.includes('5090') && name.includes('soc')) return 600;
             if (name.includes('5090')) return 575;
             if (name.includes('5080')) return 360;
             if (name.includes('5070 ti')) return 300;
@@ -5635,6 +5737,7 @@ const DEVICE_TEMPLATES = {
             if (name.includes('3090')) return 350;
             if (name.includes('3080')) return 320;
             if (name.includes('3070')) return 220;
+            if (name.includes('rtx pro 6000')) return 600;
             if (name.includes('rtx 6000')) return 300;
 
             // AMD GPUs
@@ -7089,6 +7192,7 @@ const DEVICE_TEMPLATES = {
 
             const isCustom = selectedDevice.template === 'Custom';
             const isEditedPreset = selectedDevice.isEdited && !isCustom;
+            const advancedOpen = isCustom ? ' open' : '';
             const badgeHtml = isCustom
                 ? '<div class="custom-badge">Custom</div>'
                 : (isEditedPreset ? '<div class="custom-badge edited">Modified</div>' : '');
@@ -7119,64 +7223,71 @@ const DEVICE_TEMPLATES = {
                 </div>
                 <div class="device ${isCustom || isEditedPreset ? 'custom-device' : ''}">
                     ${badgeHtml}
-                    <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0;">Hardware for selected device</label>
-                    <select class="input" onchange="handleDeviceTemplateChange(${selectedDevice.id}, this)">
-                        <optgroup label="Custom">
-                            <option value="Custom" ${isCustom ? 'selected' : ''}>Custom device (enter specs manually)</option>
-                        </optgroup>
-                        <optgroup label="Presets">${templateOptions}</optgroup>
-                        ${deviceLibrary.length > 0 ? `<optgroup label="My saved devices">${libraryOptions}</optgroup>` : ''}
-                    </select>
-                    <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.25rem;">Label</label>
-                    <div class="device-name-row">
-                        <input class="input device-name-input" title="Rename this device (label only)" value="${escapeHtml(selectedDevice.name)}"
-                               onchange="updateDevice(${selectedDevice.id}, 'name', this.value)">
-                        <div class="device-actions">
-                            <button class="icon-button" onclick="cloneDevice(${selectedDevice.id})" title="Duplicate this device">Clone</button>
-                            <button class="icon-button" onclick="saveToLibrary(${selectedDevice.id})" title="Save this spec to your library for reuse">Save</button>
-                            <button class="icon-button destructive" onclick="removeDevice(${selectedDevice.id})" ${devices.length === 1 ? 'disabled' : ''} title="Remove this device">Remove</button>
-                        </div>
+                    <div class="hardware-preset-row">
+                        <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0;">Hardware</label>
+                        <select class="input" onchange="handleDeviceTemplateChange(${selectedDevice.id}, this)">
+                            <optgroup label="Custom">
+                                <option value="Custom" ${isCustom ? 'selected' : ''}>Custom device</option>
+                            </optgroup>
+                            <optgroup label="Presets">${templateOptions}</optgroup>
+                            ${deviceLibrary.length > 0 ? `<optgroup label="My saved devices">${libraryOptions}</optgroup>` : ''}
+                        </select>
                     </div>
-                    <div class="device-grid">
-                        <div>
-                            <label title="Total GPU/unified memory on the device">Memory (GB)</label>
-                            <input type="number" class="input" value="${selectedDevice.memoryGB}"
-                                   onchange="updateDevice(${selectedDevice.id}, 'memoryGB', parseFloat(this.value) || 0)">
+                    <details class="hardware-advanced"${advancedOpen}>
+                        <summary>Advanced hardware settings</summary>
+                        <div class="hardware-advanced-content">
+                            <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.25rem;">Label</label>
+                            <div class="device-name-row">
+                                <input class="input device-name-input" title="Rename this device (label only)" value="${escapeHtml(selectedDevice.name)}"
+                                       onchange="updateDevice(${selectedDevice.id}, 'name', this.value)">
+                                <div class="device-actions">
+                                    <button class="icon-button" onclick="cloneDevice(${selectedDevice.id})" title="Duplicate this device">Clone</button>
+                                    <button class="icon-button" onclick="saveToLibrary(${selectedDevice.id})" title="Save this spec to your library for reuse">Save</button>
+                                    <button class="icon-button destructive" onclick="removeDevice(${selectedDevice.id})" ${devices.length === 1 ? 'disabled' : ''} title="Remove this device">Remove</button>
+                                </div>
+                            </div>
+                            <div class="device-grid">
+                                <div>
+                                    <label title="Total GPU/unified memory on the device">Memory (GB)</label>
+                                    <input type="number" class="input" value="${selectedDevice.memoryGB}"
+                                           onchange="updateDevice(${selectedDevice.id}, 'memoryGB', parseFloat(this.value) || 0)">
+                                </div>
+                                <div>
+                                    <label title="How fast the device can read weights/KV cache from its own memory">Memory BW (GB/s)</label>
+                                    <input type="number" class="input" value="${selectedDevice.localBandwidthGBps}"
+                                           onchange="updateDevice(${selectedDevice.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)">
+                                </div>
+                                <div>
+                                    <label title="Bandwidth to other devices">Interconnect BW (GB/s)</label>
+                                    <input type="number" class="input" value="${selectedDevice.networkBandwidthGBps || 32}"
+                                           onchange="updateDevice(${selectedDevice.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)">
+                                </div>
+                                <div>
+                                    <label title="Pick a common interconnect to auto-fill the bandwidth above">Interconnect type</label>
+                                    <select class="input" onchange="applyInterconnectPreset(${selectedDevice.id}, this.value)">
+                                        ${renderInterconnectOptions(selectedDevice.interconnectType || '')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label title="Effective compute throughput for the current quantization">Compute TFLOPs (${currentQuant})</label>
+                                    <input type="number" class="input" value="${getDeviceComputeTflops(selectedDevice, currentQuant)}"
+                                           onchange="updateDevice(${selectedDevice.id}, 'computeTFlops', parseFloat(this.value) || 0)">
+                                </div>
+                                <div>
+                                    <label title="If the model exceeds this device's memory, where to spill the overflow">If memory overflows -> spill to</label>
+                                    <select class="input" onchange="updateDevice(${selectedDevice.id}, 'overflowTarget', this.value === 'none' ? null : (this.value === 'ddr5' ? 'ddr5' : parseInt(this.value)))">
+                                        <option value="none" ${!selectedDevice.overflowTarget ? 'selected' : ''}>Nothing - model must fit</option>
+                                        <option value="ddr5" ${selectedDevice.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 system RAM (~115 GB/s)</option>
+                                        ${devices.filter(d => d.id !== selectedDevice.id).map(d => `
+                                            <option value="${d.id}" ${selectedDevice.overflowTarget === d.id ? 'selected' : ''}>
+                                                ${escapeHtml(d.name)} (via interconnect)
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label title="How fast the device can read weights/KV cache from its own memory">Memory BW (GB/s)</label>
-                            <input type="number" class="input" value="${selectedDevice.localBandwidthGBps}"
-                                   onchange="updateDevice(${selectedDevice.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)">
-                        </div>
-                        <div>
-                            <label title="Bandwidth to other devices">Interconnect BW (GB/s)</label>
-                            <input type="number" class="input" value="${selectedDevice.networkBandwidthGBps || 32}"
-                                   onchange="updateDevice(${selectedDevice.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)">
-                        </div>
-                        <div>
-                            <label title="Pick a common interconnect to auto-fill the bandwidth above">Interconnect type</label>
-                            <select class="input" onchange="applyInterconnectPreset(${selectedDevice.id}, this.value)">
-                                ${renderInterconnectOptions(selectedDevice.interconnectType || '')}
-                            </select>
-                        </div>
-                        <div>
-                            <label title="Effective compute throughput for the current quantization">Compute TFLOPs (${currentQuant})</label>
-                            <input type="number" class="input" value="${getDeviceComputeTflops(selectedDevice, currentQuant)}"
-                                   onchange="updateDevice(${selectedDevice.id}, 'computeTFlops', parseFloat(this.value) || 0)">
-                        </div>
-                        <div>
-                            <label title="If the model exceeds this device's memory, where to spill the overflow">If memory overflows -> spill to</label>
-                            <select class="input" onchange="updateDevice(${selectedDevice.id}, 'overflowTarget', this.value === 'none' ? null : (this.value === 'ddr5' ? 'ddr5' : parseInt(this.value)))">
-                                <option value="none" ${!selectedDevice.overflowTarget ? 'selected' : ''}>Nothing - model must fit</option>
-                                <option value="ddr5" ${selectedDevice.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 system RAM (~115 GB/s)</option>
-                                ${devices.filter(d => d.id !== selectedDevice.id).map(d => `
-                                    <option value="${d.id}" ${selectedDevice.overflowTarget === d.id ? 'selected' : ''}>
-                                        ${escapeHtml(d.name)} (via interconnect)
-                                    </option>
-                                `).join('')}
-                            </select>
-                        </div>
-                    </div>
+                    </details>
                 </div>
             `;
         };
@@ -8344,6 +8455,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             FRAMEWORK_PROFILES,
             ARCHITECTURE_PROFILES,
             ATTENTION_MECHANISM_PROFILES,
+            KV_CACHE_COMPRESSION_PROFILES,
             parseBenchmarkData,
             parseBenchmarkRate,
             isThroughputBenchmarkRow,
@@ -8357,6 +8469,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             normalizeModelConfig,
             getArchitectureProfile,
             getFrameworkProfile,
+            getKVCacheCompressionProfile,
             calculateMemoryBreakdown,
             calculateEffectiveBandwidth,
             calculateDecodeTokenRate,
@@ -8366,6 +8479,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             findOptimalStrategy,
             findBenchmarkMatches,
             updateDeviceDisplay,
+            updateDevice,
             selectDevice,
             addDevice,
             calculateEXOPhaseSplit,

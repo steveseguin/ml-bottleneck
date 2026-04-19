@@ -31,12 +31,13 @@ async function setInputAndChange(page, selector, value) {
   }, value);
 }
 
-async function applyConfig(page, { scenario, model, quant, framework, strategy = 'auto', batchSize = 1, seqLength = 2048 }) {
+async function applyConfig(page, { scenario, model, quant, framework, strategy = 'auto', batchSize = 1, seqLength = 2048, kvCacheCompression = 'none' }) {
   await selectAndChange(page, '#scenarioPreset', scenario);
   await selectAndChange(page, '#modelPreset', model);
   await selectAndChange(page, '#quantizationType', quant);
   await selectAndChange(page, '#runtimeFramework', framework);
   await selectAndChange(page, '#parallelismStrategy', strategy);
+  await selectAndChange(page, '#kvCacheCompression', kvCacheCompression);
   await setInputAndChange(page, '#batchSize', batchSize);
   await setInputAndChange(page, '#seqLength', seqLength);
   await page.waitForSelector('#systemAnalysis .result-hero');
@@ -95,6 +96,8 @@ test('hardware editor keeps one selected device and adds new devices to topology
 
   await expect(page.locator('#devices > .device')).toHaveCount(1);
   await expect(page.locator('#devices .device-chip')).toHaveCount(1);
+  await expect(page.locator('#devices .hardware-advanced')).toHaveCount(1);
+  await expect(page.locator('#devices .hardware-advanced')).not.toHaveAttribute('open', '');
 
   await page.locator('#devices .add-device-inline').click();
   await expect(page.locator('#devices > .device')).toHaveCount(1);
@@ -110,6 +113,9 @@ test('hardware editor keeps one selected device and adds new devices to topology
   const topologyBox = await page.locator('#topologyCanvas').boundingBox();
   expect(topologyBox?.width).toBeGreaterThan(200);
   expect(topologyBox?.height).toBeGreaterThan(100);
+
+  await selectAndChange(page, '#devices .hardware-preset-row select', 'Custom');
+  await expect(page.locator('#devices .hardware-advanced')).toHaveAttribute('open', '');
 });
 
 test('displayed result rates match core calculations across different configs', async ({ page }) => {
@@ -232,6 +238,32 @@ test('browser long-context Qwen config slows down from KV-cache pressure', async
 
   expect(longKv).toBeGreaterThan(shortKv * 100);
   expect(longRate).toBeLessThan(shortRate);
+  await expect(page.locator('#systemAnalysis')).not.toContainText('NaN');
+});
+
+test('browser TurboQuant option reduces long-context KV pressure', async ({ page }) => {
+  await loadApp(page);
+  await setDevices(page, [{ template: 'RTX 3090' }]);
+
+  await applyConfig(page, {
+    scenario: '',
+    model: 'qwen3.5_27b',
+    quant: 'float16',
+    framework: 'llama_cpp',
+    strategy: 'pipeline',
+    seqLength: 262144,
+    kvCacheCompression: 'none'
+  });
+  const baselineRate = await displayedRate(page);
+  const baselineKv = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics()[0].decodeKvCacheGB);
+
+  await selectAndChange(page, '#kvCacheCompression', 'turboquant_3_5');
+  await page.waitForSelector('#systemAnalysis .result-hero');
+  const turboRate = await displayedRate(page);
+  const turboKv = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics()[0].decodeKvCacheGB);
+
+  expect(turboKv).toBeLessThan(baselineKv * 0.25);
+  expect(turboRate).toBeGreaterThan(baselineRate);
   await expect(page.locator('#systemAnalysis')).not.toContainText('NaN');
 });
 

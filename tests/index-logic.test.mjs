@@ -23,13 +23,14 @@ function cloneMacClusterNode(hooks, id, { bandwidth = 40, interconnectType = 'th
   };
 }
 
-function setLlmDefaults(app, { preset, quant = 'q4', framework = 'auto', strategy = 'auto', batchSize = 1, seqLength = 2048 } = {}) {
+function setLlmDefaults(app, { preset, quant = 'q4', framework = 'auto', strategy = 'auto', batchSize = 1, seqLength = 2048, kvCacheCompression = 'none' } = {}) {
   if (preset) {
     app.applyPreset(preset);
   }
   app.setValue('quantizationType', quant);
   app.setValue('runtimeFramework', framework);
   app.setValue('parallelismStrategy', strategy);
+  app.setValue('kvCacheCompression', kvCacheCompression);
   app.setValue('batchSize', batchSize);
   app.setValue('seqLength', seqLength);
 }
@@ -499,6 +500,44 @@ test('long-context decode accounts for KV-cache bytes in the active working set'
   assert.ok(longContext.systemRate < shortContext.systemRate);
 });
 
+test('TurboQuant reduces KV-cache memory without shrinking model weights', () => {
+  const app = loadApp();
+  app.hooks.setDevices([cloneTemplate(app.hooks, 'RTX 3090')]);
+  setLlmDefaults(app, {
+    preset: 'qwen3.5_27b',
+    quant: 'float16',
+    framework: 'llama_cpp',
+    strategy: 'pipeline',
+    batchSize: 1,
+    seqLength: 262144
+  });
+  const baseline = getSystemResult(app, 'pipeline');
+
+  app.setValue('kvCacheCompression', 'turboquant_3_5');
+  const turboQuant = getSystemResult(app, 'pipeline');
+  const compressionProfile = app.hooks.getKVCacheCompressionProfile(turboQuant.modelConfig, 2);
+
+  assert.equal(compressionProfile.bitsPerChannel, 3.5);
+  assert.ok(turboQuant.metrics[0].decodeKvCacheGB < baseline.metrics[0].decodeKvCacheGB * 0.25);
+  assert.equal(turboQuant.metrics[0].modelSizeGB, baseline.metrics[0].modelSizeGB);
+  assert.ok(turboQuant.systemRate > baseline.systemRate);
+});
+
+test('hardware templates include corrected RTX PRO 6000 and 5090 SOC options', () => {
+  const app = loadApp();
+  const pro6000 = app.hooks.DEVICE_TEMPLATES['RTX PRO 6000 Blackwell'];
+  const soc5090 = app.hooks.DEVICE_TEMPLATES['RTX 5090 SUPRIM SOC'];
+
+  assert.equal(pro6000.memoryGB, 96);
+  assert.equal(pro6000.localBandwidthGBps, 1792);
+  assert.equal(pro6000.pcieGeneration, 5);
+  assert.equal(pro6000.pcieLanes, 16);
+
+  assert.equal(soc5090.memoryGB, 32);
+  assert.equal(soc5090.localBandwidthGBps, 1792);
+  assert.equal(soc5090.computeTFlops.q4, 1020);
+});
+
 test('official task-score benchmark rows render but stay out of throughput matching', () => {
   const app = loadApp();
   const benchmarkData = app.hooks.getBenchmarkData();
@@ -532,15 +571,16 @@ test('hardware editor shows one selected device while topology chips track all d
   app.hooks.updateDeviceDisplay();
   let html = app.elements.get('devices').innerHTML;
   assert.equal(app.hooks.getSelectedDeviceId(), 1);
-  assert.equal((html.match(/Hardware for selected device/g) || []).length, 1);
+  assert.equal((html.match(/Advanced hardware settings/g) || []).length, 1);
   assert.equal((html.match(/class="device /g) || []).length, 1);
   assert.match(html, /NVIDIA RTX 4090/);
   assert.match(html, /NVIDIA H100/);
+  assert.doesNotMatch(html, /<details class="hardware-advanced" open>/);
 
   app.hooks.selectDevice(2);
   html = app.elements.get('devices').innerHTML;
   assert.equal(app.hooks.getSelectedDeviceId(), 2);
-  assert.equal((html.match(/Hardware for selected device/g) || []).length, 1);
+  assert.equal((html.match(/Advanced hardware settings/g) || []).length, 1);
   assert.match(html, /NVIDIA H100/);
 
   app.hooks.addDevice();
@@ -548,7 +588,11 @@ test('hardware editor shows one selected device while topology chips track all d
   assert.equal(app.hooks.getDevices().length, 3);
   assert.equal(app.hooks.getSelectedDeviceId(), 3);
   assert.match(html, /3\. Device 3/);
-  assert.equal((html.match(/Hardware for selected device/g) || []).length, 1);
+  assert.equal((html.match(/Advanced hardware settings/g) || []).length, 1);
+
+  app.hooks.updateDevice(3, 'template', 'Custom');
+  html = app.elements.get('devices').innerHTML;
+  assert.match(html, /<details class="hardware-advanced" open>/);
 });
 
 test('benchmark rate parser handles approximate and ranged values', () => {
