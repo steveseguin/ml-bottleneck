@@ -79,6 +79,12 @@ test('new Qwen, Kimi, GLM, and MiniMax presets carry routing and attention metad
   assert.equal(modelConfig.routingType, 'moe');
   assert.equal(modelConfig.activeParamsB, 10);
   assert.equal(modelConfig.numExperts, 256);
+
+  app.applyPreset('minimax_m2.7');
+  modelConfig = app.hooks.buildEffectiveModelConfig();
+  assert.equal(modelConfig.routingType, 'moe');
+  assert.equal(modelConfig.activeParamsB, 10);
+  assert.equal(modelConfig.contextLength, 204800);
 });
 
 test('DeepSeek R1 still separates resident and active weights under overflow', () => {
@@ -170,6 +176,10 @@ test('benchmark data remains normalized and official references win first', () =
   assert.ok(benchmarkData.every(row => row.source.startsWith('https://')));
   assert.ok(benchmarkData.some(row => row.model === 'Llama 3.3 70B' && row.framework === 'NVIDIA NIM'));
   assert.ok(benchmarkData.some(row => row.hardware === '8 x MI355X (aggregate)' && row.framework === 'AMD MaxText'));
+  assert.ok(benchmarkData.some(row => row.model === 'Qwen 3.6 35B A3B' && row.hardware === 'SWE-bench Verified' && row.tokenRateSingle === '73.4%'));
+  assert.ok(benchmarkData.some(row => row.model === 'MiniMax M2.7 229B A10B' && row.hardware === 'Terminal Bench 2' && row.tokenRateSingle === '57.0%'));
+  assert.ok(benchmarkData.some(row => row.model === 'GLM 5.1' && row.hardware === 'SWE-Bench Pro' && row.tokenRateSingle === '58.4%'));
+  assert.equal(app.hooks.getBenchmarkSourceTier('https://huggingface.co/Qwen/Qwen3.6-35B-A3B'), 2);
 
   app.hooks.setDevices([
     cloneTemplate(app.hooks, 'H100', 1, 'H100 #1'),
@@ -187,6 +197,58 @@ test('benchmark data remains normalized and official references win first', () =
   const matches = app.hooks.findBenchmarkMatches(app.hooks.buildEffectiveModelConfig(), app.hooks.getDevices());
   assert.ok(matches.length > 0);
   assert.equal(matches[0].source.includes('docs.nvidia.com'), true);
+});
+
+test('official task-score benchmark rows render but stay out of throughput matching', () => {
+  const app = loadApp();
+  const benchmarkData = app.hooks.getBenchmarkData();
+  const taskScoreRow = benchmarkData.find(row => row.model === 'Qwen 3.6 35B A3B' && row.hardware === 'SWE-bench Verified');
+  const throughputRow = benchmarkData.find(row => row.model === 'Llama 3.1 8B' && row.framework === 'NVIDIA NIM');
+
+  assert.ok(taskScoreRow);
+  assert.ok(throughputRow);
+  assert.equal(app.hooks.isThroughputBenchmarkRow(taskScoreRow), false);
+  assert.equal(app.hooks.isThroughputBenchmarkRow(throughputRow), true);
+
+  app.hooks.setDevices([{
+    ...cloneTemplate(app.hooks, 'H100', 1, 'SWE-bench Verified'),
+    name: 'SWE-bench Verified',
+    template: 'SWE-bench Verified'
+  }]);
+  app.applyPreset('qwen3.6_35b_a3b');
+  app.setValue('quantizationType', 'Official eval');
+
+  const matches = app.hooks.findBenchmarkMatches(app.hooks.buildEffectiveModelConfig(), app.hooks.getDevices());
+  assert.ok(matches.every(row => app.hooks.isThroughputBenchmarkRow(row)));
+});
+
+test('hardware editor shows one selected device while topology chips track all devices', () => {
+  const app = loadApp();
+  app.hooks.setDevices([
+    cloneTemplate(app.hooks, 'RTX 4090', 1, 'Primary 4090'),
+    cloneTemplate(app.hooks, 'H100', 2, 'Second H100')
+  ]);
+
+  app.hooks.updateDeviceDisplay();
+  let html = app.elements.get('devices').innerHTML;
+  assert.equal(app.hooks.getSelectedDeviceId(), 1);
+  assert.equal((html.match(/Hardware for selected device/g) || []).length, 1);
+  assert.equal((html.match(/class="device /g) || []).length, 1);
+  assert.match(html, /NVIDIA RTX 4090/);
+  assert.match(html, /NVIDIA H100/);
+
+  app.hooks.selectDevice(2);
+  html = app.elements.get('devices').innerHTML;
+  assert.equal(app.hooks.getSelectedDeviceId(), 2);
+  assert.equal((html.match(/Hardware for selected device/g) || []).length, 1);
+  assert.match(html, /NVIDIA H100/);
+
+  app.hooks.addDevice();
+  html = app.elements.get('devices').innerHTML;
+  assert.equal(app.hooks.getDevices().length, 3);
+  assert.equal(app.hooks.getSelectedDeviceId(), 3);
+  assert.match(html, /3\. Device 3/);
+  assert.equal((html.match(/Hardware for selected device/g) || []).length, 1);
 });
 
 test('benchmark rate parser handles approximate and ranged values', () => {
