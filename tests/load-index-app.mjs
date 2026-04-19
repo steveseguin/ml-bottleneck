@@ -178,7 +178,7 @@ function createDocument(defaultValues) {
   };
 
   const requiredIds = [
-    'modelPreset', 'quantizationType', 'totalParamsB', 'batchSize', 'seqLength', 'hiddenSize', 'numLayers',
+    'modelPreset', 'quantizationType', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'seqLength', 'hiddenSize', 'numLayers',
     'numHeads', 'numKVHeads', 'intermediateSize', 'architectureType', 'activeParamsB', 'numExperts',
     'activeExperts', 'routingType', 'attentionMechanism', 'dtype', 'parallelismStrategy', 'optimizationMode',
     'kvCacheCompression', 'runtimeFramework', 'hoursPerDay', 'costPerKwh', 'systemAnalysis', 'alerts', 'utilizationChart',
@@ -205,7 +205,9 @@ export function loadApp() {
     quantizationType: 'q4',
     totalParamsB: '400',
     batchSize: '1',
-    seqLength: '2048',
+    promptTokens: '16384',
+    outputTokens: '4096',
+    seqLength: '20480',
     hiddenSize: '16384',
     numLayers: '120',
     numHeads: '128',

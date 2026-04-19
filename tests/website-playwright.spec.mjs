@@ -31,7 +31,9 @@ async function setInputAndChange(page, selector, value) {
   }, value);
 }
 
-async function applyConfig(page, { scenario, model, quant, framework, strategy = 'auto', batchSize = 1, seqLength = 2048, kvCacheCompression = 'none' }) {
+async function applyConfig(page, { scenario, model, quant, framework, strategy = 'auto', batchSize = 1, seqLength = 2048, promptTokens, outputTokens, kvCacheCompression = 'none' }) {
+  const resolvedOutputTokens = outputTokens ?? 1;
+  const resolvedPromptTokens = promptTokens ?? Math.max(1, seqLength - resolvedOutputTokens);
   await selectAndChange(page, '#scenarioPreset', scenario);
   await selectAndChange(page, '#modelPreset', model);
   await selectAndChange(page, '#quantizationType', quant);
@@ -39,6 +41,8 @@ async function applyConfig(page, { scenario, model, quant, framework, strategy =
   await selectAndChange(page, '#parallelismStrategy', strategy);
   await selectAndChange(page, '#kvCacheCompression', kvCacheCompression);
   await setInputAndChange(page, '#batchSize', batchSize);
+  await setInputAndChange(page, '#promptTokens', resolvedPromptTokens);
+  await setInputAndChange(page, '#outputTokens', resolvedOutputTokens);
   await setInputAndChange(page, '#seqLength', seqLength);
   await page.waitForSelector('#systemAnalysis .result-hero');
 }
@@ -231,6 +235,8 @@ test('browser long-context Qwen config slows down from KV-cache pressure', async
   const shortRate = await displayedRate(page);
   const shortKv = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics()[0].decodeKvCacheGB);
 
+  await setInputAndChange(page, '#promptTokens', 262143);
+  await setInputAndChange(page, '#outputTokens', 1);
   await setInputAndChange(page, '#seqLength', 262144);
   await page.waitForSelector('#systemAnalysis .result-hero');
   const longRate = await displayedRate(page);
@@ -238,6 +244,51 @@ test('browser long-context Qwen config slows down from KV-cache pressure', async
 
   expect(longKv).toBeGreaterThan(shortKv * 100);
   expect(longRate).toBeLessThan(shortRate);
+  await expect(page.locator('#systemAnalysis')).not.toContainText('NaN');
+});
+
+test('browser result summary separates prompt, decode, and total timing', async ({ page }) => {
+  await loadApp(page);
+  await setDevices(page, [{ template: 'RTX 4090' }]);
+
+  await applyConfig(page, {
+    scenario: '',
+    model: 'llama3_8b',
+    quant: 'q4',
+    framework: 'llama_cpp',
+    strategy: 'pipeline',
+    promptTokens: 16384,
+    outputTokens: 4096,
+    seqLength: 20480
+  });
+
+  await expect(page.locator('#systemAnalysis .phase-summary-card')).toHaveCount(3);
+  await expect(page.locator('#systemAnalysis .phase-summary-card').nth(0)).toContainText('Prompt');
+  await expect(page.locator('#systemAnalysis .phase-summary-card').nth(1)).toContainText('Decode');
+  await expect(page.locator('#systemAnalysis .phase-summary-card').nth(2)).toContainText('Total');
+
+  const workflow = await page.evaluate(() => {
+    const hooks = window.__mlBottleneckTestHooks;
+    const modelConfig = hooks.buildEffectiveModelConfig();
+    const metrics = hooks.calculateMetrics();
+    const strategy = modelConfig.parallelismStrategy === 'auto'
+      ? hooks.findOptimalStrategy().strategy
+      : modelConfig.parallelismStrategy;
+    const decodeRate = hooks.calculateSystemRateFromDeviceRates(
+      metrics.map(metric => metric.decodeTokensPerSecond),
+      strategy,
+      modelConfig.batchSize,
+      hooks.getDevices()
+    );
+    return hooks.calculateWorkflowSummary(modelConfig, metrics, decodeRate, strategy, hooks.getDevices());
+  });
+
+  expect(workflow.promptTokens).toBe(16384);
+  expect(workflow.outputTokens).toBe(4096);
+  expect(workflow.totalTokens).toBe(20480);
+  expect(workflow.promptSeconds).toBeGreaterThan(0);
+  expect(workflow.decodeSeconds).toBeGreaterThan(0);
+  expect(workflow.averageTokensPerSecond).toBeGreaterThan(0);
   await expect(page.locator('#systemAnalysis')).not.toContainText('NaN');
 });
 

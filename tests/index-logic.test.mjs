@@ -23,15 +23,19 @@ function cloneMacClusterNode(hooks, id, { bandwidth = 40, interconnectType = 'th
   };
 }
 
-function setLlmDefaults(app, { preset, quant = 'q4', framework = 'auto', strategy = 'auto', batchSize = 1, seqLength = 2048, kvCacheCompression = 'none' } = {}) {
+function setLlmDefaults(app, { preset, quant = 'q4', framework = 'auto', strategy = 'auto', batchSize = 1, seqLength = 2048, promptTokens, outputTokens, kvCacheCompression = 'none' } = {}) {
   if (preset) {
     app.applyPreset(preset);
   }
+  const resolvedOutputTokens = outputTokens ?? 1;
+  const resolvedPromptTokens = promptTokens ?? Math.max(1, seqLength - resolvedOutputTokens);
   app.setValue('quantizationType', quant);
   app.setValue('runtimeFramework', framework);
   app.setValue('parallelismStrategy', strategy);
   app.setValue('kvCacheCompression', kvCacheCompression);
   app.setValue('batchSize', batchSize);
+  app.setValue('promptTokens', resolvedPromptTokens);
+  app.setValue('outputTokens', resolvedOutputTokens);
   app.setValue('seqLength', seqLength);
 }
 
@@ -492,6 +496,8 @@ test('long-context decode accounts for KV-cache bytes in the active working set'
   });
   const shortContext = getSystemResult(app, 'pipeline');
 
+  app.setValue('promptTokens', 262143);
+  app.setValue('outputTokens', 1);
   app.setValue('seqLength', 262144);
   const longContext = getSystemResult(app, 'pipeline');
 
@@ -781,6 +787,45 @@ test('system analysis leads with decode rate and collapses breakdown', () => {
   assert.ok(recommendationIdx > breakdownIdx, 'recommendation should be inside collapsed breakdown');
   assert.match(html, /System decode rate/);
   assert.match(html, /Per-device/);
+});
+
+test('prompt and output token split drives end-to-end timing summary', () => {
+  const app = loadApp();
+  app.hooks.setDevices([cloneTemplate(app.hooks, 'RTX 4090')]);
+  setLlmDefaults(app, {
+    preset: 'llama3_8b',
+    quant: 'q4',
+    framework: 'llama_cpp',
+    strategy: 'pipeline',
+    batchSize: 1,
+    promptTokens: 16384,
+    outputTokens: 4096,
+    seqLength: 20480
+  });
+
+  const { modelConfig, metrics, strategy, systemRate } = getSystemResult(app, 'pipeline');
+  const workflow = app.hooks.calculateWorkflowSummary(modelConfig, metrics, systemRate, strategy, app.hooks.getDevices());
+
+  assert.equal(modelConfig.promptTokens, 16384);
+  assert.equal(modelConfig.outputTokens, 4096);
+  assert.equal(modelConfig.seqLength, 20480);
+  assert.ok(workflow.prefillSystemRate > workflow.decodeSystemRate);
+  assert.ok(workflow.promptSeconds > 0);
+  assert.ok(workflow.decodeSeconds > 0);
+  assert.equal(Number(workflow.decodeSeconds.toFixed(6)), Number((4096 / systemRate).toFixed(6)));
+  assert.equal(
+    Number(workflow.averageTokensPerSecond.toFixed(6)),
+    Number((20480 / workflow.totalSeconds).toFixed(6))
+  );
+
+  app.hooks.updateSystemAnalysis();
+  const html = app.elements.get('systemAnalysis').innerHTML;
+  assert.match(html, /phase-summary-grid/);
+  assert.match(html, /Prompt/);
+  assert.match(html, /Decode/);
+  assert.match(html, /Total/);
+  assert.match(html, /Input 16K \/ output 4\.1K/);
+  assert.match(html, /Avg End-to-End/);
 });
 
 test('calculateEffectiveBandwidth honors overflow target device bandwidth', () => {
