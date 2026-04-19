@@ -645,6 +645,7 @@ input, select {
 .device-chip-list {
     display: flex;
     gap: 0.5rem;
+    min-width: 0;
     overflow-x: auto;
     padding-bottom: 0.15rem;
     scrollbar-width: thin;
@@ -1726,6 +1727,20 @@ td {
 
     .device-name-row {
         grid-template-columns: 1fr;
+    }
+
+    .device-selector {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        align-items: stretch;
+    }
+
+    .device-chip {
+        min-width: 8.75rem;
+    }
+
+    .add-device-inline {
+        width: auto;
+        padding: 0.5rem 0.7rem;
     }
 
     .device-actions {
