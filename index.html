@@ -13,7 +13,7 @@
     <meta name="description" content="Analyze and visualize hardware bottlenecks in machine learning systems. Get real-time insights into memory, bandwidth, and compute utilization across multiple devices.">
     <meta name="keywords" content="ML, machine learning, hardware bottleneck, performance analysis, GPU, CPU, token rate, memory utilization, bandwidth analysis, compute utilization">
     <meta name="author" content="Steve Seguin">
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#0f766e">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -1251,6 +1251,428 @@ input, select {
         font-size: 0.95rem;
     }
 }
+
+/* Compact AI lab theme and layout corrections */
+:root {
+    --primary: #0f766e;
+    --primary-hover: #0d9488;
+    --destructive: #dc2626;
+    --destructive-hover: #b91c1c;
+    --border: #d3dee8;
+    --background: #f3f7fb;
+    --card: #fbfdff;
+    --text: #0b1320;
+    --text-secondary: #516171;
+    --surface-muted: #edf4f8;
+    --radius: 0.5rem;
+    --shadow: 0 10px 28px -24px rgb(15 23 42 / 0.45);
+    --transition: all 0.16s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary: #2dd4bf;
+        --primary-hover: #5eead4;
+        --destructive: #f87171;
+        --destructive-hover: #ef4444;
+        --border: #20313b;
+        --background: #071117;
+        --card: #0d1b24;
+        --text: #e7f0f5;
+        --text-secondary: #91a4b1;
+        --surface-muted: #102430;
+        --shadow: 0 14px 32px -24px rgb(0 0 0 / 0.75);
+    }
+}
+
+body {
+    max-width: 1680px;
+    padding: 1.25rem 1.5rem;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.4;
+}
+
+h1,
+h2,
+h3,
+h4,
+.result-hero .rate-label,
+.result-hero .rate-number {
+    letter-spacing: 0;
+}
+
+h1 {
+    margin: 0.25rem 0 0.2rem;
+    font-size: 1.8rem;
+}
+
+h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.18rem;
+}
+
+h3 {
+    margin: 0.75rem 0 0.5rem;
+}
+
+.app-subtitle {
+    margin: 0 0 1rem;
+}
+
+.grid {
+    align-items: start;
+    grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--card);
+    box-shadow: var(--shadow);
+}
+
+.card:hover {
+    border-color: rgba(15, 118, 110, 0.45);
+}
+
+.card > h2:first-child {
+    margin-top: 0 !important;
+    margin-bottom: 0.75rem;
+}
+
+label {
+    margin-bottom: 0.3rem;
+    font-size: 0.78rem;
+}
+
+.input,
+select {
+    margin-bottom: 0.7rem;
+    padding: 0.58rem 0.7rem;
+}
+
+.field-help {
+    margin-top: -0.25rem !important;
+    margin-bottom: 0.7rem;
+    line-height: 1.35;
+}
+
+.button {
+    padding: 0.62rem 1rem;
+}
+
+.device {
+    margin-bottom: 0.55rem;
+    padding: 0.85rem;
+}
+
+.device-grid {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0.55rem 0.75rem;
+}
+
+.device-name-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 0.45rem;
+    margin-bottom: 0.55rem;
+}
+
+.device-selector {
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+}
+
+.device-chip {
+    min-width: 9.75rem;
+    padding: 0.42rem 0.6rem;
+    border-radius: 0.45rem;
+}
+
+.device-actions {
+    gap: 0.35rem;
+}
+
+.device-actions .icon-button {
+    min-height: 2.25rem;
+    padding: 0 0.65rem;
+}
+
+.device-chip:hover,
+.device-chip.selected {
+    border-color: var(--primary);
+    background: rgba(15, 118, 110, 0.1);
+}
+
+.device-chip.selected {
+    box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.16);
+}
+
+.input:focus,
+select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.icon-button:not(:disabled):hover {
+    border-color: var(--primary);
+    background: rgba(15, 118, 110, 0.1);
+    color: var(--primary);
+}
+
+.chart-container {
+    height: 320px;
+    margin-bottom: 0.4rem;
+    padding: 0.75rem;
+}
+
+.result-hero {
+    background:
+        linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(37, 99, 235, 0.05)),
+        var(--card);
+}
+
+.result-hero-main,
+.result-hero-side {
+    padding: 1rem 1.1rem;
+}
+
+.result-hero .rate-number {
+    font-size: 2.45rem;
+}
+
+.result-hero .bottleneck-line.is-good {
+    border-color: rgba(5, 150, 105, 0.28);
+    background: rgba(5, 150, 105, 0.1);
+    color: #059669;
+}
+
+.details-disclosure {
+    margin-top: 0.75rem !important;
+}
+
+.details-disclosure summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0.55rem 0.7rem;
+}
+
+.details-disclosure-content {
+    padding: 0 0.7rem 0.7rem;
+}
+
+.tuning-panel {
+    margin-top: 0.75rem;
+    padding: 0.15rem 0.7rem;
+}
+
+.tuning-panel > summary {
+    list-style: none;
+    padding: 0.5rem 0;
+    white-space: nowrap;
+}
+
+.tuning-panel > summary::before {
+    content: "> ";
+}
+
+.tuning-panel > summary::-webkit-details-marker,
+.nested-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.tuning-panel > summary::marker,
+.nested-details > summary::marker,
+.section-summary::marker {
+    content: "";
+}
+
+.nested-details {
+    margin: 0.35rem 0 0.65rem;
+    padding: 0.1rem 0 0.2rem 0.65rem;
+}
+
+.nested-details > summary {
+    padding: 0.25rem 0;
+    white-space: nowrap;
+}
+
+.section-summary {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 0;
+    padding: 0.5rem 1rem !important;
+    list-style: none;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.section-summary::-webkit-details-marker {
+    display: none;
+}
+
+.section-summary::before,
+.topology-card > .section-summary::before,
+.reference-card > .section-summary::before {
+    content: ">";
+    flex: 0 0 auto;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    transition: transform 0.15s ease;
+}
+
+details[open] > .section-summary::before,
+.topology-card[open] > .section-summary::before,
+.reference-card[open] > .section-summary::before {
+    transform: rotate(90deg);
+}
+
+.summary-title {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+}
+
+.summary-sub,
+.topology-card .topology-sub {
+    flex: 0 0 auto;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 400;
+}
+
+.topology-card,
+.reference-card {
+    overflow: hidden;
+}
+
+.topology-card {
+    padding: 0;
+}
+
+.topology-card > .section-summary,
+.reference-card > .section-summary {
+    align-items: center;
+}
+
+#topologyContainer {
+    min-height: 128px;
+    background: var(--surface-muted);
+}
+
+.topology-legend {
+    gap: 0.8rem;
+    padding: 0.55rem 1rem 0.7rem;
+}
+
+.reference-card > .field-help {
+    margin: 0.6rem 1rem 0.75rem !important;
+}
+
+.filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+    gap: 0.65rem;
+    margin: 0.75rem 0;
+    padding: 0.85rem;
+    background: var(--surface-muted);
+}
+
+.filter-group {
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.filters input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.58rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    color: var(--text);
+}
+
+table {
+    margin: 0.75rem 0;
+    background: var(--card);
+}
+
+th,
+td {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.78rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    .card:hover {
+        border-color: rgba(45, 212, 191, 0.5);
+    }
+
+    .device-chip:hover,
+    .device-chip.selected,
+    .icon-button:not(:disabled):hover {
+        background: rgba(45, 212, 191, 0.12);
+    }
+}
+
+@media (max-width: 720px) {
+    body {
+        padding: 0.8rem;
+    }
+
+    h1 {
+        font-size: 1.55rem;
+    }
+
+    .grid {
+        gap: 0.8rem;
+        margin: 0.8rem 0;
+    }
+
+    .card {
+        padding: 0.85rem;
+    }
+
+    .section-summary {
+        align-items: flex-start;
+        white-space: normal;
+    }
+
+    .summary-title {
+        white-space: normal;
+    }
+
+    .summary-sub,
+    .topology-card .topology-sub {
+        flex: 1 1 100%;
+    }
+
+    .topology-legend {
+        padding: 0.55rem 0.85rem 0.7rem;
+    }
+
+    .chart-container {
+        height: 280px;
+    }
+
+    .filters {
+        grid-template-columns: 1fr;
+        padding: 0.7rem;
+    }
+}
 </style>
 </head>
 <body>
@@ -1502,21 +1924,20 @@ input, select {
 
         <div class="card">
             <h2 style="margin-top: 0;">Hardware</h2>
-            <p class="field-help" style="margin-top: -0.75rem;">Select one device to edit. The full system appears in the topology below.</p>
+            <p class="field-help">Select one device to edit. The full system appears in the topology below.</p>
             <div id="devices"></div>
         </div>
     </div>
 
-    <details class="card topology-card" style="margin-bottom: 1.5rem;" open>
-        <summary>
-            <h2>Topology</h2>
+    <details class="card topology-card" open>
+        <summary class="section-summary">
+            <span class="summary-title">Topology</span>
             <span class="topology-sub">How selected hardware connects</span>
         </summary>
         <div id="topologyContainer">
             <canvas id="topologyCanvas"></canvas>
         </div>
         <div class="topology-legend">
-            <span class="legend-item"><span class="legend-swatch" style="background:#22c55e;"></span>Fast (NVLink / UltraFusion, 300+ GB/s)</span>
             <span class="legend-item"><span class="legend-swatch" style="background:var(--primary);"></span>PCIe 5.0 (32-64 GB/s)</span>
             <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b;"></span>PCIe 4.0 (8-32 GB/s)</span>
             <span class="legend-item"><span class="legend-swatch" style="background:var(--destructive);"></span>Slow (&lt;8 GB/s)</span>
@@ -1525,7 +1946,7 @@ input, select {
     </details>
 
     <div class="card" style="margin-top: 0;">
-        <h2 style="margin-top: 0;">Results <small style="font-weight: 400; color: var(--text-secondary); font-size: 0.85rem;">— approximate</small></h2>
+        <h2 style="margin-top: 0;">Results <small style="font-weight: 400; color: var(--text-secondary); font-size: 0.85rem;">- approximate</small></h2>
         <div id="alerts"></div>
         <div id="systemAnalysis"></div>
     </div>
@@ -1537,26 +1958,10 @@ input, select {
         </div>
     </div>
 
-    <details class="card topology-card" style="display: none;" aria-hidden="true">
-        <summary>
-            <h2>Topology</h2>
-            <span class="topology-sub">Legacy topology placeholder</span>
-        </summary>
-        <div id="topologyContainerOld">
-            <canvas id="topologyCanvasOld"></canvas>
-        </div>
-        <div class="topology-legend">
-            <span class="legend-item"><span class="legend-swatch" style="background:#22c55e;"></span>Fast (NVLink / UltraFusion, 300+ GB/s)</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--primary);"></span>PCIe 5.0 (32–64 GB/s)</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b;"></span>PCIe 4.0 (8–32 GB/s)</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--destructive);"></span>Slow (&lt;8 GB/s)</span>
-            <span class="legend-item legend-note">Solid = explicit · Dashed = inferred</span>
-        </div>
-    </details>
-
-    <details class="card" style="margin-bottom: 2rem;">
-        <summary style="cursor: pointer; font-size: 1.25rem; font-weight: 600; list-style: none;">
-            📚 Published benchmarks for reference <small style="font-weight: 400; color: var(--text-secondary); margin-left: 0.5rem;">— click to expand</small>
+    <details class="card reference-card">
+        <summary class="section-summary">
+            <span class="summary-title">Published benchmarks for reference</span>
+            <span class="summary-sub">click to expand</span>
         </summary>
         <p class="field-help" style="margin: 0.75rem 0 1rem 0;">
             Real-world throughput plus official model-card task scores from vendor, community, and research sources. Throughput rows are used for configuration alignment; task-score rows are for comparison only.
@@ -7651,7 +8056,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             const rows = Math.ceil(devices.length / perRow);
             const extraOverflow = devices.some(d => d.overflowTarget === 'ddr5') ? 40 : 0;
             const busHeight = devices.length > 1 ? 30 : 0;
-            const height = Math.max(160, 32 + busHeight + rows * (nodeHeight + vGap) + extraOverflow);
+            const height = Math.max(128, 24 + busHeight + rows * (nodeHeight + vGap) + extraOverflow);
 
             canvas.width = width * dpr;
             canvas.height = height * dpr;
