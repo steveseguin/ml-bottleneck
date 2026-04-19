@@ -65,6 +65,31 @@ async function calculatedRate(page) {
   });
 }
 
+async function setDevices(page, specs) {
+  await page.evaluate(nextSpecs => {
+    const hooks = window.__mlBottleneckTestHooks;
+    const devices = nextSpecs.map((spec, index) => {
+      if (spec.template) {
+        return {
+          id: index + 1,
+          name: spec.name || `${spec.template} #${index + 1}`,
+          template: spec.template,
+          ...JSON.parse(JSON.stringify(hooks.DEVICE_TEMPLATES[spec.template])),
+          ...(spec.overrides || {})
+        };
+      }
+      return {
+        id: index + 1,
+        template: 'Custom',
+        ...spec
+      };
+    });
+    hooks.setDevices(devices);
+    hooks.updateDeviceDisplay();
+    hooks.updateSystemAnalysis();
+  }, specs);
+}
+
 test('hardware editor keeps one selected device and adds new devices to topology selection', async ({ page }) => {
   await loadApp(page);
 
@@ -125,4 +150,130 @@ test('published benchmark filters include official task-score rows', async ({ pa
   await page.locator('#hardwareFilter').fill('Terminal');
   await expect(page.locator('#llmTable tbody')).toContainText('Terminal Bench 2');
   await expect(page.locator('#llmTable tbody')).toContainText('57.0%');
+});
+
+test('published benchmark filters include community Qwen throughput rows', async ({ page }) => {
+  await loadApp(page);
+  await page.evaluate(() => {
+    document.querySelector('#llmTable')?.closest('details')?.setAttribute('open', '');
+  });
+
+  await page.locator('#modelFilter').fill('Qwen 3.6 35B');
+  await page.locator('#hardwareFilter').fill('Community');
+  await page.locator('#quantizationFilter').fill('FP8');
+
+  await expect(page.locator('#llmTable tbody')).toContainText('216.45 tok/s');
+  await expect(page.locator('#llmTable tbody')).toContainText('SGLang');
+  await expect(page.locator('#llmTable tbody')).toContainText('Community X report');
+});
+
+test('browser validation matrix keeps displayed rates in broad expected ranges', async ({ page }) => {
+  await loadApp(page);
+
+  const cases = [
+    {
+      devices: [{ name: 'M4 Pro 48GB', memoryGB: 48, localBandwidthGBps: 273, networkBandwidthGBps: 32, computeTFlops: { float16: 50, bfloat16: 50, int8: 100, fp8: 110, q4: 145 } }],
+      config: { scenario: '', model: 'qwen2.5_7b', quant: 'int8', framework: 'mlx', strategy: 'pipeline', seqLength: 2048 },
+      min: 20,
+      max: 45
+    },
+    {
+      devices: [{ template: 'RTX 3090' }],
+      config: { scenario: '', model: 'qwen3.5_35b_a3b', quant: 'int8', framework: 'llama_cpp', strategy: 'pipeline', seqLength: 240000 },
+      min: 35,
+      max: 90,
+      expectOverflow: true
+    },
+    {
+      devices: [1, 2, 3, 4].map(id => ({ template: 'H200', name: `H200 #${id}` })),
+      config: { scenario: '', model: 'minimax_m2.5', quant: 'fp8', framework: 'vllm', strategy: 'tensor', batchSize: 8, seqLength: 4096 },
+      min: 400,
+      max: 3000
+    }
+  ];
+
+  for (const testCase of cases) {
+    await setDevices(page, testCase.devices);
+    await applyConfig(page, testCase.config);
+    const shown = await displayedRate(page);
+    const expected = await calculatedRate(page);
+    const pageText = await page.locator('#systemAnalysis').innerText();
+    const overflow = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics().some(metric => metric.hasOverflow));
+
+    expect(shown).toBeGreaterThan(testCase.min);
+    expect(shown).toBeLessThan(testCase.max);
+    expect(Math.abs(shown - expected)).toBeLessThan(0.2);
+    expect(pageText).not.toContain('NaN');
+    if (testCase.expectOverflow !== undefined) {
+      expect(overflow).toBe(testCase.expectOverflow);
+    }
+  }
+});
+
+test('browser long-context Qwen config slows down from KV-cache pressure', async ({ page }) => {
+  await loadApp(page);
+  await setDevices(page, [{ template: 'RTX 3090' }]);
+
+  await applyConfig(page, {
+    scenario: '',
+    model: 'qwen3.5_27b',
+    quant: 'q4',
+    framework: 'llama_cpp',
+    strategy: 'pipeline',
+    seqLength: 2048
+  });
+  const shortRate = await displayedRate(page);
+  const shortKv = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics()[0].decodeKvCacheGB);
+
+  await setInputAndChange(page, '#seqLength', 262144);
+  await page.waitForSelector('#systemAnalysis .result-hero');
+  const longRate = await displayedRate(page);
+  const longKv = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics()[0].decodeKvCacheGB);
+
+  expect(longKv).toBeGreaterThan(shortKv * 100);
+  expect(longRate).toBeLessThan(shortRate);
+  await expect(page.locator('#systemAnalysis')).not.toContainText('NaN');
+});
+
+test('browser fuzz smoke changes configs repeatedly without invalid output', async ({ page }) => {
+  await loadApp(page);
+  const presets = ['llama3_8b', 'qwen3.5_27b', 'qwen3.6_35b_a3b', 'minimax_m2.7', 'glm5_1'];
+  const quantizations = ['q4', 'int8', 'fp8'];
+  const frameworks = ['auto', 'llama_cpp', 'mlx', 'vllm', 'sglang'];
+  const strategies = ['auto', 'pipeline', 'tensor'];
+  const seqLengths = [512, 2048, 8192, 32768];
+  const deviceSets = [
+    [{ template: 'RTX 4090' }],
+    [{ template: 'H100' }],
+    [{ template: 'Mac M4 Max (128)' }],
+    [1, 2].map(id => ({ template: 'RTX 4090', name: `RTX 4090 #${id}` }))
+  ];
+
+  let seed = 99173;
+  const next = () => {
+    seed = (seed * 1103515245 + 12345) >>> 0;
+    return seed;
+  };
+  const pick = values => values[next() % values.length];
+
+  for (let i = 0; i < 24; i += 1) {
+    await setDevices(page, pick(deviceSets));
+    await applyConfig(page, {
+      scenario: '',
+      model: pick(presets),
+      quant: pick(quantizations),
+      framework: pick(frameworks),
+      strategy: pick(strategies),
+      batchSize: 1 + (next() % 4),
+      seqLength: pick(seqLengths)
+    });
+
+    const rate = await displayedRate(page);
+    const pageText = await page.locator('#systemAnalysis').innerText();
+    expect(Number.isFinite(rate)).toBe(true);
+    expect(rate).toBeGreaterThanOrEqual(0);
+    expect(rate).toBeLessThan(1_000_000);
+    expect(pageText).not.toContain('NaN');
+    expect(pageText).not.toContain('undefined');
+  }
 });

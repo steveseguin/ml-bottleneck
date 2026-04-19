@@ -4498,6 +4498,28 @@ const DEVICE_TEMPLATES = {
             return decodeFlops * numLayers;
         }
 
+        function calculateDecodeKVCacheBytes(modelConfig, dtypeSize, kvScale = 1) {
+            const architectureProfile = getArchitectureProfile(modelConfig);
+            const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
+            const seqLength = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
+            const hiddenSize = Math.max(parseFloat(modelConfig.hiddenSize) || 1, 1);
+            const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
+            const numLayers = Math.max(parseFloat(modelConfig.numLayers) || 1, 1);
+            const headDim = hiddenSize / numHeads;
+            const kvHeads = getKVHeads(modelConfig);
+
+            return 2 *
+                batchSize *
+                seqLength *
+                headDim *
+                kvHeads *
+                dtypeSize *
+                numLayers *
+                architectureProfile.kvCacheMultiplier *
+                architectureProfile.decodeAttentionMultiplier *
+                kvScale;
+        }
+
         /**
          * Calculate effective memory bandwidth considering PCIe overflow
          *
@@ -4514,10 +4536,17 @@ const DEVICE_TEMPLATES = {
             const parallelScales = modelConfig
                 ? getParallelismScales(modelConfig, allDevices, deviceIndex)
                 : { residentScale: 1, accessedScale: 1 };
-            const residentModelSizeBytes = modelSizeBytes * parallelScales.residentScale;
-            const accessedModelSizeBytes = modelConfig
+            const dtypeSize = modelConfig && modelConfig.totalParamsB > 0
+                ? modelSizeBytes / (modelConfig.totalParamsB * 1e9)
+                : 1;
+            const decodeKvCacheBytes = modelConfig
+                ? calculateDecodeKVCacheBytes(modelConfig, dtypeSize, parallelScales.kvScale || 1)
+                : 0;
+            const residentModelSizeBytes = (modelSizeBytes * parallelScales.residentScale) + decodeKvCacheBytes;
+            const accessedWeightBytes = modelConfig
                 ? getActiveParamsB(modelConfig) * 1e9 * (modelSizeBytes / (modelConfig.totalParamsB * 1e9)) * parallelScales.accessedScale * architectureProfile.decodeWeightAccessMultiplier
                 : modelSizeBytes;
+            const accessedModelSizeBytes = accessedWeightBytes + decodeKvCacheBytes;
             // Case 1: Model fits entirely in device memory
             if (residentModelSizeBytes <= deviceMemoryBytes) {
                 return {
@@ -4527,7 +4556,9 @@ const DEVICE_TEMPLATES = {
                     overflowBandwidthGBps: 0,
                     bottleneckReason: 'none',
                     hasOverflow: false,
-                    accessedModelSizeBytes
+                    accessedModelSizeBytes,
+                    accessedWeightBytes,
+                    decodeKvCacheBytes
                 };
             }
 
@@ -4589,7 +4620,9 @@ const DEVICE_TEMPLATES = {
                 totalTimeMs,
                 hasOverflow: true,
                 overflowGB: overflowPortion / 1e9,
-                accessedModelSizeBytes
+                accessedModelSizeBytes,
+                accessedWeightBytes,
+                decodeKvCacheBytes
             };
         }
 
@@ -4627,6 +4660,8 @@ const DEVICE_TEMPLATES = {
                 theoreticalMax: theoreticalTokensPerSec,
                 modelSizeGB: modelSizeBytes / 1e9,
                 activeModelSizeGB: bandwidthInfo.accessedModelSizeBytes / 1e9,
+                activeWeightSizeGB: bandwidthInfo.accessedWeightBytes / 1e9,
+                decodeKvCacheGB: bandwidthInfo.decodeKvCacheBytes / 1e9,
                 frameworkLabel: frameworkProfile.label,
                 ...bandwidthInfo
             };
@@ -5821,6 +5856,8 @@ const DEVICE_TEMPLATES = {
 					overflowBottleneckReason: tokenRateInfo.bottleneckReason || 'none',
 					modelSizeGB: tokenRateInfo.modelSizeGB,
 					activeModelSizeGB: tokenRateInfo.activeModelSizeGB,
+					activeWeightSizeGB: tokenRateInfo.activeWeightSizeGB,
+					decodeKvCacheGB: tokenRateInfo.decodeKvCacheGB,
 					// Image generation info
 					isImageGen,
 					imagesPerSecond: imageGenInfo ? imageGenInfo.imagesPerSecond : null,
@@ -7123,6 +7160,19 @@ Qwen 2.5 Benchmarks
 Qwen 2.5 72B	Q4	vLLM	4 x A6000		449 t/s		https://www.databasemart.com/blog/vllm-gpu-benchmark-a6000-4
 Qwen 2.5 72B	Q4	Ollama	2 x RTX 5090				~25 t/s	https://www.databasemart.com/blog/ollama-gpu-benchmark-rtx5090-2
 Qwen 2.5 Coder 32B	FP16		H100				25.5 t/s	https://medium.com/@wltsankalpa/benchmarking-qwen-models-across-nvidia-gpus-t4-l4-h100-architectures-finding-your-sweet-spot-a59a0adf9043
+Community Qwen Throughput Reports
+Qwen 3.6 35B A3B	FP8	SGLang	Community X report	1	Single stream; TTFT 25.4 ms	3815 tok/s prompt	216.45 tok/s	https://x.com/royjossfolk
+Qwen 3.6 35B A3B	FP8	SGLang	Community X report	4	Concurrency c=4	695.1 tok/s		https://x.com/royjossfolk
+Qwen 3.6 35B A3B	3-bit + 4-bit KV	llama.cpp CUDA	RTX 4060 Ti 16GB	1	256K context		71 t/s	https://x.com/0xfldr
+Qwen 3.6 Plus Preview	Hosted preview	BridgeBench	BridgeMind hosted	1	1M context		158 t/s	https://x.com/bridgemindai
+Qwen 3.5 27B	Q4	MLX	Mac M3 Ultra 256GB	1	Community coding setup		57 t/s	https://x.com/runsonai
+Qwen 3.5 27B	Q4	Community report	RTX 3090	1	Reported ceiling		35 t/s	https://x.com/Multi_Serio_Ai
+Qwen 3.5 35B A3B	Q8 / TurboQuant	Windows local	RTX 3090	1	Full 240K context		75 t/s	https://x.com/AminYa74
+Qwen 3.5 122B A10B	FP8	Community report	2 x RTX PRO 6000 Blackwell	32	Aggregate concurrent requests	~1000 t/s		https://x.com/NinjaBoffin
+DeepSeek R1 Distill Qwen 7B	8-bit	MLX	M4 Pro	1	Community speed test		29.64 t/s	https://x.com/pymike00
+DeepSeek R1 Distill Qwen 7B	6-bit	MLX	M4 Pro	1	Community speed test		38.40 t/s	https://x.com/pymike00
+DeepSeek R1 Distill Qwen 32B	4-bit	MLX	M4 Pro	1	Community speed test		11.96 t/s	https://x.com/pymike00
+DeepSeek R1 Distill Qwen 32B	6-bit	MLX	M4 Pro	1	Community speed test		8.59 t/s	https://x.com/pymike00
 Framework Comparisons
 Llama 3 8B	FP16	TensorRT-LLM	RTX 4090				~255 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm
 Llama 3 8B	FP16	llama.cpp	RTX 4090				~150 t/s	https://www.jan.ai/post/benchmarking-nvidia-tensorrt-llm

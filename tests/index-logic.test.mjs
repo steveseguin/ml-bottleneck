@@ -34,6 +34,46 @@ function setLlmDefaults(app, { preset, quant = 'q4', framework = 'auto', strateg
   app.setValue('seqLength', seqLength);
 }
 
+function buildCustomDevice({ id = 1, name, memoryGB, localBandwidthGBps, networkBandwidthGBps = 32, computeTFlops }) {
+  return {
+    id,
+    name,
+    template: 'Custom',
+    memoryGB,
+    localBandwidthGBps,
+    networkBandwidthGBps,
+    computeTFlops: computeTFlops || {
+      float16: 50,
+      bfloat16: 50,
+      int8: 100,
+      fp8: 110,
+      q4: 145
+    }
+  };
+}
+
+function getSystemResult(app, explicitStrategy) {
+  const modelConfig = app.hooks.buildEffectiveModelConfig();
+  const strategy = explicitStrategy || (
+    modelConfig.parallelismStrategy === 'auto'
+      ? app.hooks.findOptimalStrategy().strategy
+      : modelConfig.parallelismStrategy
+  );
+  const metrics = app.hooks.calculateMetrics();
+  const systemRate = app.hooks.calculateSystemRateFromDeviceRates(
+    metrics.map(metric => metric.decodeTokensPerSecond),
+    strategy,
+    modelConfig.batchSize,
+    app.hooks.getDevices()
+  );
+
+  return { modelConfig, metrics, strategy, systemRate };
+}
+
+function assertFiniteNumber(value, label) {
+  assert.equal(Number.isFinite(value), true, `${label} should be finite, got ${value}`);
+}
+
 test('effective config keeps user overrides on top of preset defaults', () => {
   const app = loadApp();
   app.applyPreset('llama3_8b');
@@ -179,7 +219,10 @@ test('benchmark data remains normalized and official references win first', () =
   assert.ok(benchmarkData.some(row => row.model === 'Qwen 3.6 35B A3B' && row.hardware === 'SWE-bench Verified' && row.tokenRateSingle === '73.4%'));
   assert.ok(benchmarkData.some(row => row.model === 'MiniMax M2.7 229B A10B' && row.hardware === 'Terminal Bench 2' && row.tokenRateSingle === '57.0%'));
   assert.ok(benchmarkData.some(row => row.model === 'GLM 5.1' && row.hardware === 'SWE-Bench Pro' && row.tokenRateSingle === '58.4%'));
+  assert.ok(benchmarkData.some(row => row.model === 'Qwen 3.6 35B A3B' && row.framework === 'SGLang' && row.tokenRateSingle === '216.45 tok/s'));
+  assert.ok(benchmarkData.some(row => row.model === 'DeepSeek R1 Distill Qwen 32B' && row.framework === 'MLX' && row.tokenRateSingle === '11.96 t/s'));
   assert.equal(app.hooks.getBenchmarkSourceTier('https://huggingface.co/Qwen/Qwen3.6-35B-A3B'), 2);
+  assert.equal(app.hooks.getBenchmarkSourceTier('https://x.com/royjossfolk'), 1);
 
   app.hooks.setDevices([
     cloneTemplate(app.hooks, 'H100', 1, 'H100 #1'),
@@ -197,6 +240,263 @@ test('benchmark data remains normalized and official references win first', () =
   const matches = app.hooks.findBenchmarkMatches(app.hooks.buildEffectiveModelConfig(), app.hooks.getDevices());
   assert.ok(matches.length > 0);
   assert.equal(matches[0].source.includes('docs.nvidia.com'), true);
+});
+
+test('community throughput rows are usable references without becoming official evidence', () => {
+  const app = loadApp();
+  const benchmarkData = app.hooks.getBenchmarkData();
+  const qwenFp8Row = benchmarkData.find(row =>
+    row.model === 'Qwen 3.6 35B A3B' &&
+    row.framework === 'SGLang' &&
+    row.tokenRateSingle === '216.45 tok/s'
+  );
+
+  assert.ok(qwenFp8Row);
+  assert.equal(app.hooks.isThroughputBenchmarkRow(qwenFp8Row), true);
+  assert.equal(qwenFp8Row.source, 'https://x.com/royjossfolk');
+  assert.equal(app.hooks.getBenchmarkSourceTier(qwenFp8Row.source), 1);
+
+  app.hooks.setDevices([cloneTemplate(app.hooks, 'H100')]);
+  setLlmDefaults(app, {
+    preset: 'qwen3.6_35b_a3b',
+    quant: 'fp8',
+    framework: 'sglang',
+    strategy: 'pipeline',
+    batchSize: 1,
+    seqLength: 2048
+  });
+  const { metrics, systemRate } = getSystemResult(app, 'pipeline');
+  const alignment = app.hooks.getBenchmarkAlignmentSummary(app.hooks.buildEffectiveModelConfig(), app.hooks.getDevices(), metrics, systemRate);
+
+  assert.ok(alignment.some(row => row.source === 'https://x.com/royjossfolk'));
+  assert.ok(alignment.every(row => row.sourceTier === 1));
+});
+
+test('validation matrix stays inside broad benchmark-justified ranges', () => {
+  const app = loadApp();
+  const m4Pro = buildCustomDevice({ name: 'M4 Pro 48GB', memoryGB: 48, localBandwidthGBps: 273 });
+
+  const cases = [
+    {
+      name: 'Qwen 7B 8-bit on M4 Pro tracks community MLX reports',
+      devices: [m4Pro],
+      preset: 'qwen2.5_7b',
+      quant: 'int8',
+      framework: 'mlx',
+      strategy: 'pipeline',
+      seqLength: 2048,
+      minRate: 20,
+      maxRate: 45,
+      maxMemoryUtilization: 35
+    },
+    {
+      name: 'DeepSeek R1 Distill Qwen 32B 4-bit on M4 Pro is in the low-teens',
+      devices: [m4Pro],
+      preset: 'deepseek_r1_distill_32b',
+      quant: 'q4',
+      framework: 'mlx',
+      strategy: 'pipeline',
+      seqLength: 2048,
+      minRate: 8,
+      maxRate: 18,
+      maxMemoryUtilization: 70
+    },
+    {
+      name: 'Qwen 3.5 27B Q4 on M4 Max is plausible against 35-57 tok/s community reports',
+      devices: [cloneTemplate(app.hooks, 'Mac M4 Max (128)')],
+      preset: 'qwen3.5_27b',
+      quant: 'q4',
+      framework: 'mlx',
+      strategy: 'pipeline',
+      seqLength: 2048,
+      minRate: 25,
+      maxRate: 65,
+      maxMemoryUtilization: 30
+    },
+    {
+      name: 'Qwen 3.5 35B A3B Q8 on RTX 3090 long context reflects overflow drag',
+      devices: [cloneTemplate(app.hooks, 'RTX 3090')],
+      preset: 'qwen3.5_35b_a3b',
+      quant: 'int8',
+      framework: 'llama_cpp',
+      strategy: 'pipeline',
+      seqLength: 240000,
+      minRate: 35,
+      maxRate: 90,
+      minMemoryUtilization: 100,
+      expectOverflow: true
+    },
+    {
+      name: 'Qwen 3.5 27B Q4 on RTX 3090 long context accounts for KV-cache pressure',
+      devices: [cloneTemplate(app.hooks, 'RTX 3090')],
+      preset: 'qwen3.5_27b',
+      quant: 'q4',
+      framework: 'llama_cpp',
+      strategy: 'pipeline',
+      seqLength: 262144,
+      minRate: 25,
+      maxRate: 65,
+      minMemoryUtilization: 100,
+      minDecodeKvCacheGB: 1
+    },
+    {
+      name: 'MiniMax M2.5 FP8 on 4x H200 remains a high-throughput datacenter setup',
+      devices: [1, 2, 3, 4].map(id => cloneTemplate(app.hooks, 'H200', id, `H200 #${id}`)),
+      preset: 'minimax_m2.5',
+      quant: 'fp8',
+      framework: 'vllm',
+      strategy: 'tensor',
+      batchSize: 8,
+      seqLength: 4096,
+      minRate: 400,
+      maxRate: 3000,
+      maxMemoryUtilization: 80
+    },
+    {
+      name: 'GLM 5.1 FP8 needs many H100s but should fit on 8-way tensor parallel',
+      devices: [1, 2, 3, 4, 5, 6, 7, 8].map(id => cloneTemplate(app.hooks, 'H100', id, `H100 #${id}`)),
+      preset: 'glm5_1',
+      quant: 'fp8',
+      framework: 'vllm',
+      strategy: 'tensor',
+      batchSize: 8,
+      seqLength: 4096,
+      minRate: 100,
+      maxRate: 1000,
+      maxMemoryUtilization: 100
+    }
+  ];
+
+  for (const testCase of cases) {
+    app.hooks.setDevices(testCase.devices.map(device => ({ ...device, computeTFlops: { ...device.computeTFlops } })));
+    setLlmDefaults(app, {
+      preset: testCase.preset,
+      quant: testCase.quant,
+      framework: testCase.framework,
+      strategy: testCase.strategy,
+      batchSize: testCase.batchSize || 1,
+      seqLength: testCase.seqLength
+    });
+
+    const { metrics, systemRate } = getSystemResult(app, testCase.strategy);
+    assert.ok(systemRate >= testCase.minRate && systemRate <= testCase.maxRate, `${testCase.name}: ${systemRate} tok/s`);
+    const maxMemory = Math.max(...metrics.map(metric => metric.memoryUtilization));
+    if (testCase.maxMemoryUtilization !== undefined) {
+      assert.ok(maxMemory <= testCase.maxMemoryUtilization, `${testCase.name}: memory ${maxMemory}%`);
+    }
+    if (testCase.minMemoryUtilization !== undefined) {
+      assert.ok(maxMemory >= testCase.minMemoryUtilization, `${testCase.name}: memory ${maxMemory}%`);
+    }
+    if (testCase.expectOverflow !== undefined) {
+      assert.equal(metrics.some(metric => metric.hasOverflow), testCase.expectOverflow, testCase.name);
+    }
+    if (testCase.minDecodeKvCacheGB !== undefined) {
+      assert.ok(Math.max(...metrics.map(metric => metric.decodeKvCacheGB || 0)) >= testCase.minDecodeKvCacheGB, testCase.name);
+    }
+  }
+});
+
+test('quantization and sharding monotonic checks catch obvious regressions', () => {
+  const app = loadApp();
+  app.hooks.setDevices([cloneTemplate(app.hooks, 'Mac M4 Max (128)')]);
+  setLlmDefaults(app, { preset: 'qwen3.5_27b', quant: 'q4', framework: 'mlx', strategy: 'pipeline' });
+  const q4 = getSystemResult(app, 'pipeline');
+
+  app.setValue('quantizationType', 'int8');
+  const int8 = getSystemResult(app, 'pipeline');
+
+  app.setValue('quantizationType', 'float16');
+  const float16 = getSystemResult(app, 'pipeline');
+
+  assert.ok(q4.metrics[0].modelSizeGB < int8.metrics[0].modelSizeGB);
+  assert.ok(int8.metrics[0].modelSizeGB < float16.metrics[0].modelSizeGB);
+  assert.ok(q4.systemRate > int8.systemRate);
+  assert.ok(int8.systemRate > float16.systemRate);
+
+  app.hooks.setDevices([cloneTemplate(app.hooks, 'H100')]);
+  setLlmDefaults(app, { preset: 'qwen3.6_35b_a3b', quant: 'fp8', framework: 'sglang', strategy: 'pipeline' });
+  const singleH100 = getSystemResult(app, 'pipeline').systemRate;
+
+  app.hooks.setDevices([1, 2, 3, 4].map(id => cloneTemplate(app.hooks, 'H100', id, `H100 #${id}`)));
+  setLlmDefaults(app, { preset: 'qwen3.6_35b_a3b', quant: 'fp8', framework: 'sglang', strategy: 'tensor' });
+  const fourH100 = getSystemResult(app, 'tensor').systemRate;
+
+  assert.ok(fourH100 > singleH100 * 2.5, `4x H100 ${fourH100} should materially beat 1x H100 ${singleH100}`);
+});
+
+test('deterministic config fuzzing keeps metrics finite and UI output sane', () => {
+  const app = loadApp();
+  const presets = ['llama3_8b', 'qwen3.5_27b', 'qwen3.6_35b_a3b', 'kimi_k2.5', 'minimax_m2.7', 'glm5_1', 'deepseek_r1_distill_32b'];
+  const quantizations = ['q4', 'int8', 'fp8', 'float16'];
+  const frameworks = ['auto', 'llama_cpp', 'mlx', 'vllm', 'sglang', 'tensorrt_llm', 'exo'];
+  const strategies = ['auto', 'pipeline', 'tensor', 'expert'];
+  const seqLengths = [256, 2048, 8192, 32768, 262144];
+  const batchSizes = [1, 2, 4, 8];
+  const deviceSets = [
+    () => [cloneTemplate(app.hooks, 'RTX 4090')],
+    () => [cloneTemplate(app.hooks, 'H100')],
+    () => [cloneTemplate(app.hooks, 'Mac M4 Max (128)')],
+    () => [1, 2].map(id => cloneTemplate(app.hooks, 'RTX 4090', id, `RTX 4090 #${id}`)),
+    () => [1, 2, 3, 4].map(id => cloneMacClusterNode(app.hooks, id))
+  ];
+
+  let seed = 20260419;
+  const next = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed;
+  };
+  const pick = values => values[next() % values.length];
+
+  for (let i = 0; i < 96; i += 1) {
+    const preset = pick(presets);
+    const quant = pick(quantizations);
+    const framework = pick(frameworks);
+    const strategy = pick(strategies);
+    const seqLength = pick(seqLengths);
+    const batchSize = pick(batchSizes);
+    const devices = pick(deviceSets)();
+
+    app.hooks.setDevices(devices);
+    setLlmDefaults(app, { preset, quant, framework, strategy, batchSize, seqLength });
+
+    const { metrics, systemRate } = getSystemResult(app);
+    assert.equal(metrics.length, devices.length, `case ${i}: metric count`);
+    assertFiniteNumber(systemRate, `case ${i} system rate`);
+    assert.ok(systemRate >= 0 && systemRate < 1_000_000, `case ${i}: unreasonable rate ${systemRate}`);
+
+    for (const [metricIndex, metric] of metrics.entries()) {
+      for (const key of ['memoryUtilization', 'prefillTokensPerSecond', 'decodeTokensPerSecond', 'modelSizeGB', 'activeModelSizeGB', 'effectiveBandwidthGBps']) {
+        assertFiniteNumber(metric[key], `case ${i} metric ${metricIndex} ${key}`);
+      }
+      assert.ok(metric.memoryUtilization >= 0, `case ${i}: negative memory utilization`);
+      assert.ok(metric.decodeTokensPerSecond >= 0, `case ${i}: negative decode rate`);
+    }
+
+    app.hooks.updateSystemAnalysis();
+    const html = app.elements.get('systemAnalysis').innerHTML;
+    assert.doesNotMatch(html, /NaN|undefined/, `case ${i}: rendered invalid text for ${preset}/${quant}/${framework}`);
+  }
+});
+
+test('long-context decode accounts for KV-cache bytes in the active working set', () => {
+  const app = loadApp();
+  app.hooks.setDevices([cloneTemplate(app.hooks, 'RTX 3090')]);
+  setLlmDefaults(app, {
+    preset: 'qwen3.5_27b',
+    quant: 'q4',
+    framework: 'llama_cpp',
+    strategy: 'pipeline',
+    batchSize: 1,
+    seqLength: 2048
+  });
+  const shortContext = getSystemResult(app, 'pipeline');
+
+  app.setValue('seqLength', 262144);
+  const longContext = getSystemResult(app, 'pipeline');
+
+  assert.ok(longContext.metrics[0].decodeKvCacheGB > shortContext.metrics[0].decodeKvCacheGB * 100);
+  assert.ok(longContext.metrics[0].activeModelSizeGB > shortContext.metrics[0].activeModelSizeGB);
+  assert.ok(longContext.systemRate < shortContext.systemRate);
 });
 
 test('official task-score benchmark rows render but stay out of throughput matching', () => {
