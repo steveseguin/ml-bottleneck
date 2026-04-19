@@ -99,14 +99,14 @@ test('hardware editor keeps one selected device and adds new devices to topology
   await loadApp(page);
 
   await expect(page.locator('#devices > .device')).toHaveCount(1);
-  await expect(page.locator('#devices .device-chip')).toHaveCount(1);
   await expect(page.locator('#devices .hardware-advanced')).toHaveCount(1);
   await expect(page.locator('#devices .hardware-advanced')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#hardwareHeadMeta')).toBeEmpty();
 
   await page.locator('#devices .add-device-inline').click();
   await expect(page.locator('#devices > .device')).toHaveCount(1);
-  await expect(page.locator('#devices .device-chip')).toHaveCount(2);
-  await expect(page.locator('#devices .device-chip.selected .device-chip-title')).toContainText('2. Device 2');
+  await expect(page.locator('#devices .device-name-input')).toHaveValue('Device 2');
+  await expect(page.locator('#hardwareHeadMeta')).toContainText('Editing device 2 of 2');
 
   const state = await page.evaluate(() => ({
     count: window.__mlBottleneckTestHooks.getDevices().length,

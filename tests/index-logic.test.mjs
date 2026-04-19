@@ -567,7 +567,7 @@ test('official task-score benchmark rows render but stay out of throughput match
   assert.ok(matches.every(row => app.hooks.isThroughputBenchmarkRow(row)));
 });
 
-test('hardware editor shows one selected device while topology chips track all devices', () => {
+test('hardware editor shows one selected device with a position indicator across all devices', () => {
   const app = loadApp();
   app.hooks.setDevices([
     cloneTemplate(app.hooks, 'RTX 4090', 1, 'Primary 4090'),
@@ -576,24 +576,30 @@ test('hardware editor shows one selected device while topology chips track all d
 
   app.hooks.updateDeviceDisplay();
   let html = app.elements.get('devices').innerHTML;
+  let metaHtml = app.elements.get('hardwareHeadMeta').innerHTML;
   assert.equal(app.hooks.getSelectedDeviceId(), 1);
   assert.equal((html.match(/Advanced hardware settings/g) || []).length, 1);
   assert.equal((html.match(/class="device /g) || []).length, 1);
   assert.match(html, /NVIDIA RTX 4090/);
   assert.match(html, /NVIDIA H100/);
+  assert.match(metaHtml, /Editing device 1 of 2/);
   assert.doesNotMatch(html, /<details class="hardware-advanced" open>/);
 
   app.hooks.selectDevice(2);
   html = app.elements.get('devices').innerHTML;
+  metaHtml = app.elements.get('hardwareHeadMeta').innerHTML;
   assert.equal(app.hooks.getSelectedDeviceId(), 2);
   assert.equal((html.match(/Advanced hardware settings/g) || []).length, 1);
   assert.match(html, /NVIDIA H100/);
+  assert.match(metaHtml, /Editing device 2 of 2/);
 
   app.hooks.addDevice();
   html = app.elements.get('devices').innerHTML;
+  metaHtml = app.elements.get('hardwareHeadMeta').innerHTML;
   assert.equal(app.hooks.getDevices().length, 3);
   assert.equal(app.hooks.getSelectedDeviceId(), 3);
-  assert.match(html, /3\. Device 3/);
+  assert.match(metaHtml, /Editing device 3 of 3/);
+  assert.match(html, /value="Device 3"/);
   assert.equal((html.match(/Advanced hardware settings/g) || []).length, 1);
 
   app.hooks.updateDevice(3, 'template', 'Custom');

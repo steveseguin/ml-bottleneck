@@ -805,22 +805,6 @@ input, select {
     color: var(--text-secondary);
     font-size: 0.84rem;
 }
-.details-disclosure {
-    margin-top: 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.03);
-}
-.details-disclosure summary {
-    cursor: pointer;
-    padding: 0.75rem;
-    color: var(--text-secondary);
-    font-weight: 600;
-}
-.details-disclosure-content {
-    padding: 0 0.75rem 0.75rem 0.75rem;
-}
-
 /* Improved card transitions */
 .card {
     transition: all 0.2s ease;
@@ -836,53 +820,6 @@ input, select {
     font-size: 0.75rem;
     color: var(--text-secondary);
     line-height: 1.4;
-}
-
-/* Tuning panel (collapsed advanced options) */
-.tuning-panel {
-    margin-top: 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.25rem 0.85rem;
-    background: var(--background);
-}
-.tuning-panel > summary {
-    cursor: pointer;
-    padding: 0.6rem 0;
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    list-style: none;
-}
-.tuning-panel > summary::before {
-    content: "▸ ";
-    display: inline-block;
-    margin-right: 0.25rem;
-    transition: transform 0.15s ease;
-}
-.tuning-panel[open] > summary::before {
-    transform: rotate(90deg);
-}
-.tuning-panel[open] > summary {
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 0.85rem;
-    color: var(--text);
-}
-
-.nested-details {
-    margin: 0.5rem 0 1rem 0;
-    border-left: 2px solid var(--border);
-    padding: 0.15rem 0 0.25rem 0.75rem;
-}
-.nested-details > summary {
-    cursor: pointer;
-    padding: 0.35rem 0;
-    font-size: 0.82rem;
-    color: var(--text-secondary);
-    list-style: revert;
-}
-.nested-details[open] > summary {
-    margin-bottom: 0.5rem;
 }
 
 .app-subtitle {
@@ -938,27 +875,42 @@ input, select {
 }
 .topology-legend {
     display: flex;
-    gap: 1.25rem;
-    padding: 0.75rem 1.5rem 1rem;
+    gap: 1rem 1.4rem;
+    padding: 0.8rem 1.5rem 1rem;
     flex-wrap: wrap;
-    font-size: 0.75rem;
+    font-size: 0.82rem;
+    color: var(--text);
+    align-items: center;
+}
+.topology-legend .legend-group-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--text-secondary);
+    font-weight: 600;
+    margin-right: 0.1rem;
 }
 .topology-legend .legend-item {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.45rem;
 }
 .topology-legend .legend-swatch {
     display: inline-block;
-    width: 18px;
-    height: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+}
+.topology-legend .legend-swatch.legend-swatch--line {
+    width: 22px;
+    height: 4px;
     border-radius: 2px;
+    border: 0;
 }
 .topology-legend .legend-note {
     margin-left: auto;
-    font-style: italic;
-    opacity: 0.8;
+    color: var(--text-secondary);
 }
 @media (max-width: 640px) {
     .topology-legend .legend-note { margin-left: 0; }
@@ -1014,6 +966,124 @@ input, select {
 } /* end light theme */
 
 /* Shared component polish; keep these outside theme media blocks. */
+
+/* Shared disclosure panels (tuning, nested settings, breakdown). These present
+   as obviously-clickable panels with a rotating chevron and hover state so users
+   don't mistake them for plain text. */
+.details-disclosure,
+.tuning-panel,
+.nested-details,
+.hardware-advanced {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(148, 163, 184, 0.05);
+    overflow: hidden;
+}
+
+.details-disclosure { margin-top: 1rem; }
+.tuning-panel      { margin-top: 1rem; padding: 0; }
+.nested-details    { margin: 0.75rem 0 0; }
+.hardware-advanced { margin-top: 0.55rem; }
+
+.details-disclosure > summary,
+.tuning-panel > summary,
+.nested-details > summary,
+.hardware-advanced > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    cursor: pointer;
+    padding: 0.7rem 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    list-style: none;
+    user-select: none;
+    transition: background-color 0.18s ease, color 0.18s ease;
+    white-space: normal;
+}
+
+.details-disclosure > summary { font-size: 0.92rem; }
+.tuning-panel > summary       { font-size: 0.95rem; }
+.nested-details > summary     { font-size: 0.88rem; padding: 0.6rem 0.85rem; }
+.hardware-advanced > summary  { font-size: 0.85rem; color: var(--text-secondary); padding: 0.6rem 0.85rem; }
+
+.details-disclosure > summary::-webkit-details-marker,
+.tuning-panel > summary::-webkit-details-marker,
+.nested-details > summary::-webkit-details-marker,
+.hardware-advanced > summary::-webkit-details-marker,
+.details-disclosure > summary::marker,
+.tuning-panel > summary::marker,
+.nested-details > summary::marker,
+.hardware-advanced > summary::marker {
+    display: none;
+    content: "";
+}
+
+.details-disclosure > summary::before,
+.tuning-panel > summary::before,
+.nested-details > summary::before,
+.hardware-advanced > summary::before {
+    content: "▸";
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    transition: transform 0.18s ease;
+    flex: 0 0 auto;
+}
+
+.details-disclosure[open] > summary::before,
+.tuning-panel[open] > summary::before,
+.nested-details[open] > summary::before,
+.hardware-advanced[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.details-disclosure > summary:hover,
+.tuning-panel > summary:hover,
+.nested-details > summary:hover,
+.hardware-advanced > summary:hover,
+.details-disclosure > summary:focus-visible,
+.tuning-panel > summary:focus-visible,
+.nested-details > summary:focus-visible,
+.hardware-advanced > summary:focus-visible {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--primary);
+    outline: none;
+}
+
+.details-disclosure[open] > summary,
+.tuning-panel[open] > summary,
+.nested-details[open] > summary,
+.hardware-advanced[open] > summary {
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+}
+
+.details-disclosure-content,
+.tuning-panel-content,
+.nested-details-content,
+.hardware-advanced-content {
+    padding: 0.85rem 0.9rem 1rem;
+}
+
+/* Subheadings that group related inputs inside the tuning panel. */
+.tuning-section {
+    margin-top: 1.2rem;
+}
+.tuning-section:first-child {
+    margin-top: 0;
+}
+.tuning-section-title {
+    display: block;
+    margin: 0 0 0.5rem 0;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
 .device-name-row {
     display: flex;
     align-items: stretch;
@@ -1382,34 +1452,59 @@ option {
     gap: 0.3rem;
 }
 
-.hardware-advanced {
-    margin-top: 0.55rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface-muted);
+.hardware-preset-line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: stretch;
 }
 
-.hardware-advanced > summary {
-    padding: 0.55rem 0.7rem;
-    cursor: pointer;
+.hardware-preset-line .add-device-inline {
+    white-space: nowrap;
+}
+
+.hardware-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.hardware-head-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
-    font-size: 0.84rem;
-    font-weight: 700;
-    list-style: none;
 }
 
-.hardware-advanced > summary::before {
-    content: "> ";
-}
-
-.hardware-advanced > summary::-webkit-details-marker,
-.hardware-advanced > summary::marker {
+.hardware-head-meta:empty {
     display: none;
-    content: "";
 }
 
-.hardware-advanced-content {
-    padding: 0 0.7rem 0.7rem;
+.hardware-head-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.hardware-head-nav .icon-button {
+    min-height: 1.7rem;
+    min-width: 1.7rem;
+    padding: 0 0.4rem;
+    font-size: 0.9rem;
+}
+
+#topologyCanvas {
+    cursor: pointer;
+}
+
+@media (max-width: 480px) {
+    .hardware-preset-line {
+        grid-template-columns: 1fr;
+    }
 }
 
 .device-grid {
@@ -1505,55 +1600,8 @@ select:focus {
     color: #059669;
 }
 
-.details-disclosure {
-    margin-top: 0.75rem !important;
-}
-
-.details-disclosure summary {
-    display: flex;
-    align-items: center;
-    min-height: 2.25rem;
-    padding: 0.55rem 0.7rem;
-}
-
-.details-disclosure-content {
-    padding: 0 0.7rem 0.7rem;
-}
-
-.tuning-panel {
-    margin-top: 0.75rem;
-    padding: 0.15rem 0.7rem;
-}
-
-.tuning-panel > summary {
-    list-style: none;
-    padding: 0.5rem 0;
-    white-space: nowrap;
-}
-
-.tuning-panel > summary::before {
-    content: "> ";
-}
-
-.tuning-panel > summary::-webkit-details-marker,
-.nested-details > summary::-webkit-details-marker {
-    display: none;
-}
-
-.tuning-panel > summary::marker,
-.nested-details > summary::marker,
 .section-summary::marker {
     content: "";
-}
-
-.nested-details {
-    margin: 0.35rem 0 0.65rem;
-    padding: 0.1rem 0 0.2rem 0.65rem;
-}
-
-.nested-details > summary {
-    padding: 0.25rem 0;
-    white-space: nowrap;
 }
 
 .token-split-grid {
@@ -2007,184 +2055,202 @@ td {
 
                 <details class="tuning-panel">
                     <summary>Tuning &amp; advanced options</summary>
-                    <p class="field-help" style="margin-top: 0.75rem;">Defaults work for most setups. Change these only if you need specific behavior.</p>
+                    <div class="tuning-panel-content">
+                        <p class="field-help" style="margin-top: 0;">Defaults work for most setups. Change these only if you need specific behavior.</p>
 
-                    <div class="token-split-grid">
-                        <div class="token-input-group">
-                            <label for="promptTokens">Input context</label>
-                            <input type="number" id="promptTokens" class="input" value="16384" min="1" step="256">
-                            <small class="field-help">Prompt tokens processed before generation.</small>
+                        <div class="tuning-section">
+                            <span class="tuning-section-title">Workload</span>
+                            <div class="token-split-grid">
+                                <div class="token-input-group">
+                                    <label for="promptTokens">Input context</label>
+                                    <input type="number" id="promptTokens" class="input" value="16384" min="1" step="256">
+                                    <small class="field-help">Prompt tokens processed before generation.</small>
+                                </div>
+                                <div class="token-input-group">
+                                    <label for="outputTokens">Output response</label>
+                                    <input type="number" id="outputTokens" class="input" value="4096" min="1" step="256">
+                                    <small class="field-help">Generated tokens decoded autoregressively.</small>
+                                </div>
+                            </div>
+                            <input type="hidden" id="seqLength" value="20480">
+                            <small class="field-help token-total-help">Memory uses the combined context window; timing is split into prompt processing and decode.</small>
+
+                            <label for="batchSize">Batch size</label>
+                            <select id="batchSize" class="input">
+                                <option value="1">1 &mdash; interactive (single user)</option>
+                                <option value="4">4 &mdash; small batch</option>
+                                <option value="8">8 &mdash; medium batch</option>
+                                <option value="16">16 &mdash; large batch</option>
+                                <option value="32">32 &mdash; high throughput</option>
+                                <option value="64">64 &mdash; max throughput</option>
+                            </select>
                         </div>
-                        <div class="token-input-group">
-                            <label for="outputTokens">Output response</label>
-                            <input type="number" id="outputTokens" class="input" value="4096" min="1" step="256">
-                            <small class="field-help">Generated tokens decoded autoregressively.</small>
+
+                        <div class="tuning-section">
+                            <span class="tuning-section-title">Distribution &amp; optimization</span>
+                            <label for="parallelismStrategy">Distribution across devices</label>
+                            <select id="parallelismStrategy" class="input">
+                                <option value="auto">AUTO &mdash; pick the best strategy</option>
+                                <option value="pipeline">Pipeline (layers split across devices)</option>
+                                <option value="tensor">Tensor (each layer split across devices)</option>
+                                <option value="data">Data (replica per device, separate requests)</option>
+                                <option value="expert">Expert (MoE experts split across devices)</option>
+                                <option value="sequence">Sequence parallelism</option>
+                                <option value="context">Context parallelism</option>
+                                <option value="hybrid_tp_pp">Hybrid TP+PP</option>
+                                <option value="hybrid_tp_dp">Hybrid TP+DP</option>
+                            </select>
+
+                            <label for="optimizationMode">Inference optimization</label>
+                            <select id="optimizationMode" class="input">
+                                <option value="none">Standard inference</option>
+                                <option value="speculative">Speculative decoding (2&ndash;3x speedup)</option>
+                                <option value="continuous_batching">Continuous batching</option>
+                                <option value="paged_attention">PagedAttention (vLLM)</option>
+                                <option value="flash_attention">Flash Attention</option>
+                                <option value="exo_phase_split">EXO phase split (prefill/decode)</option>
+                            </select>
+
+                            <label for="kvCacheCompression">KV cache compression</label>
+                            <select id="kvCacheCompression" class="input">
+                                <option value="none" selected>None</option>
+                                <option value="turboquant_3_5">TurboQuant 3.5-bit</option>
+                                <option value="turboquant_2_5">TurboQuant 2.5-bit</option>
+                            </select>
+                            <small class="field-help">Applies to KV cache only; most useful for long contexts or memory overflow.</small>
                         </div>
+
+                        <div class="tuning-section">
+                            <span class="tuning-section-title">Runtime</span>
+                            <label for="runtimeFramework">Runtime framework</label>
+                            <select id="runtimeFramework" class="input">
+                                <option value="auto" selected>AUTO &mdash; match hardware</option>
+                                <option value="llama_cpp">llama.cpp</option>
+                                <option value="mlx">MLX / MLX-LM</option>
+                                <option value="ollama">Ollama</option>
+                                <option value="vllm">vLLM</option>
+                                <option value="sglang">SGLang</option>
+                                <option value="tensorrt_llm">TensorRT-LLM</option>
+                                <option value="exo">EXO / MLX Distributed</option>
+                            </select>
+                        </div>
+
+                        <div class="tuning-section">
+                            <span class="tuning-section-title">Scenarios</span>
+                            <label for="scenarioPreset">Load a scenario preset</label>
+                            <select id="scenarioPreset" class="input" onchange="loadScenarioPreset(this.value)">
+                                <option value="">&mdash; none &mdash;</option>
+                                <optgroup label="RTX 50-Series Multi-GPU">
+                                    <option value="5090_ddr5">RTX 5090 + DDR5 Overflow (36GB model)</option>
+                                    <option value="5090_5060ti_x1">RTX 5090 x16 + RTX 5060 Ti x1 (slow PCIe)</option>
+                                    <option value="5090_5060ti_x8">RTX 5090 x8 + RTX 5060 Ti x8 (balanced)</option>
+                                    <option value="5090_oculink">RTX 5090 x16 + GPU via Oculink (x4)</option>
+                                    <option value="dual_5090">2x RTX 5090 x16 (theoretical)</option>
+                                </optgroup>
+                                <optgroup label="RTX 40-Series">
+                                    <option value="4090_ddr5">RTX 4090 + DDR5 Overflow</option>
+                                    <option value="4090_4080">RTX 4090 + RTX 4080 (both x8)</option>
+                                </optgroup>
+                                <optgroup label="Apple Silicon">
+                                    <option value="m4_max">Mac M4 Max (128GB)</option>
+                                    <option value="m3_ultra">Mac M3 Ultra (512GB)</option>
+                                    <option value="m3_ultra_x4_tb5">4x Mac M3 Ultra (Thunderbolt 5)</option>
+                                    <option value="m3_ultra_x4_tb5_rdma">4x Mac M3 Ultra (TB5 RDMA)</option>
+                                </optgroup>
+                                <optgroup label="Data Center">
+                                    <option value="h100_single">Single H100</option>
+                                    <option value="h100_x8">8x H100 (NVLink)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <details class="nested-details">
+                            <summary>Cost assumptions (power pricing)</summary>
+                            <div class="nested-details-content">
+                                <div class="inline-select-group">
+                                    <label for="hoursPerDay">Hours/day</label>
+                                    <input type="number" id="hoursPerDay" class="input" value="8" min="1" max="24" step="1">
+
+                                    <label for="costPerKwh">$/kWh</label>
+                                    <input type="number" id="costPerKwh" class="input" value="0.12" min="0.01" step="0.01">
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="nested-details">
+                            <summary>Model internals (override preset)</summary>
+                            <div class="nested-details-content">
+                                <label>Total Parameters (B)</label>
+                                <input type="number" id="totalParamsB" class="input" value="400">
+
+                                <label>Hidden Size</label>
+                                <input type="number" id="hiddenSize" class="input" value="16384">
+
+                                <label>Number of Layers</label>
+                                <input type="number" id="numLayers" class="input" value="120">
+
+                                <label>Number of Heads</label>
+                                <input type="number" id="numHeads" class="input" value="128">
+
+                                <label>Architecture Family</label>
+                                <select id="architectureType" class="input">
+                                    <option value="transformer">Transformer</option>
+                                    <option value="dense_transformer">Dense Transformer</option>
+                                    <option value="moe_transformer">MoE Transformer</option>
+                                    <option value="hybrid_ssm_transformer">Hybrid SSM + Transformer</option>
+                                    <option value="state_space">State Space / Mamba-like</option>
+                                    <option value="encoder_decoder">Encoder-Decoder</option>
+                                    <option value="multimodal_transformer">Multimodal Transformer</option>
+                                    <option value="diffusion_transformer">Diffusion / DiT</option>
+                                    <option value="audio_transformer">Audio / Speech Transformer</option>
+                                </select>
+
+                                <div class="device-grid">
+                                    <div>
+                                        <label>KV Heads</label>
+                                        <input type="number" id="numKVHeads" class="input" value="8" min="1">
+                                    </div>
+                                    <div>
+                                        <label>Intermediate Size</label>
+                                        <input type="number" id="intermediateSize" class="input" value="32768" min="1">
+                                    </div>
+                                    <div>
+                                        <label>Active Params (B)</label>
+                                        <input type="number" id="activeParamsB" class="input" value="400" min="0" step="0.1">
+                                    </div>
+                                    <div>
+                                        <label>Experts</label>
+                                        <input type="number" id="numExperts" class="input" value="1" min="1">
+                                    </div>
+                                    <div>
+                                        <label>Active Experts</label>
+                                        <input type="number" id="activeExperts" class="input" value="1" min="1">
+                                    </div>
+                                    <div>
+                                        <label>Routing</label>
+                                        <select id="routingType" class="input">
+                                            <option value="auto">Auto</option>
+                                            <option value="dense">Dense</option>
+                                            <option value="moe">MoE</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label>Attention</label>
+                                        <select id="attentionMechanism" class="input">
+                                            <option value="auto">Auto</option>
+                                            <option value="standard">Standard</option>
+                                            <option value="grouped_query">Grouped-Query</option>
+                                            <option value="multi_query">Multi-Query</option>
+                                            <option value="mla">MLA</option>
+                                            <option value="hybrid_linear">Hybrid Linear</option>
+                                            <option value="sliding_window">Sliding Window</option>
+                                            <option value="hybrid_ssm">Hybrid SSM</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
                     </div>
-                    <input type="hidden" id="seqLength" value="20480">
-                    <small class="field-help token-total-help">Memory uses the combined context window; timing is split into prompt processing and decode.</small>
-
-                    <label for="batchSize">Batch size</label>
-                    <select id="batchSize" class="input">
-                        <option value="1">1 &mdash; interactive (single user)</option>
-                        <option value="4">4 &mdash; small batch</option>
-                        <option value="8">8 &mdash; medium batch</option>
-                        <option value="16">16 &mdash; large batch</option>
-                        <option value="32">32 &mdash; high throughput</option>
-                        <option value="64">64 &mdash; max throughput</option>
-                    </select>
-
-                    <label for="parallelismStrategy">Distribution across devices</label>
-                    <select id="parallelismStrategy" class="input">
-                        <option value="auto">AUTO &mdash; pick the best strategy</option>
-                        <option value="pipeline">Pipeline (layers split across devices)</option>
-                        <option value="tensor">Tensor (each layer split across devices)</option>
-                        <option value="data">Data (replica per device, separate requests)</option>
-                        <option value="expert">Expert (MoE experts split across devices)</option>
-                        <option value="sequence">Sequence parallelism</option>
-                        <option value="context">Context parallelism</option>
-                        <option value="hybrid_tp_pp">Hybrid TP+PP</option>
-                        <option value="hybrid_tp_dp">Hybrid TP+DP</option>
-                    </select>
-
-                    <label for="optimizationMode">Inference optimization</label>
-                    <select id="optimizationMode" class="input">
-                        <option value="none">Standard inference</option>
-                        <option value="speculative">Speculative decoding (2&ndash;3x speedup)</option>
-                        <option value="continuous_batching">Continuous batching</option>
-                        <option value="paged_attention">PagedAttention (vLLM)</option>
-                        <option value="flash_attention">Flash Attention</option>
-                        <option value="exo_phase_split">EXO phase split (prefill/decode)</option>
-                    </select>
-
-                    <label for="kvCacheCompression">KV cache compression</label>
-                    <select id="kvCacheCompression" class="input">
-                        <option value="none" selected>None</option>
-                        <option value="turboquant_3_5">TurboQuant 3.5-bit</option>
-                        <option value="turboquant_2_5">TurboQuant 2.5-bit</option>
-                    </select>
-                    <small class="field-help">Applies to KV cache only; most useful for long contexts or memory overflow.</small>
-
-                    <label for="runtimeFramework">Runtime framework</label>
-                    <select id="runtimeFramework" class="input">
-                        <option value="auto" selected>AUTO &mdash; match hardware</option>
-                        <option value="llama_cpp">llama.cpp</option>
-                        <option value="mlx">MLX / MLX-LM</option>
-                        <option value="ollama">Ollama</option>
-                        <option value="vllm">vLLM</option>
-                        <option value="sglang">SGLang</option>
-                        <option value="tensorrt_llm">TensorRT-LLM</option>
-                        <option value="exo">EXO / MLX Distributed</option>
-                    </select>
-
-                    <label for="scenarioPreset">Load a scenario preset</label>
-                    <select id="scenarioPreset" class="input" onchange="loadScenarioPreset(this.value)">
-                        <option value="">&mdash; none &mdash;</option>
-                        <optgroup label="RTX 50-Series Multi-GPU">
-                            <option value="5090_ddr5">RTX 5090 + DDR5 Overflow (36GB model)</option>
-                            <option value="5090_5060ti_x1">RTX 5090 x16 + RTX 5060 Ti x1 (slow PCIe)</option>
-                            <option value="5090_5060ti_x8">RTX 5090 x8 + RTX 5060 Ti x8 (balanced)</option>
-                            <option value="5090_oculink">RTX 5090 x16 + GPU via Oculink (x4)</option>
-                            <option value="dual_5090">2x RTX 5090 x16 (theoretical)</option>
-                        </optgroup>
-                        <optgroup label="RTX 40-Series">
-                            <option value="4090_ddr5">RTX 4090 + DDR5 Overflow</option>
-                            <option value="4090_4080">RTX 4090 + RTX 4080 (both x8)</option>
-                        </optgroup>
-                        <optgroup label="Apple Silicon">
-                            <option value="m4_max">Mac M4 Max (128GB)</option>
-                            <option value="m3_ultra">Mac M3 Ultra (512GB)</option>
-                            <option value="m3_ultra_x4_tb5">4x Mac M3 Ultra (Thunderbolt 5)</option>
-                            <option value="m3_ultra_x4_tb5_rdma">4x Mac M3 Ultra (TB5 RDMA)</option>
-                        </optgroup>
-                        <optgroup label="Data Center">
-                            <option value="h100_single">Single H100</option>
-                            <option value="h100_x8">8x H100 (NVLink)</option>
-                        </optgroup>
-                    </select>
-
-                    <details class="nested-details">
-                        <summary>Cost assumptions (power pricing)</summary>
-                        <div class="inline-select-group">
-                            <label for="hoursPerDay">Hours/day</label>
-                            <input type="number" id="hoursPerDay" class="input" value="8" min="1" max="24" step="1">
-
-                            <label for="costPerKwh">$/kWh</label>
-                            <input type="number" id="costPerKwh" class="input" value="0.12" min="0.01" step="0.01">
-                        </div>
-                    </details>
-
-                    <details class="nested-details">
-                        <summary>Model internals (override preset)</summary>
-                        <label>Total Parameters (B)</label>
-                        <input type="number" id="totalParamsB" class="input" value="400">
-
-                        <label>Hidden Size</label>
-                        <input type="number" id="hiddenSize" class="input" value="16384">
-
-                        <label>Number of Layers</label>
-                        <input type="number" id="numLayers" class="input" value="120">
-
-                        <label>Number of Heads</label>
-                        <input type="number" id="numHeads" class="input" value="128">
-
-                        <label>Architecture Family</label>
-                        <select id="architectureType" class="input">
-                            <option value="transformer">Transformer</option>
-                            <option value="dense_transformer">Dense Transformer</option>
-                            <option value="moe_transformer">MoE Transformer</option>
-                            <option value="hybrid_ssm_transformer">Hybrid SSM + Transformer</option>
-                            <option value="state_space">State Space / Mamba-like</option>
-                            <option value="encoder_decoder">Encoder-Decoder</option>
-                            <option value="multimodal_transformer">Multimodal Transformer</option>
-                            <option value="diffusion_transformer">Diffusion / DiT</option>
-                            <option value="audio_transformer">Audio / Speech Transformer</option>
-                        </select>
-
-                        <div class="device-grid">
-                            <div>
-                                <label>KV Heads</label>
-                                <input type="number" id="numKVHeads" class="input" value="8" min="1">
-                            </div>
-                            <div>
-                                <label>Intermediate Size</label>
-                                <input type="number" id="intermediateSize" class="input" value="32768" min="1">
-                            </div>
-                            <div>
-                                <label>Active Params (B)</label>
-                                <input type="number" id="activeParamsB" class="input" value="400" min="0" step="0.1">
-                            </div>
-                            <div>
-                                <label>Experts</label>
-                                <input type="number" id="numExperts" class="input" value="1" min="1">
-                            </div>
-                            <div>
-                                <label>Active Experts</label>
-                                <input type="number" id="activeExperts" class="input" value="1" min="1">
-                            </div>
-                            <div>
-                                <label>Routing</label>
-                                <select id="routingType" class="input">
-                                    <option value="auto">Auto</option>
-                                    <option value="dense">Dense</option>
-                                    <option value="moe">MoE</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Attention</label>
-                                <select id="attentionMechanism" class="input">
-                                    <option value="auto">Auto</option>
-                                    <option value="standard">Standard</option>
-                                    <option value="grouped_query">Grouped-Query</option>
-                                    <option value="multi_query">Multi-Query</option>
-                                    <option value="mla">MLA</option>
-                                    <option value="hybrid_linear">Hybrid Linear</option>
-                                    <option value="sliding_window">Sliding Window</option>
-                                    <option value="hybrid_ssm">Hybrid SSM</option>
-                                </select>
-                            </div>
-                        </div>
-                    </details>
                 </details>
 
                 <select id="dtype" class="input" style="display: none;" aria-hidden="true">
@@ -2199,8 +2265,10 @@ td {
         </div>
 
         <div class="card">
-            <h2 style="margin-top: 0;">Hardware</h2>
-            <p class="field-help">Select one device to edit. The full system appears in the topology below.</p>
+            <div class="hardware-card-head">
+                <h2 style="margin: 0;">Hardware</h2>
+                <div id="hardwareHeadMeta" class="hardware-head-meta"></div>
+            </div>
             <div id="devices"></div>
         </div>
     </div>
@@ -2214,10 +2282,11 @@ td {
             <canvas id="topologyCanvas"></canvas>
         </div>
         <div class="topology-legend">
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--primary);"></span>PCIe 5.0 (32-64 GB/s)</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b;"></span>PCIe 4.0 (8-32 GB/s)</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--destructive);"></span>Slow (&lt;8 GB/s)</span>
-            <span class="legend-item legend-note">Selected device is highlighted</span>
+            <span class="legend-group-label">Status</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#22c55e;"></span>OK (&le; 85%)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b;"></span>Strained (85-100%)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--destructive);"></span>Overloaded (&gt; 100% or overflow)</span>
+            <span class="legend-item legend-note">Bar segments: M=Memory · C=Compute · L=Local BW · N=Network BW · click a node to edit</span>
         </div>
     </details>
 
@@ -6892,8 +6961,15 @@ const DEVICE_TEMPLATES = {
             `;
         }
 
+        let _latestMetricsByDeviceId = new Map();
+        let _topologyNodes = [];
         function updateSystemAnalysis() {
             const metrics = calculateMetrics();
+            _latestMetricsByDeviceId = new Map();
+            metrics.forEach((m, idx) => {
+                const device = devices[idx];
+                if (device) _latestMetricsByDeviceId.set(device.id, m);
+            });
             const analysisContainer = document.getElementById('systemAnalysis');
             let systemAnalysisHtml = '';
             metrics.forEach((m, idx) => {
@@ -7257,6 +7333,9 @@ const DEVICE_TEMPLATES = {
             if (typeof updateModelSummary === 'function') {
                 updateModelSummary();
             }
+
+            // Refresh topology so node accent colours reflect the new metrics
+            if (typeof updateTopology === 'function') updateTopology();
         }
 	    
         function escapeHtml(value) {
@@ -7569,46 +7648,51 @@ const DEVICE_TEMPLATES = {
                         ${escapeHtml(DEVICE_TEMPLATES[template].name)}${selectedDevice.template === template && isEditedPreset ? ' - modified' : ''}
                     </option>
                 `).join('');
-            const deviceChips = devices.map((device, idx) => `
-                <button type="button"
-                        class="device-chip ${device.id === selectedDevice.id ? 'selected' : ''}"
-                        onclick="selectDevice(${device.id})"
-                        title="Edit ${escapeHtml(device.name)}">
-                    <span class="device-chip-title">${idx + 1}. ${escapeHtml(device.name)}</span>
-                    <span class="device-chip-meta">${device.memoryGB} GB / ${device.localBandwidthGBps} GB/s</span>
-                </button>
-            `).join('');
+            const selectedIdx = devices.findIndex(d => d.id === selectedDevice.id);
+            const prevId = devices.length > 1 ? devices[(selectedIdx - 1 + devices.length) % devices.length].id : null;
+            const nextId = devices.length > 1 ? devices[(selectedIdx + 1) % devices.length].id : null;
+            const headMeta = document.getElementById('hardwareHeadMeta');
+            if (headMeta) {
+                headMeta.innerHTML = devices.length > 1
+                    ? `
+                        <span>Editing device ${selectedIdx + 1} of ${devices.length}</span>
+                        <span class="hardware-head-nav">
+                            <button type="button" class="icon-button" onclick="selectDevice(${prevId})" title="Previous device" aria-label="Previous device">‹</button>
+                            <button type="button" class="icon-button" onclick="selectDevice(${nextId})" title="Next device" aria-label="Next device">›</button>
+                        </span>
+                    `
+                    : '';
+            }
 
             devicesContainer.innerHTML = `
-                <div class="device-selector">
-                    <div class="device-chip-list" aria-label="Configured devices">${deviceChips}</div>
-                    <button class="button add-device-inline" onclick="addDevice()">+ Add device</button>
-                </div>
                 <div class="device ${isCustom || isEditedPreset ? 'custom-device' : ''}">
                     ${badgeHtml}
                     <div class="hardware-preset-row">
-                        <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0;">Hardware</label>
-                        <select class="input" onchange="handleDeviceTemplateChange(${selectedDevice.id}, this)">
-                            <optgroup label="Custom">
-                                <option value="Custom" ${isCustom ? 'selected' : ''}>Custom device</option>
-                            </optgroup>
-                            <optgroup label="Presets">${templateOptions}</optgroup>
-                            ${deviceLibrary.length > 0 ? `<optgroup label="My saved devices">${libraryOptions}</optgroup>` : ''}
-                        </select>
+                        <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0;">Hardware preset</label>
+                        <div class="hardware-preset-line">
+                            <select class="input" onchange="handleDeviceTemplateChange(${selectedDevice.id}, this)">
+                                <optgroup label="Custom">
+                                    <option value="Custom" ${isCustom ? 'selected' : ''}>Custom device</option>
+                                </optgroup>
+                                <optgroup label="Presets">${templateOptions}</optgroup>
+                                ${deviceLibrary.length > 0 ? `<optgroup label="My saved devices">${libraryOptions}</optgroup>` : ''}
+                            </select>
+                            <button class="button add-device-inline" onclick="addDevice()" title="Add another device to the system">+ Add device</button>
+                        </div>
+                    </div>
+                    <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.6rem; display: block;">Label</label>
+                    <div class="device-name-row">
+                        <input class="input device-name-input" title="Rename this device (label only)" value="${escapeHtml(selectedDevice.name)}"
+                               onchange="updateDevice(${selectedDevice.id}, 'name', this.value)">
+                        <div class="device-actions">
+                            <button class="icon-button" onclick="cloneDevice(${selectedDevice.id})" title="Duplicate this device">Clone</button>
+                            <button class="icon-button" onclick="saveToLibrary(${selectedDevice.id})" title="Save this spec to your library for reuse">Save</button>
+                            <button class="icon-button destructive" onclick="removeDevice(${selectedDevice.id})" ${devices.length === 1 ? 'disabled' : ''} title="Remove this device">Remove</button>
+                        </div>
                     </div>
                     <details class="hardware-advanced"${advancedOpen}>
                         <summary>Advanced hardware settings</summary>
                         <div class="hardware-advanced-content">
-                            <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.25rem;">Label</label>
-                            <div class="device-name-row">
-                                <input class="input device-name-input" title="Rename this device (label only)" value="${escapeHtml(selectedDevice.name)}"
-                                       onchange="updateDevice(${selectedDevice.id}, 'name', this.value)">
-                                <div class="device-actions">
-                                    <button class="icon-button" onclick="cloneDevice(${selectedDevice.id})" title="Duplicate this device">Clone</button>
-                                    <button class="icon-button" onclick="saveToLibrary(${selectedDevice.id})" title="Save this spec to your library for reuse">Save</button>
-                                    <button class="icon-button destructive" onclick="removeDevice(${selectedDevice.id})" ${devices.length === 1 ? 'disabled' : ''} title="Remove this device">Remove</button>
-                                </div>
-                            </div>
                             <div class="device-grid">
                                 <div>
                                     <label title="Total GPU/unified memory on the device">Memory (GB)</label>
@@ -7875,11 +7959,21 @@ const DEVICE_TEMPLATES = {
 	        return updatedDevice;
 	    });
 
+	    // Name edits don't change the editor layout, so skip the full re-render.
+	    // Rebuilding the devices container mid-blur can destroy a button the user just clicked
+	    // (e.g. "+ Add device") before its click event dispatches, forcing a second click.
+	    if (field === 'name') {
+	        if (typeof updateTopology === 'function') updateTopology();
+	        updateSystemAnalysis();
+	        saveDevices();
+	        return;
+	    }
+
 	    updateDeviceDisplay();
 	    updateSystemAnalysis();
 	    saveDevices();
 	}
-	
+
 	function updateModelConfigFromPreset() {
 		const modelPresetId = document.getElementById('modelPreset').value;
 		if (modelPresetId && MODEL_PRESETS[modelPresetId]) {
@@ -8541,7 +8635,10 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	});
 
         // Topology Visualization
+        // Shared node layout (_topologyNodes) is declared near the top of this script so
+        // updateTopology can be invoked from updateSystemAnalysis during initial load.
         function updateTopology() {
+            if (typeof getComputedStyle !== 'function') return;
             const canvas = document.getElementById('topologyCanvas');
             const container = document.getElementById('topologyContainer');
             if (!canvas || !container) return;
@@ -8558,15 +8655,62 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             const themeText = styles.getPropertyValue('--text').trim() || '#f8fafc';
             const themeMuted = styles.getPropertyValue('--text-secondary').trim() || '#94a3b8';
             const themePrimary = styles.getPropertyValue('--primary').trim() || '#6366f1';
+            const themeDanger = styles.getPropertyValue('--destructive').trim() || '#ef4444';
+
+            const STATUS_COLORS = {
+                ok: '#22c55e',
+                warn: '#f59e0b',
+                bad: themeDanger,
+                none: themeBorder
+            };
+
+            // Returns { level: 'ok'|'warn'|'bad'|'none', label, color } for a device from its metrics.
+            function getDeviceStatus(device) {
+                const m = _latestMetricsByDeviceId && _latestMetricsByDeviceId.get
+                    ? _latestMetricsByDeviceId.get(device.id)
+                    : null;
+                if (!m) return { level: 'none', label: '', color: STATUS_COLORS.none, util: 0 };
+                const pairs = [
+                    ['Mem', m.memoryUtilization || 0],
+                    ['Compute', m.computeUtilization || 0],
+                    ['Local BW', m.localBandwidthUtilization || 0],
+                    ['Net BW', m.networkBandwidthUtilization || 0]
+                ];
+                let worst = pairs[0];
+                for (const p of pairs) if (p[1] > worst[1]) worst = p;
+                const util = worst[1];
+                let level = 'ok';
+                if (m.hasOverflow || util > 100) level = 'bad';
+                else if (util > 85) level = 'warn';
+                const label = level === 'bad' && m.hasOverflow && util < 100
+                    ? 'Overflow'
+                    : `${worst[0]} ${util.toFixed(0)}%`;
+                return { level, label, color: STATUS_COLORS[level], util };
+            }
+
+            // Returns status for the interconnect bus from the worst network-BW util across devices.
+            function getBusStatus() {
+                if (!_latestMetricsByDeviceId || !_latestMetricsByDeviceId.size) {
+                    return { level: 'none', color: STATUS_COLORS.none, util: 0 };
+                }
+                let worst = 0;
+                for (const m of _latestMetricsByDeviceId.values()) {
+                    if ((m.networkBandwidthUtilization || 0) > worst) worst = m.networkBandwidthUtilization;
+                }
+                let level = 'ok';
+                if (worst > 100) level = 'bad';
+                else if (worst > 85) level = 'warn';
+                return { level, color: STATUS_COLORS[level], util: worst };
+            }
 
             const rect = container.getBoundingClientRect();
             const width = rect.width;
             const dpr = window.devicePixelRatio || 1;
 
             // Lay out a horizontal row of nodes when possible, wrapping to a second row if narrow
-            const nodeWidth = 200;
-            const nodeHeight = 72;
-            const vGap = 24;
+            const nodeWidth = 210;
+            const nodeHeight = 82;
+            const vGap = 26;
             const hPad = 20;
             const availWidth = width - hPad * 2;
             const perRow = Math.max(1, Math.min(devices.length, Math.floor((availWidth + 16) / (nodeWidth + 16))));
@@ -8608,6 +8752,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
                 const y = 20 + busHeight + row * (nodeHeight + vGap);
                 return { id: device.id, x, y, w: nodeWidth, h: nodeHeight, device };
             });
+            _topologyNodes = nodes;
 
             function getConnectionColor(bw) {
                 if (bw >= 300) return '#22c55e';
@@ -8643,22 +8788,26 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
                         if (bw < busBw) busBw = bw;
                     }
                 }
-                const busColor = getConnectionColor(busBw);
+                const busStatus = getBusStatus();
+                // Prefer utilization-based color when metrics exist, otherwise fall back to speed tier
+                const busColor = busStatus.level === 'none' ? getConnectionColor(busBw) : busStatus.color;
                 const busY = 20 + busHeight / 2;
                 const busX0 = Math.min(...nodes.filter(n => n.y === nodes[0].y).map(n => n.x + n.w / 2));
                 const busX1 = Math.max(...nodes.filter(n => n.y === nodes[0].y).map(n => n.x + n.w / 2));
 
                 // Bus bar
                 ctx.strokeStyle = busColor;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = busStatus.level === 'bad' ? 3 : 2;
                 ctx.setLineDash([]);
                 ctx.beginPath();
                 ctx.moveTo(busX0, busY);
                 ctx.lineTo(busX1, busY);
                 ctx.stroke();
 
-                // Bus label
-                const busLabel = `Interconnect · ~${busBw} GB/s`;
+                // Bus label — includes network utilization when available
+                const busLabel = busStatus.level === 'none'
+                    ? `Interconnect · ~${busBw} GB/s`
+                    : `Interconnect · ~${busBw} GB/s · net ${busStatus.util.toFixed(0)}%`;
                 ctx.font = '11px system-ui';
                 ctx.textAlign = 'center';
                 const labelW = ctx.measureText(busLabel).width + 14;
@@ -8685,45 +8834,102 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             nodes.forEach(n => {
                 const d = n.device;
                 const isSelected = d.id === selectedDeviceId;
+                const status = getDeviceStatus(d);
+                const hasStatus = status.level !== 'none';
+                const borderColor = hasStatus ? status.color : themeBorder;
+
+                // Base card
                 ctx.fillStyle = themeCard;
-                ctx.strokeStyle = isSelected ? themePrimary : themeBorder;
-                ctx.lineWidth = isSelected ? 2 : 1;
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = hasStatus || isSelected ? 2 : 1;
                 ctx.beginPath();
                 ctx.roundRect(n.x, n.y, n.w, n.h, 8);
                 ctx.fill();
                 ctx.stroke();
                 if (isSelected) {
-                    ctx.fillStyle = 'rgba(99, 102, 241, 0.10)';
+                    ctx.fillStyle = 'rgba(99, 102, 241, 0.12)';
                     ctx.fill();
                     ctx.strokeStyle = themePrimary;
+                    ctx.lineWidth = 2;
                     ctx.stroke();
+                }
+
+                // Left accent stripe indicates bottleneck status at a glance
+                if (hasStatus) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.roundRect(n.x, n.y, n.w, n.h, 8);
+                    ctx.clip();
+                    ctx.fillStyle = status.color;
+                    ctx.fillRect(n.x, n.y, 4, n.h);
+                    ctx.restore();
                 }
 
                 // Name
                 ctx.fillStyle = themeText;
                 ctx.font = '600 13px system-ui';
                 ctx.textAlign = 'left';
-                const name = d.name.length > 26 ? d.name.slice(0, 24) + '…' : d.name;
-                ctx.fillText(name, n.x + 12, n.y + 24);
+                const name = d.name.length > 22 ? d.name.slice(0, 20) + '…' : d.name;
+                ctx.fillText(name, n.x + 12, n.y + 22);
 
                 // Memory / memory BW
                 ctx.fillStyle = themeMuted;
                 ctx.font = '11px system-ui';
-                ctx.fillText(`${d.memoryGB} GB · ${d.localBandwidthGBps} GB/s mem BW`, n.x + 12, n.y + 42);
+                ctx.fillText(`${d.memoryGB} GB · ${d.localBandwidthGBps} GB/s mem BW`, n.x + 12, n.y + 40);
 
                 // Interconnect line
                 const netBw = d.networkBandwidthGBps || 32;
                 const netInfo = d.interconnectType
                     ? `${d.interconnectType.replace(/_/g, ' ')} · ${netBw} GB/s`
                     : `Net ${netBw} GB/s`;
-                ctx.fillText(netInfo, n.x + 12, n.y + 60);
+                ctx.fillText(netInfo, n.x + 12, n.y + 56);
 
-                // Overflow dot
-                if (d.overflowTarget) {
-                    ctx.fillStyle = '#f59e0b';
+                // Status chip (top-right) — shows worst utilization or "OK"
+                if (hasStatus && status.label) {
+                    ctx.font = '600 10px system-ui';
+                    const chipText = status.label;
+                    const chipPadX = 6;
+                    const chipTextW = ctx.measureText(chipText).width;
+                    const chipW = chipTextW + chipPadX * 2;
+                    const chipH = 16;
+                    const chipX = n.x + n.w - chipW - 8;
+                    const chipY = n.y + 8;
+                    ctx.fillStyle = status.color;
                     ctx.beginPath();
-                    ctx.arc(n.x + n.w - 12, n.y + 12, 4, 0, Math.PI * 2);
+                    ctx.roundRect(chipX, chipY, chipW, chipH, 8);
                     ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(chipText, chipX + chipW / 2, chipY + 11);
+                }
+
+                // Bottom utilization bar — tiny histogram so bottleneck source is obvious
+                const m = _latestMetricsByDeviceId && _latestMetricsByDeviceId.get(d.id);
+                if (m) {
+                    const barTop = n.y + n.h - 10;
+                    const barLeft = n.x + 12;
+                    const barRight = n.x + n.w - 12;
+                    const fullW = barRight - barLeft;
+                    const segs = [
+                        ['M', m.memoryUtilization || 0],
+                        ['C', m.computeUtilization || 0],
+                        ['L', m.localBandwidthUtilization || 0],
+                        ['N', m.networkBandwidthUtilization || 0]
+                    ];
+                    const segW = (fullW - 6) / segs.length;
+                    segs.forEach((s, si) => {
+                        const util = s[1];
+                        const level = m.hasOverflow && s[0] === 'M' ? 'bad'
+                            : util > 100 ? 'bad'
+                            : util > 85 ? 'warn'
+                            : 'ok';
+                        ctx.fillStyle = themeBorder;
+                        const sx = barLeft + si * (segW + 2);
+                        ctx.fillRect(sx, barTop, segW, 4);
+                        ctx.fillStyle = STATUS_COLORS[level];
+                        const fillW = Math.min(1, util / 100) * segW;
+                        ctx.fillRect(sx, barTop, fillW, 4);
+                    });
                 }
             });
 
@@ -8813,6 +9019,28 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 
         // Handle window resize
         window.addEventListener('resize', () => setTimeout(updateTopology, 100));
+
+        // Make topology nodes clickable so they can be used to switch between devices.
+        (function wireTopologyInteraction() {
+            const canvas = document.getElementById('topologyCanvas');
+            if (!canvas) return;
+
+            function hitTest(event) {
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                return _topologyNodes.find(n => x >= n.x && x <= n.x + n.w && y >= n.y && y <= n.y + n.h) || null;
+            }
+
+            canvas.addEventListener('click', (event) => {
+                const hit = hitTest(event);
+                if (hit) selectDevice(hit.id);
+            });
+
+            canvas.addEventListener('mousemove', (event) => {
+                canvas.style.cursor = hitTest(event) ? 'pointer' : 'default';
+            });
+        })();
 
         window.__mlBottleneckTestHooks = {
             MODEL_PRESETS,
