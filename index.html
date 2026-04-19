@@ -1648,16 +1648,32 @@ td {
 
     .section-summary {
         align-items: flex-start;
+        flex-wrap: wrap;
         white-space: normal;
     }
 
     .summary-title {
+        overflow: visible;
+        flex: 1 1 auto;
         white-space: normal;
+        text-overflow: clip;
     }
 
     .summary-sub,
     .topology-card .topology-sub {
         flex: 1 1 100%;
+    }
+
+    .device-name-row {
+        grid-template-columns: 1fr;
+    }
+
+    .device-actions {
+        justify-content: stretch;
+    }
+
+    .device-actions .icon-button {
+        flex: 1 1 0;
     }
 
     .topology-legend {
