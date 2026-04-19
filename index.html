@@ -1364,6 +1364,13 @@ select {
     padding: 0.62rem 1rem;
 }
 
+.input,
+select,
+option {
+    background: var(--card);
+    color: var(--text);
+}
+
 .device {
     margin-bottom: 0.55rem;
     padding: 0.85rem;
@@ -1392,6 +1399,16 @@ select {
     min-width: 9.75rem;
     padding: 0.42rem 0.6rem;
     border-radius: 0.45rem;
+    background: rgba(148, 163, 184, 0.08);
+    color: var(--text);
+}
+
+.device-chip-title {
+    color: inherit;
+}
+
+.device-chip-meta {
+    color: var(--text-secondary);
 }
 
 .device-actions {
@@ -1617,6 +1634,14 @@ td {
 }
 
 @media (prefers-color-scheme: dark) {
+    .button:not(.button-destructive) {
+        color: #042f2e;
+    }
+
+    .button:not(.button-destructive):hover {
+        color: #042f2e;
+    }
+
     .card:hover {
         border-color: rgba(45, 212, 191, 0.5);
     }
