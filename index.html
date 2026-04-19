@@ -933,6 +933,79 @@ input, select {
     .result-hero .rate-number { font-size: 2.5rem; }
 }
 
+/* Topology card */
+.topology-card { padding: 0; }
+.topology-card > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    user-select: none;
+}
+.topology-card > summary::-webkit-details-marker { display: none; }
+.topology-card > summary::before {
+    content: "▸";
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    transition: transform 0.15s ease;
+    display: inline-block;
+}
+.topology-card[open] > summary::before {
+    transform: rotate(90deg);
+}
+.topology-card h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    display: inline;
+}
+.topology-card .topology-sub {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+#topologyContainer {
+    position: relative;
+    min-height: 200px;
+    background: var(--background);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+}
+#topologyCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.topology-legend {
+    display: flex;
+    gap: 1.25rem;
+    padding: 0.75rem 1.5rem 1rem;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+.topology-legend .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.topology-legend .legend-swatch {
+    display: inline-block;
+    width: 18px;
+    height: 3px;
+    border-radius: 2px;
+}
+.topology-legend .legend-note {
+    margin-left: auto;
+    font-style: italic;
+    opacity: 0.8;
+}
+@media (max-width: 640px) {
+    .topology-legend .legend-note { margin-left: 0; }
+}
+
 /* Progress indicator */
 .progress-bar {
     height: 4px;
@@ -1248,19 +1321,22 @@ input, select {
         </div>
     </div>
 
-    <!-- Topology Visualization -->
-    <div class="card" style="margin-bottom: 2rem;">
-        <h2 style="margin-top: 0;">System topology <small style="font-weight: 400; color: var(--text-secondary);">— connection diagram</small></h2>
-        <div id="topologyContainer" style="position: relative; min-height: 300px; background: var(--background); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden;">
-            <canvas id="topologyCanvas" style="width: 100%; height: 100%;"></canvas>
+    <details class="card topology-card" style="margin-bottom: 2rem;" open>
+        <summary>
+            <h2>Topology</h2>
+            <span class="topology-sub">How devices connect</span>
+        </summary>
+        <div id="topologyContainer">
+            <canvas id="topologyCanvas"></canvas>
         </div>
-        <div style="display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--text-secondary);">
-            <div><span style="display: inline-block; width: 20px; height: 3px; background: #4ade80; margin-right: 4px;"></span>NVLink (300+ GB/s)</div>
-            <div><span style="display: inline-block; width: 20px; height: 3px; background: #60a5fa; margin-right: 4px;"></span>PCIe 5.0 (32-64 GB/s)</div>
-            <div><span style="display: inline-block; width: 20px; height: 3px; background: #fbbf24; margin-right: 4px;"></span>PCIe 4.0 (8-32 GB/s)</div>
-            <div><span style="display: inline-block; width: 20px; height: 3px; background: #f87171; margin-right: 4px;"></span>PCIe 3.0/DDR5 (&lt;16 GB/s)</div>
+        <div class="topology-legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:#22c55e;"></span>Fast (NVLink / UltraFusion, 300+ GB/s)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--primary);"></span>PCIe 5.0 (32–64 GB/s)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b;"></span>PCIe 4.0 (8–32 GB/s)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--destructive);"></span>Slow (&lt;8 GB/s)</span>
+            <span class="legend-item legend-note">Solid = explicit · Dashed = inferred</span>
         </div>
-    </div>
+    </details>
 
     <details class="card" style="margin-bottom: 2rem;">
         <summary style="cursor: pointer; font-size: 1.25rem; font-weight: 600; list-style: none;">
@@ -6898,371 +6974,243 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
             const canvas = document.getElementById('topologyCanvas');
             const container = document.getElementById('topologyContainer');
             if (!canvas || !container) return;
+            if (typeof container.closest === 'function') {
+                const _det = container.closest('details');
+                if (_det && !_det.open) return;
+            }
 
-            // Set canvas size
+            // Read theme colors from CSS so canvas adapts to dark/light
+            const styles = getComputedStyle(document.documentElement);
+            const themeBg = styles.getPropertyValue('--background').trim() || '#0b0f1a';
+            const themeCard = styles.getPropertyValue('--card').trim() || '#1e293b';
+            const themeBorder = styles.getPropertyValue('--border').trim() || '#334155';
+            const themeText = styles.getPropertyValue('--text').trim() || '#f8fafc';
+            const themeMuted = styles.getPropertyValue('--text-secondary').trim() || '#94a3b8';
+            const themePrimary = styles.getPropertyValue('--primary').trim() || '#6366f1';
+
             const rect = container.getBoundingClientRect();
+            const width = rect.width;
             const dpr = window.devicePixelRatio || 1;
-            const height = Math.max(300, devices.length * 100 + 60);
-            canvas.width = rect.width * dpr;
+
+            // Lay out a horizontal row of nodes when possible, wrapping to a second row if narrow
+            const nodeWidth = 200;
+            const nodeHeight = 72;
+            const vGap = 24;
+            const hPad = 20;
+            const availWidth = width - hPad * 2;
+            const perRow = Math.max(1, Math.min(devices.length, Math.floor((availWidth + 16) / (nodeWidth + 16))));
+            const rows = Math.ceil(devices.length / perRow);
+            const extraOverflow = devices.some(d => d.overflowTarget === 'ddr5') ? 40 : 0;
+            const busHeight = devices.length > 1 ? 30 : 0;
+            const height = Math.max(160, 32 + busHeight + rows * (nodeHeight + vGap) + extraOverflow);
+
+            canvas.width = width * dpr;
             canvas.height = height * dpr;
             canvas.style.height = height + 'px';
-
             const ctx = canvas.getContext('2d');
-            ctx.scale(dpr, dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-            const width = rect.width;
-
-            // Clear with dark background
-            ctx.fillStyle = '#0f0f1a';
+            // Clear
+            ctx.fillStyle = themeBg;
             ctx.fillRect(0, 0, width, height);
 
             if (devices.length === 0) {
-                ctx.fillStyle = '#666';
-                ctx.font = '14px system-ui';
+                ctx.fillStyle = themeMuted;
+                ctx.font = '13px system-ui';
                 ctx.textAlign = 'center';
-                ctx.fillText('Add devices to see topology', width/2, height/2);
+                ctx.fillText('Add a device to see the topology', width / 2, height / 2);
                 return;
             }
 
-            // Calculate node positions - arrange in a grid
-            const nodeWidth = 200;
-            const nodeHeight = 90;
-            const cols = Math.min(3, devices.length);
-            const rows = Math.ceil(devices.length / cols);
-            const hGap = (width - cols * nodeWidth) / (cols + 1);
-            const vGap = 30;
-
+            // Compute node positions
+            const rowWidths = [];
+            for (let r = 0; r < rows; r++) {
+                const count = Math.min(perRow, devices.length - r * perRow);
+                rowWidths.push(count * nodeWidth + (count - 1) * 16);
+            }
             const nodes = devices.map((device, i) => {
-                const col = i % cols;
-                const row = Math.floor(i / cols);
-                return {
-                    id: device.id,
-                    x: hGap + col * (nodeWidth + hGap),
-                    y: 30 + row * (nodeHeight + vGap),
-                    width: nodeWidth,
-                    height: nodeHeight,
-                    device: device
-                };
+                const row = Math.floor(i / perRow);
+                const col = i % perRow;
+                const rowW = rowWidths[row];
+                const rowX0 = (width - rowW) / 2;
+                const x = rowX0 + col * (nodeWidth + 16);
+                const y = 20 + busHeight + row * (nodeHeight + vGap);
+                return { id: device.id, x, y, w: nodeWidth, h: nodeHeight, device };
             });
 
-            // Helper function to infer connection type between devices
-            function inferConnectionType(deviceA, deviceB) {
-                const nameA = (deviceA.template || deviceA.name || '').toLowerCase();
-                const nameB = (deviceB.template || deviceB.name || '').toLowerCase();
-
-                // Check for datacenter GPUs - likely NVLink
-                const isNvlinkDevice = (name) => /h100|a100|b200|h200|dgx/.test(name);
-                if (isNvlinkDevice(nameA) && isNvlinkDevice(nameB)) {
-                    return { type: 'nvlink4', bandwidth: 450 };
-                }
-
-                // Check for Apple Silicon - UltraFusion or network
-                const isApple = (name) => /mac|m[1-4]/.test(name);
-                if (isApple(nameA) && isApple(nameB)) {
-                    // If both are "Ultra" variants, could be UltraFusion
-                    if (nameA.includes('ultra') && nameB.includes('ultra')) {
-                        return { type: 'ultrafusion', bandwidth: 2500 };
-                    }
-                    return { type: '10gbe', bandwidth: 1.25 };
-                }
-
-                // Check for RTX 50xx (PCIe 5.0)
-                const isPcie5 = (name) => /rtx 50|5090|5080|5070|5060/.test(name);
-                if (isPcie5(nameA) || isPcie5(nameB)) {
-                    return { type: 'pcie5_x16', bandwidth: 64 };
-                }
-
-                // Default to PCIe 4.0 x16
-                return { type: 'pcie4_x16', bandwidth: 32 };
+            function getConnectionColor(bw) {
+                if (bw >= 300) return '#22c55e';
+                if (bw >= 32) return themePrimary;
+                if (bw >= 8) return '#f59e0b';
+                return styles.getPropertyValue('--destructive').trim() || '#ef4444';
             }
 
-            // Helper to get connection color
-            function getConnectionColor(bandwidth) {
-                if (bandwidth >= 300) return '#4ade80'; // Green for NVLink
-                if (bandwidth >= 32) return '#60a5fa';  // Blue for PCIe 5.0
-                if (bandwidth >= 8) return '#fbbf24';   // Yellow for PCIe 4.0
-                return '#f87171';                       // Red for slow
+            function inferBandwidth(a, b) {
+                const na = (a.template || a.name || '').toLowerCase();
+                const nb = (b.template || b.name || '').toLowerCase();
+                const nvl = /h100|a100|b200|h200|dgx/;
+                if (nvl.test(na) && nvl.test(nb)) return 450;
+                const apple = /mac|m[1-4]/;
+                if (apple.test(na) && apple.test(nb)) {
+                    if (na.includes('ultra') && nb.includes('ultra')) return 2500;
+                    return 1.25;
+                }
+                if (/rtx 50|5090|5080|5070|5060/.test(na + nb)) return 64;
+                return 32;
             }
 
-            // Track drawn connections to avoid duplicates
-            const drawnConnections = new Set();
-
-            // Draw explicit connections (overflowTarget set)
-            devices.forEach((device, i) => {
-                if (device.overflowTarget) {
-                    const sourceNode = nodes[i];
-                    let targetX, targetY, targetW = 80, targetH = 40;
-                    let bandwidth = 115;
-                    let label = 'DDR5';
-
-                    if (device.overflowTarget === 'ddr5') {
-                        // Draw to virtual DDR5 node to the right
-                        targetX = sourceNode.x + sourceNode.width + 20;
-                        targetY = sourceNode.y + (sourceNode.height - targetH) / 2;
-                        bandwidth = device.ddr5BandwidthGBps || 115;
-                        label = 'DDR5 RAM';
-
-                        // Draw DDR5 box
-                        ctx.fillStyle = 'rgba(248, 113, 113, 0.15)';
-                        ctx.strokeStyle = '#f87171';
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
-                        ctx.roundRect(targetX, targetY, targetW, targetH, 6);
-                        ctx.fill();
-                        ctx.stroke();
-
-                        ctx.fillStyle = '#f87171';
-                        ctx.font = 'bold 10px system-ui';
-                        ctx.textAlign = 'center';
-                        ctx.fillText(label, targetX + targetW/2, targetY + 16);
-                        ctx.font = '9px system-ui';
-                        ctx.fillText(`${bandwidth} GB/s`, targetX + targetW/2, targetY + 30);
-
-                        // Mark as drawn
-                        drawnConnections.add(`${i}-ddr5`);
-                    } else {
-                        const targetIdx = devices.findIndex(d => d.id === device.overflowTarget);
-                        const targetNode = nodes.find(n => n.id === device.overflowTarget);
-                        if (targetNode && targetIdx !== -1) {
-                            targetX = targetNode.x;
-                            targetY = targetNode.y;
-                            targetW = targetNode.width;
-                            targetH = targetNode.height;
-                            // Use networkBandwidthGBps for connection bandwidth
-                            bandwidth = device.networkBandwidthGBps || 32;
-                            // Show interconnect type if available
-                            if (device.interconnectType) {
-                                label = device.interconnectType.replace(/_/g, ' ').toUpperCase();
-                            } else {
-                                label = `${bandwidth} GB/s`;
-                            }
-
-                            // Mark as drawn (both directions)
-                            const connKey = [Math.min(i, targetIdx), Math.max(i, targetIdx)].join('-');
-                            drawnConnections.add(connKey);
-                        } else {
-                            return;
-                        }
-                    }
-
-                    // Connection color based on bandwidth
-                    const color = getConnectionColor(bandwidth);
-
-                    // Draw connection line (solid for explicit connections)
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = 3;
-                    ctx.setLineDash([]); // Solid line for explicit
-
-                    const sx = sourceNode.x + sourceNode.width;
-                    const sy = sourceNode.y + sourceNode.height / 2;
-                    const tx = targetX;
-                    const ty = targetY + targetH / 2;
-
-                    ctx.beginPath();
-                    ctx.moveTo(sx, sy);
-                    // Curved line
-                    const cpx = (sx + tx) / 2;
-                    ctx.quadraticCurveTo(cpx, sy, cpx, (sy + ty) / 2);
-                    ctx.quadraticCurveTo(cpx, ty, tx, ty);
-                    ctx.stroke();
-
-                    // Draw arrow head
-                    const angle = Math.atan2(ty - (sy + ty) / 2, tx - cpx);
-                    ctx.fillStyle = color;
-                    ctx.beginPath();
-                    ctx.moveTo(tx, ty);
-                    ctx.lineTo(tx - 10 * Math.cos(angle - Math.PI / 6), ty - 10 * Math.sin(angle - Math.PI / 6));
-                    ctx.lineTo(tx - 10 * Math.cos(angle + Math.PI / 6), ty - 10 * Math.sin(angle + Math.PI / 6));
-                    ctx.closePath();
-                    ctx.fill();
-
-                    // Bandwidth label
-                    const midX = (sx + tx) / 2;
-                    const midY = (sy + ty) / 2;
-                    ctx.fillStyle = '#0f0f1a';
-                    ctx.fillRect(midX - 35, midY - 10, 70, 18);
-                    ctx.fillStyle = color;
-                    ctx.font = 'bold 9px system-ui';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(`${bandwidth} GB/s`, midX, midY + 3);
-                }
-            });
-
-            // Auto-draw inferred connections for multi-device setups
+            // Draw the shared interconnect bus for multi-device setups
             if (devices.length > 1) {
+                // Determine the slowest inferred/actual bandwidth in the mesh
+                let busBw = Infinity;
                 for (let i = 0; i < devices.length; i++) {
                     for (let j = i + 1; j < devices.length; j++) {
-                        const connKey = `${i}-${j}`;
-                        if (drawnConnections.has(connKey)) continue;
-
-                        const sourceNode = nodes[i];
-                        const targetNode = nodes[j];
-                        const deviceA = devices[i];
-                        const deviceB = devices[j];
-
-                        // Infer connection type
-                        const inferred = inferConnectionType(deviceA, deviceB);
-                        // Use actual network bandwidth if set, otherwise inferred
-                        const bandwidth = Math.min(
-                            deviceA.networkBandwidthGBps || inferred.bandwidth,
-                            deviceB.networkBandwidthGBps || inferred.bandwidth
+                        const bw = Math.min(
+                            devices[i].networkBandwidthGBps || inferBandwidth(devices[i], devices[j]),
+                            devices[j].networkBandwidthGBps || inferBandwidth(devices[i], devices[j])
                         );
-                        const color = getConnectionColor(bandwidth);
-
-                        // Calculate connection points (center to center for mesh)
-                        const sx = sourceNode.x + sourceNode.width / 2;
-                        const sy = sourceNode.y + sourceNode.height / 2;
-                        const tx = targetNode.x + targetNode.width / 2;
-                        const ty = targetNode.y + targetNode.height / 2;
-
-                        // Draw dashed line for inferred connections
-                        ctx.strokeStyle = color;
-                        ctx.lineWidth = 2;
-                        ctx.globalAlpha = 0.5;
-                        ctx.setLineDash([6, 4]);
-
-                        ctx.beginPath();
-                        ctx.moveTo(sx, sy);
-                        ctx.lineTo(tx, ty);
-                        ctx.stroke();
-
-                        ctx.setLineDash([]);
-                        ctx.globalAlpha = 1.0;
-
-                        // Small bandwidth label at midpoint
-                        const midX = (sx + tx) / 2;
-                        const midY = (sy + ty) / 2;
-                        ctx.fillStyle = 'rgba(15, 15, 26, 0.8)';
-                        ctx.fillRect(midX - 25, midY - 8, 50, 14);
-                        ctx.fillStyle = color;
-                        ctx.globalAlpha = 0.7;
-                        ctx.font = '8px system-ui';
-                        ctx.textAlign = 'center';
-                        ctx.fillText(`${bandwidth} GB/s`, midX, midY + 3);
-                        ctx.globalAlpha = 1.0;
+                        if (bw < busBw) busBw = bw;
                     }
                 }
+                const busColor = getConnectionColor(busBw);
+                const busY = 20 + busHeight / 2;
+                const busX0 = Math.min(...nodes.filter(n => n.y === nodes[0].y).map(n => n.x + n.w / 2));
+                const busX1 = Math.max(...nodes.filter(n => n.y === nodes[0].y).map(n => n.x + n.w / 2));
+
+                // Bus bar
+                ctx.strokeStyle = busColor;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.moveTo(busX0, busY);
+                ctx.lineTo(busX1, busY);
+                ctx.stroke();
+
+                // Bus label
+                const busLabel = `Interconnect · ~${busBw} GB/s`;
+                ctx.font = '11px system-ui';
+                ctx.textAlign = 'center';
+                const labelW = ctx.measureText(busLabel).width + 14;
+                const labelX = (busX0 + busX1) / 2 - labelW / 2;
+                ctx.fillStyle = themeBg;
+                ctx.fillRect(labelX, busY - 9, labelW, 18);
+                ctx.fillStyle = busColor;
+                ctx.fillText(busLabel, (busX0 + busX1) / 2, busY + 4);
+
+                // Drop lines from each first-row node to bus
+                ctx.strokeStyle = themeBorder;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                nodes.filter(n => n.y === nodes[0].y).forEach(n => {
+                    ctx.beginPath();
+                    ctx.moveTo(n.x + n.w / 2, busY);
+                    ctx.lineTo(n.x + n.w / 2, n.y);
+                    ctx.stroke();
+                });
+                ctx.setLineDash([]);
             }
 
-            // Draw nodes
-            nodes.forEach((node) => {
-                const device = node.device;
-                const template = DEVICE_TEMPLATES[device.template] || {};
-                const currentQuant = document.getElementById('quantizationType')?.value || 'q4';
-                const tflops = getDeviceComputeTflops(device, currentQuant);
-
-                // Gradient background
-                const gradient = ctx.createLinearGradient(node.x, node.y, node.x, node.y + node.height);
-                gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
-                gradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
-                ctx.fillStyle = gradient;
-                ctx.strokeStyle = '#3b82f6';
-                ctx.lineWidth = 2;
+            // Draw nodes (flat)
+            nodes.forEach(n => {
+                const d = n.device;
+                ctx.fillStyle = themeCard;
+                ctx.strokeStyle = themeBorder;
+                ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.roundRect(node.x, node.y, node.width, node.height, 10);
+                ctx.roundRect(n.x, n.y, n.w, n.h, 8);
                 ctx.fill();
                 ctx.stroke();
 
-                // Device icon/type badge
-                const typeLabel = template.type || 'Custom';
-                ctx.fillStyle = 'rgba(255,255,255,0.1)';
-                ctx.beginPath();
-                ctx.roundRect(node.x + 8, node.y + 8, 50, 16, 4);
-                ctx.fill();
-                ctx.fillStyle = '#888';
-                ctx.font = '9px system-ui';
+                // Name
+                ctx.fillStyle = themeText;
+                ctx.font = '600 13px system-ui';
                 ctx.textAlign = 'left';
-                ctx.fillText(typeLabel.substring(0, 8), node.x + 12, node.y + 19);
+                const name = d.name.length > 26 ? d.name.slice(0, 24) + '…' : d.name;
+                ctx.fillText(name, n.x + 12, n.y + 24);
 
-                // Device name
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 13px system-ui';
-                ctx.textAlign = 'center';
-                const displayName = device.name.length > 24 ? device.name.substring(0, 22) + '...' : device.name;
-                ctx.fillText(displayName, node.x + node.width/2, node.y + 38);
-
-                // Specs line
-                ctx.fillStyle = '#aaa';
+                // Memory / memory BW
+                ctx.fillStyle = themeMuted;
                 ctx.font = '11px system-ui';
-                ctx.fillText(`${device.memoryGB} GB | ${device.localBandwidthGBps} GB/s`, node.x + node.width/2, node.y + 55);
+                ctx.fillText(`${d.memoryGB} GB · ${d.localBandwidthGBps} GB/s mem BW`, n.x + 12, n.y + 42);
 
-                // Network/Interconnect info - always show
-                ctx.font = '10px system-ui';
-                ctx.fillStyle = '#888';
-                const netBw = device.networkBandwidthGBps || 32;
-                const netInfo = device.interconnectType
-                    ? `${device.interconnectType.replace(/_/g, ' ')} (${netBw} GB/s)`
-                    : `Net: ${netBw} GB/s`;
-                ctx.fillText(netInfo, node.x + node.width/2, node.y + 72)
+                // Interconnect line
+                const netBw = d.networkBandwidthGBps || 32;
+                const netInfo = d.interconnectType
+                    ? `${d.interconnectType.replace(/_/g, ' ')} · ${netBw} GB/s`
+                    : `Net ${netBw} GB/s`;
+                ctx.fillText(netInfo, n.x + 12, n.y + 60);
 
-                // TFLOPs badge
-                if (tflops > 0) {
-                    ctx.fillStyle = 'rgba(74, 222, 128, 0.2)';
+                // Overflow dot
+                if (d.overflowTarget) {
+                    ctx.fillStyle = '#f59e0b';
                     ctx.beginPath();
-                    ctx.roundRect(node.x + node.width - 55, node.y + 8, 47, 16, 4);
-                    ctx.fill();
-                    ctx.fillStyle = '#4ade80';
-                    ctx.font = 'bold 9px system-ui';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(`${tflops}T`, node.x + node.width - 32, node.y + 19);
-                }
-
-                // Overflow indicator
-                if (device.overflowTarget) {
-                    ctx.fillStyle = 'rgba(251, 191, 36, 0.3)';
-                    ctx.beginPath();
-                    ctx.arc(node.x + node.width - 10, node.y + node.height - 10, 6, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = '#fbbf24';
-                    ctx.beginPath();
-                    ctx.arc(node.x + node.width - 10, node.y + node.height - 10, 4, 0, Math.PI * 2);
+                    ctx.arc(n.x + n.w - 12, n.y + 12, 4, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
 
-            // Show legend for connection types
-            if (devices.length > 1) {
-                const hasExplicitConnections = devices.some(d => d.overflowTarget);
-                ctx.font = '9px system-ui';
-                ctx.textAlign = 'left';
-                const legendY = height - 15;
-                const legendX = 10;
+            // Draw explicit overflow connections
+            devices.forEach((device, i) => {
+                if (!device.overflowTarget) return;
+                const source = nodes[i];
+                const bw = device.overflowTarget === 'ddr5'
+                    ? (device.ddr5BandwidthGBps || 115)
+                    : (device.networkBandwidthGBps || 32);
+                const color = getConnectionColor(bw);
 
-                // Connection legend
-                ctx.fillStyle = '#666';
-                ctx.fillText('Connections:', legendX, legendY);
+                if (device.overflowTarget === 'ddr5') {
+                    // DDR5 sits below source node
+                    const bx = source.x + source.w / 2 - 70;
+                    const by = source.y + source.h + 14;
+                    const bw2 = 140, bh2 = 28;
 
-                // Solid = explicit
-                ctx.strokeStyle = '#60a5fa';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([]);
-                ctx.beginPath();
-                ctx.moveTo(legendX + 70, legendY - 4);
-                ctx.lineTo(legendX + 90, legendY - 4);
-                ctx.stroke();
-                ctx.fillStyle = '#888';
-                ctx.fillText('Explicit', legendX + 95, legendY);
+                    // Line down to DDR5 box
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.moveTo(source.x + source.w / 2, source.y + source.h);
+                    ctx.lineTo(source.x + source.w / 2, by);
+                    ctx.stroke();
 
-                // Dashed = inferred
-                ctx.strokeStyle = '#60a5fa';
-                ctx.globalAlpha = 0.5;
-                ctx.setLineDash([4, 3]);
-                ctx.beginPath();
-                ctx.moveTo(legendX + 145, legendY - 4);
-                ctx.lineTo(legendX + 165, legendY - 4);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.globalAlpha = 1.0;
-                ctx.fillStyle = '#888';
-                ctx.fillText('Inferred', legendX + 170, legendY);
-
-                if (!hasExplicitConnections) {
-                    ctx.fillStyle = '#666';
-                    ctx.font = 'italic 9px system-ui';
-                    ctx.textAlign = 'right';
-                    ctx.fillText('Set "Overflow Target" for explicit data flow', width - 10, legendY);
+                    // DDR5 box
+                    ctx.fillStyle = themeCard;
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(bx, by, bw2, bh2, 6);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = themeText;
+                    ctx.font = '600 11px system-ui';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`DDR5 RAM · ${bw} GB/s`, bx + bw2 / 2, by + 18);
+                } else {
+                    const target = nodes.find(n => n.id === device.overflowTarget);
+                    if (!target) return;
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([]);
+                    const sx = source.x + source.w / 2;
+                    const sy = source.y + source.h / 2;
+                    const tx = target.x + target.w / 2;
+                    const ty = target.y + target.h / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy);
+                    ctx.lineTo(tx, ty);
+                    ctx.stroke();
+                    // Label
+                    ctx.font = '10px system-ui';
+                    ctx.textAlign = 'center';
+                    const label = `${bw} GB/s`;
+                    const lw = ctx.measureText(label).width + 10;
+                    const lx = (sx + tx) / 2, ly = (sy + ty) / 2;
+                    ctx.fillStyle = themeBg;
+                    ctx.fillRect(lx - lw / 2, ly - 8, lw, 16);
+                    ctx.fillStyle = color;
+                    ctx.fillText(label, lx, ly + 3);
                 }
-            }
+            });
         }
 
         // Override updateDeviceDisplay to also update topology
@@ -7271,6 +7219,19 @@ Llama 3.1 8B	FP16	AMD PARD	AMD EPYC + MI300X				380 t/s	https://www.amd.com/en/d
             _originalUpdateDeviceDisplay();
             setTimeout(updateTopology, 50);
         };
+
+        // Redraw topology when the panel is toggled open (canvas can't size while hidden)
+        try {
+            const _topoContainer = document.getElementById('topologyContainer');
+            const _topologyDetails = (_topoContainer && typeof _topoContainer.closest === 'function')
+                ? _topoContainer.closest('details')
+                : null;
+            if (_topologyDetails) {
+                _topologyDetails.addEventListener('toggle', () => {
+                    if (_topologyDetails.open) setTimeout(updateTopology, 50);
+                });
+            }
+        } catch (e) { /* no-op: non-browser environments */ }
 
         // Handle window resize
         window.addEventListener('resize', () => setTimeout(updateTopology, 100));
