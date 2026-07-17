@@ -10,9 +10,11 @@ ML System Bottleneck Analyzer is a browser-based tool for analyzing hardware bot
 
 ## Architecture
 
-This is a **single-file web application** (`index.html`) containing:
-- All HTML, CSS, and JavaScript in one file
-- No build system, bundler, or package manager
+This is a **static web application** centered on `index.html`:
+- Application HTML, CSS, and JavaScript remain in one file
+- `data/localmaxxing-snapshot.js` is a generated, versioned benchmark/model snapshot
+- `scripts/refresh-localmaxxing.mjs` rebuilds that snapshot from the public Localmaxxing API
+- No build system or bundler
 - Chart.js loaded from CDN for visualizations
 - Device configurations persisted to localStorage
 
@@ -47,8 +49,10 @@ The analyzer supports two distribution strategies:
 ## Development
 
 To develop locally:
-1. Open `index.html` directly in a browser
-2. No server required (though one can be used for live reload)
+1. Run a small static server from the repository root (the external data snapshot must be served beside `index.html`)
+2. Open the local server URL in a browser
+3. Run `npm run refresh:localmaxxing` when refreshing the benchmark evidence and model catalog
+4. Run `npm test` before committing
 
 To deploy:
 - Upload `index.html` to any static hosting (GitHub Pages via CNAME file)

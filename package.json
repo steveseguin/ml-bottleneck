@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "refresh:localmaxxing": "node scripts/refresh-localmaxxing.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:playwright": "playwright test tests/website-playwright.spec.mjs"
   },

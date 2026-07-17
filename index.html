@@ -43,6 +43,7 @@
 
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+	<script src="data/localmaxxing-snapshot.js"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -2631,22 +2632,299 @@ td {
     .execution-card { padding: 0.75rem; }
     .strategy-diagram { padding: 0.65rem; }
 }
+
+/* Product shell: decision-first workspaces */
+body {
+    max-width: 1600px;
+    padding: 1rem 1.25rem 3rem;
+}
+
+.product-nav {
+    position: sticky;
+    top: 0.65rem;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: minmax(13rem, auto) 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    min-height: 4rem;
+    padding: 0.55rem 0.7rem;
+    margin-bottom: 1.25rem;
+    background: color-mix(in srgb, var(--background) 86%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+    border-radius: 1rem;
+    box-shadow: 0 14px 40px rgb(2 8 23 / 0.16);
+    backdrop-filter: blur(18px);
+}
+
+.product-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.product-brand:hover { color: var(--text); text-decoration: none; }
+.product-brand > span:last-child { display: grid; line-height: 1.05; }
+.product-brand strong { font-size: 0.9rem; letter-spacing: -0.02em; }
+.product-brand small { margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.brand-mark {
+    display: grid;
+    width: 2.35rem;
+    height: 2.35rem;
+    place-items: center;
+    border-radius: 0.75rem;
+    background: linear-gradient(145deg, #2dd4bf, #2563eb);
+    color: #04111d;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.38);
+}
+
+.workspace-tabs { display: flex; justify-content: center; gap: 0.25rem; min-width: 0; }
+.workspace-tab {
+    border: 0;
+    padding: 0.62rem 0.85rem;
+    border-radius: 0.65rem;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 650;
+}
+.workspace-tab:hover { background: color-mix(in srgb, var(--card) 72%, transparent); color: var(--text); }
+.workspace-tab.is-active { background: var(--text); color: var(--background); }
+.workspace-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.data-freshness { color: var(--text-secondary); font-size: 0.66rem; white-space: nowrap; }
+.product-main { min-width: 0; }
+.workspace-view[hidden] { display: none !important; }
+.workspace-view { animation: workspace-in 180ms ease-out; }
+@keyframes workspace-in { from { opacity: 0.6; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .workspace-view { animation: none; } }
+
+.app-header {
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem);
+    min-height: 0;
+    padding: clamp(1.1rem, 2vw, 1.7rem);
+    margin-bottom: 1rem;
+    background:
+        radial-gradient(circle at 84% 14%, rgb(45 212 191 / 0.13), transparent 30%),
+        linear-gradient(135deg, color-mix(in srgb, var(--card) 80%, #071522), color-mix(in srgb, var(--background) 90%, #0c2930));
+}
+.app-header h1 { max-width: 17ch; margin-top: 0.2rem; font-size: clamp(1.7rem, 3vw, 2.65rem); }
+.app-subtitle { max-width: 66ch; }
+.header-result { align-self: stretch; display: grid; align-content: center; min-height: 7.5rem; }
+
+.planner-shell {
+    display: grid;
+    grid-template-columns: minmax(21rem, 25rem) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+.planner-controls { min-width: 0; }
+.planner-controls > .grid { display: block; margin: 0; }
+.planner-controls > .grid > .card { margin-bottom: 1rem; padding: 1rem; }
+.planner-controls h2 { font-size: 1.05rem; }
+.planner-controls label { font-size: 0.72rem; }
+.planner-controls .input, .planner-controls select { margin-bottom: 0.7rem; }
+.planner-stage { min-width: 0; }
+.planner-stage > .card { margin-bottom: 1rem; }
+.execution-card { min-height: 28rem; }
+.results-card { min-height: 14rem; }
+.calibration-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.65rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+}
+.calibration-strip span { display: block; color: var(--text-secondary); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.calibration-strip strong { display: block; margin-top: 0.2rem; font-size: 0.78rem; }
+.topology-card, .utilization-card, .reference-card { margin-top: 1rem; }
+
+.workspace-heading {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 12rem;
+    padding: clamp(1.25rem, 3vw, 2.5rem) 0.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.25rem;
+}
+.workspace-heading h1 { max-width: 22ch; margin: 0.35rem 0 0.65rem; font-size: clamp(2rem, 4vw, 3.7rem); line-height: 0.98; }
+.workspace-heading p { max-width: 67ch; margin: 0; color: var(--text-secondary); }
+.evidence-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.source-link { align-self: end; padding: 0.65rem 0; font-size: 0.76rem; }
+
+.catalog-toolbar {
+    display: grid;
+    grid-template-columns: minmax(15rem, 2fr) repeat(4, minmax(8rem, 0.72fr));
+    gap: 0.7rem;
+    align-items: end;
+    margin-bottom: 0.7rem;
+}
+.catalog-toolbar label { margin: 0; }
+.catalog-toolbar label > span { display: block; margin-bottom: 0.35rem; font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em; }
+.catalog-toolbar .input { margin: 0; }
+.catalog-summary { display: flex; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; color: var(--text-secondary); font-size: 0.72rem; }
+.model-catalog { border-top: 1px solid var(--border); }
+.catalog-row {
+    display: grid;
+    grid-template-columns: minmax(17rem, 2fr) minmax(9rem, 0.7fr) minmax(9rem, 0.85fr) minmax(8rem, 0.75fr) auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.95rem 0.25rem;
+    border-bottom: 1px solid var(--border);
+}
+.catalog-row:hover { background: color-mix(in srgb, var(--card) 46%, transparent); }
+.catalog-identity { min-width: 0; }
+.catalog-identity strong { display: block; overflow: hidden; color: var(--text); font-size: 0.88rem; text-overflow: ellipsis; white-space: nowrap; }
+.catalog-identity span, .catalog-cell span { display: block; color: var(--text-secondary); font-size: 0.66rem; }
+.catalog-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+.catalog-tag { padding: 0.16rem 0.36rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--text-secondary); font-size: 0.58rem; }
+.catalog-cell strong { font-size: 0.8rem; }
+.catalog-use {
+    border: 1px solid var(--border);
+    border-radius: 0.55rem;
+    padding: 0.5rem 0.65rem;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.68rem;
+}
+.catalog-use:hover { border-color: var(--primary); color: var(--primary); }
+.catalog-empty { padding: 4rem 1rem; color: var(--text-secondary); text-align: center; }
+
+.evidence-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 1rem; }
+.evidence-stat { padding: 1rem 0; border-top: 1px solid var(--border); }
+.evidence-stat strong { display: block; font-size: clamp(1.35rem, 3vw, 2.3rem); line-height: 1; }
+.evidence-stat span { display: block; margin-top: 0.4rem; color: var(--text-secondary); font-size: 0.68rem; }
+.evidence-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(16rem, 0.72fr); gap: 1.5rem; padding: 1.25rem 0 1.75rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.section-heading-inline { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+.section-heading-inline h2, .calibration-method h2, .gold-set-head h2, .api-contract h2 { margin: 0.2rem 0 0.6rem; }
+.plot-legend { color: var(--text-secondary); font-size: 0.65rem; white-space: nowrap; }
+.plot-legend i { display: inline-block; width: 0.5rem; height: 0.5rem; margin-right: 0.3rem; border-radius: 50%; background: #2dd4bf; }
+.calibration-plot-svg { display: block; width: 100%; height: auto; min-height: 20rem; }
+.calibration-plot-svg text { fill: var(--text-secondary); font-family: inherit; font-size: 11px; }
+.calibration-plot-svg .axis, .calibration-plot-svg .gridline { stroke: var(--border); stroke-width: 1; }
+.calibration-plot-svg .parity { stroke: var(--text-secondary); stroke-width: 1; stroke-dasharray: 5 5; }
+.calibration-plot-svg .point { fill: #2dd4bf; fill-opacity: 0.72; stroke: var(--background); stroke-width: 1.5; }
+.calibration-plot-svg .point.is-outlier { fill: #f59e0b; }
+.calibration-method { padding-left: 1.4rem; border-left: 1px solid var(--border); }
+.calibration-method p { color: var(--text-secondary); font-size: 0.75rem; }
+.calibration-method dl { margin: 1.2rem 0 0; }
+.calibration-method dl div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-top: 1px solid var(--border); font-size: 0.7rem; }
+.calibration-method dt { color: var(--text-secondary); }
+.calibration-method dd { margin: 0; font-weight: 700; }
+.gold-set-head { display: flex; justify-content: space-between; gap: 1rem; align-items: end; padding-top: 1.5rem; }
+.gold-set-head .input { width: min(23rem, 100%); margin: 0; }
+.gold-table-wrap { max-width: 100%; overflow-x: auto; }
+.gold-table { width: 100%; min-width: 48rem; border-collapse: collapse; }
+.gold-table th, .gold-table td { padding: 0.75rem 0.45rem; border-bottom: 1px solid var(--border); text-align: right; font-size: 0.7rem; }
+.gold-table th:first-child, .gold-table td:first-child { text-align: left; }
+.gold-run-title { display: block; font-weight: 650; }
+.gold-run-meta { display: block; color: var(--text-secondary); font-size: 0.61rem; }
+.error-good { color: #22c55e; }.error-near { color: #f59e0b; }.error-far { color: var(--destructive); }
+
+.interpreter-layout { display: grid; grid-template-columns: minmax(18rem, 0.75fr) minmax(0, 1.4fr); gap: 1rem; align-items: stretch; }
+.interpreter-form, .interpreter-output { padding: clamp(1rem, 2.5vw, 1.6rem); border: 1px solid var(--border); border-radius: 0.9rem; background: color-mix(in srgb, var(--card) 72%, transparent); }
+.interpreter-form label span { float: right; font-weight: 400; }
+.interpreter-form textarea { resize: vertical; }
+.interpreter-output { display: grid; align-content: center; min-height: 23rem; background: radial-gradient(circle at 75% 20%, rgb(45 212 191 / 0.13), transparent 34%), color-mix(in srgb, var(--card) 72%, transparent); }
+.interpreter-output h2 { max-width: 20ch; margin: 0.35rem 0 0.8rem; font-size: clamp(1.45rem, 3vw, 2.5rem); }
+.interpreter-output p { max-width: 62ch; color: var(--text-secondary); }
+.empty-kicker { color: #2dd4bf; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.interpret-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.65rem; margin: 1rem 0; }
+.interpret-metric { padding-top: 0.65rem; border-top: 1px solid var(--border); }
+.interpret-metric strong { display: block; font-size: 1.25rem; }
+.interpret-metric span { color: var(--text-secondary); font-size: 0.62rem; }
+.recommendation-list { margin: 0.8rem 0 0; padding-left: 1.1rem; color: var(--text-secondary); font-size: 0.72rem; }
+.api-contract { display: grid; grid-template-columns: minmax(0, 1fr) minmax(21rem, 0.8fr); gap: 2rem; align-items: center; margin-top: 1rem; padding: 1.3rem 0; border-top: 1px solid var(--border); }
+.api-contract p { max-width: 58ch; color: var(--text-secondary); }
+.api-contract pre { max-width: 100%; overflow: auto; margin: 0; padding: 1rem; border-radius: 0.8rem; background: #07101d; color: #b7f7e8; font-size: 0.69rem; }
+
+@media (max-width: 1120px) {
+    .planner-shell { grid-template-columns: minmax(19rem, 22rem) minmax(0, 1fr); }
+    .catalog-toolbar { grid-template-columns: repeat(2, 1fr); }
+    .catalog-search { grid-column: 1 / -1; }
+    .catalog-row { grid-template-columns: minmax(15rem, 2fr) repeat(3, minmax(7rem, 1fr)) auto; }
+}
+
+@media (max-width: 860px) {
+    body { padding: 0.65rem 0.75rem 2rem; }
+    .product-nav { position: static; grid-template-columns: 1fr auto; gap: 0.55rem; }
+    .workspace-tabs { grid-column: 1 / -1; order: 3; justify-content: flex-start; overflow-x: auto; padding-bottom: 0.1rem; }
+    .data-freshness { text-align: right; }
+    .planner-shell { grid-template-columns: 1fr; }
+    .planner-controls > .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+    .planner-controls > .grid > .card { margin: 0 0 1rem; }
+    .evidence-layout, .interpreter-layout, .api-contract { grid-template-columns: 1fr; }
+    .calibration-method { padding: 1rem 0 0; border-left: 0; border-top: 1px solid var(--border); }
+    .catalog-row { grid-template-columns: minmax(0, 1.8fr) repeat(2, minmax(7rem, 0.8fr)) auto; }
+    .catalog-row .catalog-cell:nth-of-type(3) { display: none; }
+}
+
+@media (max-width: 620px) {
+    .data-freshness { display: none; }
+    .product-nav { grid-template-columns: 1fr; }
+    .workspace-tabs { grid-column: auto; }
+    .workspace-tab { flex: 0 0 auto; padding-inline: 0.7rem; }
+    .app-header { grid-template-columns: 1fr; }
+    .planner-controls > .grid { display: block; }
+    .catalog-toolbar { grid-template-columns: 1fr 1fr; }
+    .catalog-summary { display: block; }
+    .catalog-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0.65rem; }
+    .catalog-row .catalog-cell { display: none; }
+    .catalog-use { align-self: start; }
+    .evidence-heading { grid-template-columns: 1fr; }
+    .source-link { justify-self: start; }
+    .evidence-stats { grid-template-columns: 1fr; gap: 0; }
+    .section-heading-inline, .gold-set-head { align-items: stretch; flex-direction: column; }
+    .plot-legend { white-space: normal; }
+    .gold-set-head .input { width: 100%; }
+    .interpret-metrics { grid-template-columns: 1fr; }
+    .calibration-strip { grid-template-columns: repeat(2, 1fr); }
+}
 </style>
 </head>
 <body>
+    <header class="product-nav">
+        <a class="product-brand" href="#plan" data-workspace-link="plan" aria-label="ML Bottleneck planner">
+            <span class="brand-mark" aria-hidden="true">MB</span>
+            <span><strong>ML Bottleneck</strong><small>Inference intelligence</small></span>
+        </a>
+        <nav class="workspace-tabs" aria-label="Primary">
+            <button class="workspace-tab is-active" type="button" data-workspace="plan">Plan</button>
+            <button class="workspace-tab" type="button" data-workspace="models">Models</button>
+            <button class="workspace-tab" type="button" data-workspace="evidence">Evidence</button>
+            <button class="workspace-tab" type="button" data-workspace="explain">Explain a result</button>
+        </nav>
+        <span class="data-freshness" id="dataFreshness">Loading evidence…</span>
+    </header>
+
+    <main class="product-main">
+    <section id="workspace-plan" class="workspace-view" data-workspace-view="plan">
     <header class="app-header">
         <div class="app-header-copy">
-            <span class="eyebrow">Local inference deployment lab</span>
-            <h1>See how a model maps onto your hardware.</h1>
-            <p class="app-subtitle">Explore what is sharded, what is duplicated, what runs in series, and where communication becomes the bottleneck.</p>
+            <span class="eyebrow">Deployment workbench</span>
+            <h1>Build the fastest configuration that fits.</h1>
+            <p class="app-subtitle">Map the architecture, expose the communication path, and compare the physics ceiling with benchmark-calibrated reality.</p>
         </div>
         <div class="header-result" id="headerResult" aria-live="polite">
-            <span class="header-result-label">Estimated decode</span>
+            <span class="header-result-label">Expected real / ideal</span>
             <strong id="headerResultRate">Calculating…</strong>
             <span id="headerResultMeta">Choose a model and hardware</span>
         </div>
     </header>
 
+    <div class="planner-shell">
+    <aside class="planner-controls" aria-label="Deployment inputs">
     <div class="grid">
         <div class="card">
             <h2 style="margin-top: 0;">Model</h2>
@@ -2988,6 +3266,9 @@ td {
             <div id="devices"></div>
         </div>
     </div>
+    </aside>
+
+    <div class="planner-stage">
 
     <section class="card execution-card" aria-labelledby="executionMapTitle">
         <div class="execution-head">
@@ -3010,6 +3291,8 @@ td {
         </div>
         <div id="alerts"></div>
         <div id="systemAnalysis"></div>
+    </div>
+    </div>
     </div>
 
     <details class="card topology-card">
@@ -3082,7 +3365,91 @@ td {
         </div>
     </details>
 
+    </section>
+
+    <section id="workspace-models" class="workspace-view" data-workspace-view="models" hidden>
+        <header class="workspace-heading">
+            <span class="eyebrow">Model intelligence</span>
+            <h1>Browse the ecosystem, not a dropdown.</h1>
+            <p>Base models, fine-tunes, quantizations, active parameters, and Localmaxxing performance signals in one catalog.</p>
+        </header>
+        <div class="catalog-toolbar" role="search">
+            <label class="catalog-search"><span>Search model or organization</span><input class="input" id="catalogSearch" type="search" placeholder="Gemma 4, Qwen, MiniMax, coding…"></label>
+            <label><span>Family</span><select class="input" id="catalogFamily"><option value="">All families</option></select></label>
+            <label><span>Architecture</span><select class="input" id="catalogArchitecture"><option value="">Dense + MoE</option><option value="moe">MoE only</option><option value="dense">Dense only</option></select></label>
+            <label><span>Size</span><select class="input" id="catalogSize"><option value="">Any size</option><option value="edge">Under 10B</option><option value="workstation">10–70B</option><option value="frontier">70B+</option></select></label>
+            <label><span>Sort</span><select class="input" id="catalogSort"><option value="benchmarks">Most measured</option><option value="speed">Fastest observed</option><option value="name">Name</option><option value="size">Parameter size</option></select></label>
+        </div>
+        <div class="catalog-summary" id="catalogSummary" aria-live="polite"></div>
+        <div class="model-catalog" id="modelCatalog"></div>
+    </section>
+
+    <section id="workspace-evidence" class="workspace-view" data-workspace-view="evidence" hidden>
+        <header class="workspace-heading evidence-heading">
+            <div>
+                <span class="eyebrow">Calibration lab</span>
+                <h1>Ideal physics, checked against real machines.</h1>
+                <p>The gold set keeps only Localmaxxing runs that map cleanly to a known model, device, quantization, runtime, and command.</p>
+            </div>
+            <a class="source-link" href="https://www.localmaxxing.com/en/models" target="_blank" rel="noopener">Open Localmaxxing ↗</a>
+        </header>
+        <div class="evidence-stats" id="evidenceStats"></div>
+        <div class="evidence-layout">
+            <section class="evidence-plot-section" aria-labelledby="calibrationPlotTitle">
+                <div class="section-heading-inline"><div><span class="eyebrow">Leave-one-out validation</span><h2 id="calibrationPlotTitle">Measured versus predicted</h2></div><span class="plot-legend"><i></i> Calibrated projection</span></div>
+                <div id="calibrationPlot"></div>
+            </section>
+            <aside class="calibration-method">
+                <span class="eyebrow">What the handicap means</span>
+                <h2>Ceiling × reality factor</h2>
+                <p>The ideal ceiling comes from memory traffic, compute, capacity, and communication. A peer-derived factor accounts for runtime efficiency, fused kernels, scheduler behavior, and hardware-specific friction.</p>
+                <dl id="calibrationMethodStats"></dl>
+            </aside>
+        </div>
+        <div class="gold-set-head"><div><span class="eyebrow">Gold set</span><h2>Reproducible reference runs</h2></div><input class="input" id="goldSearch" type="search" placeholder="Filter model, hardware, runtime…"></div>
+        <div class="gold-table-wrap"><table class="gold-table"><thead><tr><th>Model / setup</th><th>Observed</th><th>Ideal</th><th>Calibrated</th><th>Error</th></tr></thead><tbody id="goldTableBody"></tbody></table></div>
+    </section>
+
+    <section id="workspace-explain" class="workspace-view" data-workspace-view="explain" hidden>
+        <header class="workspace-heading">
+            <span class="eyebrow">Result interpreter</span>
+            <h1>Turn a measured run into headroom.</h1>
+            <p>Use the active plan, enter the speed you measured, and get the implied efficiency, ideal ceiling, and highest-value changes.</p>
+        </header>
+        <div class="interpreter-layout">
+            <form class="interpreter-form" id="resultInterpreterForm">
+                <label for="measuredTokS">Measured output speed <span>tok/s</span></label>
+                <input class="input" id="measuredTokS" type="number" min="0.01" step="0.01" placeholder="32.2" required>
+                <label for="resultJson">Optional Localmaxxing result JSON</label>
+                <textarea class="input" id="resultJson" rows="8" placeholder='Paste a result object; tokSOut, model, hardware, engine, and engineFlags will be recognized.'></textarea>
+                <button class="button" type="submit">Explain this run</button>
+            </form>
+            <section class="interpreter-output" id="interpreterOutput" aria-live="polite">
+                <span class="empty-kicker">Waiting for a measurement</span>
+                <h2>Your active plan supplies the model and hardware.</h2>
+                <p>We will compare the entered result with both its physical ceiling and the peer-calibrated expectation.</p>
+            </section>
+        </div>
+        <section class="api-contract">
+            <div><span class="eyebrow">Future API contract</span><h2>One payload in, an optimization envelope out.</h2><p>The same result shape can power a public endpoint once the static site gains a small backend.</p></div>
+            <pre id="apiContractPreview"><code>{
+  "observedTokS": 32.2,
+  "configuration": "active-plan",
+  "return": ["idealTokS", "expectedTokS", "headroom", "recommendations"]
+}</code></pre>
+        </section>
+    </section>
+    </main>
+
     <script>
+        const LOCALMAXXING_DATA = window.LOCALMAXXING_SNAPSHOT || {
+            generatedAt: null,
+            source: 'https://www.localmaxxing.com',
+            stats: { models: 0, benchmarkRunsScanned: 0, goldCases: 0 },
+            models: [],
+            goldCases: []
+        };
+
         const DTYPE_SIZES = {
             'float32': 4,
             'bfloat16': 2,
@@ -3590,6 +3957,60 @@ td {
 	    imageSize: 896,
 	    ropeScalingFactor: 8.0
 	  },
+	  'gemma4_26b_a4b': {
+	    label: 'Gemma 4 26B A4B',
+	    hfId: 'google/gemma-4-26B-A4B',
+	    totalParamsB: 25.2,
+	    hiddenSize: 2816,
+	    numLayers: 30,
+	    numHeads: 16,
+	    numKVHeads: 8,
+	    intermediateSize: 2112,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 8,
+	    activeParamsB: 3.8,
+	    routingType: 'moe',
+	    attentionMechanism: 'sliding_window',
+	    slidingWindow: 1024,
+	    contextLength: 262144,
+	    hasVision: true,
+	    visionHiddenSize: 1152,
+	    visionNumLayers: 27,
+	    visionNumHeads: 16
+	  },
+	  'gemma4_e4b': {
+	    label: 'Gemma 4 E4B (8B resident)',
+	    hfId: 'google/gemma-4-E4B',
+	    totalParamsB: 8,
+	    hiddenSize: 2560,
+	    numLayers: 42,
+	    numHeads: 8,
+	    numKVHeads: 2,
+	    intermediateSize: 10240,
+	    activeParamsB: 4.5,
+	    routingType: 'dense',
+	    attentionMechanism: 'sliding_window',
+	    slidingWindow: 512,
+	    contextLength: 131072,
+	    hasVision: true
+	  },
+	  'gemma4_e2b': {
+	    label: 'Gemma 4 E2B (5.1B resident)',
+	    hfId: 'google/gemma-4-E2B',
+	    totalParamsB: 5.1,
+	    hiddenSize: 1536,
+	    numLayers: 35,
+	    numHeads: 8,
+	    numKVHeads: 1,
+	    intermediateSize: 6144,
+	    activeParamsB: 2.3,
+	    routingType: 'dense',
+	    attentionMechanism: 'sliding_window',
+	    slidingWindow: 512,
+	    contextLength: 131072,
+	    hasVision: true
+	  },
 	  'yi_34b': {
 	    totalParamsB: 34,
 	    hiddenSize: 7168,
@@ -3661,6 +4082,26 @@ td {
 	    activeParamsB: 37,
 	    routingType: 'moe',
 	    attentionMechanism: 'mla'
+	  },
+	  'deepseek_v4_flash': {
+	    label: 'DeepSeek V4 Flash 284B A13B',
+	    hfId: 'deepseek-ai/DeepSeek-V4-Flash',
+	    totalParamsB: 284,
+	    hiddenSize: 4096,
+	    numLayers: 43,
+	    numHeads: 64,
+	    numKVHeads: 1,
+	    intermediateSize: 2048,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 6,
+	    activeParamsB: 13,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    slidingWindow: 128,
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 1048576
 	  },
 	  'deepseek_r1_distill_70b': {
 	    totalParamsB: 70,
@@ -3743,6 +4184,7 @@ td {
 	  },
 	  'qwen3_8b': {
 	    label: 'Qwen 3 8B',
+	    hfId: 'Qwen/Qwen3-8B',
 	    totalParamsB: 8,
 	    hiddenSize: 4096,
 	    numLayers: 36,
@@ -3754,6 +4196,7 @@ td {
 	  },
 	  'qwen3_30b_a3b': {
 	    label: 'Qwen 3 30B A3B',
+	    hfId: 'Qwen/Qwen3-30B-A3B-Instruct-2507',
 	    totalParamsB: 30,
 	    hiddenSize: 4096,
 	    numLayers: 48,
@@ -3782,6 +4225,7 @@ td {
 	  },
 	  'qwen3.5_27b': {
 	    label: 'Qwen 3.5 27B',
+	    hfId: 'Qwen/Qwen3.5-27B',
 	    totalParamsB: 27,
 	    hiddenSize: 5120,
 	    numLayers: 64,
@@ -3795,6 +4239,7 @@ td {
 	  },
 	  'qwen3.5_35b_a3b': {
 	    label: 'Qwen 3.5 35B A3B',
+	    hfId: 'Qwen/Qwen3.5-35B-A3B',
 	    totalParamsB: 35,
 	    hiddenSize: 2048,
 	    numLayers: 40,
@@ -3811,6 +4256,7 @@ td {
 	  },
 	  'qwen3.5_122b_a10b': {
 	    label: 'Qwen 3.5 122B A10B',
+	    hfId: 'Qwen/Qwen3.5-122B-A10B',
 	    totalParamsB: 122,
 	    hiddenSize: 3072,
 	    numLayers: 48,
@@ -3843,6 +4289,7 @@ td {
 	  },
 	  'qwen3.6_35b_a3b': {
 	    label: 'Qwen 3.6 35B A3B',
+	    hfId: 'Qwen/Qwen3.6-35B-A3B',
 	    totalParamsB: 35,
 	    hiddenSize: 2048,
 	    numLayers: 40,
@@ -3851,6 +4298,41 @@ td {
 	    isMoE: true,
 	    numExperts: 256,
 	    activeExperts: 8,
+	    activeParamsB: 3,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    contextLength: 262144
+	  },
+	  'qwen3.6_27b': {
+	    label: 'Qwen 3.6 27B',
+	    hfId: 'Qwen/Qwen3.6-27B',
+	    totalParamsB: 28,
+	    hiddenSize: 5120,
+	    numLayers: 64,
+	    numHeads: 24,
+	    numKVHeads: 4,
+	    intermediateSize: 17408,
+	    routingType: 'dense',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 262144,
+	    hasVision: true
+	  },
+	  'qwen3_coder_next': {
+	    label: 'Qwen 3 Coder Next 80B A3B',
+	    hfId: 'Qwen/Qwen3-Coder-Next',
+	    totalParamsB: 80,
+	    hiddenSize: 2048,
+	    numLayers: 48,
+	    numHeads: 16,
+	    numKVHeads: 2,
+	    intermediateSize: 5120,
+	    isMoE: true,
+	    numExperts: 512,
+	    activeExperts: 10,
 	    activeParamsB: 3,
 	    routingType: 'moe',
 	    attentionMechanism: 'hybrid_linear',
@@ -3920,6 +4402,27 @@ td {
 	    numKVHeads: 2,
 	    routingType: 'dense',
 	    attentionMechanism: 'grouped_query'
+	  },
+	  'glm4.7_flash': {
+	    label: 'GLM 4.7 Flash 30B A3B',
+	    hfId: 'zai-org/GLM-4.7-Flash',
+	    totalParamsB: 30,
+	    hiddenSize: 2048,
+	    numLayers: 47,
+	    numHeads: 20,
+	    numKVHeads: 20,
+	    intermediateSize: 10240,
+	    isMoE: true,
+	    numExperts: 64,
+	    activeExperts: 4,
+	    activeParamsB: 3,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla',
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 202752,
+	    kvLoraRank: 512,
+	    qLoraRank: 768
 	  },
 	  'glm5': {
 	    label: 'GLM 5 744B A40B',
@@ -4136,6 +4639,59 @@ td {
 	    numExperts: 16,
 	    activeExperts: 4,
 	    activeParamsB: 36
+	  },
+	  'gpt_oss_120b': {
+	    label: 'GPT-OSS 120B A5.1B',
+	    hfId: 'openai/gpt-oss-120b',
+	    totalParamsB: 117,
+	    hiddenSize: 2880,
+	    numLayers: 36,
+	    numHeads: 64,
+	    numKVHeads: 8,
+	    intermediateSize: 2880,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 4,
+	    activeParamsB: 5.1,
+	    routingType: 'moe',
+	    attentionMechanism: 'sliding_window',
+	    slidingWindow: 128,
+	    contextLength: 131072
+	  },
+	  'gpt_oss_20b': {
+	    label: 'GPT-OSS 20B A3.6B',
+	    hfId: 'openai/gpt-oss-20b',
+	    totalParamsB: 21,
+	    hiddenSize: 2880,
+	    numLayers: 24,
+	    numHeads: 64,
+	    numKVHeads: 8,
+	    intermediateSize: 2880,
+	    isMoE: true,
+	    numExperts: 32,
+	    activeExperts: 4,
+	    activeParamsB: 3.6,
+	    routingType: 'moe',
+	    attentionMechanism: 'sliding_window',
+	    slidingWindow: 128,
+	    contextLength: 131072
+	  },
+	  'lfm2.5_8b_a1b': {
+	    label: 'LFM 2.5 8B A1B',
+	    hfId: 'LiquidAI/LFM2.5-8B-A1B',
+	    totalParamsB: 8,
+	    hiddenSize: 2048,
+	    numLayers: 24,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    intermediateSize: 7168,
+	    isMoE: true,
+	    numExperts: 32,
+	    activeExperts: 4,
+	    activeParamsB: 1,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_ssm',
+	    contextLength: 128000
 	  },
 	  // Arctic (Snowflake MoE)
 	  'arctic_480b': {
@@ -8593,8 +9149,16 @@ const DEVICE_TEMPLATES = {
 
                 const parallelismPretty = parallelism.replace('_', ' ').toUpperCase();
                 const rateParts = systemRateLabel.split(' ');
-                const rateNum = rateParts[0];
-                const rateUnits = rateParts.slice(1).join(' ') || (isImageGen ? 'img/s' : 'tok/s');
+                const currentCalibration = !isImageGen ? calculateCurrentCalibration(modelConfig, metrics, systemRate, parallelism) : null;
+                const rateNum = currentCalibration ? formatCompactRate(currentCalibration.expectedTokS) : rateParts[0];
+                const rateUnits = currentCalibration ? 'tok/s' : (rateParts.slice(1).join(' ') || (isImageGen ? 'img/s' : 'tok/s'));
+                const calibrationSummaryHtml = currentCalibration ? `
+                    <div class="calibration-strip">
+                        <div><span>Ideal ceiling</span><strong>${formatCompactRate(currentCalibration.idealTokS)} tok/s</strong></div>
+                        <div><span>Generic engine model</span><strong>${formatCompactRate(currentCalibration.genericTokS)} tok/s</strong></div>
+                        <div><span>Reality factor</span><strong>${(currentCalibration.realityFactor * 100).toFixed(0)}%</strong></div>
+                        <div><span>Evidence</span><strong>${currentCalibration.peers} peers · ${currentCalibration.confidence}</strong></div>
+                    </div>` : '';
                 const phaseSummaryHtml = (!isImageGen && workflowSummary) ? `
                     <div class="phase-summary-grid">
                         <div class="phase-summary-card">
@@ -8618,8 +9182,8 @@ const DEVICE_TEMPLATES = {
                 systemAnalysisHtml += `
                     <div class="result-hero">
                         <div class="result-hero-main">
-                            <div class="rate-label">${isImageGen ? 'System throughput' : 'System decode rate'}</div>
-                            <div class="rate-value"><span class="rate-number">${rateNum}</span><span class="rate-units">${rateUnits}</span></div>
+                            <div class="rate-label">${isImageGen ? 'System throughput' : 'System decode rate · expected real'}</div>
+                            <div class="rate-value"><span class="rate-number">${rateNum}</span> <span class="rate-units">${rateUnits}</span></div>
                         </div>
                         <div class="result-hero-side">
                             <div class="bottleneck-line ${bottleneckLineClass}">${bottleneckText}</div>
@@ -8627,6 +9191,7 @@ const DEVICE_TEMPLATES = {
                         </div>
                     </div>
                     ${phaseSummaryHtml}
+                    ${calibrationSummaryHtml}
 
                     <details class="details-disclosure" style="margin-top: 1rem;">
                         <summary>Breakdown &amp; details</summary>
@@ -8654,7 +9219,10 @@ const DEVICE_TEMPLATES = {
             const headerRate = document.getElementById('headerResultRate');
             const headerMeta = document.getElementById('headerResultMeta');
             const renderedRate = analysisContainer.querySelector('.rate-value')?.textContent?.replace(/\s+/g, ' ').trim();
-            if (headerRate && renderedRate) headerRate.textContent = renderedRate;
+            if (headerRate && renderedRate) {
+                const idealRate = analysisContainer.querySelector('.calibration-strip > div:first-child strong')?.textContent?.trim();
+                headerRate.textContent = idealRate ? `${renderedRate} / ${idealRate}` : renderedRate;
+            }
             if (headerMeta) {
                 const config = buildEffectiveModelConfig();
                 headerMeta.textContent = `${config.label || getModelPresetLabel(config.modelPreset) || config.hfId || `${config.totalParamsB.toFixed(1)}B model`} · ${devices.length} device${devices.length === 1 ? '' : 's'} · ${formatStrategyLabel(config.parallelismStrategy)}`;
@@ -8676,6 +9244,369 @@ const DEVICE_TEMPLATES = {
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+
+        let goldValidationCache = null;
+
+        function median(values) {
+            const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+            if (!sorted.length) return null;
+            const midpoint = Math.floor(sorted.length / 2);
+            return sorted.length % 2 ? sorted[midpoint] : (sorted[midpoint - 1] + sorted[midpoint]) / 2;
+        }
+
+        function formatCompactRate(value) {
+            if (!Number.isFinite(value)) return '—';
+            if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
+            if (value >= 100) return value.toFixed(0);
+            return value.toFixed(1);
+        }
+
+        function calculateGoldCaseProjection(reference) {
+            const preset = MODEL_PRESETS[reference.presetKey];
+            const template = DEVICE_TEMPLATES[reference.hardwareTemplate];
+            if (!preset || !template || !DTYPE_SIZES[reference.quantKey]) return null;
+
+            const caseDevices = Array.from({ length: Math.max(1, reference.deviceCount || 1) }, (_, index) => ({
+                id: index + 1,
+                template: reference.hardwareTemplate,
+                name: `${template.name || reference.hardwareTemplate}${reference.deviceCount > 1 ? ` #${index + 1}` : ''}`,
+                ...JSON.parse(JSON.stringify(template)),
+                ...(Number.isFinite(reference.memoryGB) && reference.memoryGB > 0 ? { memoryGB: reference.memoryGB } : {})
+            }));
+            const strategy = caseDevices.length > 1 ? 'tensor' : 'pipeline';
+            const contextLength = Math.max(2, reference.contextLength || 2048);
+            const modelConfig = normalizeModelConfig({
+                ...preset,
+                modelPreset: reference.presetKey,
+                hfId: preset.hfId || reference.hfId,
+                quantizationType: reference.quantKey,
+                runtimeFramework: reference.runtimeKey,
+                parallelismStrategy: strategy,
+                optimizationMode: 'none',
+                kvCacheCompression: 'none',
+                batchSize: 1,
+                promptTokens: contextLength - 1,
+                outputTokens: 1,
+                seqLength: contextLength
+            });
+            const coordinationSeconds = calculateDecodeCoordinationTimeSeconds(modelConfig, caseDevices);
+            const genericRates = [];
+            const idealRates = [];
+
+            caseDevices.forEach((device, index) => {
+                const rate = calculateDecodeTokenRate(device, modelConfig, DTYPE_SIZES[reference.quantKey], caseDevices, index);
+                genericRates.push(1 / ((1 / Math.max(rate.tokensPerSecond, 0.0001)) + coordinationSeconds));
+                idealRates.push(1 / ((1 / Math.max(rate.theoreticalMax, 0.0001)) + coordinationSeconds));
+            });
+
+            const genericTokS = calculateSystemRateFromDeviceRates(genericRates, strategy, 1, caseDevices);
+            const idealTokS = calculateSystemRateFromDeviceRates(idealRates, strategy, 1, caseDevices);
+            if (!Number.isFinite(genericTokS) || !Number.isFinite(idealTokS) || genericTokS <= 0 || idealTokS <= 0) return null;
+
+            return {
+                ...reference,
+                strategy,
+                genericTokS,
+                idealTokS,
+                observedToGeneric: reference.observedTokS / genericTokS,
+                observedToIdeal: reference.observedTokS / idealTokS
+            };
+        }
+
+        function getGoldSimilarity(target, peer) {
+            let score = 0;
+            if (target.hfId && target.hfId === peer.hfId) score += 8;
+            if (target.presetKey && target.presetKey === peer.presetKey) score += 5;
+            if (target.hardwareTemplate && target.hardwareTemplate === peer.hardwareTemplate) score += 5;
+            if (target.runtimeKey && target.runtimeKey === peer.runtimeKey) score += 3;
+            if (target.quantKey && target.quantKey === peer.quantKey) score += 2;
+            if (target.quantization && target.quantization === peer.quantization) score += 2;
+            if (target.engineVersion && target.engineVersion === peer.engineVersion) score += 2;
+            if ((target.deviceCount || 1) === (peer.deviceCount || 1)) score += 1;
+            if (target.contextLength && peer.contextLength) {
+                const contextRatio = Math.max(target.contextLength, peer.contextLength) / Math.max(1, Math.min(target.contextLength, peer.contextLength));
+                if (contextRatio <= 1.1) score += 2;
+                else if (contextRatio <= 2) score += 1;
+            }
+            const targetPreset = MODEL_PRESETS[target.presetKey] || {};
+            const peerPreset = MODEL_PRESETS[peer.presetKey] || {};
+            if (Boolean(targetPreset.isMoE) === Boolean(peerPreset.isMoE)) score += 1;
+            return score;
+        }
+
+        function getPeerCorrection(target, rows, excludeId = null) {
+            const candidates = rows
+                .filter(row => row.id !== excludeId && Number.isFinite(row.observedToGeneric) && row.observedToGeneric >= 0.02 && row.observedToGeneric <= 30)
+                .map(row => ({ row, score: getGoldSimilarity(target, row) }))
+                .sort((a, b) => b.score - a.score || b.row.reproducibility - a.row.reproducibility);
+            const bestScore = candidates[0]?.score || 0;
+            const nearest = candidates.filter(candidate => candidate.score >= Math.max(6, bestScore - 1)).slice(0, 12);
+            const chosen = nearest.length ? nearest : candidates.slice(0, 12);
+            const correction = median(chosen.map(candidate => candidate.row.observedToGeneric));
+            return {
+                factor: Math.max(0.05, Math.min(8, correction || 1)),
+                peers: chosen.length,
+                bestScore
+            };
+        }
+
+        function getGoldValidationRows() {
+            if (goldValidationCache) return goldValidationCache;
+            const projected = (LOCALMAXXING_DATA.goldCases || []).map(calculateGoldCaseProjection).filter(Boolean);
+            goldValidationCache = projected.map(row => {
+                const calibration = getPeerCorrection(row, projected, row.id);
+                const calibratedTokS = Math.min(row.idealTokS * 0.99, row.genericTokS * calibration.factor);
+                const absoluteErrorPct = Math.abs(calibratedTokS - row.observedTokS) / row.observedTokS * 100;
+                return { ...row, calibratedTokS, absoluteErrorPct, calibrationPeers: calibration.peers, calibrationFactor: calibration.factor };
+            });
+            return goldValidationCache;
+        }
+
+        function calculateCurrentCalibration(modelConfig, metrics, genericSystemRate, strategy) {
+            if (!metrics?.length || !Number.isFinite(genericSystemRate)) return null;
+            const idealRates = metrics.map(metric => {
+                const coordination = Math.max(0, metric.decodeCoordinationTimeMs || 0) / 1000;
+                return 1 / ((1 / Math.max(metric.theoreticalMaxTokensPerSecond || 0.0001, 0.0001)) + coordination);
+            });
+            const idealTokS = calculateSystemRateFromDeviceRates(idealRates, strategy, modelConfig.batchSize || 1, devices);
+            const target = {
+                hfId: modelConfig.hfId,
+                presetKey: modelConfig.modelPreset,
+                hardwareTemplate: devices[0]?.template || '',
+                runtimeKey: getFrameworkProfile(modelConfig, devices).key,
+                quantKey: modelConfig.quantizationType,
+                deviceCount: devices.length,
+                contextLength: modelConfig.seqLength,
+                batchSize: modelConfig.batchSize || 1
+            };
+            const validationRows = getGoldValidationRows();
+            const hasComparablePeers = validationRows.some(row =>
+                row.presetKey === target.presetKey &&
+                row.hardwareTemplate === target.hardwareTemplate &&
+                row.runtimeKey === target.runtimeKey &&
+                row.quantKey === target.quantKey &&
+                (row.deviceCount || 1) === target.deviceCount &&
+                (row.batchSize || 1) === target.batchSize
+            );
+            const calibration = hasComparablePeers
+                ? getPeerCorrection(target, validationRows)
+                : { factor: 1, peers: 0, bestScore: 0 };
+            const expectedTokS = Math.min(idealTokS * 0.99, genericSystemRate * calibration.factor);
+            return {
+                idealTokS,
+                genericTokS: genericSystemRate,
+                expectedTokS,
+                realityFactor: idealTokS > 0 ? expectedTokS / idealTokS : 0,
+                correctionFactor: calibration.factor,
+                peers: calibration.peers,
+                confidence: calibration.bestScore >= 10 && calibration.peers >= 3 ? 'strong' : (calibration.peers >= 2 ? 'directional' : 'uncalibrated')
+            };
+        }
+
+        function switchWorkspace(name, { updateHash = true } = {}) {
+            const allowed = new Set(['plan', 'models', 'evidence', 'explain']);
+            const next = allowed.has(name) ? name : 'plan';
+            document.querySelectorAll('[data-workspace-view]').forEach(view => {
+                view.hidden = view.dataset.workspaceView !== next;
+            });
+            document.querySelectorAll('[data-workspace]').forEach(button => {
+                const selected = button.dataset.workspace === next;
+                button.classList.toggle('is-active', selected);
+                button.setAttribute('aria-current', selected ? 'page' : 'false');
+            });
+            if (updateHash && window.history?.replaceState) window.history.replaceState(null, '', `#${next}`);
+            if (next === 'evidence') renderEvidenceWorkspace();
+            if (next === 'models') renderModelCatalog();
+            if (next === 'plan') {
+                setTimeout(() => {
+                    if (typeof updateTopology === 'function') updateTopology();
+                    if (utilizationChart) utilizationChart.resize();
+                }, 20);
+            }
+            window.scrollTo?.({ top: 0, behavior: 'smooth' });
+        }
+
+        function getCatalogModels() {
+            if (LOCALMAXXING_DATA.models?.length) return LOCALMAXXING_DATA.models;
+            return Object.entries(MODEL_PRESETS).map(([presetKey, preset]) => ({
+                hfId: preset.hfId || presetKey,
+                name: preset.label || formatModelPresetName(presetKey),
+                organization: preset.hfId?.split('/')[0] || 'Built in',
+                family: (preset.label || presetKey).split(/[\s_.-]/)[0],
+                paramsB: preset.totalParamsB,
+                activeParamsB: preset.activeParamsB || null,
+                isMoE: Boolean(preset.isMoE),
+                modality: preset.hasVision ? 'image-text-to-text' : 'text-generation',
+                benchmarkCount: 0,
+                bestTokS: null,
+                medianTokS: null,
+                baseHfId: null,
+                format: '',
+                presetKey
+            }));
+        }
+
+        function renderModelCatalog() {
+            const container = document.getElementById('modelCatalog');
+            if (!container) return;
+            const models = getCatalogModels();
+            const normalizeCatalogText = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+            const query = normalizeCatalogText(document.getElementById('catalogSearch')?.value || '');
+            const family = document.getElementById('catalogFamily')?.value || '';
+            const architecture = document.getElementById('catalogArchitecture')?.value || '';
+            const size = document.getElementById('catalogSize')?.value || '';
+            const sort = document.getElementById('catalogSort')?.value || 'benchmarks';
+            const filtered = models.filter(model => {
+                const haystack = normalizeCatalogText(`${model.name} ${model.hfId} ${model.organization} ${model.family} ${model.modality}`);
+                const catalogIsMoE = Boolean(MODEL_PRESETS[model.presetKey]?.isMoE ?? model.isMoE);
+                if (query && !haystack.includes(query)) return false;
+                if (family && (model.family || model.organization) !== family) return false;
+                if (architecture === 'moe' && !catalogIsMoE) return false;
+                if (architecture === 'dense' && catalogIsMoE) return false;
+                if (size === 'edge' && (!model.paramsB || model.paramsB >= 10)) return false;
+                if (size === 'workstation' && (!model.paramsB || model.paramsB < 10 || model.paramsB >= 70)) return false;
+                if (size === 'frontier' && (!model.paramsB || model.paramsB < 70)) return false;
+                return true;
+            });
+            const sorters = {
+                benchmarks: (a, b) => b.benchmarkCount - a.benchmarkCount || (b.bestTokS || 0) - (a.bestTokS || 0),
+                speed: (a, b) => (b.bestTokS || 0) - (a.bestTokS || 0) || b.benchmarkCount - a.benchmarkCount,
+                name: (a, b) => a.name.localeCompare(b.name),
+                size: (a, b) => (a.paramsB || Infinity) - (b.paramsB || Infinity)
+            };
+            filtered.sort(sorters[sort] || sorters.benchmarks);
+            const visible = filtered.slice(0, 150);
+            const baseCount = filtered.filter(model => !model.baseHfId).length;
+            document.getElementById('catalogSummary').innerHTML = `<span><strong>${filtered.length.toLocaleString()}</strong> matching models · ${baseCount.toLocaleString()} base models · ${Math.max(0, filtered.length - baseCount).toLocaleString()} variants</span><span>Snapshot ${LOCALMAXXING_DATA.generatedAt ? new Date(LOCALMAXXING_DATA.generatedAt).toLocaleDateString() : 'unavailable'} · first ${visible.length} shown</span>`;
+            container.innerHTML = visible.length ? visible.map(model => {
+                const preset = MODEL_PRESETS[model.presetKey] || {};
+                const catalogIsMoE = Boolean(preset.isMoE ?? model.isMoE);
+                const params = model.paramsB ? `${model.paramsB}B total` : 'Size unknown';
+                const activeParams = preset.activeParamsB || model.activeParamsB;
+                const active = activeParams ? `${activeParams}B active` : (catalogIsMoE ? 'Active size unknown' : 'Dense');
+                return `
+                    <article class="catalog-row">
+                        <div class="catalog-identity">
+                            <strong>${escapeHtml(model.name)}</strong>
+                            <span>${escapeHtml(model.organization)} · ${escapeHtml(model.hfId)}</span>
+                            <div class="catalog-tags"><span class="catalog-tag">${catalogIsMoE ? 'MoE' : 'Dense'}</span><span class="catalog-tag">${escapeHtml(model.modality || 'text')}</span>${model.baseHfId ? '<span class="catalog-tag">Variant</span>' : '<span class="catalog-tag">Base</span>'}</div>
+                        </div>
+                        <div class="catalog-cell"><strong>${params}</strong><span>${active}</span></div>
+                        <div class="catalog-cell"><strong>${model.benchmarkCount.toLocaleString()} runs</strong><span>Localmaxxing evidence</span></div>
+                        <div class="catalog-cell"><strong>${model.bestTokS ? `${formatCompactRate(model.bestTokS)} tok/s` : 'No speed yet'}</strong><span>${model.medianTokS ? `${formatCompactRate(model.medianTokS)} median` : model.format || '—'}</span></div>
+                        <button class="catalog-use" type="button" data-use-model="${escapeHtml(model.hfId)}" data-preset-key="${escapeHtml(model.presetKey || '')}">Use in plan</button>
+                    </article>`;
+            }).join('') : '<div class="catalog-empty">No models match these filters.</div>';
+        }
+
+        async function useCatalogModel(hfId, presetKey) {
+            if (presetKey && MODEL_PRESETS[presetKey]) {
+                const select = document.getElementById('modelPreset');
+                select.value = presetKey;
+                document.getElementById('modelSearch').value = getModelPresetLabel(presetKey);
+                updateModelConfigFromPreset();
+                document.getElementById('hfId').value = hfId;
+                updateSystemAnalysis();
+                switchWorkspace('plan');
+                return;
+            }
+            document.getElementById('hfModelId').value = hfId;
+            switchWorkspace('plan');
+            await importHuggingFaceModel();
+        }
+
+        function buildCalibrationPlot(rows) {
+            if (!rows.length) return '<div class="catalog-empty">No compatible gold cases in this snapshot.</div>';
+            const width = 820;
+            const height = 390;
+            const margin = { left: 54, right: 18, top: 20, bottom: 46 };
+            const values = rows.flatMap(row => [row.observedTokS, row.calibratedTokS]).filter(value => value > 0);
+            const minValue = Math.max(0.5, Math.min(...values) * 0.78);
+            const maxValue = Math.max(...values) * 1.28;
+            const minLog = Math.log10(minValue);
+            const maxLog = Math.log10(maxValue);
+            const x = value => margin.left + ((Math.log10(Math.max(value, minValue)) - minLog) / (maxLog - minLog)) * (width - margin.left - margin.right);
+            const y = value => height - margin.bottom - ((Math.log10(Math.max(value, minValue)) - minLog) / (maxLog - minLog)) * (height - margin.top - margin.bottom);
+            const ticks = [1, 3, 10, 30, 100, 300, 1000, 3000].filter(value => value >= minValue && value <= maxValue);
+            const grid = ticks.map(value => `<line class="gridline" x1="${x(value)}" y1="${margin.top}" x2="${x(value)}" y2="${height - margin.bottom}"/><line class="gridline" x1="${margin.left}" y1="${y(value)}" x2="${width - margin.right}" y2="${y(value)}"/><text x="${x(value)}" y="${height - 20}" text-anchor="middle">${formatCompactRate(value)}</text><text x="${margin.left - 9}" y="${y(value) + 4}" text-anchor="end">${formatCompactRate(value)}</text>`).join('');
+            const points = rows.map(row => `<circle class="point ${row.absoluteErrorPct > 40 ? 'is-outlier' : ''}" cx="${x(row.observedTokS)}" cy="${y(row.calibratedTokS)}" r="4"><title>${escapeHtml(row.model)} · ${escapeHtml(row.hardware)}: ${row.observedTokS.toFixed(1)} observed, ${row.calibratedTokS.toFixed(1)} predicted</title></circle>`).join('');
+            return `<svg class="calibration-plot-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Scatter plot of Localmaxxing measured output tokens per second versus leave-one-out calibrated projections">
+                ${grid}
+                <line class="parity" x1="${x(minValue)}" y1="${y(minValue)}" x2="${x(maxValue)}" y2="${y(maxValue)}"/>
+                ${points}
+                <text x="${(margin.left + width - margin.right) / 2}" y="${height - 3}" text-anchor="middle">Localmaxxing measured tok/s · log scale</text>
+                <text transform="translate(14 ${(margin.top + height - margin.bottom) / 2}) rotate(-90)" text-anchor="middle">Calibrated prediction tok/s</text>
+            </svg>`;
+        }
+
+        function renderEvidenceWorkspace() {
+            const plot = document.getElementById('calibrationPlot');
+            if (!plot) return;
+            const rows = getGoldValidationRows();
+            const medianError = median(rows.map(row => row.absoluteErrorPct)) || 0;
+            const idealAbove = rows.length ? rows.filter(row => row.idealTokS >= row.observedTokS).length / rows.length * 100 : 0;
+            const medianReality = median(rows.map(row => Math.min(1, row.observedToIdeal))) || 0;
+            document.getElementById('evidenceStats').innerHTML = `
+                <div class="evidence-stat"><strong>${rows.length}</strong><span>reproducible Localmaxxing gold cases</span></div>
+                <div class="evidence-stat"><strong>${medianError.toFixed(1)}%</strong><span>median leave-one-out prediction error</span></div>
+                <div class="evidence-stat"><strong>${idealAbove.toFixed(0)}%</strong><span>of observed runs remain below the physics ceiling</span></div>`;
+            plot.innerHTML = buildCalibrationPlot(rows);
+            document.getElementById('calibrationMethodStats').innerHTML = `
+                <div><dt>Median real / ideal</dt><dd>${(medianReality * 100).toFixed(0)}%</dd></div>
+                <div><dt>Runs scanned</dt><dd>${(LOCALMAXXING_DATA.stats?.benchmarkRunsScanned || 0).toLocaleString()}</dd></div>
+                <div><dt>Catalog models</dt><dd>${(LOCALMAXXING_DATA.stats?.models || 0).toLocaleString()}</dd></div>
+                <div><dt>Validation</dt><dd>leave one out</dd></div>`;
+            renderGoldTable();
+        }
+
+        function renderGoldTable() {
+            const tbody = document.getElementById('goldTableBody');
+            if (!tbody) return;
+            const query = (document.getElementById('goldSearch')?.value || '').trim().toLowerCase();
+            const rows = getGoldValidationRows().filter(row => `${row.model} ${row.hardware} ${row.engine} ${row.quantization}`.toLowerCase().includes(query)).slice(0, 80);
+            tbody.innerHTML = rows.map(row => {
+                const errorClass = row.absoluteErrorPct <= 20 ? 'error-good' : (row.absoluteErrorPct <= 40 ? 'error-near' : 'error-far');
+                return `<tr><td><a class="gold-run-title" href="${escapeHtml(row.source)}" target="_blank" rel="noopener">${escapeHtml(row.model)}</a><span class="gold-run-meta">${escapeHtml(row.hardware)} · ${escapeHtml(row.engine)} ${escapeHtml(row.quantization)} · ${row.contextLength.toLocaleString()} ctx</span></td><td>${row.observedTokS.toFixed(1)}</td><td>${row.idealTokS.toFixed(1)}</td><td>${row.calibratedTokS.toFixed(1)}</td><td class="${errorClass}">${row.absoluteErrorPct.toFixed(1)}%</td></tr>`;
+            }).join('') || '<tr><td colspan="5">No gold cases match this filter.</td></tr>';
+        }
+
+        function getActivePlanOutcome() {
+            let modelConfig = buildEffectiveModelConfig();
+            const strategy = modelConfig.parallelismStrategy === 'auto' ? findOptimalStrategy().strategy : modelConfig.parallelismStrategy;
+            const metrics = calculateMetrics();
+            const genericSystemRate = calculateSystemRateFromDeviceRates(metrics.map(metric => metric.decodeTokensPerSecond), strategy, modelConfig.batchSize || 1, devices);
+            modelConfig = { ...modelConfig, parallelismStrategy: strategy };
+            return { modelConfig, strategy, metrics, genericSystemRate, calibration: calculateCurrentCalibration(modelConfig, metrics, genericSystemRate, strategy) };
+        }
+
+        function renderResultInterpretation(measuredTokS, parsed = null) {
+            const output = document.getElementById('interpreterOutput');
+            const plan = getActivePlanOutcome();
+            const calibration = plan.calibration;
+            if (!output || !calibration || !Number.isFinite(measuredTokS) || measuredTokS <= 0) return;
+            const efficiency = measuredTokS / calibration.idealTokS;
+            const headroom = Math.max(0, calibration.idealTokS - measuredTokS);
+            const recommendations = [];
+            if (plan.metrics.some(metric => metric.hasOverflow)) recommendations.push('Eliminate weight or KV overflow first; a smaller quant or another memory device has the largest upside.');
+            if (efficiency < calibration.realityFactor * 0.72) recommendations.push('This run is below comparable peers. Verify warmup, greedy sampling, GPU offload, flash attention, and the exact kernel/backend build.');
+            if (devices.length > 1 && plan.metrics.some(metric => (metric.decodeCoordinationTimeMs || 0) > 1)) recommendations.push('Inter-device coordination is material. Prefer a faster fabric, reduce tensor-parallel degree, or place more work on each device.');
+            if ((plan.modelConfig.optimizationMode || 'none') === 'none' && (plan.modelConfig.batchSize || 1) === 1) recommendations.push('Test MTP, EAGLE, or a draft model; interactive decode is the strongest speculative-decoding use case.');
+            if (!recommendations.length) recommendations.push('The run is already near the expected envelope; gains now depend on fused kernels, custom quantization, or a faster memory subsystem.');
+            const modelLabel = getSelectedModelLabel(plan.modelConfig);
+            output.innerHTML = `<span class="empty-kicker">${escapeHtml(modelLabel)} · ${escapeHtml(devices[0]?.name || 'current hardware')}</span><h2>${(efficiency * 100).toFixed(0)}% of the physical ceiling.</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>peer-calibrated expectation</span></div><div class="interpret-metric"><strong>${calibration.idealTokS.toFixed(1)}</strong><span>ideal tok/s ceiling</span></div></div><p>${headroom.toFixed(1)} tok/s of theoretical headroom remains. The peer envelope is based on ${calibration.peers} neighboring gold cases and is ${calibration.confidence}.</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+            document.getElementById('apiContractPreview').innerHTML = `<code>${escapeHtml(JSON.stringify({
+                observedTokS: measuredTokS,
+                model: plan.modelConfig.hfId || modelLabel,
+                hardware: devices.map(device => device.name),
+                idealTokS: Number(calibration.idealTokS.toFixed(2)),
+                expectedTokS: Number(calibration.expectedTokS.toFixed(2)),
+                efficiency: Number(efficiency.toFixed(3)),
+                headroomTokS: Number(headroom.toFixed(2)),
+                confidence: calibration.confidence,
+                sourceResultId: parsed?.id || null,
+                recommendations
+            }, null, 2))}</code>`;
         }
 
         function parseHuggingFaceModelMetadata(apiInfo = {}, rawConfig = {}, hfId = '') {
@@ -10029,17 +10960,18 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 
 	    // Organize models into categories for better UX
 	    const modelCategories = {
+	        'Current Localmaxxing leaders': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'gemma4_26b_a4b', 'gemma4_e4b', 'gemma4_e2b', 'deepseek_v4_flash', 'qwen3_coder_next', 'glm4.7_flash', 'gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'minimax_m2.7', 'kimi_k2.5'],
 	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision', 'llama4_scout', 'llama4_maverick'],
-	        'DeepSeek': ['deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
-	        'Qwen': ['qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b', 'qwen3.6_35b_a3b'],
-	        'Gemma': ['gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
+	        'DeepSeek': ['deepseek_v4_flash', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
+	        'Qwen': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
+	        'Gemma': ['gemma4_26b_a4b', 'gemma4_e4b', 'gemma4_e2b', 'gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
 	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
 	        'Kimi': ['kimi_k2', 'kimi_k2.5'],
 	        'MiniMax': ['minimax_m2', 'minimax_m2.5', 'minimax_m2.7'],
-	        'GLM': ['glm5', 'glm5_1', 'glm4_9b'],
-	        'Other MoE': ['dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],
+	        'GLM': ['glm5', 'glm5_1', 'glm4.7_flash', 'glm4_9b'],
+	        'Other MoE': ['gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],
 	        'Falcon': ['falcon_40b', 'falcon2_180b', 'falcon2_11b'],
 	        'Code Models': ['starcoder2_15b', 'starcoder2_7b', 'starcoder2_3b'],
 	        'Vision Models': ['llava_1.5_7b', 'llava_1.5_13b'],
@@ -10108,6 +11040,55 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             modelSearch.value = match.label;
             updateModelConfigFromPreset();
         });
+
+        const freshness = document.getElementById('dataFreshness');
+        if (freshness) {
+            const generated = LOCALMAXXING_DATA.generatedAt ? new Date(LOCALMAXXING_DATA.generatedAt).toLocaleDateString() : 'offline';
+            freshness.textContent = `${(LOCALMAXXING_DATA.stats?.models || 0).toLocaleString()} models · ${(LOCALMAXXING_DATA.stats?.goldCases || 0).toLocaleString()} gold runs · ${generated}`;
+        }
+
+        const familySelect = document.getElementById('catalogFamily');
+        if (familySelect) {
+            const families = [...new Set(getCatalogModels().map(model => model.family || model.organization).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+            familySelect.innerHTML = '<option value="">All families</option>' + families.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+        }
+        document.querySelectorAll('[data-workspace]').forEach(button => button.addEventListener('click', () => switchWorkspace(button.dataset.workspace)));
+        document.querySelectorAll('[data-workspace-link]').forEach(link => link.addEventListener('click', event => {
+            event.preventDefault();
+            switchWorkspace(link.dataset.workspaceLink);
+        }));
+        ['catalogSearch', 'catalogFamily', 'catalogArchitecture', 'catalogSize', 'catalogSort'].forEach(id => {
+            const control = document.getElementById(id);
+            control?.addEventListener(id === 'catalogSearch' ? 'input' : 'change', renderModelCatalog);
+        });
+        document.getElementById('modelCatalog')?.addEventListener('click', event => {
+            const button = event.target.closest?.('[data-use-model]');
+            if (button) useCatalogModel(button.dataset.useModel, button.dataset.presetKey);
+        });
+        document.getElementById('goldSearch')?.addEventListener('input', renderGoldTable);
+        document.getElementById('resultJson')?.addEventListener('input', event => {
+            const value = event.target.value.trim();
+            if (!value) return;
+            try {
+                const parsed = JSON.parse(value);
+                const tokSOut = Number(parsed.tokSOut ?? parsed.observedTokS);
+                if (Number.isFinite(tokSOut)) document.getElementById('measuredTokS').value = tokSOut;
+            } catch { /* keep manual input available while JSON is incomplete */ }
+        });
+        document.getElementById('resultInterpreterForm')?.addEventListener('submit', event => {
+            event.preventDefault();
+            let parsed = null;
+            const raw = document.getElementById('resultJson').value.trim();
+            if (raw) {
+                try { parsed = JSON.parse(raw); } catch { parsed = null; }
+            }
+            const measured = Number(document.getElementById('measuredTokS').value || parsed?.tokSOut || parsed?.observedTokS);
+            renderResultInterpretation(measured, parsed);
+        });
+
+	    renderModelCatalog();
+	    const initialWorkspace = typeof window.location?.hash === 'string' ? window.location.hash.replace('#', '') : 'plan';
+	    switchWorkspace(initialWorkspace || 'plan', { updateHash: false });
 	    
 	    renderTable(data);
 	    updateSystemAnalysis();
@@ -10559,6 +11540,10 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             getExecutionEvidence,
             getLocalmaxxingUrl,
             parseHuggingFaceModelMetadata,
+            calculateGoldCaseProjection,
+            getGoldValidationRows,
+            calculateCurrentCalibration,
+            getCatalogModels,
             getOptimizationAdjustments,
             buildExecutionPlan,
             buildExecutionMapHtml,

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { loadApp } from './load-index-app.mjs';
 
 function cloneTemplate(hooks, templateName, id = 1, name = templateName) {
@@ -130,6 +131,78 @@ test('new Qwen, Kimi, GLM, and MiniMax presets carry routing and attention metad
   assert.equal(modelConfig.routingType, 'moe');
   assert.equal(modelConfig.activeParamsB, 10);
   assert.equal(modelConfig.contextLength, 204800);
+});
+
+test('current Localmaxxing leaders have first-class architecture presets', () => {
+  const app = loadApp();
+
+  app.applyPreset('gemma4_26b_a4b');
+  let model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.hfId, 'google/gemma-4-26B-A4B');
+  assert.equal(model.totalParamsB, 25.2);
+  assert.equal(model.activeParamsB, 3.8);
+  assert.equal(model.numExperts, 128);
+  assert.equal(model.activeExperts, 8);
+
+  app.applyPreset('deepseek_v4_flash');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.totalParamsB, 284);
+  assert.equal(model.activeParamsB, 13);
+  assert.equal(model.contextLength, 1048576);
+
+  app.applyPreset('qwen3_coder_next');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.totalParamsB, 80);
+  assert.equal(model.activeParamsB, 3);
+  assert.equal(model.numExperts, 512);
+
+  app.applyPreset('gpt_oss_120b');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.routingType, 'moe');
+  assert.equal(model.activeParamsB, 5.1);
+});
+
+test('versioned Localmaxxing snapshot contains a broad catalog and strict gold cases', () => {
+  const source = fs.readFileSync(new URL('../data/localmaxxing-snapshot.js', import.meta.url), 'utf8');
+  const match = source.match(/Object\.freeze\(([\s\S]+)\);\s*$/);
+  assert.ok(match, 'snapshot should be a single frozen JSON payload');
+  const snapshot = JSON.parse(match[1]);
+
+  assert.ok(snapshot.models.length >= 500, `catalog had ${snapshot.models.length} models`);
+  assert.ok(snapshot.goldCases.length >= 75, `gold set had ${snapshot.goldCases.length} cases`);
+  assert.ok(snapshot.models.some(model => model.hfId === 'google/gemma-4-26B-A4B'));
+  assert.ok(snapshot.models.some(model => model.hfId === 'deepseek-ai/DeepSeek-V4-Flash'));
+  for (const reference of snapshot.goldCases) {
+    assert.equal(reference.batchSize, 1);
+    assert.ok(reference.command.length > 0);
+    assert.ok(reference.presetKey && reference.hardwareTemplate && reference.runtimeKey && reference.quantKey);
+    assert.ok(reference.observedTokS > 0);
+  }
+});
+
+test('gold-case projection separates the physical ceiling from generic real-world efficiency', () => {
+  const app = loadApp();
+  const projection = app.hooks.calculateGoldCaseProjection({
+    id: 'fixture',
+    presetKey: 'qwen3.6_27b',
+    hfId: 'Qwen/Qwen3.6-27B',
+    model: 'Qwen3.6-27B',
+    hardwareTemplate: 'RTX 3090',
+    hardware: 'RTX 3090',
+    deviceCount: 1,
+    memoryGB: 24,
+    runtimeKey: 'llama_cpp',
+    engine: 'llama.cpp',
+    quantKey: 'q4',
+    quantization: 'Q4_K_M',
+    contextLength: 8192,
+    observedTokS: 39,
+    reproducibility: 7
+  });
+
+  assert.ok(projection.idealTokS > projection.genericTokS);
+  assert.ok(projection.genericTokS > 0);
+  assert.ok(Number.isFinite(projection.observedToIdeal));
 });
 
 test('DeepSeek R1 still separates resident and active weights under overflow', () => {

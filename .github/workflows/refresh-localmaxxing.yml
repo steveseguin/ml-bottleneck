@@ -1,0 +1,31 @@
+name: Refresh Localmaxxing snapshot
+
+on:
+  schedule:
+    - cron: "23 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Refresh public model and benchmark data
+        run: node scripts/refresh-localmaxxing.mjs
+      - name: Commit changed snapshot
+        run: |
+          if git diff --quiet -- data/localmaxxing-snapshot.js; then
+            echo "Snapshot is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/localmaxxing-snapshot.js
+          git commit -m "data: refresh Localmaxxing snapshot"
+          git push

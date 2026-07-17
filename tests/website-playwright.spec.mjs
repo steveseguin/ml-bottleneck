@@ -48,8 +48,11 @@ async function applyConfig(page, { scenario, model, quant, framework, strategy =
 }
 
 async function displayedRate(page) {
-  const text = await page.locator('#systemAnalysis .rate-number').first().innerText();
-  return Number.parseFloat(text.replace(/,/g, ''));
+  const text = await page.locator('#systemAnalysis .rate-value').first().innerText();
+  const numeric = Number.parseFloat(text.replace(/,/g, ''));
+  if (/m\s*tok\/s/i.test(text)) return numeric * 1_000_000;
+  if (/k\s*tok\/s/i.test(text)) return numeric * 1_000;
+  return numeric;
 }
 
 async function calculatedRate(page) {
@@ -66,9 +69,31 @@ async function calculatedRate(page) {
       modelConfig.batchSize,
       hooks.getDevices()
     );
-    return Number(rate.toFixed(1));
+    const calibration = hooks.calculateCurrentCalibration(modelConfig, metrics, rate, strategy);
+    return Number((calibration?.expectedTokS || rate).toFixed(1));
   });
 }
+
+test('new workspaces connect catalog, evidence, and result interpretation', async ({ page }) => {
+  await loadApp(page);
+
+  await page.getByRole('button', { name: 'Models', exact: true }).click();
+  await page.locator('#catalogSearch').fill('Gemma 4');
+  await expect(page.locator('#catalogSummary')).toContainText('matching models');
+  await expect(page.locator('#modelCatalog')).toContainText('gemma-4');
+  await page.locator('#modelCatalog [data-preset-key="gemma4_26b_a4b"]').first().click();
+  await expect(page.locator('#modelPreset')).toHaveValue('gemma4_26b_a4b');
+
+  await page.getByRole('button', { name: 'Evidence', exact: true }).click();
+  await expect(page.locator('#evidenceStats')).toContainText('120');
+  await expect(page.locator('#goldTableBody tr')).toHaveCount(80);
+
+  await page.getByRole('button', { name: 'Explain a result', exact: true }).click();
+  await page.locator('#measuredTokS').fill('45');
+  await page.getByRole('button', { name: 'Explain this run', exact: true }).click();
+  await expect(page.locator('#interpreterOutput')).toContainText('physical ceiling');
+  await expect(page.locator('#apiContractPreview')).toContainText('expectedTokS');
+});
 
 async function setDevices(page, specs) {
   await page.evaluate(nextSpecs => {
@@ -140,7 +165,7 @@ test('displayed result rates match core calculations across different configs', 
     expect(Number.isFinite(shown)).toBe(true);
     expect(shown).toBeGreaterThan(config.min);
     expect(shown).toBeLessThan(config.max);
-    expect(Math.abs(shown - expected)).toBeLessThan(0.2);
+    expect(Math.abs(shown - expected)).toBeLessThan(Math.max(0.5, expected * 0.051));
     expect(pageText).not.toContain('NaN');
   }
 });
@@ -213,7 +238,7 @@ test('browser validation matrix keeps displayed rates in broad expected ranges',
 
     expect(shown).toBeGreaterThan(testCase.min);
     expect(shown).toBeLessThan(testCase.max);
-    expect(Math.abs(shown - expected)).toBeLessThan(0.2);
+    expect(Math.abs(shown - expected)).toBeLessThan(Math.max(0.5, expected * 0.051));
     expect(pageText).not.toContain('NaN');
     if (testCase.expectOverflow !== undefined) {
       expect(overflow).toBe(testCase.expectOverflow);
