@@ -1892,6 +1892,327 @@ td {
     }
 }
 
+.execution-card {
+    margin-top: 0;
+    overflow: hidden;
+}
+
+.execution-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.execution-head h2 {
+    margin: 0 0 0.2rem;
+}
+
+.execution-head p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+}
+
+.execution-strategies {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem;
+}
+
+.execution-strategy {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--background);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.73rem;
+    font-weight: 650;
+    padding: 0.34rem 0.62rem;
+}
+
+.execution-strategy:hover,
+.execution-strategy[aria-pressed="true"] {
+    border-color: var(--primary);
+    background: rgba(45, 212, 191, 0.1);
+    color: var(--text);
+}
+
+.architecture-strip {
+    display: grid;
+    grid-template-columns: minmax(110px, 0.75fr) minmax(230px, 2fr) minmax(110px, 0.75fr);
+    align-items: stretch;
+    gap: 0.7rem;
+    margin-bottom: 0.9rem;
+}
+
+.architecture-stage {
+    position: relative;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--background);
+    padding: 0.8rem;
+}
+
+.architecture-stage:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: -0.72rem;
+    width: 0.72rem;
+    border-top: 2px solid var(--primary);
+}
+
+.architecture-kicker {
+    color: var(--primary);
+    font-size: 0.66rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.architecture-title {
+    margin-top: 0.2rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.architecture-meta {
+    margin-top: 0.24rem;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+.block-anatomy {
+    display: grid;
+    grid-template-columns: minmax(115px, 0.8fr) minmax(130px, 0.9fr) minmax(160px, 1.2fr);
+    gap: 0.5rem;
+    margin-top: 0.65rem;
+}
+
+.anatomy-part {
+    border-left: 3px solid var(--primary);
+    border-radius: 5px;
+    background: rgba(45, 212, 191, 0.06);
+    padding: 0.52rem 0.58rem;
+}
+
+.anatomy-part.router {
+    border-left-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.07);
+}
+
+.anatomy-part.experts {
+    border-left-color: #a855f7;
+    background: rgba(168, 85, 247, 0.07);
+}
+
+.anatomy-part strong {
+    display: block;
+    font-size: 0.76rem;
+}
+
+.anatomy-part span {
+    display: block;
+    margin-top: 0.12rem;
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+}
+
+.expert-sample {
+    display: grid;
+    grid-template-columns: repeat(16, minmax(4px, 1fr));
+    gap: 2px;
+    margin-top: 0.42rem;
+}
+
+.expert-dot {
+    height: 6px;
+    border-radius: 2px;
+    background: rgba(148, 163, 184, 0.26);
+}
+
+.expert-dot.active {
+    background: #a855f7;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.65);
+}
+
+.execution-summary-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0 0 0.75rem;
+}
+
+.execution-chip {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--background);
+    color: var(--text-secondary);
+    font-size: 0.71rem;
+    padding: 0.3rem 0.55rem;
+}
+
+.execution-chip strong {
+    color: var(--text);
+}
+
+.shard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.65rem;
+}
+
+.shard-card {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--background);
+    padding: 0.72rem;
+    overflow: hidden;
+}
+
+.shard-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--primary);
+}
+
+.shard-card.is-tight::before { background: #f59e0b; }
+.shard-card.is-over::before { background: var(--destructive); }
+
+.shard-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.shard-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.shard-index {
+    color: var(--text-secondary);
+    font-size: 0.66rem;
+    white-space: nowrap;
+}
+
+.shard-assignment {
+    margin-top: 0.36rem;
+    color: var(--primary);
+    font-size: 0.74rem;
+    font-weight: 650;
+}
+
+.shard-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+}
+
+.shard-stats strong {
+    display: block;
+    color: var(--text);
+    font-size: 0.76rem;
+}
+
+.memory-track {
+    height: 5px;
+    margin-top: 0.55rem;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+}
+
+.memory-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--primary);
+}
+
+.is-tight .memory-fill { background: #f59e0b; }
+.is-over .memory-fill { background: var(--destructive); }
+
+.evidence-panel {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.7fr) minmax(0, 2fr);
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.8rem;
+}
+
+.evidence-lead {
+    color: var(--text-secondary);
+    font-size: 0.73rem;
+    line-height: 1.45;
+}
+
+.evidence-lead strong {
+    display: block;
+    margin-bottom: 0.18rem;
+    color: var(--text);
+    font-size: 0.8rem;
+}
+
+.evidence-runs {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.evidence-run {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--background);
+    padding: 0.52rem 0.6rem;
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    text-decoration: none;
+}
+
+.evidence-run:hover { border-color: var(--primary); }
+
+.evidence-run strong {
+    display: block;
+    margin-bottom: 0.12rem;
+    color: var(--text);
+    font-size: 0.73rem;
+}
+
+.evidence-rate {
+    color: #22c55e;
+    font-size: 0.86rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.execution-footnote {
+    margin: 0.65rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    line-height: 1.45;
+}
+
 @media (max-width: 720px) {
     body {
         padding: 0.8rem;
@@ -1976,6 +2297,39 @@ td {
         align-items: flex-start;
         flex-direction: column;
         gap: 0.45rem;
+    }
+
+    .execution-head,
+    .evidence-panel {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+
+    .execution-strategies {
+        justify-content: flex-start;
+    }
+
+    .architecture-strip,
+    .block-anatomy {
+        grid-template-columns: 1fr;
+    }
+
+    .architecture-stage:not(:last-child)::after {
+        top: auto;
+        right: 50%;
+        bottom: -0.72rem;
+        width: 0;
+        height: 0.72rem;
+        border-top: 0;
+        border-right: 2px solid var(--primary);
+    }
+
+    .evidence-run {
+        grid-template-columns: 1fr;
+    }
+
+    .evidence-rate {
+        white-space: normal;
     }
 }
 </style>
@@ -2161,6 +2515,9 @@ td {
                                     <option value="h100_single">Single H100</option>
                                     <option value="h100_x8">8x H100 (NVLink)</option>
                                 </optgroup>
+                                <optgroup label="Workstation AI">
+                                    <option value="b70_x4_minimax_m27">4x Intel Arc Pro B70 + MiniMax M2.7 (Q4 plan)</option>
+                                </optgroup>
                             </select>
                         </div>
 
@@ -2272,6 +2629,17 @@ td {
             <div id="devices"></div>
         </div>
     </div>
+
+    <section class="card execution-card" aria-labelledby="executionMapTitle">
+        <div class="execution-head">
+            <div>
+                <h2 id="executionMapTitle">Model execution map</h2>
+                <p>See the active model path, what each device stores, and where devices communicate.</p>
+            </div>
+            <div id="executionStrategyControls" class="execution-strategies" aria-label="Compare distribution layouts"></div>
+        </div>
+        <div id="executionMap" aria-live="polite"></div>
+    </section>
 
     <details class="card topology-card" open>
         <summary class="section-summary">
@@ -3552,8 +3920,10 @@ td {
 	  },
 	  'minimax_m2.7': {
 	    label: 'MiniMax M2.7 229B A10B',
+	    hfId: 'MiniMaxAI/MiniMax-M2.7',
 	    totalParamsB: 229,
 	    hiddenSize: 3072,
+	    headDim: 128,
 	    numLayers: 62,
 	    numHeads: 48,
 	    numKVHeads: 8,
@@ -3564,6 +3934,8 @@ td {
 	    activeParamsB: 10,
 	    routingType: 'moe',
 	    attentionMechanism: 'grouped_query',
+	    useMTP: true,
+	    mtpModules: 3,
 	    contextLength: 204800
 	  },
 	  // Video Generation Models
@@ -4349,6 +4721,25 @@ const DEVICE_TEMPLATES = {
   },
 
   // Intel
+  'Intel Arc Pro B70': {
+    name: 'Intel Arc Pro B70 32GB',
+    memoryGB: 32,
+    localBandwidthGBps: 608,
+    networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 22.94,
+      'float16': 45.88,
+      'bfloat16': 45.88,
+      'int8': 367,
+      'fp8': 183.5,
+      'q4': 550.5
+    },
+    powerWatts: 230,
+    sourceUrl: 'https://www.intel.com/content/www/us/en/products/docs/discrete-gpus/arc/workstations/b-series/overview.html',
+    type: 'GPU'
+  },
   'Intel Arc B580': {
     name: 'Intel Arc B580 12GB',
     memoryGB: 12,
@@ -6037,6 +6428,7 @@ const DEVICE_TEMPLATES = {
          * Returns watts based on device template/name
          */
         function estimateDeviceTDP(device) {
+            if (Number.isFinite(device.powerWatts) && device.powerWatts > 0) return device.powerWatts;
             const name = (device.template || device.name || '').toLowerCase();
 
             // Datacenter GPUs
@@ -6311,6 +6703,7 @@ const DEVICE_TEMPLATES = {
 	// Load scenario preset configurations
 	function loadScenarioPreset(scenario) {
 	    if (!scenario) return;
+	    let scenarioUpdatesModel = false;
 
 	    switch(scenario) {
 	        case '5090_ddr5':
@@ -6514,11 +6907,32 @@ const DEVICE_TEMPLATES = {
 	            }
 	            break;
 
+	        case 'b70_x4_minimax_m27':
+	            devices = [];
+	            for (let i = 1; i <= 4; i++) {
+                devices.push({
+	                    id: i,
+	                    template: 'Intel Arc Pro B70',
+	                    ...DEVICE_TEMPLATES['Intel Arc Pro B70'],
+	                    name: `Intel Arc Pro B70 #${i}`,
+	                    networkBandwidthGBps: 64,
+	                    interconnectType: 'pcie5_x16'
+	                });
+	            }
+	            document.getElementById('modelPreset').value = 'minimax_m2.7';
+	            document.getElementById('quantizationType').value = 'q4';
+	            document.getElementById('parallelismStrategy').value = 'tensor';
+	            document.getElementById('runtimeFramework').value = 'vllm';
+	            document.getElementById('optimizationMode').value = 'paged_attention';
+	            scenarioUpdatesModel = true;
+	            break;
+
 	        default:
 	            return;
 	    }
 
         selectedDeviceId = devices[0]?.id || null;
+	    if (scenarioUpdatesModel) updateModelConfigFromPreset();
 	    updateDeviceDisplay();
 	    updateSystemAnalysis();
 	    saveDevices();
@@ -6961,6 +7375,319 @@ const DEVICE_TEMPLATES = {
             `;
         }
 
+        const LOCALMAXXING_EVIDENCE = [
+            {
+                modelPreset: 'minimax_m2.7',
+                model: 'MiniMax M2.7',
+                hardwarePattern: 'h200',
+                hardware: '4x H200 SXM',
+                deviceCount: 4,
+                quantization: 'FP8',
+                runtime: 'vLLM TP4',
+                batchSize: 10,
+                contextLength: 200000,
+                rate: 495.88,
+                metric: 'output tok/s',
+                source: 'https://www.localmaxxing.com/en/leaderboard?hfId=MiniMaxAI%2FMiniMax-M2.7'
+            },
+            {
+                modelPreset: 'gemma4_12b',
+                model: 'Gemma 4 12B',
+                hardwarePattern: 'arc pro b70',
+                hardware: '4x Intel Arc Pro B70',
+                deviceCount: 4,
+                quantization: 'INT4 AutoRound W4A16',
+                runtime: 'vLLM TP4 / XPU graph',
+                batchSize: 8,
+                contextLength: 32768,
+                rate: 796.18,
+                metric: 'aggregate output tok/s',
+                source: 'https://www.localmaxxing.com/en/leaderboard?hardwareName=Intel%20Arc%20Pro%20B70'
+            }
+        ];
+
+        function deriveMoEComposition(modelConfig) {
+            const config = normalizeModelConfig(modelConfig);
+            if (!config.isMoE) {
+                return {
+                    denseParamsB: config.totalParamsB,
+                    expertParamsB: 0,
+                    activeExpertParamsB: 0
+                };
+            }
+
+            const expertActivationRatio = Math.min(1, config.activeExperts / Math.max(config.numExperts, 1));
+            const denseParamsB = expertActivationRatio < 1
+                ? Math.min(config.totalParamsB, Math.max(0, (config.activeParamsB - (config.totalParamsB * expertActivationRatio)) / (1 - expertActivationRatio)))
+                : 0;
+            const expertParamsB = Math.max(0, config.totalParamsB - denseParamsB);
+            return {
+                denseParamsB,
+                expertParamsB,
+                activeExpertParamsB: expertParamsB * expertActivationRatio
+            };
+        }
+
+        function getLocalmaxxingUrl(modelConfig, devicesArray) {
+            const params = [];
+            if (modelConfig.hfId) params.push(`hfId=${encodeURIComponent(modelConfig.hfId)}`);
+            const firstDevice = devicesArray[0];
+            if (firstDevice) {
+                const sameHardware = devicesArray.every(device => (device.template || device.name) === (firstDevice.template || firstDevice.name));
+                if (sameHardware) {
+                    params.push(`hardwareName=${encodeURIComponent(firstDevice.template || firstDevice.name)}`);
+                }
+            }
+            return `https://www.localmaxxing.com/en/leaderboard${params.length ? `?${params.join('&')}` : ''}`;
+        }
+
+        function getExecutionEvidence(modelConfig, devicesArray) {
+            const deviceNames = devicesArray.map(device => `${device.template || ''} ${device.name || ''}`.toLowerCase());
+            return LOCALMAXXING_EVIDENCE
+                .map(run => {
+                    const modelMatch = run.modelPreset === modelConfig.modelPreset;
+                    const hardwareMatch = deviceNames.some(name => name.includes(run.hardwarePattern));
+                    const deviceCountMatch = run.deviceCount === devicesArray.length;
+                    const exact = modelMatch && hardwareMatch && deviceCountMatch;
+                    const score = exact ? 10 : ((modelMatch ? 4 : 0) + (hardwareMatch ? 3 : 0) + (deviceCountMatch ? 1 : 0));
+                    return { ...run, exact, score };
+                })
+                .filter(run => run.score >= 3)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 2);
+        }
+
+        function getLayerRange(index, count, layers) {
+            const start = Math.floor((index * layers) / count) + 1;
+            const end = Math.floor(((index + 1) * layers) / count);
+            return { start, end: Math.max(start, end) };
+        }
+
+        function buildExecutionPlan(modelConfig, devicesArray, metricsArray = [], strategyOverride = null) {
+            const config = normalizeModelConfig(modelConfig);
+            const strategy = strategyOverride || config.parallelismStrategy || 'pipeline';
+            const count = Math.max(devicesArray.length, 1);
+            const dtypeSize = DTYPE_SIZES[config.quantizationType] || 2;
+            const quantOverhead = config.quantizationType === 'q4' ? 1.08 : (config.quantizationType === 'fp8' ? 1.03 : 1);
+            const composition = deriveMoEComposition(config);
+            const totalWeightsGB = config.totalParamsB * dtypeSize * quantOverhead;
+            const activeWeightsGB = getActiveParamsB(config) * dtypeSize * quantOverhead;
+            const tensorDegree = Math.max(1, Math.floor(Math.sqrt(count)));
+            const pipelineDegree = Math.max(1, Math.ceil(count / tensorDegree));
+
+            const shards = devicesArray.map((device, index) => {
+                const layerRange = getLayerRange(index, count, config.numLayers);
+                const expertRange = getLayerRange(index, count, config.numExperts);
+                const metric = metricsArray[index] || {};
+                let assignment;
+                let detail;
+
+                if (strategy === 'pipeline') {
+                    assignment = `Layers ${layerRange.start}-${layerRange.end}`;
+                    detail = config.isMoE ? `All ${config.numExperts} experts inside those layers` : 'Complete attention and feed-forward blocks';
+                } else if (strategy === 'tensor') {
+                    assignment = `All ${config.numLayers} layers - tensor slice ${index + 1}/${count}`;
+                    detail = config.isMoE ? `Each matrix and expert is sharded ${count} ways` : `Each matrix is sharded ${count} ways`;
+                } else if (strategy === 'expert') {
+                    assignment = `Experts ${expertRange.start}-${expertRange.end}`;
+                    detail = `All ${config.numLayers} routers; about ${(config.activeExperts / count).toFixed(1)} active experts/device/token`;
+                } else if (strategy === 'data') {
+                    assignment = `Full ${config.numLayers}-layer replica`;
+                    detail = 'Independent request stream; no model sharding';
+                } else if (strategy === 'hybrid_tp_pp') {
+                    const ppIndex = Math.floor(index / tensorDegree);
+                    const tpIndex = index % tensorDegree;
+                    const ppRange = getLayerRange(ppIndex, pipelineDegree, config.numLayers);
+                    assignment = `Layers ${ppRange.start}-${ppRange.end} - tensor slice ${tpIndex + 1}/${tensorDegree}`;
+                    detail = `${pipelineDegree} pipeline stages x ${tensorDegree}-way tensor parallel`;
+                } else if (strategy === 'hybrid_tp_dp') {
+                    const group = Math.floor(index / tensorDegree) + 1;
+                    assignment = `Replica ${group} - tensor slice ${(index % tensorDegree) + 1}/${tensorDegree}`;
+                    detail = 'Tensor-sharded replicas serve independent batches';
+                } else if (strategy === 'sequence' || strategy === 'context') {
+                    assignment = `All ${config.numLayers} layers - ${strategy} slice ${index + 1}/${count}`;
+                    detail = 'Weights replicated; token positions and KV cache are partitioned';
+                } else {
+                    assignment = `All ${config.numLayers} layers`;
+                    detail = 'Single execution path';
+                }
+
+                const parallelScales = getParallelismScales({ ...config, parallelismStrategy: strategy }, devicesArray, index);
+                const residentWeightsGB = totalWeightsGB * parallelScales.residentScale;
+                const activeModelSizeGB = activeWeightsGB * parallelScales.accessedScale;
+                const memoryUtilization = Number.isFinite(metric.memoryUtilization)
+                    ? metric.memoryUtilization
+                    : (residentWeightsGB / Math.max(device.memoryGB, 0.1)) * 100;
+
+                return {
+                    index,
+                    device,
+                    assignment,
+                    detail,
+                    residentWeightsGB,
+                    activeModelSizeGB,
+                    kvCacheGB: metric.decodeKvCacheGB || 0,
+                    memoryUtilization
+                };
+            });
+
+            const communication = {
+                pipeline: `${Math.max(0, count - 1)} activation ${count === 2 ? 'boundary' : 'boundaries'} per token`,
+                tensor: `${config.numLayers} collective steps per token across ${count} devices`,
+                expert: `${config.numLayers} router all-to-all steps; ${config.activeExperts} expert routes per token`,
+                data: 'No per-token device traffic; requests are independent',
+                sequence: `${config.numLayers} activation collectives across sequence shards`,
+                context: `${config.numLayers} attention/KV collectives across context shards`,
+                hybrid_tp_pp: `${pipelineDegree} stages with ${tensorDegree}-way collectives inside each stage`,
+                hybrid_tp_dp: `Independent replicas with ${tensorDegree}-way collectives inside each replica`
+            }[strategy] || 'Single-device execution path';
+
+            return {
+                config,
+                strategy,
+                shards,
+                composition,
+                totalWeightsGB,
+                activeWeightsGB,
+                communication
+            };
+        }
+
+        function buildExecutionMapHtml(plan, evidenceRows = []) {
+            const { config, strategy, shards, composition } = plan;
+            const isMoE = config.isMoE;
+            const headDim = config.headDim || Math.round(config.hiddenSize / Math.max(config.numHeads, 1));
+            const activeDots = isMoE ? Math.max(1, Math.round(16 * config.activeExperts / config.numExperts)) : 0;
+            const expertDots = isMoE
+                ? Array.from({ length: 16 }, (_, index) => `<span class="expert-dot${index < activeDots ? ' active' : ''}"></span>`).join('')
+                : '';
+            const modelSource = config.hfId
+                ? `<a href="https://huggingface.co/${encodeURI(config.hfId)}" target="_blank" rel="noopener noreferrer">Model config</a>`
+                : '';
+            const exactEvidence = evidenceRows.some(run => run.exact);
+            const liveUrl = getLocalmaxxingUrl(config, shards.map(shard => shard.device));
+
+            return `
+                <div class="architecture-strip">
+                    <div class="architecture-stage">
+                        <div class="architecture-kicker">Input</div>
+                        <div class="architecture-title">Tokens + embeddings</div>
+                        <div class="architecture-meta">${formatTokenCount(config.promptTokens)} prompt tokens<br>${config.hiddenSize.toLocaleString()} hidden width</div>
+                    </div>
+                    <div class="architecture-stage">
+                        <div class="architecture-kicker">Repeated ${config.numLayers}x</div>
+                        <div class="architecture-title">${isMoE ? 'Sparse Mixture-of-Experts block' : 'Transformer block'}</div>
+                        <div class="block-anatomy">
+                            <div class="anatomy-part">
+                                <strong>${getArchitectureProfile(config).attentionLabel}</strong>
+                                <span>${config.numHeads} query / ${config.numKVHeads} KV heads - ${headDim} dim</span>
+                            </div>
+                            ${isMoE ? `
+                                <div class="anatomy-part router">
+                                    <strong>Router: top ${config.activeExperts}</strong>
+                                    <span>Selects ${config.activeExperts} of ${config.numExperts} experts for each token</span>
+                                </div>
+                                <div class="anatomy-part experts">
+                                    <strong>${config.numExperts} expert MLPs</strong>
+                                    <span>${composition.expertParamsB.toFixed(1)}B stored - ${composition.activeExpertParamsB.toFixed(1)}B touched/token</span>
+                                    <div class="expert-sample" aria-label="Representative expert pool; highlighted cells show the active fraction">${expertDots}</div>
+                                </div>
+                            ` : `
+                                <div class="anatomy-part experts" style="grid-column: span 2;">
+                                    <strong>Dense feed-forward network</strong>
+                                    <span>${config.intermediateSize.toLocaleString()} intermediate width - every parameter participates</span>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                    <div class="architecture-stage">
+                        <div class="architecture-kicker">Output</div>
+                        <div class="architecture-title">LM head${config.useMTP ? ' + MTP' : ''}</div>
+                        <div class="architecture-meta">One token per decode step${config.useMTP ? `<br>${config.mtpModules || 1} multi-token prediction modules` : ''}<br>${modelSource}</div>
+                    </div>
+                </div>
+                <div class="execution-summary-line">
+                    <span class="execution-chip"><strong>${formatStrategyLabel(strategy)}</strong> layout</span>
+                    <span class="execution-chip"><strong>${config.totalParamsB}B</strong> resident model</span>
+                    <span class="execution-chip"><strong>${getActiveParamsB(config).toFixed(1)}B</strong> active/token</span>
+                    <span class="execution-chip"><strong>${plan.totalWeightsGB.toFixed(1)} GB</strong> quantized weights</span>
+                    <span class="execution-chip"><strong>${plan.communication}</strong></span>
+                </div>
+                <div class="shard-grid">
+                    ${shards.map(shard => {
+                        const statusClass = shard.memoryUtilization > 100 ? ' is-over' : (shard.memoryUtilization > 85 ? ' is-tight' : '');
+                        return `
+                            <div class="shard-card${statusClass}">
+                                <div class="shard-head">
+                                    <div class="shard-name">${escapeHtml(shard.device.name || shard.device.template)}</div>
+                                    <div class="shard-index">GPU ${shard.index + 1}/${shards.length}</div>
+                                </div>
+                                <div class="shard-assignment">${shard.assignment}</div>
+                                <div class="architecture-meta">${shard.detail}</div>
+                                <div class="shard-stats">
+                                    <div><strong>${shard.residentWeightsGB.toFixed(1)} GB</strong>resident weights</div>
+                                    <div><strong>${shard.activeModelSizeGB.toFixed(1)} GB</strong>active weight path</div>
+                                    <div><strong>${shard.kvCacheGB.toFixed(2)} GB</strong>decode KV cache</div>
+                                    <div><strong>${shard.memoryUtilization.toFixed(0)}%</strong>memory use</div>
+                                </div>
+                                <div class="memory-track" aria-label="${shard.memoryUtilization.toFixed(0)} percent memory utilization"><div class="memory-fill" style="width:${Math.min(100, shard.memoryUtilization).toFixed(1)}%"></div></div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div class="evidence-panel">
+                    <div class="evidence-lead">
+                        <strong>${exactEvidence ? 'Measured comparison available' : 'Estimate - validate before buying'}</strong>
+                        ${exactEvidence
+                            ? 'A matching community run is shown beside the prediction. Batch, context, quantization, and engine still matter.'
+                            : 'No exact model + hardware run is embedded for this plan. Related model or hardware runs provide bounds, not validation.'}
+                        <div style="margin-top:0.35rem;"><a href="${liveUrl}" target="_blank" rel="noopener noreferrer">Explore live LocalMaxxing results</a></div>
+                    </div>
+                    <div class="evidence-runs">
+                        ${evidenceRows.length ? evidenceRows.map(run => `
+                            <a class="evidence-run" href="${run.source}" target="_blank" rel="noopener noreferrer">
+                                <span><strong>${run.exact ? 'Matching run' : 'Related evidence'}: ${run.model} on ${run.hardware}</strong>${run.quantization} - ${run.runtime} - batch ${run.batchSize} - ${formatTokenCount(run.contextLength)} context</span>
+                                <span class="evidence-rate">${run.rate.toFixed(1)} ${run.metric}</span>
+                            </a>
+                        `).join('') : '<div class="evidence-run"><span><strong>No nearby measured run in the embedded evidence set</strong>Use the live leaderboard link to search current community results.</span></div>'}
+                    </div>
+                </div>
+                <p class="execution-footnote">The map is a planning abstraction. Tensor and expert collectives, framework support, quantization kernels, PCIe topology, and routing imbalance can materially change real throughput.</p>
+            `;
+        }
+
+        function updateExecutionMap(modelConfig, metrics, resolvedStrategy) {
+            const map = document.getElementById('executionMap');
+            const controls = document.getElementById('executionStrategyControls');
+            if (!map || !controls || !devices.length) return;
+
+            const selectedStrategy = modelConfig.parallelismStrategy || resolvedStrategy;
+            const strategyOptions = [
+                { value: 'auto', label: 'Auto' },
+                { value: 'pipeline', label: 'Pipeline' },
+                ...(devices.length > 1 ? [{ value: 'tensor', label: 'Tensor' }] : []),
+                ...(modelConfig.isMoE && devices.length > 1 ? [{ value: 'expert', label: 'Experts' }] : []),
+                ...(devices.length > 1 ? [{ value: 'data', label: 'Replicas' }] : [])
+            ];
+            controls.innerHTML = strategyOptions.map(option => `
+                <button type="button" class="execution-strategy" data-execution-strategy="${option.value}" aria-pressed="${selectedStrategy === option.value}">${option.label}</button>
+            `).join('');
+
+            const plan = buildExecutionPlan(modelConfig, devices, metrics, resolvedStrategy);
+            map.innerHTML = buildExecutionMapHtml(plan, getExecutionEvidence(modelConfig, devices));
+        }
+
+        const executionStrategyControls = document.getElementById('executionStrategyControls');
+        if (executionStrategyControls) {
+            executionStrategyControls.addEventListener('click', event => {
+                const button = event.target.closest('[data-execution-strategy]');
+                if (!button) return;
+                const strategySelect = document.getElementById('parallelismStrategy');
+                strategySelect.value = button.dataset.executionStrategy;
+                updateSystemAnalysis();
+            });
+        }
+
         let _latestMetricsByDeviceId = new Map();
         let _topologyNodes = [];
         function updateSystemAnalysis() {
@@ -7206,6 +7933,7 @@ const DEVICE_TEMPLATES = {
                 const benchmarkMatches = findBenchmarkMatches(modelConfig, devices);
                 const benchmarkAlignment = getBenchmarkAlignmentSummary(modelConfig, devices, metrics, systemRate);
                 const recommendationHtml = buildRecommendedSetupHtml(modelConfig, devices, metrics, systemRate, parallelism, benchmarkAlignment, systemRateLabel, workflowSummary);
+                updateExecutionMap(modelConfig, metrics, parallelism);
                 let benchmarkHtml = '';
                 if (benchmarkMatches.length > 0) {
                     benchmarkHtml = `
@@ -8216,6 +8944,9 @@ Intel Arc B580 Benchmarks
 Llama 3 8B	Q4	IPEX-LLM	Arc B580				20 t/s	https://www.techreviewer.com/tech-specs/intel-b580-gpu-for-llms/
 Llama 2 7B	INT4	IPEX-LLM	Arc B580				~18 t/s	https://github.com/intel/ipex-llm
 Mistral 7B	Q4	IPEX-LLM	Arc B580				~15 t/s	https://www.propelrc.com/intel-arc-b580-and-a770-for-local-ai-software/
+LocalMaxxing Community Measurements
+MiniMax M2.7 229B A10B	FP8	vLLM TP4	4 x H200 SXM	10	200000	495.88 t/s		https://www.localmaxxing.com/en/leaderboard?hfId=MiniMaxAI%2FMiniMax-M2.7
+Gemma 4 12B	INT4 AutoRound W4A16	vLLM TP4 / XPU graph	4 x Intel Arc Pro B70	8	32768	796.18 t/s		https://www.localmaxxing.com/en/leaderboard?hardwareName=Intel%20Arc%20Pro%20B70
 Gemma 3 Benchmarks
 Gemma 3 27B	Q4	Ollama	RTX 5090				50 t/s	https://github.com/ollama/ollama/issues/9701
 Gemma 3 27B	Q4	Ollama	RTX 4090				~35 t/s	https://huggingface.co/google/gemma-3-27b-it/discussions/39
@@ -9057,6 +9788,11 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             getConfidenceSummary,
             getTopRecommendationReasons,
             buildRecommendedSetupHtml,
+            deriveMoEComposition,
+            getExecutionEvidence,
+            getLocalmaxxingUrl,
+            buildExecutionPlan,
+            buildExecutionMapHtml,
             calculateWorkflowSummary,
             formatDuration,
             formatTokenRate,

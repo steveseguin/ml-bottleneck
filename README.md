@@ -7,6 +7,8 @@ A powerful web-based tool for analyzing hardware bottlenecks in machine learning
 ## ✨ Key Features
 
 - 📊 Real-time visualization of system bottlenecks
+- 🧠 Model execution map showing attention, MoE routing, active experts, and MTP
+- 🧩 Per-device layer, tensor, expert, and replica shard visualization
 - 🎯 Precise token rate estimation
 - 🔄 Support for pipeline and tensor parallelism
 - 💾 Advanced memory usage analysis
@@ -14,6 +16,7 @@ A powerful web-based tool for analyzing hardware bottlenecks in machine learning
 - ⚡ Bandwidth and compute utilization metrics
 - 📱 Responsive design for all devices
 - 🌐 No installation required - runs in browser!
+- 📏 Measured-evidence links and clearly labeled prediction confidence
 
 ## 🎮 Quick Start
 

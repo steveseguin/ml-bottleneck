@@ -183,7 +183,7 @@ function createDocument(defaultValues) {
     'activeExperts', 'routingType', 'attentionMechanism', 'dtype', 'parallelismStrategy', 'optimizationMode',
     'kvCacheCompression', 'runtimeFramework', 'hoursPerDay', 'costPerKwh', 'systemAnalysis', 'alerts', 'utilizationChart',
     'devices', 'llmTable', '__llmTableTbody', 'modelFilter', 'hardwareFilter', 'quantizationFilter',
-    'modelSummary', 'topologyCanvas', 'topologyContainer', 'loadDevicesBtn', 'scenarioPreset'
+    'modelSummary', 'topologyCanvas', 'topologyContainer', 'executionMap', 'executionStrategyControls', 'loadDevicesBtn', 'scenarioPreset'
   ];
 
   requiredIds.forEach(getElementById);

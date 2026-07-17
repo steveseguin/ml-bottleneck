@@ -318,6 +318,27 @@ test('browser TurboQuant option reduces long-context KV pressure', async ({ page
   await expect(page.locator('#systemAnalysis')).not.toContainText('NaN');
 });
 
+test('execution map visualizes MiniMax across four Arc Pro B70 GPUs and compares layouts', async ({ page }) => {
+  await loadApp(page);
+
+  await selectAndChange(page, '#scenarioPreset', 'b70_x4_minimax_m27');
+
+  await expect(page.locator('#executionMap .shard-card')).toHaveCount(4);
+  await expect(page.locator('#executionMap')).toContainText('Sparse Mixture-of-Experts block');
+  await expect(page.locator('#executionMap')).toContainText('Selects 8 of 256 experts');
+  await expect(page.locator('#executionMap')).toContainText('All 62 layers - tensor slice 1/4');
+  await expect(page.locator('#executionMap')).toContainText('Estimate - validate before buying');
+  await expect(page.locator('#executionMap')).toContainText('Related evidence: MiniMax M2.7 on 4x H200 SXM');
+
+  const expertButton = page.locator('[data-execution-strategy="expert"]');
+  await expect(expertButton).toHaveCount(1);
+  await expertButton.click();
+
+  await expect(page.locator('#executionMap')).toContainText('Experts 1-64');
+  await expect(page.locator('#parallelismStrategy')).toHaveValue('expert');
+  await expect(page.locator('#executionMap')).not.toContainText('bhk_');
+});
+
 test('browser fuzz smoke changes configs repeatedly without invalid output', async ({ page }) => {
   await loadApp(page);
   const presets = ['llama3_8b', 'qwen3.5_27b', 'qwen3.6_35b_a3b', 'minimax_m2.7', 'glm5_1'];

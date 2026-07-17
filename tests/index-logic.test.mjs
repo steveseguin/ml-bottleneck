@@ -905,3 +905,56 @@ test('EXO phase split assigns prefill to compute-heavier device and decode to ba
   assert.equal(split.prefillDevices[0], 'Compute Node');
   assert.equal(split.decodeDevices[0], 'Bandwidth Node');
 });
+
+test('execution map explains MiniMax MoE routing and four-way tensor sharding', () => {
+  const app = loadApp();
+  const b70 = app.hooks.DEVICE_TEMPLATES['Intel Arc Pro B70'];
+  assert.equal(b70.memoryGB, 32);
+  assert.equal(b70.localBandwidthGBps, 608);
+
+  app.hooks.setDevices([1, 2, 3, 4].map(id => ({
+    id,
+    template: 'Intel Arc Pro B70',
+    ...JSON.parse(JSON.stringify(b70)),
+    name: `Intel Arc Pro B70 #${id}`
+  })));
+  setLlmDefaults(app, {
+    preset: 'minimax_m2.7',
+    quant: 'q4',
+    framework: 'vllm',
+    strategy: 'tensor',
+    batchSize: 1,
+    seqLength: 20480
+  });
+
+  const config = app.hooks.buildEffectiveModelConfig();
+  const metrics = app.hooks.calculateMetrics();
+  const plan = app.hooks.buildExecutionPlan(config, app.hooks.getDevices(), metrics, 'tensor');
+  const html = app.hooks.buildExecutionMapHtml(plan, app.hooks.getExecutionEvidence(config, app.hooks.getDevices()));
+
+  assert.equal(config.hfId, 'MiniMaxAI/MiniMax-M2.7');
+  assert.equal(plan.shards.length, 4);
+  assert.ok(plan.shards.every(shard => shard.residentWeightsGB < 32));
+  assert.equal(plan.composition.denseParamsB.toFixed(1), '2.9');
+  assert.match(plan.shards[0].assignment, /All 62 layers/);
+  assert.match(plan.shards[0].detail, /sharded 4 ways/);
+  assert.match(html, /Selects 8 of 256 experts/);
+  assert.match(html, /multi-token prediction modules/);
+  assert.match(html, /Estimate - validate before buying/);
+  assert.doesNotMatch(html, /bhk_/);
+});
+
+test('four B70 scenario loads a complete MiniMax planning configuration', () => {
+  const app = loadApp();
+
+  app.hooks.loadScenarioPreset('b70_x4_minimax_m27');
+
+  assert.equal(app.hooks.getDevices().length, 4);
+  assert.ok(app.hooks.getDevices().every(device => device.template === 'Intel Arc Pro B70'));
+  assert.equal(app.elements.get('modelPreset').value, 'minimax_m2.7');
+  assert.equal(app.elements.get('quantizationType').value, 'q4');
+  assert.equal(app.elements.get('parallelismStrategy').value, 'tensor');
+  assert.equal(app.elements.get('runtimeFramework').value, 'vllm');
+  assert.match(app.elements.get('executionMap').innerHTML, /Intel Arc Pro B70 #1/);
+  assert.match(app.elements.get('executionMap').innerHTML, /Related evidence/);
+});
