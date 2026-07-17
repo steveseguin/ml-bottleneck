@@ -938,10 +938,57 @@ test('execution map explains MiniMax MoE routing and four-way tensor sharding', 
   assert.equal(plan.composition.denseParamsB.toFixed(1), '2.9');
   assert.match(plan.shards[0].assignment, /All 62 layers/);
   assert.match(plan.shards[0].detail, /sharded 4 ways/);
-  assert.match(html, /Selects 8 of 256 experts/);
-  assert.match(html, /multi-token prediction modules/);
+  assert.match(html, /top 8 of 256 experts active/);
+  assert.match(html, /Each device stores a unique 1\/4 slice/);
+  assert.match(html, /All-reduce \/ gather after each layer/);
+  assert.match(html, /weight slices are not duplicates/);
+  assert.match(html, /3 MTP modules/);
   assert.match(html, /Estimate - validate before buying/);
   assert.doesNotMatch(html, /bhk_/);
+});
+
+test('Hugging Face metadata parser imports nested dense and MoE configs', () => {
+  const app = loadApp();
+  const dense = app.hooks.parseHuggingFaceModelMetadata(
+    { id: 'Qwen/Qwen3-8B', safetensors: { total: 8_190_000_000 } },
+    { text_config: { hidden_size: 4096, num_hidden_layers: 36, num_attention_heads: 32, num_key_value_heads: 8, intermediate_size: 12288 } },
+    'Qwen/Qwen3-8B'
+  );
+  const moe = app.hooks.parseHuggingFaceModelMetadata(
+    { id: 'org/moe', safetensors: { total: 200_000_000_000 } },
+    { hidden_size: 4096, num_hidden_layers: 48, num_attention_heads: 32, num_key_value_heads: 8, intermediate_size: 14336, num_local_experts: 128, num_experts_per_tok: 8 },
+    'org/moe'
+  );
+
+  assert.equal(dense.hfId, 'Qwen/Qwen3-8B');
+  assert.equal(dense.totalParamsB, 8.19);
+  assert.equal(dense.numKVHeads, 8);
+  assert.equal(moe.isMoE, true);
+  assert.equal(moe.numExperts, 128);
+  assert.equal(moe.activeExperts, 8);
+});
+
+test('speculative decoding model responds to acceptance and draft cost', () => {
+  const app = loadApp();
+  const fast = app.hooks.getOptimizationAdjustments({
+    optimizationMode: 'speculative', batchSize: 1, specMethod: 'eagle3', specTokens: 5, specAcceptance: 0.9, specDraftRatio: 0.04
+  });
+  const slow = app.hooks.getOptimizationAdjustments({
+    optimizationMode: 'speculative', batchSize: 1, specMethod: 'draft_model', specTokens: 5, specAcceptance: 0.35, specDraftRatio: 0.2
+  });
+
+  assert.ok(fast.decodeMultiplier > 2);
+  assert.ok(fast.decodeMultiplier > slow.decodeMultiplier);
+  assert.equal(fast.speculation.candidateCount, 5);
+});
+
+test('current workstation hardware families include scalable 16 to 32 GB options', () => {
+  const app = loadApp();
+  assert.equal(app.hooks.DEVICE_TEMPLATES['Intel Arc Pro B50'].memoryGB, 16);
+  assert.equal(app.hooks.DEVICE_TEMPLATES['Intel Arc Pro B60'].memoryGB, 24);
+  assert.equal(app.hooks.DEVICE_TEMPLATES['Intel Arc Pro B65'].memoryGB, 32);
+  assert.equal(app.hooks.DEVICE_TEMPLATES['AMD Radeon AI PRO R9700'].memoryGB, 32);
+  assert.equal(app.hooks.DEVICE_TEMPLATES['AMD MI350X'].localBandwidthGBps, 8000);
 });
 
 test('four B70 scenario loads a complete MiniMax planning configuration', () => {

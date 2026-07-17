@@ -114,6 +114,7 @@ test('hardware editor keeps one selected device and adds new devices to topology
   }));
   expect(state).toEqual({ count: 2, selected: 2 });
 
+  await page.locator('.topology-card > summary').click();
   const topologyBox = await page.locator('#topologyCanvas').boundingBox();
   expect(topologyBox?.width).toBeGreaterThan(200);
   expect(topologyBox?.height).toBeGreaterThan(100);
@@ -324,8 +325,11 @@ test('execution map visualizes MiniMax across four Arc Pro B70 GPUs and compares
   await selectAndChange(page, '#scenarioPreset', 'b70_x4_minimax_m27');
 
   await expect(page.locator('#executionMap .shard-card')).toHaveCount(4);
-  await expect(page.locator('#executionMap')).toContainText('Sparse Mixture-of-Experts block');
-  await expect(page.locator('#executionMap')).toContainText('Selects 8 of 256 experts');
+  await expect(page.locator('#executionMap')).toContainText('Attention → router → selected experts');
+  await expect(page.locator('#executionMap')).toContainText('top 8 of 256 experts active');
+  await expect(page.locator('#executionMap')).toContainText('Each device stores a unique 1/4 slice');
+  await expect(page.locator('#executionMap')).toContainText('weight slices are not duplicates');
+  await expect(page.locator('#executionMap')).toContainText('All-reduce / gather after each layer');
   await expect(page.locator('#executionMap')).toContainText('All 62 layers - tensor slice 1/4');
   await expect(page.locator('#executionMap')).toContainText('Estimate - validate before buying');
   await expect(page.locator('#executionMap')).toContainText('Related evidence: MiniMax M2.7 on 4x H200 SXM');
@@ -337,6 +341,70 @@ test('execution map visualizes MiniMax across four Arc Pro B70 GPUs and compares
   await expect(page.locator('#executionMap')).toContainText('Experts 1-64');
   await expect(page.locator('#parallelismStrategy')).toHaveValue('expert');
   await expect(page.locator('#executionMap')).not.toContainText('bhk_');
+});
+
+test('speculative decoding exposes proposer verification flow and modeled inputs', async ({ page }) => {
+  await loadApp(page);
+  await page.locator('details.tuning-panel > summary').click();
+  await selectAndChange(page, '#optimizationMode', 'speculative');
+
+  await expect(page.locator('#speculativeControls')).toBeVisible();
+  await expect(page.locator('#executionMap')).toContainText('Target verifies once');
+  await expect(page.locator('#executionMap')).toContainText('candidate tokens');
+
+  await page.locator('#specAcceptance').fill('90');
+  await page.locator('#specAcceptance').dispatchEvent('change');
+  const highAcceptance = await displayedRate(page);
+  await page.locator('#specAcceptance').fill('30');
+  await page.locator('#specAcceptance').dispatchEvent('change');
+  const lowAcceptance = await displayedRate(page);
+  expect(highAcceptance).toBeGreaterThan(lowAcceptance);
+});
+
+test('public Hugging Face model import populates a custom architecture', async ({ page }) => {
+  const corsHeaders = { 'access-control-allow-origin': '*', 'content-type': 'application/json' };
+  await page.route('https://huggingface.co/api/models/**', route => route.fulfill({
+    headers: corsHeaders,
+    body: JSON.stringify({ id: 'demo/Sparse-12B', safetensors: { total: 12_000_000_000 } })
+  }));
+  await page.route('https://huggingface.co/**/resolve/main/config.json', route => route.fulfill({
+    headers: corsHeaders,
+    body: JSON.stringify({
+      hidden_size: 4096,
+      num_hidden_layers: 40,
+      num_attention_heads: 32,
+      num_key_value_heads: 8,
+      intermediate_size: 14336,
+      num_local_experts: 64,
+      num_experts_per_tok: 4
+    })
+  }));
+  await loadApp(page);
+
+  await page.locator('#hfModelId').fill('demo/Sparse-12B');
+  await page.locator('#hfImportButton').click();
+  await expect(page.locator('#hfImportStatus')).toContainText('Loaded 12.0B parameters');
+  await expect(page.locator('#modelPreset')).toHaveValue('');
+  await expect(page.locator('#numExperts')).toHaveValue('64');
+  await expect(page.locator('#activeExperts')).toHaveValue('4');
+  await expect(page.locator('#executionMap')).toContainText('top 4 of 64 experts active');
+});
+
+test('mobile layout stays within the viewport with benchmark table collapsed', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await loadApp(page);
+
+  const dimensions = await page.evaluate(() => ({
+    viewport: window.innerWidth,
+    document: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth
+  }));
+  expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport);
+  expect(dimensions.body).toBeLessThanOrEqual(dimensions.viewport);
+  await page.locator('.reference-card > summary').click();
+  const expandedWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(expandedWidth).toBeLessThanOrEqual(390);
+  await expect(page.locator('.app-header h1')).toBeVisible();
 });
 
 test('browser fuzz smoke changes configs repeatedly without invalid output', async ({ page }) => {

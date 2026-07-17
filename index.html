@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ML System Bottleneck Analyzer - Hardware Performance Analysis Tool</title>
+    <title>ML Bottleneck - Visual Local LLM Deployment Planner</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNjM2NmYxO3N0b3Atb3BhY2l0eToxIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM0ZjQ2ZTU7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB4PSI0IiB5PSI0IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHJ4PSI0IiBmaWxsPSJ1cmwoI2dyYWQpIi8+CiAgPHBhdGggZD0iTTEwIDE2IEwxNCAyMCBMMjIgMTIiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik04IDIyIEwyNCAyMiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTggMjYgTDIwIDI2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC43Ii8+Cjwvc3ZnPg==">
 
     <!-- Primary Meta Tags -->
-    <meta name="title" content="ML System Bottleneck Analyzer - Hardware Performance Analysis Tool">
-    <meta name="description" content="Analyze and visualize hardware bottlenecks in machine learning systems. Get real-time insights into memory, bandwidth, and compute utilization across multiple devices.">
-    <meta name="keywords" content="ML, machine learning, hardware bottleneck, performance analysis, GPU, CPU, token rate, memory utilization, bandwidth analysis, compute utilization">
+    <meta name="title" content="ML Bottleneck - Visual Local LLM Deployment Planner">
+    <meta name="description" content="Map LLM layers, tensor shards, MoE experts, replicas, and speculative decoding across local GPUs. Estimate memory fit, communication, and token throughput.">
+    <meta name="keywords" content="local LLM, model sharding, tensor parallel, expert parallel, speculative decoding, GPU, token rate, memory utilization, bandwidth analysis">
     <meta name="author" content="Steve Seguin">
     <meta name="theme-color" content="#0f766e">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://mlbottleneck.com/">
-    <meta property="og:title" content="ML System Bottleneck Analyzer">
-    <meta property="og:description" content="Web-based tool for analyzing hardware bottlenecks in ML systems. Visualize performance limitations across distributed setups - right in your browser!">
+    <meta property="og:title" content="ML Bottleneck - Visual Local LLM Deployment Planner">
+    <meta property="og:description" content="See exactly how an LLM maps across local hardware: layers, tensor slices, experts, replicas, communication, and speculative decoding.">
     <meta property="og:image" content="https://mlbottleneck.com/logo.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://mlbottleneck.com/">
-    <meta property="twitter:title" content="ML System Bottleneck Analyzer">
-    <meta property="twitter:description" content="Web-based tool for analyzing hardware bottlenecks in ML systems. Visualize performance limitations across distributed setups - right in your browser!">
+    <meta property="twitter:title" content="ML Bottleneck - Visual Local LLM Deployment Planner">
+    <meta property="twitter:description" content="See exactly how an LLM maps across local hardware: layers, tensor slices, experts, replicas, communication, and speculative decoding.">
     <meta property="twitter:image" content="https://mlbottleneck.com/logo.png">
     <meta name="twitter:creator" content="@xyster">
 
@@ -48,8 +48,8 @@
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "ML System Bottleneck Analyzer",
-      "description": "Web-based tool for analyzing hardware bottlenecks in machine learning systems. Visualize performance limitations across distributed setups - right in your browser!",
+      "name": "ML Bottleneck",
+      "description": "Visual local LLM deployment planner for model architecture, sharding, speculative decoding, memory fit, communication, and throughput.",
       "url": "https://mlbottleneck.com",
       "author": {
         "@type": "Person",
@@ -2332,17 +2332,330 @@ td {
         white-space: normal;
     }
 }
+
+/* Deployment-first interface */
+.app-header {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(235px, 0.34fr);
+    gap: 2rem;
+    align-items: end;
+    margin: 1.25rem 0 1.6rem;
+    padding: 1.5rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at 92% 14%, rgba(45, 212, 191, 0.18), transparent 35%),
+        linear-gradient(135deg, rgba(99, 102, 241, 0.12), transparent 45%),
+        var(--card);
+}
+
+.app-header::after {
+    content: "";
+    position: absolute;
+    right: -70px;
+    bottom: -105px;
+    width: 260px;
+    height: 260px;
+    border: 1px solid rgba(45, 212, 191, 0.22);
+    border-radius: 50%;
+    box-shadow: 0 0 0 26px rgba(45, 212, 191, 0.035), 0 0 0 60px rgba(99, 102, 241, 0.025);
+    pointer-events: none;
+}
+
+.app-header h1 {
+    max-width: 760px;
+    margin: 0.2rem 0 0.35rem;
+    font-size: clamp(1.75rem, 4vw, 3.25rem);
+    line-height: 1.02;
+}
+
+.app-subtitle {
+    max-width: 760px;
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+}
+
+.eyebrow {
+    display: block;
+    color: var(--primary);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.header-result {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 0.15rem;
+    border: 1px solid rgba(45, 212, 191, 0.28);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.9);
+    padding: 1rem;
+}
+
+.header-result-label,
+.header-result span:last-child {
+    color: #cbd5e1;
+    font-size: 0.68rem;
+}
+
+.header-result strong {
+    color: #f8fafc;
+    font-size: clamp(1.35rem, 3vw, 2rem);
+    letter-spacing: -0.04em;
+}
+
+.hf-import {
+    margin: 0.25rem 0 1rem;
+    border: 1px dashed rgba(45, 212, 191, 0.38);
+    border-radius: 10px;
+    background: rgba(45, 212, 191, 0.04);
+    padding: 0.8rem;
+}
+
+.hf-import label { margin: 0; color: var(--text); }
+.hf-import p { margin: 0.12rem 0 0.65rem; color: var(--text-secondary); font-size: 0.7rem; }
+.hf-import-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
+.hf-import-row .input,
+.hf-import-row .button { margin: 0; }
+.import-status { min-height: 1rem; margin-top: 0.4rem; color: var(--text-secondary); font-size: 0.7rem; }
+.import-status.is-error { color: #f87171; }
+.import-status.is-success { color: #22c55e; }
+
+.speculative-controls {
+    margin: -0.35rem 0 1rem;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 10px;
+    background: rgba(168, 85, 247, 0.055);
+    padding: 0.75rem;
+}
+
+.speculative-controls[hidden] { display: none; }
+.speculative-controls-head { display: flex; gap: 0.45rem; flex-direction: column; margin-bottom: 0.65rem; }
+.speculative-controls-head strong { color: #c084fc; font-size: 0.78rem; }
+.speculative-controls-head span { color: var(--text-secondary); font-size: 0.68rem; }
+.speculative-control-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+.speculative-control-grid .input { margin-bottom: 0.35rem; }
+.optional { color: var(--text-secondary); font-weight: 400; }
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.section-heading h2 { margin: 0.15rem 0 0; }
+.approximate-badge { border: 1px solid var(--border); border-radius: 999px; color: var(--text-secondary); font-size: 0.68rem; padding: 0.3rem 0.55rem; }
+.results-card { border-color: rgba(45, 212, 191, 0.28); }
+.utilization-card .chart-container { margin-top: 1rem; }
+
+.deployment-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(250px, 0.7fr);
+    gap: 0.75rem;
+    margin-bottom: 0.8rem;
+}
+
+.model-loop,
+.deployment-notes {
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--background);
+    padding: 0.8rem;
+}
+
+.model-loop-track {
+    display: grid;
+    grid-template-columns: minmax(105px, 0.7fr) auto minmax(210px, 1.7fr) auto minmax(95px, 0.65fr);
+    gap: 0.45rem;
+    align-items: stretch;
+}
+
+.model-stage {
+    display: grid;
+    align-content: center;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.58rem;
+}
+
+.model-stage.repeat { border-color: rgba(45, 212, 191, 0.34); background: rgba(45, 212, 191, 0.045); }
+.stage-arrow { align-self: center; color: var(--primary); font-weight: 800; }
+.model-stage strong { display: block; font-size: 0.76rem; }
+.model-stage span { margin-top: 0.1rem; color: var(--text-secondary); font-size: 0.64rem; line-height: 1.35; }
+.repeat-badge { color: var(--primary) !important; font-weight: 750; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.deployment-notes { display: grid; gap: 0.45rem; align-content: center; }
+.deployment-note { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 0.5rem; font-size: 0.68rem; }
+.deployment-note strong { color: var(--text); }
+.deployment-note span { color: var(--text-secondary); }
+
+.strategy-diagram {
+    position: relative;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background:
+        linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+        var(--background);
+    background-size: 22px 22px;
+    padding: 0.85rem;
+    overflow: hidden;
+}
+
+.diagram-title-row { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; margin-bottom: 0.75rem; }
+.diagram-title-row strong { font-size: 0.82rem; }
+.diagram-title-row span { color: var(--text-secondary); font-size: 0.67rem; text-align: right; }
+
+.pipeline-flow,
+.replica-flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0.55rem;
+    overflow-x: auto;
+    padding: 0.1rem 0 0.35rem;
+}
+
+.device-stage,
+.replica-card,
+.tensor-slice,
+.expert-device {
+    position: relative;
+    min-width: 190px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--card);
+    padding: 0.65rem;
+}
+
+.device-stage:not(:last-child)::after {
+    content: "→";
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    right: -0.48rem;
+    width: 0.7rem;
+    color: #f59e0b;
+    background: var(--background);
+    font-weight: 900;
+    text-align: center;
+}
+
+.device-stage:only-child { flex: 1 1 100%; min-width: min(100%, 260px); }
+
+.device-label { display: flex; justify-content: space-between; gap: 0.45rem; align-items: baseline; }
+.device-label strong { overflow: hidden; font-size: 0.74rem; text-overflow: ellipsis; white-space: nowrap; }
+.device-label span { color: var(--text-secondary); font-size: 0.59rem; white-space: nowrap; }
+.ownership-label { margin-top: 0.4rem; color: var(--primary); font-size: 0.71rem; font-weight: 750; }
+.device-detail { margin-top: 0.15rem; min-height: 2em; color: var(--text-secondary); font-size: 0.62rem; line-height: 1.35; }
+.device-metrics { display: flex; flex-wrap: wrap; gap: 0.32rem 0.6rem; margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.59rem; }
+.device-metrics strong { color: var(--text); }
+
+.tensor-frame { display: grid; grid-template-columns: minmax(135px, 0.25fr) minmax(0, 1fr); gap: 0.75rem; align-items: stretch; }
+.tensor-layer-key { display: grid; align-content: center; border: 1px solid rgba(45, 212, 191, 0.35); border-radius: 9px; background: rgba(45, 212, 191, 0.05); padding: 0.7rem; }
+.tensor-layer-key strong { font-size: 0.76rem; }
+.tensor-layer-key span { color: var(--text-secondary); font-size: 0.62rem; }
+.tensor-slices { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 0.45rem; }
+.tensor-slice { min-width: 0; border-top: 3px solid var(--primary); }
+.collective-bus { grid-column: 1 / -1; display: flex; justify-content: center; margin-top: 0.55rem; border-top: 2px solid #f59e0b; }
+.collective-bus span { margin-top: -0.65rem; border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 999px; background: var(--background); color: #f59e0b; padding: 0.22rem 0.55rem; font-size: 0.62rem; font-weight: 700; }
+
+.expert-router { display: grid; grid-template-columns: minmax(105px, 0.2fr) minmax(0, 1fr); gap: 0.65rem; align-items: stretch; }
+.router-node { display: grid; align-content: center; border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 9px; background: rgba(245, 158, 11, 0.055); padding: 0.7rem; }
+.router-node strong { color: #f59e0b; font-size: 0.75rem; }
+.router-node span { color: var(--text-secondary); font-size: 0.62rem; }
+.expert-devices { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 0.45rem; }
+.expert-device { min-width: 0; border-top: 3px solid #a855f7; }
+.expert-pool { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; margin-top: 0.45rem; }
+.expert-cell { height: 9px; border-radius: 2px; background: rgba(168, 85, 247, 0.24); }
+.expert-cell.active { background: #a855f7; box-shadow: 0 0 7px rgba(168, 85, 247, 0.6); }
+
+.replica-flow { justify-content: center; }
+.replica-card { flex: 1 0 190px; max-width: 280px; border-top: 3px solid #22c55e; }
+.replica-fork { display: flex; justify-content: center; margin-bottom: 0.55rem; color: #22c55e; font-size: 0.66rem; font-weight: 700; }
+
+.speculation-flow {
+    display: grid;
+    grid-template-columns: minmax(145px, 0.75fr) auto minmax(145px, 1fr) auto minmax(145px, 0.85fr);
+    gap: 0.45rem;
+    align-items: stretch;
+    margin: 0 0 0.75rem;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 12px;
+    background: rgba(168, 85, 247, 0.04);
+    padding: 0.75rem;
+}
+
+.spec-node { display: grid; align-content: center; min-width: 0; border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 8px; background: var(--background); padding: 0.6rem; }
+.spec-node strong { color: #c084fc; font-size: 0.72rem; }
+.spec-node span { color: var(--text-secondary); font-size: 0.61rem; }
+.spec-arrow { align-self: center; color: #c084fc; font-weight: 800; }
+.accept-meter { height: 5px; margin-top: 0.4rem; border-radius: 999px; background: rgba(248, 113, 113, 0.28); overflow: hidden; }
+.accept-meter span { display: block; height: 100%; background: #22c55e; }
+
+.table-scroll { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.table-scroll table { min-width: 760px; }
+.reference-card { min-width: 0; overflow: hidden; }
+
+.hardware-search { margin-bottom: 0.5rem; }
+
+@media (max-width: 820px) {
+    .app-header,
+    .deployment-overview { grid-template-columns: 1fr; }
+    .header-result { max-width: none; }
+    .model-loop-track { grid-template-columns: 1fr; }
+    .stage-arrow { transform: rotate(90deg); justify-self: center; }
+    .tensor-frame,
+    .expert-router { grid-template-columns: 1fr; }
+    .speculation-flow { grid-template-columns: 1fr; }
+    .spec-arrow { transform: rotate(90deg); justify-self: center; }
+}
+
+@media (max-width: 520px) {
+    body { overflow-x: hidden; }
+    .app-header { margin-top: 0; padding: 1rem; }
+    .app-header h1 { font-size: 1.9rem; }
+    .hf-import-row { grid-template-columns: 1fr; }
+    .speculative-control-grid { grid-template-columns: 1fr; }
+    .deployment-note { grid-template-columns: 1fr; gap: 0.05rem; }
+    .execution-card { padding: 0.75rem; }
+    .strategy-diagram { padding: 0.65rem; }
+}
 </style>
 </head>
 <body>
-    <h1>ML System Bottleneck Analyzer</h1>
-    <p class="app-subtitle">Pick a model and hardware. See the decode rate and what's bottlenecking it.</p>
+    <header class="app-header">
+        <div class="app-header-copy">
+            <span class="eyebrow">Local inference deployment lab</span>
+            <h1>See how a model maps onto your hardware.</h1>
+            <p class="app-subtitle">Explore what is sharded, what is duplicated, what runs in series, and where communication becomes the bottleneck.</p>
+        </div>
+        <div class="header-result" id="headerResult" aria-live="polite">
+            <span class="header-result-label">Estimated decode</span>
+            <strong id="headerResultRate">Calculating…</strong>
+            <span id="headerResultMeta">Choose a model and hardware</span>
+        </div>
+    </header>
 
     <div class="grid">
         <div class="card">
             <h2 style="margin-top: 0;">Model</h2>
             <div id="modelConfigContent">
-                <label for="modelPreset">Model</label>
+                <label for="modelSearch">Find a built-in model</label>
+                <input id="modelSearch" class="input" type="search" list="modelSearchOptions" placeholder="Search Llama, Qwen, MiniMax, GLM…" autocomplete="off">
+                <datalist id="modelSearchOptions"></datalist>
+
+                <label for="modelPreset">Model preset</label>
                     <select id="modelPreset" class="input">
                         <option value="">Custom</option>
                         <optgroup label="Llama">
@@ -2395,6 +2708,19 @@ td {
                             <option value="very_large_model_1kb">Very Large Model (1T+)</option>
                         </optgroup>
                     </select>
+
+                <div class="hf-import">
+                    <div>
+                        <label for="hfModelId">Or load any Hugging Face model</label>
+                        <p>Imports its public config, parameter count, attention shape, and MoE routing fields.</p>
+                    </div>
+                    <div class="hf-import-row">
+                        <input id="hfModelId" class="input" type="text" placeholder="org/model-name" spellcheck="false">
+                        <button id="hfImportButton" class="button" type="button">Load model</button>
+                    </div>
+                    <div id="hfImportStatus" class="import-status" role="status"></div>
+                </div>
+                <input id="hfId" type="hidden" value="">
 
                 <label for="quantizationType">Quantization</label>
                 <select id="quantizationType" class="input">
@@ -2458,12 +2784,45 @@ td {
                             <label for="optimizationMode">Inference optimization</label>
                             <select id="optimizationMode" class="input">
                                 <option value="none">Standard inference</option>
-                                <option value="speculative">Speculative decoding (2&ndash;3x speedup)</option>
+                                <option value="speculative">Speculative decoding</option>
                                 <option value="continuous_batching">Continuous batching</option>
                                 <option value="paged_attention">PagedAttention (vLLM)</option>
                                 <option value="flash_attention">Flash Attention</option>
                                 <option value="exo_phase_split">EXO phase split (prefill/decode)</option>
                             </select>
+
+                            <div id="speculativeControls" class="speculative-controls" hidden>
+                                <div class="speculative-controls-head">
+                                    <strong>Speculative path</strong>
+                                    <span>Draft several tokens, verify them with the target in one pass, then keep the accepted prefix.</span>
+                                </div>
+                                <div class="speculative-control-grid">
+                                    <div>
+                                        <label for="specMethod">Method</label>
+                                        <select id="specMethod" class="input">
+                                            <option value="draft_model">Draft model</option>
+                                            <option value="eagle3">EAGLE-3</option>
+                                            <option value="mtp">Native MTP</option>
+                                            <option value="ngram">N-gram</option>
+                                            <option value="suffix">Suffix</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="specTokens">Draft tokens / step</label>
+                                        <input id="specTokens" class="input" type="number" value="5" min="1" max="16" step="1">
+                                    </div>
+                                    <div>
+                                        <label for="specAcceptance">Expected acceptance</label>
+                                        <input id="specAcceptance" class="input" type="number" value="70" min="5" max="100" step="5">
+                                    </div>
+                                    <div>
+                                        <label for="specDraftRatio">Draft cost vs target</label>
+                                        <input id="specDraftRatio" class="input" type="number" value="8" min="0" max="100" step="1">
+                                    </div>
+                                </div>
+                                <label for="specDraftModel">Draft / speculator model <span class="optional">optional</span></label>
+                                <input id="specDraftModel" class="input" type="text" placeholder="e.g. Qwen/Qwen3-0.6B or an EAGLE head">
+                            </div>
 
                             <label for="kvCacheCompression">KV cache compression</label>
                             <select id="kvCacheCompression" class="input">
@@ -2641,10 +3000,22 @@ td {
         <div id="executionMap" aria-live="polite"></div>
     </section>
 
-    <details class="card topology-card" open>
+    <div class="card results-card" style="margin-top: 0;">
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">Estimated outcome</span>
+                <h2>Performance and fit</h2>
+            </div>
+            <span class="approximate-badge">Planning estimate</span>
+        </div>
+        <div id="alerts"></div>
+        <div id="systemAnalysis"></div>
+    </div>
+
+    <details class="card topology-card">
         <summary class="section-summary">
-            <span class="summary-title">Topology</span>
-            <span class="topology-sub">How selected hardware connects</span>
+            <span class="summary-title">Physical topology</span>
+            <span class="topology-sub">Inspect links and utilization after understanding the logical deployment</span>
         </summary>
         <div id="topologyContainer">
             <canvas id="topologyCanvas"></canvas>
@@ -2658,18 +3029,15 @@ td {
         </div>
     </details>
 
-    <div class="card" style="margin-top: 0;">
-        <h2 style="margin-top: 0;">Results <small style="font-weight: 400; color: var(--text-secondary); font-size: 0.85rem;">- approximate</small></h2>
-        <div id="alerts"></div>
-        <div id="systemAnalysis"></div>
-    </div>
-
-    <div class="card">
-        <h2 style="margin-top: 0;">Resource utilization</h2>
+    <details class="card utilization-card">
+        <summary class="section-summary">
+            <span class="summary-title">Per-device utilization chart</span>
+            <span class="summary-sub">Memory, compute, local bandwidth, and network</span>
+        </summary>
         <div class="chart-container">
             <canvas id="utilizationChart"></canvas>
         </div>
-    </div>
+    </details>
 
     <details class="card reference-card">
         <summary class="section-summary">
@@ -2694,6 +3062,7 @@ td {
             </div>
         </div>
 
+        <div class="table-scroll" tabindex="0" aria-label="Scrollable benchmark results">
         <table id="llmTable">
         <thead>
             <tr>
@@ -2710,6 +3079,7 @@ td {
         </thead>
         <tbody></tbody>
         </table>
+        </div>
     </details>
 
     <script>
@@ -4538,6 +4908,44 @@ const DEVICE_TEMPLATES = {
     },
     type: 'GPU'
   },
+  'AMD MI350X': {
+    name: 'AMD Instinct MI350X 288GB',
+    memoryGB: 288,
+    localBandwidthGBps: 8000,
+    networkBandwidthGBps: 153,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 144.2,
+      'float16': 2300,
+      'bfloat16': 2300,
+      'fp8': 4600,
+      'int8': 4600,
+      'q4': 9200
+    },
+    powerWatts: 1000,
+    sourceUrl: 'https://www.amd.com/en/products/accelerators/instinct/mi350/mi350x.html',
+    type: 'GPU'
+  },
+  'AMD Radeon AI PRO R9700': {
+    name: 'AMD Radeon AI PRO R9700 32GB',
+    memoryGB: 32,
+    localBandwidthGBps: 640,
+    networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 47.8,
+      'float16': 191,
+      'bfloat16': 191,
+      'fp8': 383,
+      'int8': 383,
+      'q4': 766
+    },
+    powerWatts: 300,
+    sourceUrl: 'https://www.amd.com/en/products/graphics/workstations/radeon-ai-pro/ai-9000-series/amd-radeon-ai-pro-r9700.html',
+    type: 'GPU'
+  },
   'RX 7900 XTX': {
     name: 'AMD RX 7900 XTX',
     memoryGB: 24,
@@ -4737,6 +5145,60 @@ const DEVICE_TEMPLATES = {
       'q4': 550.5
     },
     powerWatts: 230,
+    sourceUrl: 'https://www.intel.com/content/www/us/en/products/docs/discrete-gpus/arc/workstations/b-series/overview.html',
+    type: 'GPU'
+  },
+  'Intel Arc Pro B65': {
+    name: 'Intel Arc Pro B65 32GB',
+    memoryGB: 32,
+    localBandwidthGBps: 608,
+    networkBandwidthGBps: 64,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 12.28,
+      'float16': 24.56,
+      'bfloat16': 24.56,
+      'int8': 197,
+      'q4': 394
+    },
+    powerWatts: 200,
+    sourceUrl: 'https://www.intel.com/content/www/us/en/products/docs/discrete-gpus/arc/workstations/b-series/overview.html',
+    type: 'GPU'
+  },
+  'Intel Arc Pro B60': {
+    name: 'Intel Arc Pro B60 24GB',
+    memoryGB: 24,
+    localBandwidthGBps: 456,
+    networkBandwidthGBps: 32,
+    pcieGeneration: 5,
+    pcieLanes: 8,
+    computeTFlops: {
+      'float32': 12.28,
+      'float16': 24.56,
+      'bfloat16': 24.56,
+      'int8': 197,
+      'q4': 394
+    },
+    powerWatts: 200,
+    sourceUrl: 'https://www.intel.com/content/www/us/en/products/docs/discrete-gpus/arc/workstations/b-series/overview.html',
+    type: 'GPU'
+  },
+  'Intel Arc Pro B50': {
+    name: 'Intel Arc Pro B50 16GB',
+    memoryGB: 16,
+    localBandwidthGBps: 224,
+    networkBandwidthGBps: 32,
+    pcieGeneration: 5,
+    pcieLanes: 8,
+    computeTFlops: {
+      'float32': 10.65,
+      'float16': 21.3,
+      'bfloat16': 21.3,
+      'int8': 170,
+      'q4': 340
+    },
+    powerWatts: 70,
     sourceUrl: 'https://www.intel.com/content/www/us/en/products/docs/discrete-gpus/arc/workstations/b-series/overview.html',
     type: 'GPU'
   },
@@ -5314,6 +5776,7 @@ const DEVICE_TEMPLATES = {
             const tokenLengths = getTokenLengthConfigFromDom();
             return {
                 modelPreset: document.getElementById('modelPreset').value,
+                hfId: document.getElementById('hfId')?.value?.trim() || '',
                 quantizationType: document.getElementById('quantizationType').value,
                 totalParamsB: parseFloat(document.getElementById('totalParamsB').value),
                 batchSize: parseFloat(document.getElementById('batchSize').value),
@@ -5334,6 +5797,11 @@ const DEVICE_TEMPLATES = {
                 dtype: document.getElementById('dtype').value,
                 parallelismStrategy: document.getElementById('parallelismStrategy').value,
                 optimizationMode: document.getElementById('optimizationMode')?.value || 'none',
+                specMethod: document.getElementById('specMethod')?.value || 'draft_model',
+                specTokens: Math.max(1, parseInt(document.getElementById('specTokens')?.value || '5', 10)),
+                specAcceptance: Math.min(1, Math.max(0.05, parseFloat(document.getElementById('specAcceptance')?.value || '70') / 100)),
+                specDraftRatio: Math.min(1, Math.max(0, parseFloat(document.getElementById('specDraftRatio')?.value || '8') / 100)),
+                specDraftModel: document.getElementById('specDraftModel')?.value?.trim() || '',
                 kvCacheCompression: document.getElementById('kvCacheCompression')?.value || 'none',
                 runtimeFramework: document.getElementById('runtimeFramework')?.value || 'auto'
             };
@@ -5559,9 +6027,35 @@ const DEVICE_TEMPLATES = {
             };
 
             if (mode === 'speculative') {
-                adjustments.decodeMultiplier = batchSize > 1 ? 1.35 : 1.65;
+                const candidateCount = Math.max(1, Math.min(16, modelConfig.specTokens || 5));
+                const acceptance = Math.max(0.05, Math.min(1, modelConfig.specAcceptance || 0.7));
+                const defaultDraftRatio = {
+                    ngram: 0.01,
+                    suffix: 0.015,
+                    mtp: 0.04,
+                    eagle3: 0.06,
+                    draft_model: 0.08
+                }[modelConfig.specMethod] || 0.08;
+                const draftRatio = Number.isFinite(modelConfig.specDraftRatio)
+                    ? modelConfig.specDraftRatio
+                    : defaultDraftRatio;
+                const expectedAccepted = Array.from({ length: candidateCount }, (_, index) => acceptance ** (index + 1))
+                    .reduce((sum, probability) => sum + probability, 0);
+                const expectedOutputTokens = 1 + expectedAccepted;
+                const verificationCost = 1 + candidateCount * (batchSize > 1 ? 0.16 : 0.10);
+                const draftCost = candidateCount * draftRatio;
+                const coordinationCost = 0.04;
+                adjustments.decodeMultiplier = Math.max(0.5, Math.min(4, expectedOutputTokens / (verificationCost + draftCost + coordinationCost)));
                 adjustments.networkMultiplier = 1.05;
-                adjustments.label = 'Speculative decoding';
+                adjustments.label = `Speculative decoding (${adjustments.decodeMultiplier.toFixed(2)}x modeled)`;
+                adjustments.speculation = {
+                    candidateCount,
+                    acceptance,
+                    draftRatio,
+                    expectedAccepted,
+                    expectedOutputTokens,
+                    method: modelConfig.specMethod || 'draft_model'
+                };
             } else if (mode === 'continuous_batching') {
                 adjustments.decodeMultiplier = batchSize > 1 ? 1.18 : 1.05;
                 adjustments.prefillMultiplier = batchSize > 1 ? 1.08 : 1.0;
@@ -7557,53 +8051,168 @@ const DEVICE_TEMPLATES = {
             const { config, strategy, shards, composition } = plan;
             const isMoE = config.isMoE;
             const headDim = config.headDim || Math.round(config.hiddenSize / Math.max(config.numHeads, 1));
-            const activeDots = isMoE ? Math.max(1, Math.round(16 * config.activeExperts / config.numExperts)) : 0;
-            const expertDots = isMoE
-                ? Array.from({ length: 16 }, (_, index) => `<span class="expert-dot${index < activeDots ? ' active' : ''}"></span>`).join('')
-                : '';
             const modelSource = config.hfId
                 ? `<a href="https://huggingface.co/${encodeURI(config.hfId)}" target="_blank" rel="noopener noreferrer">Model config</a>`
                 : '';
             const exactEvidence = evidenceRows.some(run => run.exact);
             const liveUrl = getLocalmaxxingUrl(config, shards.map(shard => shard.device));
+            const optimization = getOptimizationAdjustments(config);
 
-            return `
-                <div class="architecture-strip">
-                    <div class="architecture-stage">
-                        <div class="architecture-kicker">Input</div>
-                        <div class="architecture-title">Tokens + embeddings</div>
-                        <div class="architecture-meta">${formatTokenCount(config.promptTokens)} prompt tokens<br>${config.hiddenSize.toLocaleString()} hidden width</div>
-                    </div>
-                    <div class="architecture-stage">
-                        <div class="architecture-kicker">Repeated ${config.numLayers}x</div>
-                        <div class="architecture-title">${isMoE ? 'Sparse Mixture-of-Experts block' : 'Transformer block'}</div>
-                        <div class="block-anatomy">
-                            <div class="anatomy-part">
-                                <strong>${getArchitectureProfile(config).attentionLabel}</strong>
-                                <span>${config.numHeads} query / ${config.numKVHeads} KV heads - ${headDim} dim</span>
-                            </div>
-                            ${isMoE ? `
-                                <div class="anatomy-part router">
-                                    <strong>Router: top ${config.activeExperts}</strong>
-                                    <span>Selects ${config.activeExperts} of ${config.numExperts} experts for each token</span>
-                                </div>
-                                <div class="anatomy-part experts">
-                                    <strong>${config.numExperts} expert MLPs</strong>
-                                    <span>${composition.expertParamsB.toFixed(1)}B stored - ${composition.activeExpertParamsB.toFixed(1)}B touched/token</span>
-                                    <div class="expert-sample" aria-label="Representative expert pool; highlighted cells show the active fraction">${expertDots}</div>
-                                </div>
-                            ` : `
-                                <div class="anatomy-part experts" style="grid-column: span 2;">
-                                    <strong>Dense feed-forward network</strong>
-                                    <span>${config.intermediateSize.toLocaleString()} intermediate width - every parameter participates</span>
-                                </div>
-                            `}
+            const strategyCopy = {
+                pipeline: {
+                    title: 'Layers run in series across devices',
+                    ownership: 'Each device stores a different contiguous layer range.',
+                    order: 'A token visits device 1, then 2, then 3…',
+                    duplicate: 'Nothing is duplicated unless a runtime keeps extra buffers.'
+                },
+                tensor: {
+                    title: 'Every layer is split across all devices',
+                    ownership: `Each device stores a unique 1/${shards.length} slice of every matrix${isMoE ? ' and expert' : ''}.`,
+                    order: 'All devices work on the same layer at the same time.',
+                    duplicate: 'The layer structure and activations are shared; weight slices are not duplicates.'
+                },
+                expert: {
+                    title: 'Routers dispatch tokens to expert owners',
+                    ownership: 'Attention and routers are shared; each device owns a different expert range.',
+                    order: `Each token fans out to ${config.activeExperts} selected experts, then results are gathered.`,
+                    duplicate: 'Expert weights are unique; shared attention/router weights may be replicated.'
+                },
+                data: {
+                    title: 'Full model replicas serve independent requests',
+                    ownership: 'Every device stores the entire model.',
+                    order: 'Requests split before inference and never pass between replicas.',
+                    duplicate: `The model is duplicated ${shards.length} times; this improves throughput, not single-request latency.`
+                }
+            }[strategy] || {
+                title: `${formatStrategyLabel(strategy)} deployment`,
+                ownership: 'The model and token state are partitioned according to the selected strategy.',
+                order: 'Devices cooperate on each decode step.',
+                duplicate: 'Inspect each device assignment below for resident and active state.'
+            };
+
+            const shardStatusClass = shard => shard.memoryUtilization > 100 ? ' is-over' : (shard.memoryUtilization > 85 ? ' is-tight' : '');
+            const deviceContent = shard => `
+                <div class="device-label">
+                    <strong>${escapeHtml(shard.device.name || shard.device.template)}</strong>
+                    <span>Device ${shard.index + 1}</span>
+                </div>
+                <div class="ownership-label">${shard.assignment}</div>
+                <div class="device-detail">${shard.detail}</div>
+                <div class="device-metrics">
+                    <span><strong>${shard.residentWeightsGB.toFixed(1)} GB</strong> resident</span>
+                    <span><strong>${shard.activeModelSizeGB.toFixed(1)} GB</strong> active</span>
+                    <span><strong>${shard.memoryUtilization.toFixed(0)}%</strong> memory</span>
+                </div>
+                <div class="memory-track" aria-label="${shard.memoryUtilization.toFixed(0)} percent memory utilization"><div class="memory-fill" style="width:${Math.min(100, shard.memoryUtilization).toFixed(1)}%"></div></div>
+            `;
+
+            let strategyDiagram;
+            if (strategy === 'tensor') {
+                strategyDiagram = `
+                    <div class="tensor-frame">
+                        <div class="tensor-layer-key">
+                            <span class="repeat-badge">Repeated ${config.numLayers}×</span>
+                            <strong>One transformer layer</strong>
+                            <span>${isMoE ? `${config.numExperts} experts + router` : 'Attention + feed-forward'} is cut into ${shards.length} non-duplicate weight slices.</span>
+                        </div>
+                        <div class="tensor-slices">
+                            ${shards.map(shard => `<div class="tensor-slice shard-card${shardStatusClass(shard)}">${deviceContent(shard)}</div>`).join('')}
+                            <div class="collective-bus"><span>All-reduce / gather after each layer · ${config.numLayers} collective steps per token</span></div>
                         </div>
                     </div>
-                    <div class="architecture-stage">
-                        <div class="architecture-kicker">Output</div>
-                        <div class="architecture-title">LM head${config.useMTP ? ' + MTP' : ''}</div>
-                        <div class="architecture-meta">One token per decode step${config.useMTP ? `<br>${config.mtpModules || 1} multi-token prediction modules` : ''}<br>${modelSource}</div>
+                `;
+            } else if (strategy === 'expert') {
+                const activeCells = Math.max(1, Math.round(8 * config.activeExperts / Math.max(config.numExperts, 1)));
+                strategyDiagram = `
+                    <div class="expert-router">
+                        <div class="router-node">
+                            <strong>Router · top ${config.activeExperts}</strong>
+                            <span>Scores ${config.numExperts} experts for every token and sends the token only to the winners.</span>
+                        </div>
+                        <div class="expert-devices">
+                            ${shards.map(shard => `
+                                <div class="expert-device shard-card${shardStatusClass(shard)}">
+                                    ${deviceContent(shard)}
+                                    <div class="expert-pool" aria-label="Representative expert ownership; bright cells show the expected active share">
+                                        ${Array.from({ length: 8 }, (_, index) => `<span class="expert-cell${index < activeCells ? ' active' : ''}"></span>`).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                            <div class="collective-bus"><span>Token dispatch → selected experts → gather · all-to-all traffic</span></div>
+                        </div>
+                    </div>
+                `;
+            } else if (strategy === 'data') {
+                strategyDiagram = `
+                    <div class="replica-fork">Independent request queue ↙ ↓ ↘</div>
+                    <div class="replica-flow">
+                        ${shards.map(shard => `<div class="replica-card shard-card${shardStatusClass(shard)}">${deviceContent(shard)}</div>`).join('')}
+                    </div>
+                `;
+            } else {
+                strategyDiagram = `
+                    <div class="pipeline-flow">
+                        ${shards.map(shard => `<div class="device-stage shard-card${shardStatusClass(shard)}">${deviceContent(shard)}</div>`).join('')}
+                    </div>
+                `;
+            }
+
+            const speculationHtml = config.optimizationMode === 'speculative' && optimization.speculation ? (() => {
+                const spec = optimization.speculation;
+                const methodLabel = {
+                    draft_model: 'Draft model',
+                    eagle3: 'EAGLE-3 head',
+                    mtp: 'Native MTP heads',
+                    ngram: 'N-gram proposer',
+                    suffix: 'Suffix proposer'
+                }[spec.method] || spec.method;
+                return `
+                    <div class="speculation-flow" aria-label="Speculative decoding flow">
+                        <div class="spec-node">
+                            <strong>${methodLabel}</strong>
+                            <span>${escapeHtml(config.specDraftModel || 'Lightweight proposer')} drafts ${spec.candidateCount} candidate tokens at ${(spec.draftRatio * 100).toFixed(0)}% of target decode cost/token.</span>
+                        </div>
+                        <span class="spec-arrow">→</span>
+                        <div class="spec-node">
+                            <strong>Target verifies once</strong>
+                            <span>The target model below scores the entire candidate sequence in one pass.</span>
+                        </div>
+                        <span class="spec-arrow">→</span>
+                        <div class="spec-node">
+                            <strong>${(spec.acceptance * 100).toFixed(0)}% expected acceptance</strong>
+                            <span>About ${spec.expectedAccepted.toFixed(1)} drafted tokens accepted per step · modeled ${optimization.decodeMultiplier.toFixed(2)}× decode.</span>
+                            <div class="accept-meter"><span style="width:${(spec.acceptance * 100).toFixed(0)}%"></span></div>
+                        </div>
+                    </div>
+                `;
+            })() : '';
+
+            return `
+                ${speculationHtml}
+                <div class="deployment-overview">
+                    <div class="model-loop">
+                        <div class="model-loop-track">
+                            <div class="model-stage">
+                                <strong>Embedding</strong>
+                                <span>${formatTokenCount(config.promptTokens)} input tokens · ${config.hiddenSize.toLocaleString()} wide</span>
+                            </div>
+                            <span class="stage-arrow">→</span>
+                            <div class="model-stage repeat">
+                                <span class="repeat-badge">Serial depth · repeated ${config.numLayers}×</span>
+                                <strong>${isMoE ? 'Attention → router → selected experts' : 'Attention → dense feed-forward'}</strong>
+                                <span>${getArchitectureProfile(config).attentionLabel} · ${config.numHeads} Q / ${config.numKVHeads} KV heads · ${headDim} head dim${isMoE ? ` · top ${config.activeExperts} of ${config.numExperts} experts active` : ''}</span>
+                            </div>
+                            <span class="stage-arrow">→</span>
+                            <div class="model-stage">
+                                <strong>LM head</strong>
+                                <span>Next-token logits${config.useMTP ? ` · ${config.mtpModules || 1} MTP modules` : ''} · ${modelSource}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="deployment-notes">
+                        <div class="deployment-note"><strong>Stored where</strong><span>${strategyCopy.ownership}</span></div>
+                        <div class="deployment-note"><strong>Runs when</strong><span>${strategyCopy.order}</span></div>
+                        <div class="deployment-note"><strong>Duplicated?</strong><span>${strategyCopy.duplicate}</span></div>
                     </div>
                 </div>
                 <div class="execution-summary-line">
@@ -7613,27 +8222,12 @@ const DEVICE_TEMPLATES = {
                     <span class="execution-chip"><strong>${plan.totalWeightsGB.toFixed(1)} GB</strong> quantized weights</span>
                     <span class="execution-chip"><strong>${plan.communication}</strong></span>
                 </div>
-                <div class="shard-grid">
-                    ${shards.map(shard => {
-                        const statusClass = shard.memoryUtilization > 100 ? ' is-over' : (shard.memoryUtilization > 85 ? ' is-tight' : '');
-                        return `
-                            <div class="shard-card${statusClass}">
-                                <div class="shard-head">
-                                    <div class="shard-name">${escapeHtml(shard.device.name || shard.device.template)}</div>
-                                    <div class="shard-index">GPU ${shard.index + 1}/${shards.length}</div>
-                                </div>
-                                <div class="shard-assignment">${shard.assignment}</div>
-                                <div class="architecture-meta">${shard.detail}</div>
-                                <div class="shard-stats">
-                                    <div><strong>${shard.residentWeightsGB.toFixed(1)} GB</strong>resident weights</div>
-                                    <div><strong>${shard.activeModelSizeGB.toFixed(1)} GB</strong>active weight path</div>
-                                    <div><strong>${shard.kvCacheGB.toFixed(2)} GB</strong>decode KV cache</div>
-                                    <div><strong>${shard.memoryUtilization.toFixed(0)}%</strong>memory use</div>
-                                </div>
-                                <div class="memory-track" aria-label="${shard.memoryUtilization.toFixed(0)} percent memory utilization"><div class="memory-fill" style="width:${Math.min(100, shard.memoryUtilization).toFixed(1)}%"></div></div>
-                            </div>
-                        `;
-                    }).join('')}
+                <div class="strategy-diagram">
+                    <div class="diagram-title-row">
+                        <strong>${strategyCopy.title}</strong>
+                        <span>${plan.communication}</span>
+                    </div>
+                    ${strategyDiagram}
                 </div>
                 <div class="evidence-panel">
                     <div class="evidence-lead">
@@ -8057,6 +8651,15 @@ const DEVICE_TEMPLATES = {
             updateAlerts(metrics);
             updateChart(metrics);
 
+            const headerRate = document.getElementById('headerResultRate');
+            const headerMeta = document.getElementById('headerResultMeta');
+            const renderedRate = analysisContainer.querySelector('.rate-value')?.textContent?.replace(/\s+/g, ' ').trim();
+            if (headerRate && renderedRate) headerRate.textContent = renderedRate;
+            if (headerMeta) {
+                const config = buildEffectiveModelConfig();
+                headerMeta.textContent = `${config.label || getModelPresetLabel(config.modelPreset) || config.hfId || `${config.totalParamsB.toFixed(1)}B model`} · ${devices.length} device${devices.length === 1 ? '' : 's'} · ${formatStrategyLabel(config.parallelismStrategy)}`;
+            }
+
             // Update model summary in collapsed header
             if (typeof updateModelSummary === 'function') {
                 updateModelSummary();
@@ -8073,6 +8676,120 @@ const DEVICE_TEMPLATES = {
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+
+        function parseHuggingFaceModelMetadata(apiInfo = {}, rawConfig = {}, hfId = '') {
+            let config = rawConfig && Object.keys(rawConfig).length ? rawConfig : (apiInfo.config || {});
+            if (config.text_config && typeof config.text_config === 'object') config = { ...config, ...config.text_config };
+            if (config.language_config && typeof config.language_config === 'object') config = { ...config, ...config.language_config };
+
+            const firstNumber = (...values) => {
+                const match = values.find(value => Number.isFinite(Number(value)) && Number(value) > 0);
+                return match === undefined ? undefined : Number(match);
+            };
+            const hiddenSize = firstNumber(config.hidden_size, config.d_model, config.n_embd, config.dim);
+            const numLayers = firstNumber(config.num_hidden_layers, config.n_layer, config.num_layers, config.n_layers);
+            const numHeads = firstNumber(config.num_attention_heads, config.n_head, config.num_heads, config.n_heads);
+            const numKVHeads = firstNumber(config.num_key_value_heads, config.n_kv_heads, config.num_kv_heads, numHeads);
+            const intermediateSize = firstNumber(config.intermediate_size, config.ffn_dim, config.n_inner, config.hidden_dim, hiddenSize ? hiddenSize * 4 : undefined);
+            const numExperts = firstNumber(config.num_local_experts, config.num_experts, config.n_routed_experts, config.moe_num_experts, 1);
+            const activeExperts = firstNumber(config.num_experts_per_tok, config.num_selected_experts, config.num_experts_per_token, config.moe_top_k, config.num_experts_per_token, 1);
+            const safetensorTotal = firstNumber(apiInfo.safetensors?.total);
+            const declaredParams = firstNumber(config.num_parameters, config.n_params, apiInfo.numParameters);
+            let totalParams = safetensorTotal || declaredParams;
+
+            if (!totalParams && hiddenSize && numLayers && numHeads && intermediateSize) {
+                const headDim = hiddenSize / numHeads;
+                const attentionParams = hiddenSize * hiddenSize * 2 + hiddenSize * (numKVHeads * headDim) * 2;
+                const feedForwardParams = 3 * hiddenSize * intermediateSize * Math.max(1, numExperts);
+                const embeddingParams = (firstNumber(config.vocab_size, config.padded_vocab_size) || 0) * hiddenSize;
+                totalParams = numLayers * (attentionParams + feedForwardParams) + embeddingParams;
+            }
+
+            if (!totalParams || !hiddenSize || !numLayers || !numHeads) {
+                throw new Error('The public config does not expose enough architecture metadata to build this model.');
+            }
+
+            const isMoE = numExperts > 1;
+            return normalizeModelConfig({
+                hfId: hfId || apiInfo.id || apiInfo.modelId || '',
+                label: apiInfo.id || apiInfo.modelId || hfId || 'Imported model',
+                totalParamsB: totalParams / 1e9,
+                hiddenSize,
+                numLayers,
+                numHeads,
+                numKVHeads,
+                intermediateSize,
+                numExperts,
+                activeExperts: Math.min(activeExperts, numExperts),
+                routingType: isMoE ? 'moe' : 'dense',
+                architectureType: 'transformer',
+                attentionMechanism: 'auto',
+                maxSeqLength: firstNumber(config.max_position_embeddings, config.max_sequence_length, config.seq_length),
+                isMoE,
+                modelType: config.model_type || '',
+                architectures: config.architectures || []
+            });
+        }
+
+        async function importHuggingFaceModel() {
+            const input = document.getElementById('hfModelId');
+            const button = document.getElementById('hfImportButton');
+            const status = document.getElementById('hfImportStatus');
+            const hfId = input?.value.trim().replace(/^https?:\/\/huggingface\.co\//i, '').replace(/\/$/, '');
+            if (!hfId || !hfId.includes('/')) {
+                status.className = 'import-status is-error';
+                status.textContent = 'Enter a Hugging Face ID in org/model format.';
+                return;
+            }
+
+            button.disabled = true;
+            status.className = 'import-status';
+            status.textContent = 'Reading the public model config…';
+            const encodedPath = hfId.split('/').map(encodeURIComponent).join('/');
+
+            try {
+                const [apiResponse, configResponse] = await Promise.all([
+                    fetch(`https://huggingface.co/api/models/${encodedPath}`),
+                    fetch(`https://huggingface.co/${encodedPath}/resolve/main/config.json`)
+                ]);
+                if (!apiResponse.ok && !configResponse.ok) {
+                    throw new Error(apiResponse.status === 401 || configResponse.status === 401
+                        ? 'This model is gated or private; only public configs can be imported in-browser.'
+                        : `Hugging Face returned ${apiResponse.status || configResponse.status}. Check the model ID.`);
+                }
+                const apiInfo = apiResponse.ok ? await apiResponse.json() : {};
+                const rawConfig = configResponse.ok ? await configResponse.json() : (apiInfo.config || {});
+                const parsed = parseHuggingFaceModelMetadata(apiInfo, rawConfig, hfId);
+                document.getElementById('modelPreset').value = '';
+                document.getElementById('hfId').value = parsed.hfId;
+                const fieldValues = {
+                    totalParamsB: parsed.totalParamsB.toFixed(3),
+                    hiddenSize: parsed.hiddenSize,
+                    numLayers: parsed.numLayers,
+                    numHeads: parsed.numHeads,
+                    numKVHeads: parsed.numKVHeads,
+                    intermediateSize: parsed.intermediateSize,
+                    numExperts: parsed.numExperts,
+                    activeExperts: parsed.activeExperts,
+                    routingType: parsed.routingType,
+                    architectureType: parsed.architectureType,
+                    attentionMechanism: parsed.attentionMechanism
+                };
+                Object.entries(fieldValues).forEach(([id, value]) => {
+                    const element = document.getElementById(id);
+                    if (element && value !== undefined) element.value = value;
+                });
+                document.getElementById('activeParamsB').value = parsed.activeParamsB.toFixed(3);
+                status.className = 'import-status is-success';
+                status.textContent = `Loaded ${parsed.totalParamsB.toFixed(1)}B parameters · ${parsed.numLayers} layers · ${parsed.isMoE ? `${parsed.activeExperts} of ${parsed.numExperts} experts active` : 'dense model'}.`;
+                updateSystemAnalysis();
+            } catch (error) {
+                status.className = 'import-status is-error';
+                status.textContent = error.message || 'Unable to import that model.';
+            } finally {
+                button.disabled = false;
+            }
         }
 
         function getSelectedDevice() {
@@ -8397,6 +9114,8 @@ const DEVICE_TEMPLATES = {
                     ${badgeHtml}
                     <div class="hardware-preset-row">
                         <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0;">Hardware preset</label>
+                        <input class="input hardware-search" type="search" placeholder="Filter NVIDIA, AMD, Intel, Apple…" aria-label="Filter hardware presets"
+                               oninput="filterHardwarePresets(this.value, this.closest('.hardware-preset-row').querySelector('select'))">
                         <div class="hardware-preset-line">
                             <select class="input" onchange="handleDeviceTemplateChange(${selectedDevice.id}, this)">
                                 <optgroup label="Custom">
@@ -8747,8 +9466,30 @@ const DEVICE_TEMPLATES = {
 		updateSystemAnalysis();
 	}
 
+        function updateSpeculativeControls() {
+            const controls = document.getElementById('speculativeControls');
+            if (controls) controls.hidden = document.getElementById('optimizationMode')?.value !== 'speculative';
+        }
+
+        function filterHardwarePresets(query, select) {
+            if (!select) return;
+            const normalizedQuery = String(query || '').trim().toLowerCase();
+            Array.from(select.options).forEach(option => {
+                const isSpecial = option.value === 'Custom' || option.value.startsWith('lib_');
+                option.hidden = Boolean(normalizedQuery) && !isSpecial && !option.textContent.toLowerCase().includes(normalizedQuery) && option.value !== select.value;
+            });
+        }
+
 
         document.getElementById('modelPreset').addEventListener('change', updateModelConfigFromPreset);
+        document.getElementById('optimizationMode').addEventListener('change', updateSpeculativeControls);
+        document.getElementById('hfImportButton').addEventListener('click', importHuggingFaceModel);
+        document.getElementById('hfModelId').addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                importHuggingFaceModel();
+            }
+        });
         document.getElementById('quantizationType').addEventListener('change', () => {
 			// Update display for custom devices
 			updateDeviceDisplay();
@@ -8761,6 +9502,7 @@ const DEVICE_TEMPLATES = {
             }
         });
 		updateModelConfigFromPreset();
+        updateSpeculativeControls();
         updateDeviceDisplay();
         updateSystemAnalysis();
 		
@@ -9347,6 +10089,25 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        });
 	        modelPresetSelect.appendChild(optgroup);
 	    }
+
+        const modelSearch = document.getElementById('modelSearch');
+        const modelSearchOptions = document.getElementById('modelSearchOptions');
+        const searchableModels = Object.entries(MODEL_PRESETS)
+            .map(([key, preset]) => ({ key, label: preset.label || formatModelPresetName(key), hfId: preset.hfId || '' }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+        modelSearchOptions.innerHTML = searchableModels.map(model =>
+            `<option value="${escapeHtml(model.label)}">${escapeHtml(model.hfId || model.key)}</option>`
+        ).join('');
+        modelSearch.addEventListener('change', () => {
+            const query = modelSearch.value.trim().toLowerCase();
+            const match = searchableModels.find(model =>
+                model.label.toLowerCase() === query || model.key.toLowerCase() === query || model.hfId.toLowerCase() === query
+            ) || searchableModels.find(model => model.label.toLowerCase().includes(query));
+            if (!match) return;
+            modelPresetSelect.value = match.key;
+            modelSearch.value = match.label;
+            updateModelConfigFromPreset();
+        });
 	    
 	    renderTable(data);
 	    updateSystemAnalysis();
@@ -9746,6 +10507,12 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
                     if (_topologyDetails.open) setTimeout(updateTopology, 50);
                 });
             }
+            const _utilizationDetails = document.querySelector('.utilization-card');
+            if (_utilizationDetails) {
+                _utilizationDetails.addEventListener('toggle', () => {
+                    if (_utilizationDetails.open && utilizationChart) setTimeout(() => utilizationChart.resize(), 50);
+                });
+            }
         } catch (e) { /* no-op: non-browser environments */ }
 
         // Handle window resize
@@ -9791,6 +10558,8 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             deriveMoEComposition,
             getExecutionEvidence,
             getLocalmaxxingUrl,
+            parseHuggingFaceModelMetadata,
+            getOptimizationAdjustments,
             buildExecutionPlan,
             buildExecutionMapHtml,
             calculateWorkflowSummary,
