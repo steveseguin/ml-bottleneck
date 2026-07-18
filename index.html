@@ -5856,7 +5856,7 @@ const DEVICE_TEMPLATES = {
     name: 'NVIDIA DGX Spark (GB10)',
     memoryGB: 128,
     localBandwidthGBps: 273,            // LPDDR5X-9400 unified memory
-    networkBandwidthGBps: 10 / 8,
+    networkBandwidthGBps: 200 / 8,      // built-in ConnectX-7 200Gb cluster link
     computeTFlops: {
       'float32': 125,                    // Grace Blackwell Superchip
       'float16': 250,

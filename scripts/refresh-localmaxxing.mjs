@@ -141,6 +141,7 @@ function normalizeModel(model) {
 
 function normalizeGoldCase(run) {
   const sourceHfId = run.model?.baseModel?.hfId || run.model?.hfId || '';
+  const runHfId = run.model?.hfId || sourceHfId;
   const presetKey = pickRule(sourceHfId, MODEL_PRESET_RULES);
   const hardwareTemplate = pickRule(run.hardwareGroupLabel || run.hardware?.gpuName || run.hardware?.chipVariant || '', HARDWARE_RULES);
   const runtimeKey = RUNTIME_KEYS.get((run.engine?.engineName || '').toLowerCase()) || null;
@@ -149,12 +150,35 @@ function normalizeGoldCase(run) {
   const batchSize = run.batchSize || 1;
   const contextLength = run.contextLength || 2048;
   const isSpeculative = Boolean(run.engineFlags?.specDecoding || run.engineFlags?.mtpEnabled || /speculative|draft-model|mtp/i.test(command));
+  // Pruned/modified variants (REAP, abliterated, distill-merges) have different
+  // weights than the preset they would map to; using them as gold evidence
+  // makes real runs "beat the physics ceiling".
+  const isModifiedVariant = /reap|prun|abliterat/i.test(`${runHfId} ${run.model?.displayName || ''}`);
+  // "# Remote endpoint" rows record a served API, not a reproducible command,
+  // and rows without a recognizable engine invocation cannot be re-run.
+  const isRecordedEndpoint = command.trim().startsWith('#');
+  const hasEngineInvocation = /llama|vllm|sglang|ollama|mlx|trtllm|trt-llm|exo/i.test(command);
 
   if (!presetKey || !hardwareTemplate || !runtimeKey || !quantKey) return null;
   if (batchSize !== 1 || isSpeculative || !command || !Number.isFinite(run.tokSOut)) return null;
+  if (isModifiedVariant || isRecordedEndpoint || !hasEngineInvocation) return null;
   if (run.tokSOut <= 0 || run.tokSOut > 1000 || contextLength > 131072) return null;
 
-  const deviceCount = Math.max(1, run.hardware?.gpuCount || 1);
+  // Trust an explicit tensor-parallel degree in the command over the recorded
+  // per-node GPU count (multi-node runs report gpuCount per node).
+  const tpMatch = command.match(/(?:-tp|--tensor-parallel-size)[=\s]+(\d+)/);
+  const tpDegree = tpMatch ? parseInt(tpMatch[1], 10) : 1;
+  const deviceCount = Math.max(1, run.hardware?.gpuCount || 1, tpDegree);
+
+  // A fast dense-model run whose claimed quantization could not physically
+  // fit the recorded memory means the quant label is wrong; genuine
+  // heavy-offload dense runs decode slowly and are kept. (MoE models can
+  // legitimately overflow, so they are handled by the cross-quant check in
+  // chooseGoldCases instead.)
+  const bytesPerParam = { q4: 0.6, int8: 1.06, fp8: 1.06, float16: 2.1, bfloat16: 2.1, float32: 4.2 }[quantKey] || 2.1;
+  const claimedWeightGB = (run.model?.params || 0) * bytesPerParam;
+  const recordedMemoryGB = run.hardware?.vramGb || run.hardware?.unifiedMemoryGb || 0;
+  if (!run.model?.isMoE && recordedMemoryGB > 0 && claimedWeightGB > recordedMemoryGB * 1.5 && run.tokSOut > 5) return null;
   let reproducibility = 4;
   if (run.engine?.engineVersion) reproducibility += 1;
   if (run.tokSPrefill || run.ttftMs || run.peakVramGb) reproducibility += 1;
@@ -192,7 +216,26 @@ function normalizeGoldCase(run) {
 }
 
 function chooseGoldCases(runs) {
-  const eligible = runs.map(normalizeGoldCase).filter(Boolean);
+  let eligible = runs.map(normalizeGoldCase).filter(Boolean);
+
+  // Cross-quant physics: a 16/32-bit run reads ~4x the bytes of its own
+  // 4-bit sibling, so it cannot decode at nearly the same rate. A row that
+  // does carries a mislabeled quantization string.
+  const byGroup = new Map();
+  for (const item of eligible) {
+    const groupKey = [item.presetKey, item.hardwareTemplate, item.deviceCount, item.runtimeKey].join('|');
+    if (!byGroup.has(groupKey)) byGroup.set(groupKey, []);
+    byGroup.get(groupKey).push(item);
+  }
+  eligible = eligible.filter(item => {
+    if (!['float16', 'bfloat16', 'float32'].includes(item.quantKey)) return true;
+    const group = byGroup.get([item.presetKey, item.hardwareTemplate, item.deviceCount, item.runtimeKey].join('|')) || [];
+    const q4Rates = group.filter(peer => peer.quantKey === 'q4').map(peer => peer.observedTokS).sort((a, b) => a - b);
+    if (!q4Rates.length) return true;
+    const medianQ4 = q4Rates[Math.floor(q4Rates.length / 2)];
+    return item.observedTokS <= medianQ4 * 0.6;
+  });
+
   const bySignature = new Map();
   for (const item of eligible) {
     const signature = [item.presetKey, item.hardwareTemplate, item.deviceCount, item.runtimeKey, item.quantKey].join('|');

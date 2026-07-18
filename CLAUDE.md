@@ -42,6 +42,7 @@ The plan results lead with an answer card + **ceiling ladder** (hardware ceiling
 2. `npm test` before committing — Node unit tests drive the real inline script through a fake DOM (`tests/load-index-app.mjs`); `tests/integrity.test.mjs` guards duplicate keys/functions, XSS escaping, physics anchors, and waterfall consistency
 3. `npm run test:playwright` for browser tests (requires Playwright browsers)
 4. `npm run refresh:localmaxxing` to refresh benchmark evidence and the model catalog
+5. `npm run audit:gold` after any physics or preset change — it runs the engine against every snapshot gold case and reports the observed/predicted distribution, per-runtime/hardware medians, and physics-ceiling violations. Root-cause any run that beats the ideal ceiling; never absorb it into an efficiency constant.
 
 ## Rules of the road
 
