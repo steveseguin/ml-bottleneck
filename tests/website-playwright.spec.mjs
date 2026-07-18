@@ -94,6 +94,16 @@ test('home landing shows the popular-setup chart and clicks through to the plann
 test('new workspaces connect catalog, evidence, and result interpretation', async ({ page }) => {
   await loadApp(page);
 
+  const gemma4PresetOptions = await page.evaluate(() => [...document.querySelectorAll('#modelPreset optgroup[label="Gemma 4"] option')]
+    .map(option => ({ label: option.textContent.trim(), value: option.value })));
+  expect(gemma4PresetOptions).toEqual([
+    { label: 'Gemma 4 31B', value: 'gemma4_31b' },
+    { label: 'Gemma 4 26B A4B', value: 'gemma4_26b_a4b' },
+    { label: 'Gemma 4 12B', value: 'gemma4_12b' },
+    { label: 'Gemma 4 E4B (8B resident)', value: 'gemma4_e4b' },
+    { label: 'Gemma 4 E2B (5.1B resident)', value: 'gemma4_e2b' }
+  ]);
+
   await page.getByRole('button', { name: 'Models', exact: true }).click();
   await page.locator('#catalogSearch').fill('Gemma 4');
   await expect(page.locator('#catalogSummary')).toContainText('matching models');

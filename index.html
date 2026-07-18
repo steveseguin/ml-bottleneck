@@ -3142,7 +3142,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             <h2 class="planner-input-title" style="margin-top: 0;">Model</h2>
             <div id="modelConfigContent">
                 <label for="modelSearch">Find a built-in model</label>
-                <input id="modelSearch" class="input" type="search" list="modelSearchOptions" placeholder="Search Llama, Qwen, MiniMax, GLM…" autocomplete="off">
+                <input id="modelSearch" class="input" type="search" list="modelSearchOptions" placeholder="Search Gemma 4, Llama, Qwen, MiniMax…" autocomplete="off">
                 <datalist id="modelSearchOptions"></datalist>
 
                 <label for="modelPreset">Model preset</label>
@@ -12409,11 +12409,12 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	    // Organize models into categories for better UX
 	    const modelCategories = {
 	        'New & preview': ['kimi_k3'],
-	        'Most benchmarked right now': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'gemma4_31b', 'gemma4_26b_a4b', 'gemma4_12b', 'gemma4_e4b', 'gemma4_e2b', 'ornith_1_9b', 'ornith_1_35b_a3b', 'deepseek_v4_flash', 'qwen3_coder_next', 'glm4.7_flash', 'gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'minicpm5_1b', 'minimax_m2.7', 'kimi_k2.5'],
+	        'Gemma 4': ['gemma4_31b', 'gemma4_26b_a4b', 'gemma4_12b', 'gemma4_e4b', 'gemma4_e2b'],
+	        'Most benchmarked right now': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'ornith_1_9b', 'ornith_1_35b_a3b', 'deepseek_v4_flash', 'qwen3_coder_next', 'glm4.7_flash', 'gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'minicpm5_1b', 'minimax_m2.7', 'kimi_k2.5'],
 	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision', 'llama4_scout', 'llama4_maverick'],
 	        'DeepSeek': ['deepseek_v4_flash', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
 	        'Qwen': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
-	        'Gemma': ['gemma4_31b', 'gemma4_26b_a4b', 'gemma4_12b', 'gemma4_e4b', 'gemma4_e2b', 'gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
+	        'Gemma 3 and earlier': ['gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
 	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
