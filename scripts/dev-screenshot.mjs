@@ -10,7 +10,7 @@ const page = await browser.newPage({ viewport: { width: 1400, height: 950 } });
 await page.goto('file:///' + root.replace(/\\/g, '/') + '/index.html');
 await page.waitForTimeout(1300);
 await page.screenshot({ path: path.join(root, 'test-results', 'landing-top.png') });
-await page.locator('.quickstart-card').first().click();
+await page.locator('.qs-row').first().click();
 await page.waitForTimeout(900);
 await page.screenshot({ path: path.join(root, 'test-results', 'landing-clicked.png') });
 await browser.close();

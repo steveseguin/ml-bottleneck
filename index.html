@@ -6,7 +6,7 @@
     <title>ML Bottleneck - Visual Local LLM Deployment Planner</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNjM2NmYxO3N0b3Atb3BhY2l0eToxIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM0ZjQ2ZTU7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB4PSI0IiB5PSI0IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHJ4PSI0IiBmaWxsPSJ1cmwoI2dyYWQpIi8+CiAgPHBhdGggZD0iTTEwIDE2IEwxNCAyMCBMMjIgMTIiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik04IDIyIEwyNCAyMiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+CiAgPHBhdGggZD0iTTggMjYgTDIwIDI2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC43Ii8+Cjwvc3ZnPg==">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjgwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMyZGQ0YmYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMyNTYzZWIiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB4PSIxIiB5PSIxIiB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHJ4PSI5IiBmaWxsPSJ1cmwoI2cpIi8+PHRleHQgeD0iMTYiIHk9IjIxLjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMy41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmZmZmIj5NQjwvdGV4dD48L3N2Zz4=">
 
     <!-- Primary Meta Tags -->
     <meta name="title" content="ML Bottleneck - Visual Local LLM Deployment Planner">
@@ -2336,47 +2336,25 @@ td {
 
 /* Deployment-first interface */
 .app-header {
-    position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(235px, 0.34fr);
-    gap: 2rem;
-    align-items: end;
-    margin: 1.25rem 0 1.6rem;
-    padding: 1.5rem;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background:
-        radial-gradient(circle at 92% 14%, rgba(45, 212, 191, 0.18), transparent 35%),
-        linear-gradient(135deg, rgba(99, 102, 241, 0.12), transparent 45%),
-        var(--card);
-}
-
-.app-header::after {
-    content: "";
-    position: absolute;
-    right: -70px;
-    bottom: -105px;
-    width: 260px;
-    height: 260px;
-    border: 1px solid rgba(45, 212, 191, 0.22);
-    border-radius: 50%;
-    box-shadow: 0 0 0 26px rgba(45, 212, 191, 0.035), 0 0 0 60px rgba(99, 102, 241, 0.025);
-    pointer-events: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 1.5rem 0 1.1rem;
 }
 
 .app-header h1 {
-    max-width: 760px;
-    margin: 0.2rem 0 0.35rem;
-    font-size: clamp(1.75rem, 4vw, 3.25rem);
-    line-height: 1.02;
+    margin: 0;
+    font-size: 1.45rem;
+    letter-spacing: -0.01em;
 }
 
 .app-subtitle {
-    max-width: 760px;
-    margin: 0;
+    max-width: 660px;
+    margin: 0.35rem 0 0;
     color: var(--text-secondary);
-    font-size: 0.98rem;
+    font-size: 0.9rem;
 }
 
 .eyebrow {
@@ -2389,26 +2367,17 @@ td {
 }
 
 .header-result {
-    position: relative;
-    z-index: 1;
     display: grid;
-    gap: 0.15rem;
-    border: 1px solid rgba(45, 212, 191, 0.28);
-    border-radius: 12px;
-    background: rgba(15, 23, 42, 0.9);
-    padding: 1rem;
-}
-
-.header-result-label,
-.header-result span:last-child {
-    color: #cbd5e1;
-    font-size: 0.68rem;
+    gap: 0.1rem;
+    text-align: right;
+    color: var(--text-secondary);
+    font-size: 0.66rem;
 }
 
 .header-result strong {
-    color: #f8fafc;
-    font-size: clamp(1.35rem, 3vw, 2rem);
-    letter-spacing: -0.04em;
+    color: var(--text);
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
 }
 
 .hf-import {
@@ -2677,8 +2646,8 @@ td {
 
 @media (max-width: 520px) {
     body { overflow-x: hidden; }
-    .app-header { margin-top: 0; padding: 1rem; }
-    .app-header h1 { font-size: 1.9rem; }
+    .app-header { margin-top: 0.6rem; }
+    .app-header h1 { font-size: 1.25rem; }
     .hf-import-row { grid-template-columns: 1fr; }
     .speculative-control-grid { grid-template-columns: 1fr; }
     .deployment-note { grid-template-columns: 1fr; gap: 0.05rem; }
@@ -2759,19 +2728,6 @@ body {
 @keyframes workspace-in { from { opacity: 0.6; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .workspace-view { animation: none; } }
 
-.app-header {
-    grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem);
-    min-height: 0;
-    padding: clamp(1.1rem, 2vw, 1.7rem);
-    margin-bottom: 1rem;
-    background:
-        radial-gradient(circle at 84% 14%, rgb(45 212 191 / 0.13), transparent 30%),
-        linear-gradient(135deg, color-mix(in srgb, var(--card) 80%, #071522), color-mix(in srgb, var(--background) 90%, #0c2930));
-}
-.app-header h1 { max-width: 17ch; margin-top: 0.2rem; font-size: clamp(1.7rem, 3vw, 2.65rem); }
-.app-subtitle { max-width: 66ch; }
-.header-result { align-self: stretch; display: grid; align-content: center; min-height: 7.5rem; }
-
 .planner-shell {
     display: grid;
     grid-template-columns: minmax(21rem, 25rem) minmax(0, 1fr);
@@ -2851,20 +2807,35 @@ body {
 .catalog-tag { padding: 0.16rem 0.36rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--text-secondary); font-size: 0.58rem; }
 .catalog-show-all { border: none; background: none; padding: 0; color: var(--primary); font-size: inherit; cursor: pointer; text-decoration: underline; }
 
-.quickstart-section { margin: 1.1rem 0 0.4rem; }
-.quickstart-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.8rem; margin-bottom: 0.6rem; }
-.quickstart-head h2 { margin: 0; font-size: 1.05rem; }
+.quickstart-section { margin: 0.4rem 0 0.8rem; --qs-expected: #2a78d6; --qs-ideal: #cde2fb; --qs-measured: var(--text); }
+@media (prefers-color-scheme: dark) {
+    .quickstart-section { --qs-expected: #3987e5; --qs-ideal: #2c4a70; }
+}
+.quickstart-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.8rem; margin-bottom: 0.55rem; }
+.quickstart-head h2 { margin: 0; font-size: 1rem; }
 .quickstart-head span { color: var(--text-secondary); font-size: 0.72rem; }
-.quickstart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 0.55rem; }
-.quickstart-card { display: grid; gap: 0.3rem; text-align: left; padding: 0.65rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--text); cursor: pointer; transition: box-shadow 0.15s ease; }
-.quickstart-card:hover { box-shadow: var(--shadow); }
-.quickstart-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.quickstart-model { font-weight: 700; font-size: 0.82rem; }
-.quickstart-hardware { color: var(--text-secondary); font-size: 0.66rem; }
-.quickstart-rates { display: flex; flex-wrap: wrap; gap: 0.25rem 0.6rem; margin-top: 0.1rem; }
-.quickstart-rate { color: var(--text-secondary); font-size: 0.64rem; white-space: nowrap; }
-.quickstart-rate strong { color: var(--text); font-size: 0.76rem; }
-.quickstart-rate.is-expected strong { font-size: 0.9rem; }
+.quickstart-grid { display: grid; gap: 2px; }
+.qs-row { display: grid; grid-template-columns: minmax(180px, 0.28fr) minmax(0, 1fr) minmax(84px, auto); gap: 0.7rem; align-items: center; padding: 0.32rem 0.45rem; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.qs-row:hover { background: var(--card); border-color: var(--border); }
+.qs-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.qs-label { display: grid; min-width: 0; }
+.qs-label strong { font-size: 0.76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qs-label span { color: var(--text-secondary); font-size: 0.62rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qs-bar { position: relative; height: 16px; }
+.qs-track { position: absolute; inset: 3px auto 3px 0; border-radius: 3px; background: var(--qs-ideal); }
+.qs-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--qs-expected); }
+.qs-tick { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--qs-measured); }
+.qs-value { font-size: 0.66rem; color: var(--text-secondary); text-align: right; white-space: nowrap; }
+.qs-value strong { color: var(--text); font-size: 0.8rem; }
+.qs-legend { display: flex; gap: 0.9rem; margin-top: 0.5rem; }
+.qs-key { display: inline-block; width: 12px; height: 8px; border-radius: 2px; }
+.qs-key.is-expected { background: var(--qs-expected); }
+.qs-key.is-ideal { background: var(--qs-ideal); }
+.qs-key.is-measured { width: 2px; height: 11px; border-radius: 0; background: var(--qs-measured); }
+@media (max-width: 640px) {
+    .qs-row { grid-template-columns: 1fr; gap: 0.2rem; }
+    .qs-value { text-align: left; }
+}
 .catalog-cell strong { font-size: 0.8rem; }
 .catalog-use {
     border: 1px solid var(--border);
@@ -2989,12 +2960,11 @@ body {
     <section id="workspace-plan" class="workspace-view" data-workspace-view="plan">
     <header class="app-header">
         <div class="app-header-copy">
-            <span class="eyebrow">Deployment workbench</span>
-            <h1>Build the fastest configuration that fits.</h1>
-            <p class="app-subtitle">Map the architecture, expose the communication path, and compare the physics ceiling with benchmark-calibrated reality.</p>
+            <h1>How fast will a model run on your hardware?</h1>
+            <p class="app-subtitle">Pick a model and your GPUs to get speed and memory-fit projections — computed from physics, checked against real community measurements.</p>
         </div>
         <div class="header-result" id="headerResult" aria-live="polite">
-            <span class="header-result-label">Expected real / ideal</span>
+            <span class="header-result-label">Current plan · expected / ideal</span>
             <strong id="headerResultRate">Calculating…</strong>
             <span id="headerResultMeta">Choose a model and hardware</span>
         </div>
@@ -3002,10 +2972,15 @@ body {
 
     <section class="quickstart-section" id="quickstartSection" hidden aria-label="Popular setups with predicted and measured decode rates">
         <div class="quickstart-head">
-            <h2>Start from a popular setup</h2>
-            <span>The community's most-benchmarked model + hardware pairs — expected real, physics ideal, and the measured median. Click one to load it, or configure your own below.</span>
+            <h2>Popular models on popular hardware</h2>
+            <span>Click a row to open the full plan, or build your own below.</span>
         </div>
-        <div class="quickstart-grid" id="quickstartGrid"></div>
+        <div class="quickstart-grid" id="quickstartGrid" role="list"></div>
+        <div class="qs-legend" aria-hidden="true">
+            <span class="map-legend-item"><span class="qs-key is-expected"></span>expected</span>
+            <span class="map-legend-item"><span class="qs-key is-ideal"></span>physics ideal</span>
+            <span class="map-legend-item"><span class="qs-key is-measured"></span>measured median</span>
+        </div>
     </section>
 
     <div class="planner-shell">
@@ -9991,25 +9966,29 @@ const DEVICE_TEMPLATES = {
                 return;
             }
             section.hidden = false;
-            grid.innerHTML = quickStartCombos.map((combo, index) => {
+            // One shared linear scale so bar lengths compare honestly.
+            const sorted = [...quickStartCombos].sort((a, b) => b.expectedTokS - a.expectedTokS);
+            const scaleMax = Math.max(...sorted.map(combo => combo.idealTokS), 1e-9);
+            grid.innerHTML = sorted.map(combo => {
+                const index = quickStartCombos.indexOf(combo);
                 const reference = combo.reference;
                 const preset = MODEL_PRESETS[reference.presetKey] || {};
                 const template = DEVICE_TEMPLATES[reference.hardwareTemplate] || {};
                 const modelLabel = preset.label || getModelPresetLabel(reference.presetKey) || reference.presetKey;
                 const deviceCount = Math.max(1, reference.deviceCount || 1);
                 const hardwareLabel = `${deviceCount > 1 ? `${deviceCount}× ` : ''}${template.name || reference.hardwareTemplate}`;
-                const frameworkLabel = FRAMEWORK_PROFILES[reference.runtimeKey]?.label || reference.runtimeKey;
+                const pct = value => Math.min(100, Math.max(0.6, (value / scaleMax) * 100)).toFixed(2);
+                const measured = Number.isFinite(combo.measuredMedianTokS) ? combo.measuredMedianTokS : null;
                 return `
-                    <button type="button" class="quickstart-card" data-quickstart-index="${index}" aria-label="Load ${escapeHtml(modelLabel)} on ${escapeHtml(hardwareLabel)}">
-                        <span class="quickstart-model">${escapeHtml(modelLabel)}</span>
-                        <span class="quickstart-hardware">${escapeHtml(hardwareLabel)} · ${escapeHtml((reference.quantKey || '').toUpperCase())} · ${escapeHtml(frameworkLabel)}</span>
-                        <span class="quickstart-rates">
-                            <span class="quickstart-rate is-expected"><strong>${formatCompactRate(combo.expectedTokS)}</strong> expected tok/s</span>
-                            <span class="quickstart-rate"><strong>${formatCompactRate(combo.idealTokS)}</strong> ideal</span>
-                            ${Number.isFinite(combo.measuredMedianTokS)
-                                ? `<span class="quickstart-rate is-measured"><strong>${formatCompactRate(combo.measuredMedianTokS)}</strong> measured · ${combo.runs} run${combo.runs === 1 ? '' : 's'}</span>`
-                                : ''}
+                    <button type="button" role="listitem" class="qs-row" data-quickstart-index="${index}"
+                        aria-label="Load ${escapeHtml(modelLabel)} on ${escapeHtml(hardwareLabel)}: expected ${formatCompactRate(combo.expectedTokS)}, ideal ${formatCompactRate(combo.idealTokS)}${measured ? `, measured ${formatCompactRate(measured)}` : ''} tokens per second">
+                        <span class="qs-label"><strong>${escapeHtml(modelLabel)}</strong><span>${escapeHtml(hardwareLabel)} · ${escapeHtml((reference.quantKey || '').toUpperCase())}</span></span>
+                        <span class="qs-bar">
+                            <span class="qs-track" style="width:${pct(combo.idealTokS)}%" title="physics ideal ${formatCompactRate(combo.idealTokS)} tok/s"></span>
+                            <span class="qs-fill" style="width:${pct(combo.expectedTokS)}%" title="expected ${formatCompactRate(combo.expectedTokS)} tok/s"></span>
+                            ${measured ? `<span class="qs-tick" style="left:${pct(measured)}%" title="measured median ${formatCompactRate(measured)} tok/s · ${combo.runs} runs"></span>` : ''}
                         </span>
+                        <span class="qs-value"><strong>${formatCompactRate(combo.expectedTokS)}</strong> tok/s</span>
                     </button>`;
             }).join('');
         }

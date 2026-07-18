@@ -299,9 +299,11 @@ test('quick-start gallery derives clickable community setups with honest rates',
 
   app.hooks.renderQuickStart();
   const grid = app.elements.get('quickstartGrid');
-  assert.match(grid.innerHTML, /quickstart-card/);
-  assert.match(grid.innerHTML, /expected tok\/s/);
-  assert.match(grid.innerHTML, /measured/);
+  assert.match(grid.innerHTML, /qs-row/, 'bar-chart rows render');
+  assert.match(grid.innerHTML, /qs-fill/, 'expected bars render');
+  assert.match(grid.innerHTML, /qs-track/, 'ideal tracks render');
+  assert.match(grid.innerHTML, /qs-tick/, 'measured ticks render');
+  assert.match(grid.innerHTML, /data-quickstart-index/, 'rows stay clickable');
 
   app.hooks.loadQuickStart(0);
   const combo = combos[0];
