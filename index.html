@@ -2807,6 +2807,16 @@ body {
 .catalog-tag { padding: 0.16rem 0.36rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--text-secondary); font-size: 0.58rem; }
 .catalog-show-all { border: none; background: none; padding: 0; color: var(--primary); font-size: inherit; cursor: pointer; text-decoration: underline; }
 
+.home-hero { max-width: 760px; margin: 3.4rem auto 0; text-align: center; }
+.home-hero h1 { margin: 0; font-size: clamp(1.7rem, 3.4vw, 2.35rem); letter-spacing: -0.015em; line-height: 1.15; }
+.home-hero p { margin: 0.75rem auto 0; max-width: 580px; color: var(--text-secondary); font-size: 0.98rem; }
+.home-hero .home-trust { margin-top: 0.55rem; font-size: 0.72rem; }
+#workspace-home .quickstart-section { max-width: 960px; margin: 2.2rem auto 0; }
+.home-cta { display: flex; justify-content: center; margin: 1.9rem 0 3rem; }
+.home-cta-button { display: inline-block; padding: 0.6rem 1.35rem; border-radius: 10px; background: var(--primary); color: #fff; font-size: 0.86rem; font-weight: 600; text-decoration: none; }
+.home-cta-button:hover { background: var(--primary-hover); }
+.home-cta-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
 .quickstart-section { margin: 0.4rem 0 0.8rem; --qs-expected: #2a78d6; --qs-ideal: #cde2fb; --qs-measured: var(--text); }
 @media (prefers-color-scheme: dark) {
     .quickstart-section { --qs-expected: #3987e5; --qs-ideal: #2c4a70; }
@@ -2815,7 +2825,7 @@ body {
 .quickstart-head h2 { margin: 0; font-size: 1rem; }
 .quickstart-head span { color: var(--text-secondary); font-size: 0.72rem; }
 .quickstart-grid { display: grid; gap: 2px; }
-.qs-row { display: grid; grid-template-columns: minmax(180px, 0.28fr) minmax(0, 1fr) minmax(84px, auto); gap: 0.7rem; align-items: center; padding: 0.32rem 0.45rem; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.qs-row { display: grid; grid-template-columns: minmax(230px, 0.32fr) minmax(0, 1fr) minmax(84px, auto); gap: 0.7rem; align-items: center; padding: 0.32rem 0.45rem; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--text); text-align: left; cursor: pointer; }
 .qs-row:hover { background: var(--card); border-color: var(--border); }
 .qs-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .qs-label { display: grid; min-width: 0; }
@@ -2943,12 +2953,13 @@ body {
 </head>
 <body>
     <header class="product-nav">
-        <a class="product-brand" href="#plan" data-workspace-link="plan" aria-label="ML Bottleneck planner">
+        <a class="product-brand" href="#home" data-workspace-link="home" aria-label="ML Bottleneck home">
             <span class="brand-mark" aria-hidden="true">MB</span>
-            <span><strong>ML Bottleneck</strong><small>Inference intelligence</small></span>
+            <span><strong>ML Bottleneck</strong></span>
         </a>
         <nav class="workspace-tabs" aria-label="Primary">
-            <button class="workspace-tab is-active" type="button" data-workspace="plan">Plan</button>
+            <button class="workspace-tab is-active" type="button" data-workspace="home">Home</button>
+            <button class="workspace-tab" type="button" data-workspace="plan">Plan</button>
             <button class="workspace-tab" type="button" data-workspace="models">Models</button>
             <button class="workspace-tab" type="button" data-workspace="evidence">Evidence</button>
             <button class="workspace-tab" type="button" data-workspace="explain">Explain a result</button>
@@ -2957,11 +2968,36 @@ body {
     </header>
 
     <main class="product-main">
-    <section id="workspace-plan" class="workspace-view" data-workspace-view="plan">
+    <section id="workspace-home" class="workspace-view" data-workspace-view="home">
+        <div class="home-hero">
+            <h1>How fast will a model run on your hardware?</h1>
+            <p>Pick a model and your GPUs to get speed and memory-fit projections — computed from physics, checked against real community measurements.</p>
+            <p class="home-trust">Free · runs entirely in your browser · nothing to install</p>
+        </div>
+
+        <section class="quickstart-section" id="quickstartSection" hidden aria-label="Popular setups with predicted and measured decode rates">
+            <div class="quickstart-head">
+                <h2>Popular models on popular hardware</h2>
+                <span>Click a row to open it in the planner.</span>
+            </div>
+            <div class="quickstart-grid" id="quickstartGrid" role="list"></div>
+            <div class="qs-legend" aria-hidden="true">
+                <span class="map-legend-item"><span class="qs-key is-expected"></span>expected</span>
+                <span class="map-legend-item"><span class="qs-key is-ideal"></span>physics ideal</span>
+                <span class="map-legend-item"><span class="qs-key is-measured"></span>measured median</span>
+            </div>
+        </section>
+
+        <div class="home-cta">
+            <a class="home-cta-button" href="#plan" data-workspace-link="plan">Plan your own setup</a>
+        </div>
+    </section>
+
+    <section id="workspace-plan" class="workspace-view" data-workspace-view="plan" hidden>
     <header class="app-header">
         <div class="app-header-copy">
-            <h1>How fast will a model run on your hardware?</h1>
-            <p class="app-subtitle">Pick a model and your GPUs to get speed and memory-fit projections — computed from physics, checked against real community measurements.</p>
+            <h1>Plan a deployment</h1>
+            <p class="app-subtitle">Configure the model and hardware; the map and projections update live.</p>
         </div>
         <div class="header-result" id="headerResult" aria-live="polite">
             <span class="header-result-label">Current plan · expected / ideal</span>
@@ -2969,19 +3005,6 @@ body {
             <span id="headerResultMeta">Choose a model and hardware</span>
         </div>
     </header>
-
-    <section class="quickstart-section" id="quickstartSection" hidden aria-label="Popular setups with predicted and measured decode rates">
-        <div class="quickstart-head">
-            <h2>Popular models on popular hardware</h2>
-            <span>Click a row to open the full plan, or build your own below.</span>
-        </div>
-        <div class="quickstart-grid" id="quickstartGrid" role="list"></div>
-        <div class="qs-legend" aria-hidden="true">
-            <span class="map-legend-item"><span class="qs-key is-expected"></span>expected</span>
-            <span class="map-legend-item"><span class="qs-key is-ideal"></span>physics ideal</span>
-            <span class="map-legend-item"><span class="qs-key is-measured"></span>measured median</span>
-        </div>
-    </section>
 
     <div class="planner-shell">
     <aside class="planner-controls" aria-label="Deployment inputs">
@@ -9866,8 +9889,8 @@ const DEVICE_TEMPLATES = {
         }
 
         function switchWorkspace(name, { updateHash = true } = {}) {
-            const allowed = new Set(['plan', 'models', 'evidence', 'explain']);
-            const next = allowed.has(name) ? name : 'plan';
+            const allowed = new Set(['home', 'plan', 'models', 'evidence', 'explain']);
+            const next = allowed.has(name) ? name : 'home';
             document.querySelectorAll('[data-workspace-view]').forEach(view => {
                 view.hidden = view.dataset.workspaceView !== next;
             });
@@ -10015,6 +10038,7 @@ const DEVICE_TEMPLATES = {
             saveDevices();
             updateDeviceDisplay();
             updateSystemAnalysis();
+            switchWorkspace('plan');
             document.getElementById('executionMap')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
         }
 
@@ -11669,8 +11693,8 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        const card = event.target?.closest?.('[data-quickstart-index]');
 	        if (card) loadQuickStart(parseInt(card.dataset.quickstartIndex, 10));
 	    });
-	    const initialWorkspace = typeof window.location?.hash === 'string' ? window.location.hash.replace('#', '') : 'plan';
-	    switchWorkspace(initialWorkspace || 'plan', { updateHash: false });
+	    const initialWorkspace = typeof window.location?.hash === 'string' ? window.location.hash.replace('#', '') : 'home';
+	    switchWorkspace(initialWorkspace || 'home', { updateHash: false });
 	    
 	    renderTable(data);
 	    updateSystemAnalysis();

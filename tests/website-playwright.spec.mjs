@@ -13,7 +13,8 @@ async function loadApp(page) {
       update() {}
     };
   });
-  await page.goto(appUrl);
+  // The landing is its own Home workspace now; workbench tests start in Plan.
+  await page.goto(`${appUrl}#plan`);
   await page.waitForSelector('#systemAnalysis .result-hero');
 }
 
@@ -73,6 +74,22 @@ async function calculatedRate(page) {
     return Number((calibration?.expectedTokS || rate).toFixed(1));
   });
 }
+
+test('home landing shows the popular-setup chart and clicks through to the planner', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.Chart = class { constructor() {} destroy() {} update() {} };
+  });
+  await page.goto(appUrl);
+  await expect(page.locator('#workspace-home')).toBeVisible();
+  await expect(page.locator('#workspace-plan')).toBeHidden();
+  await expect(page.locator('.home-hero h1')).toContainText('How fast will a model run');
+  await expect(page.locator('.qs-row').first()).toBeVisible();
+
+  await page.locator('.qs-row').first().click();
+  await expect(page.locator('#workspace-plan')).toBeVisible();
+  await expect(page.locator('#workspace-home')).toBeHidden();
+  await page.waitForSelector('#systemAnalysis .result-hero');
+});
 
 test('new workspaces connect catalog, evidence, and result interpretation', async ({ page }) => {
   await loadApp(page);
