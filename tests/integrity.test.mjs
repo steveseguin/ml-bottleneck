@@ -4,18 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { loadApp } from './load-index-app.mjs';
+import { loadApp, loadSnapshot } from './load-index-app.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
-
-function loadSnapshot() {
-  const source = fs.readFileSync(path.join(repoRoot, 'data', 'localmaxxing-snapshot.js'), 'utf8');
-  const context = { window: {} };
-  vm.createContext(context);
-  vm.runInContext(source, context);
-  return context.window.LOCALMAXXING_SNAPSHOT;
-}
 
 function stripStringsAndComments(line) {
   return line
@@ -290,6 +282,42 @@ test('speculation is labeled, split from efficiency, and can pass the per-pass c
   const html = app.elements.get('systemAnalysis').innerHTML;
   assert.match(html, /speculation ×\d/, 'ladder labels the modeled speculation multiplier');
   assert.match(html, /Without speculation/, 'ladder shows the speculation-free counterpart rate');
+});
+
+test('quick-start gallery derives clickable community setups with honest rates', () => {
+  const snapshot = loadSnapshot();
+  const app = loadApp({ snapshot });
+  const combos = app.hooks.buildQuickStartCombos();
+  assert.ok(combos.length >= 5, `expected several quick-start combos, got ${combos.length}`);
+
+  for (const combo of combos) {
+    assert.ok(Number.isFinite(combo.expectedTokS) && combo.expectedTokS > 0);
+    assert.ok(combo.idealTokS >= combo.expectedTokS,
+      `ideal (${combo.idealTokS}) must sit at or above expected (${combo.expectedTokS})`);
+    assert.ok(Number.isFinite(combo.measuredMedianTokS) && combo.measuredMedianTokS > 0);
+  }
+
+  app.hooks.renderQuickStart();
+  const grid = app.elements.get('quickstartGrid');
+  assert.match(grid.innerHTML, /quickstart-card/);
+  assert.match(grid.innerHTML, /expected tok\/s/);
+  assert.match(grid.innerHTML, /measured/);
+
+  app.hooks.loadQuickStart(0);
+  const combo = combos[0];
+  assert.equal(app.hooks.getDevices().length, Math.max(1, combo.reference.deviceCount || 1));
+  assert.equal(app.hooks.getDevices()[0].template, combo.reference.hardwareTemplate);
+  assert.equal(app.elements.get('modelPreset').value, combo.reference.presetKey);
+});
+
+test('data-source branding stays out of user-visible copy', () => {
+  const stripped = html
+    .replace(/LOCALMAXXING_[A-Z_]+/g, '')
+    .replace(/localmaxxing-snapshot/g, '')
+    .replace(/getLocalmaxxingUrl|LocalmaxxingUrl/g, '')
+    .replace(/https?:\/\/(www\.)?localmaxxing\.com[^\s"'`]*/g, '');
+  assert.ok(!/localmaxxing/i.test(stripped),
+    'user-visible copy mentions the data-source brand; keep the API, drop the name');
 });
 
 test('user-controlled device names are escaped in every rendered surface', () => {

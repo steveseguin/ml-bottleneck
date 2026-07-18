@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { loadApp } from './load-index-app.mjs';
+import { loadApp, loadSnapshot } from './load-index-app.mjs';
 
 function cloneTemplate(hooks, templateName, id = 1, name = templateName) {
   const template = hooks.DEVICE_TEMPLATES[templateName];
@@ -1022,7 +1022,9 @@ test('execution map explains MiniMax MoE routing and four-way tensor sharding', 
   assert.match(html, /All-reduce \/ gather after each layer/);
   assert.match(html, /weight slices are not duplicates/);
   assert.match(html, /3 MTP modules/);
-  assert.match(html, /Estimate - validate before buying/);
+  // With snapshot evidence loaded this heading upgrades to a measured
+  // comparison; without it, the honest estimate warning shows.
+  assert.match(html, /Estimate - validate before buying|Measured comparison available/);
   assert.doesNotMatch(html, /bhk_/);
 });
 
@@ -1071,7 +1073,8 @@ test('current workstation hardware families include scalable 16 to 32 GB options
 });
 
 test('four B70 scenario loads a complete MiniMax planning configuration', () => {
-  const app = loadApp();
+  // Evidence rows derive from the snapshot now, so load it into the harness.
+  const app = loadApp({ snapshot: loadSnapshot() });
 
   app.hooks.loadScenarioPreset('b70_x4_minimax_m27');
 
@@ -1082,5 +1085,5 @@ test('four B70 scenario loads a complete MiniMax planning configuration', () => 
   assert.equal(app.elements.get('parallelismStrategy').value, 'tensor');
   assert.equal(app.elements.get('runtimeFramework').value, 'vllm');
   assert.match(app.elements.get('executionMap').innerHTML, /Intel Arc Pro B70 #1/);
-  assert.match(app.elements.get('executionMap').innerHTML, /Related evidence/);
+  assert.match(app.elements.get('executionMap').innerHTML, /Matching run|Related evidence/);
 });

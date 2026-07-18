@@ -3,6 +3,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
+export function loadSnapshot() {
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const source = fs.readFileSync(path.join(repoRoot, 'data', 'localmaxxing-snapshot.js'), 'utf8');
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  return context.window.LOCALMAXXING_SNAPSHOT;
+}
+
 class FakeClassList {
   constructor() {
     this.classes = new Set();
@@ -191,7 +200,7 @@ function createDocument(defaultValues) {
   return { document, elements, domReadyHandlers };
 }
 
-export function loadApp() {
+export function loadApp(options = {}) {
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
   const scriptMatches = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
@@ -290,6 +299,9 @@ export function loadApp() {
   window.document = document;
   window.localStorage = localStorage;
   window.Chart = FakeChart;
+  if (options.snapshot) {
+    window.LOCALMAXXING_SNAPSHOT = options.snapshot;
+  }
 
   vm.createContext(sandbox);
   vm.runInContext(script, sandbox, { filename: 'index.html.inline.js' });

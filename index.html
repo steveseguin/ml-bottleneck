@@ -2850,6 +2850,21 @@ body {
 .catalog-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
 .catalog-tag { padding: 0.16rem 0.36rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--text-secondary); font-size: 0.58rem; }
 .catalog-show-all { border: none; background: none; padding: 0; color: var(--primary); font-size: inherit; cursor: pointer; text-decoration: underline; }
+
+.quickstart-section { margin: 1.1rem 0 0.4rem; }
+.quickstart-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.8rem; margin-bottom: 0.6rem; }
+.quickstart-head h2 { margin: 0; font-size: 1.05rem; }
+.quickstart-head span { color: var(--text-secondary); font-size: 0.72rem; }
+.quickstart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 0.55rem; }
+.quickstart-card { display: grid; gap: 0.3rem; text-align: left; padding: 0.65rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--text); cursor: pointer; transition: box-shadow 0.15s ease; }
+.quickstart-card:hover { box-shadow: var(--shadow); }
+.quickstart-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.quickstart-model { font-weight: 700; font-size: 0.82rem; }
+.quickstart-hardware { color: var(--text-secondary); font-size: 0.66rem; }
+.quickstart-rates { display: flex; flex-wrap: wrap; gap: 0.25rem 0.6rem; margin-top: 0.1rem; }
+.quickstart-rate { color: var(--text-secondary); font-size: 0.64rem; white-space: nowrap; }
+.quickstart-rate strong { color: var(--text); font-size: 0.76rem; }
+.quickstart-rate.is-expected strong { font-size: 0.9rem; }
 .catalog-cell strong { font-size: 0.8rem; }
 .catalog-use {
     border: 1px solid var(--border);
@@ -2984,6 +2999,14 @@ body {
             <span id="headerResultMeta">Choose a model and hardware</span>
         </div>
     </header>
+
+    <section class="quickstart-section" id="quickstartSection" hidden aria-label="Popular setups with predicted and measured decode rates">
+        <div class="quickstart-head">
+            <h2>Start from a popular setup</h2>
+            <span>The community's most-benchmarked model + hardware pairs — expected real, physics ideal, and the measured median. Click one to load it, or configure your own below.</span>
+        </div>
+        <div class="quickstart-grid" id="quickstartGrid"></div>
+    </section>
 
     <div class="planner-shell">
     <aside class="planner-controls" aria-label="Deployment inputs">
@@ -3433,7 +3456,7 @@ body {
         <header class="workspace-heading">
             <span class="eyebrow">Model intelligence</span>
             <h1>Browse the ecosystem, not a dropdown.</h1>
-            <p>Base models, fine-tunes, quantizations, active parameters, and Localmaxxing performance signals in one catalog.</p>
+            <p>Base models, fine-tunes, quantizations, active parameters, and community performance signals in one catalog.</p>
         </header>
         <div class="catalog-toolbar" role="search">
             <label class="catalog-search"><span>Search model or organization</span><input class="input" id="catalogSearch" type="search" placeholder="Gemma 4, Qwen, MiniMax, coding…"></label>
@@ -3451,9 +3474,8 @@ body {
             <div>
                 <span class="eyebrow">Calibration lab</span>
                 <h1>Ideal physics, checked against real machines.</h1>
-                <p>The gold set keeps only Localmaxxing runs that map cleanly to a known model, device, quantization, runtime, and command.</p>
+                <p>The gold set keeps only community-measured runs that map cleanly to a known model, device, quantization, runtime, and command.</p>
             </div>
-            <a class="source-link" href="https://www.localmaxxing.com/en/models" target="_blank" rel="noopener">Open Localmaxxing ↗</a>
         </header>
         <div class="evidence-stats" id="evidenceStats"></div>
         <div class="evidence-layout">
@@ -3482,7 +3504,7 @@ body {
             <form class="interpreter-form" id="resultInterpreterForm">
                 <label for="measuredTokS">Measured output speed <span>tok/s</span></label>
                 <input class="input" id="measuredTokS" type="number" min="0.01" step="0.01" placeholder="32.2" required>
-                <label for="resultJson">Optional Localmaxxing result JSON</label>
+                <label for="resultJson">Optional measured-result JSON</label>
                 <textarea class="input" id="resultJson" rows="8" placeholder='Paste a result object; tokSOut, model, hardware, engine, and engineFlags will be recognized.'></textarea>
                 <button class="button" type="submit">Explain this run</button>
             </form>
@@ -3847,7 +3869,10 @@ body {
             },
             sliding_window: {
                 label: 'Sliding Window Attention',
-                kvCacheMultiplier: 0.78,
+                // KV shrinkage is computed dynamically from the window size
+                // and layer mix (getSlidingWindowKvScale); a static multiplier
+                // cannot represent a saving that grows with context length.
+                kvCacheMultiplier: 1,
                 attentionMemoryMultiplier: 0.58,
                 activationMultiplier: 0.94,
                 prefillAttentionMultiplier: 0.70,
@@ -4032,6 +4057,36 @@ body {
 	    imageSize: 896,
 	    ropeScalingFactor: 8.0
 	  },
+	  'gemma4_31b': {
+	    label: 'Gemma 4 31B',
+	    hfId: 'google/gemma-4-31B-it',
+	    totalParamsB: 33,
+	    hiddenSize: 5376,
+	    numLayers: 60,
+	    fullAttentionLayers: 10,
+	    numHeads: 32,
+	    numKVHeads: 16,
+	    intermediateSize: 21504,
+	    routingType: 'dense',
+	    attentionMechanism: 'sliding_window',
+	    slidingWindow: 1024,
+	    contextLength: 262144
+	  },
+	  'gemma4_12b': {
+	    label: 'Gemma 4 12B',
+	    hfId: 'google/gemma-4-12B-it',
+	    totalParamsB: 12,
+	    hiddenSize: 3840,
+	    numLayers: 48,
+	    fullAttentionLayers: 8,
+	    numHeads: 16,
+	    numKVHeads: 8,
+	    intermediateSize: 15360,
+	    routingType: 'dense',
+	    attentionMechanism: 'sliding_window',
+	    slidingWindow: 1024,
+	    contextLength: 262144
+	  },
 	  'gemma4_26b_a4b': {
 	    label: 'Gemma 4 26B A4B',
 	    hfId: 'google/gemma-4-26B-A4B',
@@ -4085,6 +4140,58 @@ body {
 	    slidingWindow: 512,
 	    contextLength: 131072,
 	    hasVision: true
+	  },
+	  'ornith_1_9b': {
+	    label: 'Ornith 1.0 9B',
+	    hfId: 'deepreinforce-ai/Ornith-1.0-9B',
+	    totalParamsB: 9,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 16,
+	    numKVHeads: 4,
+	    intermediateSize: 12288,
+	    routingType: 'dense',
+	    attentionMechanism: 'hybrid_linear',
+	    contextLength: 262144
+	  },
+	  'ornith_1_35b_a3b': {
+	    label: 'Ornith 1.0 35B A3B',
+	    hfId: 'deepreinforce-ai/Ornith-1.0-35B',
+	    totalParamsB: 35,
+	    hiddenSize: 2048,
+	    numLayers: 40,
+	    numHeads: 16,
+	    numKVHeads: 2,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 3,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    contextLength: 262144
+	  },
+	  'minicpm5_1b': {
+	    label: 'MiniCPM5 1B',
+	    hfId: 'openbmb/MiniCPM5-1B',
+	    totalParamsB: 1,
+	    hiddenSize: 1536,
+	    numLayers: 24,
+	    numHeads: 16,
+	    numKVHeads: 2,
+	    intermediateSize: 4608,
+	    contextLength: 131072
+	  },
+	  'lfm2_350m': {
+	    label: 'LFM2 350M',
+	    hfId: 'LiquidAI/LFM2-350M',
+	    totalParamsB: 0.35,
+	    hiddenSize: 1024,
+	    numLayers: 16,
+	    numHeads: 16,
+	    numKVHeads: 8,
+	    routingType: 'dense',
+	    attentionMechanism: 'hybrid_linear',
+	    contextLength: 128000
 	  },
 	  'yi_34b': {
 	    totalParamsB: 34,
@@ -6517,6 +6624,21 @@ const DEVICE_TEMPLATES = {
             return modelConfig.numKVHeads || modelConfig.numHeads || 1;
         }
 
+        // Sliding-window models keep full KV only on their global-attention
+        // layers (Gemma keeps ~1 in 6); local layers cap at the window size.
+        // The saving grows with context length, so it must be computed from
+        // the window and layer mix rather than a static multiplier.
+        function getSlidingWindowKvScale(modelConfig) {
+            const windowSize = parseFloat(modelConfig.slidingWindow);
+            const seqLength = Math.max(1, parseFloat(modelConfig.seqLength) || 1);
+            const numLayers = Math.max(1, parseFloat(modelConfig.numLayers) || 1);
+            if (!Number.isFinite(windowSize) || windowSize <= 0 || seqLength <= windowSize) return 1;
+            const fullLayers = Math.max(1, Math.min(numLayers,
+                Number.isFinite(modelConfig.fullAttentionLayers) ? modelConfig.fullAttentionLayers : Math.ceil(numLayers / 6)));
+            const localLayers = numLayers - fullLayers;
+            return ((fullLayers * seqLength) + (localLayers * windowSize)) / (numLayers * seqLength);
+        }
+
         function getActiveParamsB(modelConfig) {
             const normalizedConfig = normalizeModelConfig(modelConfig);
             return normalizedConfig.activeParamsB || normalizedConfig.totalParamsB;
@@ -6827,7 +6949,7 @@ const DEVICE_TEMPLATES = {
 		const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength *
 			(modelConfig.hiddenSize / modelConfig.numHeads) *
 			kvHeads * kvCacheDtypeSize;
-		const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers * architectureProfile.kvCacheMultiplier * kvCompressionProfile.kvByteMultiplier;
+		const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers * architectureProfile.kvCacheMultiplier * kvCompressionProfile.kvByteMultiplier * getSlidingWindowKvScale(modelConfig);
 		const intermediateSize = modelConfig.intermediateSize || (4 * modelConfig.hiddenSize);
 		const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength *
 			(modelConfig.hiddenSize + intermediateSize * 0.35) * dtypeSize * architectureProfile.activationMultiplier;
@@ -6944,6 +7066,7 @@ const DEVICE_TEMPLATES = {
                 architectureProfile.kvCacheMultiplier *
                 architectureProfile.decodeAttentionMultiplier *
                 kvCompressionProfile.kvByteMultiplier *
+                getSlidingWindowKvScale(modelConfig) *
                 kvScale;
         }
 
@@ -8545,36 +8668,23 @@ const DEVICE_TEMPLATES = {
             `;
         }
 
-        const LOCALMAXXING_EVIDENCE = [
-            {
-                modelPreset: 'minimax_m2.7',
-                model: 'MiniMax M2.7',
-                hardwarePattern: 'h200',
-                hardware: '4x H200 SXM',
-                deviceCount: 4,
-                quantization: 'FP8',
-                runtime: 'vLLM TP4',
-                batchSize: 10,
-                contextLength: 200000,
-                rate: 495.88,
-                metric: 'output tok/s',
-                source: 'https://www.localmaxxing.com/en/leaderboard?hfId=MiniMaxAI%2FMiniMax-M2.7'
-            },
-            {
-                modelPreset: 'gemma4_12b',
-                model: 'Gemma 4 12B',
-                hardwarePattern: 'arc pro b70',
-                hardware: '4x Intel Arc Pro B70',
-                deviceCount: 4,
-                quantization: 'INT4 AutoRound W4A16',
-                runtime: 'vLLM TP4 / XPU graph',
-                batchSize: 8,
-                contextLength: 32768,
-                rate: 796.18,
-                metric: 'aggregate output tok/s',
-                source: 'https://www.localmaxxing.com/en/leaderboard?hardwareName=Intel%20Arc%20Pro%20B70'
-            }
-        ];
+        // Execution-map evidence rows derive from the versioned gold-case
+        // snapshot, so every reproducible community run is matchable — not a
+        // hand-picked pair that rots.
+        const LOCALMAXXING_EVIDENCE = (LOCALMAXXING_DATA.goldCases || []).map(goldCase => ({
+            modelPreset: goldCase.presetKey,
+            model: goldCase.model,
+            hardwarePattern: (goldCase.hardwareTemplate || '').toLowerCase(),
+            hardware: `${(goldCase.deviceCount || 1) > 1 ? `${goldCase.deviceCount}x ` : ''}${goldCase.hardware}`,
+            deviceCount: goldCase.deviceCount || 1,
+            quantization: goldCase.quantization,
+            runtime: goldCase.engine,
+            batchSize: goldCase.batchSize || 1,
+            contextLength: goldCase.contextLength || 2048,
+            rate: goldCase.observedTokS,
+            metric: 'tok/s',
+            source: goldCase.source
+        }));
 
         function deriveMoEComposition(modelConfig) {
             const config = normalizeModelConfig(modelConfig);
@@ -9131,7 +9241,7 @@ const DEVICE_TEMPLATES = {
                         ${exactEvidence
                             ? 'A matching community run is shown beside the prediction. Batch, context, quantization, and engine still matter.'
                             : 'No exact model + hardware run is embedded for this plan. Related model or hardware runs provide bounds, not validation.'}
-                        <div style="margin-top:0.35rem;"><a href="${liveUrl}" target="_blank" rel="noopener noreferrer">Explore live LocalMaxxing results</a></div>
+                        <div style="margin-top:0.35rem;"><a href="${liveUrl}" target="_blank" rel="noopener noreferrer">Verify against live community measurements</a></div>
                     </div>
                     <div class="evidence-runs">
                         ${evidenceRows.length ? evidenceRows.map(run => `
@@ -9829,6 +9939,106 @@ const DEVICE_TEMPLATES = {
             renderModelCatalog();
         }
 
+        // Landing quick-start: the community's most-benchmarked model+hardware
+        // pairs, each with the engine's expected/ideal rates beside the
+        // measured median — one click loads the full plan.
+        let quickStartCombos = [];
+
+        function buildQuickStartCombos() {
+            const goldCases = LOCALMAXXING_DATA.goldCases || [];
+            const groups = new Map();
+            for (const goldCase of goldCases) {
+                if (!MODEL_PRESETS[goldCase.presetKey] || !DEVICE_TEMPLATES[goldCase.hardwareTemplate]) continue;
+                const key = `${goldCase.presetKey}|${goldCase.hardwareTemplate}|${goldCase.deviceCount || 1}`;
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(goldCase);
+            }
+
+            const combos = [];
+            for (const rows of groups.values()) {
+                const reference = [...rows].sort((a, b) => (b.reproducibility || 0) - (a.reproducibility || 0))[0];
+                const projection = calculateGoldCaseProjection(reference);
+                if (!projection) continue;
+                const observed = rows.map(row => row.observedTokS).filter(Number.isFinite).sort((a, b) => a - b);
+                combos.push({
+                    reference,
+                    runs: rows.length,
+                    measuredMedianTokS: observed.length ? observed[Math.floor(observed.length / 2)] : null,
+                    expectedTokS: projection.genericTokS,
+                    idealTokS: projection.idealTokS
+                });
+            }
+            combos.sort((a, b) => b.runs - a.runs);
+
+            const seenPresets = new Set();
+            const varied = [];
+            for (const combo of combos) {
+                if (seenPresets.has(combo.reference.presetKey)) continue;
+                seenPresets.add(combo.reference.presetKey);
+                varied.push(combo);
+                if (varied.length >= 9) break;
+            }
+            return varied;
+        }
+
+        function renderQuickStart() {
+            const section = document.getElementById('quickstartSection');
+            const grid = document.getElementById('quickstartGrid');
+            if (!section || !grid) return;
+            quickStartCombos = buildQuickStartCombos();
+            if (!quickStartCombos.length) {
+                section.hidden = true;
+                return;
+            }
+            section.hidden = false;
+            grid.innerHTML = quickStartCombos.map((combo, index) => {
+                const reference = combo.reference;
+                const preset = MODEL_PRESETS[reference.presetKey] || {};
+                const template = DEVICE_TEMPLATES[reference.hardwareTemplate] || {};
+                const modelLabel = preset.label || getModelPresetLabel(reference.presetKey) || reference.presetKey;
+                const deviceCount = Math.max(1, reference.deviceCount || 1);
+                const hardwareLabel = `${deviceCount > 1 ? `${deviceCount}× ` : ''}${template.name || reference.hardwareTemplate}`;
+                const frameworkLabel = FRAMEWORK_PROFILES[reference.runtimeKey]?.label || reference.runtimeKey;
+                return `
+                    <button type="button" class="quickstart-card" data-quickstart-index="${index}" aria-label="Load ${escapeHtml(modelLabel)} on ${escapeHtml(hardwareLabel)}">
+                        <span class="quickstart-model">${escapeHtml(modelLabel)}</span>
+                        <span class="quickstart-hardware">${escapeHtml(hardwareLabel)} · ${escapeHtml((reference.quantKey || '').toUpperCase())} · ${escapeHtml(frameworkLabel)}</span>
+                        <span class="quickstart-rates">
+                            <span class="quickstart-rate is-expected"><strong>${formatCompactRate(combo.expectedTokS)}</strong> expected tok/s</span>
+                            <span class="quickstart-rate"><strong>${formatCompactRate(combo.idealTokS)}</strong> ideal</span>
+                            ${Number.isFinite(combo.measuredMedianTokS)
+                                ? `<span class="quickstart-rate is-measured"><strong>${formatCompactRate(combo.measuredMedianTokS)}</strong> measured · ${combo.runs} run${combo.runs === 1 ? '' : 's'}</span>`
+                                : ''}
+                        </span>
+                    </button>`;
+            }).join('');
+        }
+
+        function loadQuickStart(index) {
+            const combo = quickStartCombos[index];
+            if (!combo) return;
+            const reference = combo.reference;
+            const template = DEVICE_TEMPLATES[reference.hardwareTemplate];
+            if (!template || !MODEL_PRESETS[reference.presetKey]) return;
+            const deviceCount = Math.max(1, reference.deviceCount || 1);
+            devices = Array.from({ length: deviceCount }, (_, deviceIndex) => ({
+                id: deviceIndex + 1,
+                template: reference.hardwareTemplate,
+                ...JSON.parse(JSON.stringify(template)),
+                name: `${template.name || reference.hardwareTemplate}${deviceCount > 1 ? ` #${deviceIndex + 1}` : ''}`
+            }));
+            selectedDeviceId = devices[0].id;
+            document.getElementById('modelPreset').value = reference.presetKey;
+            updateModelConfigFromPreset();
+            if (DTYPE_SIZES[reference.quantKey]) document.getElementById('quantizationType').value = reference.quantKey;
+            if (FRAMEWORK_PROFILES[reference.runtimeKey]) document.getElementById('runtimeFramework').value = reference.runtimeKey;
+            document.getElementById('parallelismStrategy').value = 'auto';
+            saveDevices();
+            updateDeviceDisplay();
+            updateSystemAnalysis();
+            document.getElementById('executionMap')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        }
+
         function renderModelCatalog() {
             const container = document.getElementById('modelCatalog');
             if (!container) return;
@@ -9879,7 +10089,7 @@ const DEVICE_TEMPLATES = {
                             <div class="catalog-tags"><span class="catalog-tag">${catalogIsMoE ? 'MoE' : 'Dense'}</span><span class="catalog-tag">${escapeHtml(model.modality || 'text')}</span>${model.baseHfId ? '<span class="catalog-tag">Variant</span>' : '<span class="catalog-tag">Base</span>'}</div>
                         </div>
                         <div class="catalog-cell"><strong>${params}</strong><span>${active}</span></div>
-                        <div class="catalog-cell"><strong>${model.benchmarkCount.toLocaleString()} runs</strong><span>Localmaxxing evidence</span></div>
+                        <div class="catalog-cell"><strong>${model.benchmarkCount.toLocaleString()} runs</strong><span>measured community runs</span></div>
                         <div class="catalog-cell"><strong>${model.bestTokS ? `${formatCompactRate(model.bestTokS)} tok/s` : 'No speed yet'}</strong><span>${model.medianTokS ? `${formatCompactRate(model.medianTokS)} median` : model.format || '—'}</span></div>
                         <button class="catalog-use" type="button" data-use-model="${escapeHtml(model.hfId)}" data-preset-key="${escapeHtml(model.presetKey || '')}">Use in plan</button>
                     </article>`;
@@ -9917,11 +10127,11 @@ const DEVICE_TEMPLATES = {
             const ticks = [1, 3, 10, 30, 100, 300, 1000, 3000].filter(value => value >= minValue && value <= maxValue);
             const grid = ticks.map(value => `<line class="gridline" x1="${x(value)}" y1="${margin.top}" x2="${x(value)}" y2="${height - margin.bottom}"/><line class="gridline" x1="${margin.left}" y1="${y(value)}" x2="${width - margin.right}" y2="${y(value)}"/><text x="${x(value)}" y="${height - 20}" text-anchor="middle">${formatCompactRate(value)}</text><text x="${margin.left - 9}" y="${y(value) + 4}" text-anchor="end">${formatCompactRate(value)}</text>`).join('');
             const points = rows.map(row => `<circle class="point ${row.absoluteErrorPct > 40 ? 'is-outlier' : ''}" cx="${x(row.observedTokS)}" cy="${y(row.calibratedTokS)}" r="4"><title>${escapeHtml(row.model)} · ${escapeHtml(row.hardware)}: ${row.observedTokS.toFixed(1)} observed, ${row.calibratedTokS.toFixed(1)} predicted</title></circle>`).join('');
-            return `<svg class="calibration-plot-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Scatter plot of Localmaxxing measured output tokens per second versus leave-one-out calibrated projections">
+            return `<svg class="calibration-plot-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Scatter plot of community-measured output tokens per second versus leave-one-out calibrated projections">
                 ${grid}
                 <line class="parity" x1="${x(minValue)}" y1="${y(minValue)}" x2="${x(maxValue)}" y2="${y(maxValue)}"/>
                 ${points}
-                <text x="${(margin.left + width - margin.right) / 2}" y="${height - 3}" text-anchor="middle">Localmaxxing measured tok/s · log scale</text>
+                <text x="${(margin.left + width - margin.right) / 2}" y="${height - 3}" text-anchor="middle">Community-measured tok/s · log scale</text>
                 <text transform="translate(14 ${(margin.top + height - margin.bottom) / 2}) rotate(-90)" text-anchor="middle">Calibrated prediction tok/s</text>
             </svg>`;
         }
@@ -9934,7 +10144,7 @@ const DEVICE_TEMPLATES = {
             const idealAbove = rows.length ? rows.filter(row => row.idealTokS >= row.observedTokS).length / rows.length * 100 : 0;
             const medianReality = median(rows.map(row => Math.min(1, row.observedToIdeal))) || 0;
             document.getElementById('evidenceStats').innerHTML = `
-                <div class="evidence-stat"><strong>${rows.length}</strong><span>reproducible Localmaxxing gold cases</span></div>
+                <div class="evidence-stat"><strong>${rows.length}</strong><span>reproducible community gold runs</span></div>
                 <div class="evidence-stat"><strong>${medianError.toFixed(1)}%</strong><span>median leave-one-out prediction error</span></div>
                 <div class="evidence-stat"><strong>${idealAbove.toFixed(0)}%</strong><span>of observed runs remain below the physics ceiling</span></div>`;
             plot.innerHTML = buildCalibrationPlot(rows);
@@ -11003,7 +11213,7 @@ Intel Arc B580 Benchmarks
 Llama 3 8B	Q4	IPEX-LLM	Arc B580				20 t/s	https://www.techreviewer.com/tech-specs/intel-b580-gpu-for-llms/
 Llama 2 7B	INT4	IPEX-LLM	Arc B580				~18 t/s	https://github.com/intel/ipex-llm
 Mistral 7B	Q4	IPEX-LLM	Arc B580				~15 t/s	https://www.propelrc.com/intel-arc-b580-and-a770-for-local-ai-software/
-LocalMaxxing Community Measurements
+Community Measurements
 MiniMax M2.7 229B A10B	FP8	vLLM TP4	4 x H200 SXM	10	200000	495.88 t/s		https://www.localmaxxing.com/en/leaderboard?hfId=MiniMaxAI%2FMiniMax-M2.7
 Gemma 4 12B	INT4 AutoRound W4A16	vLLM TP4 / XPU graph	4 x Intel Arc Pro B70	8	32768	796.18 t/s		https://www.localmaxxing.com/en/leaderboard?hardwareName=Intel%20Arc%20Pro%20B70
 Gemma 3 Benchmarks
@@ -11346,17 +11556,19 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 
 	    // Organize models into categories for better UX
 	    const modelCategories = {
-	        'Current Localmaxxing leaders': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'gemma4_26b_a4b', 'gemma4_e4b', 'gemma4_e2b', 'deepseek_v4_flash', 'qwen3_coder_next', 'glm4.7_flash', 'gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'minimax_m2.7', 'kimi_k2.5'],
+	        'Most benchmarked right now': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'gemma4_31b', 'gemma4_26b_a4b', 'gemma4_12b', 'gemma4_e4b', 'gemma4_e2b', 'ornith_1_9b', 'ornith_1_35b_a3b', 'deepseek_v4_flash', 'qwen3_coder_next', 'glm4.7_flash', 'gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'minicpm5_1b', 'minimax_m2.7', 'kimi_k2.5'],
 	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision', 'llama4_scout', 'llama4_maverick'],
 	        'DeepSeek': ['deepseek_v4_flash', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
 	        'Qwen': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
-	        'Gemma': ['gemma4_26b_a4b', 'gemma4_e4b', 'gemma4_e2b', 'gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
+	        'Gemma': ['gemma4_31b', 'gemma4_26b_a4b', 'gemma4_12b', 'gemma4_e4b', 'gemma4_e2b', 'gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
 	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
 	        'Kimi': ['kimi_k2', 'kimi_k2.5'],
 	        'MiniMax': ['minimax_m2', 'minimax_m2.5', 'minimax_m2.7'],
 	        'GLM': ['glm5', 'glm5_1', 'glm4.7_flash', 'glm4_9b'],
+	        'Ornith': ['ornith_1_9b', 'ornith_1_35b_a3b'],
+	        'Small & edge': ['minicpm5_1b', 'lfm2_350m'],
 	        'Other MoE': ['gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],
 	        'Falcon': ['falcon_40b', 'falcon2_180b', 'falcon2_11b'],
 	        'Code Models': ['starcoder2_15b', 'starcoder2_7b', 'starcoder2_3b'],
@@ -11473,6 +11685,11 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
         });
 
 	    renderModelCatalog();
+	    renderQuickStart();
+	    document.getElementById('quickstartGrid')?.addEventListener?.('click', event => {
+	        const card = event.target?.closest?.('[data-quickstart-index]');
+	        if (card) loadQuickStart(parseInt(card.dataset.quickstartIndex, 10));
+	    });
 	    const initialWorkspace = typeof window.location?.hash === 'string' ? window.location.hash.replace('#', '') : 'plan';
 	    switchWorkspace(initialWorkspace || 'plan', { updateHash: false });
 	    
@@ -11930,6 +12147,10 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             getGoldValidationRows,
             calculateCurrentCalibration,
             getCatalogModels,
+            buildQuickStartCombos,
+            renderQuickStart,
+            loadQuickStart,
+            getQuickStartCombos: () => quickStartCombos,
             getOptimizationAdjustments,
             buildExecutionPlan,
             buildExecutionMapHtml,

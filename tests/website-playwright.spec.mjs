@@ -87,7 +87,7 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
   await page.getByRole('button', { name: 'Evidence', exact: true }).click();
   // The snapshot refreshes weekly in CI, so assert a meaningful corpus rather
   // than pinning an exact count that rots on every refresh.
-  await expect(page.locator('#evidenceStats')).toContainText('reproducible Localmaxxing gold cases');
+  await expect(page.locator('#evidenceStats')).toContainText('reproducible community gold runs');
   const goldStat = await page.locator('#evidenceStats').innerText();
   const goldCount = parseInt(goldStat.match(/(\d+)\s*reproducible/)?.[1] || '0', 10);
   expect(goldCount).toBeGreaterThanOrEqual(50);
@@ -362,8 +362,10 @@ test('execution map visualizes MiniMax across four Arc Pro B70 GPUs and compares
   await expect(page.locator('#executionMap')).toContainText('weight slices are not duplicates');
   await expect(page.locator('#executionMap')).toContainText('All-reduce / gather after each layer');
   await expect(page.locator('#executionMap')).toContainText('All 62 layers - tensor slice 1/4');
-  await expect(page.locator('#executionMap')).toContainText('Estimate - validate before buying');
-  await expect(page.locator('#executionMap')).toContainText('Related evidence: MiniMax M2.7 on 4x H200 SXM');
+  // Evidence now derives from the live snapshot: this exact 4x B70 MiniMax
+  // combo has measured community runs, so the map shows a matching run.
+  await expect(page.locator('#executionMap')).toContainText('Measured comparison available');
+  await expect(page.locator('#executionMap')).toContainText(/Matching run: .* on 4x/);
 
   const expertButton = page.locator('[data-execution-strategy="expert"]');
   await expect(expertButton).toHaveCount(1);

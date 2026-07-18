@@ -8,8 +8,14 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 
 const MODEL_PRESET_RULES = [
   [/gemma-4-26b-a4b/i, 'gemma4_26b_a4b'],
+  [/gemma-4-31b/i, 'gemma4_31b'],
+  [/gemma-4-12b/i, 'gemma4_12b'],
   [/gemma-4-e4b/i, 'gemma4_e4b'],
   [/gemma-4-e2b/i, 'gemma4_e2b'],
+  [/ornith-1\.0-35b/i, 'ornith_1_35b_a3b'],
+  [/ornith-1\.0-9b/i, 'ornith_1_9b'],
+  [/minicpm5-1b/i, 'minicpm5_1b'],
+  [/^liquidai\/lfm2-350m/i, 'lfm2_350m'],
   [/^google\/gemma-3-27b/i, 'gemma3_27b'],
   [/^google\/gemma-3-12b/i, 'gemma3_12b'],
   [/^google\/gemma-3-4b/i, 'gemma3_4b'],
