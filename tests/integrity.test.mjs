@@ -243,16 +243,31 @@ test('user-controlled device names are escaped in every rendered surface', () =>
   const app = loadApp();
   const hostile = `<img src=x onerror=alert(1)>"'`;
   const template = app.hooks.DEVICE_TEMPLATES['RTX 4090'];
-  app.hooks.setDevices([
-    { id: 1, template: 'RTX 4090', ...JSON.parse(JSON.stringify(template)), name: hostile },
-    { id: 2, template: 'RTX 4090', ...JSON.parse(JSON.stringify(template)), name: 'Plain device' }
-  ]);
+  const hostileDevice = (id) => ({ id, template: 'RTX 4090', ...JSON.parse(JSON.stringify(template)), name: id === 1 ? hostile : 'Plain device' });
 
-  app.hooks.updateDeviceDisplay();
-  app.hooks.updateSystemAnalysis();
+  // Cover every layer-strip branch: single-device pipeline, multi-device
+  // pipeline, tensor, expert (MoE), and data replicas — each renders device
+  // names through different template paths (including aria-labels).
+  const scenarios = [
+    { devices: [hostileDevice(1)], preset: 'llama3_8b', strategy: 'pipeline' },
+    { devices: [hostileDevice(1), hostileDevice(2)], preset: 'llama3_8b', strategy: 'pipeline' },
+    { devices: [hostileDevice(1), hostileDevice(2)], preset: 'llama3_8b', strategy: 'tensor' },
+    { devices: [hostileDevice(1), hostileDevice(2)], preset: 'mixtral_8x7b', strategy: 'expert' },
+    { devices: [hostileDevice(1), hostileDevice(2)], preset: 'llama3_8b', strategy: 'data' }
+  ];
 
-  for (const [id, element] of app.elements) {
-    const rendered = `${element.innerHTML || ''}`;
-    assert.ok(!rendered.includes('<img src=x'), `Raw hostile device name leaked into #${id}`);
+  for (const scenario of scenarios) {
+    app.hooks.setDevices(scenario.devices);
+    app.applyPreset(scenario.preset);
+    app.setValue('parallelismStrategy', scenario.strategy);
+
+    app.hooks.updateDeviceDisplay();
+    app.hooks.updateSystemAnalysis();
+
+    for (const [id, element] of app.elements) {
+      const rendered = `${element.innerHTML || ''}`;
+      assert.ok(!rendered.includes('<img src=x'),
+        `Raw hostile device name leaked into #${id} (${scenario.strategy}, ${scenario.devices.length} device[s])`);
+    }
   }
 });

@@ -8764,7 +8764,7 @@ const DEVICE_TEMPLATES = {
                         </div>`;
                 }).join('');
                 stripBody = `
-                    <div class="map-strip-track" role="img" aria-label="Layer ownership: ${shards.map(s => `${s.device.name || 'device'} holds layers ${s.layerRange.start} to ${s.layerRange.end}`).join('; ')}">
+                    <div class="map-strip-track" role="img" aria-label="Layer ownership: ${escapeHtml(shards.map(s => `${s.device.name || 'device'} holds layers ${s.layerRange.start} to ${s.layerRange.end}`).join('; '))}">
                         <div class="map-strip-cap">Embed</div>
                         ${segments}
                         <div class="map-strip-cap">LM head</div>
@@ -8786,7 +8786,7 @@ const DEVICE_TEMPLATES = {
                         </div>
                         <div class="map-strip-cap">LM head</div>
                     </div>
-                    <div class="map-strip-track" role="img" aria-label="Expert ownership: ${shards.map(s => `${s.device.name || 'device'} holds experts ${s.expertRange.start} to ${s.expertRange.end}`).join('; ')}">
+                    <div class="map-strip-track" role="img" aria-label="Expert ownership: ${escapeHtml(shards.map(s => `${s.device.name || 'device'} holds experts ${s.expertRange.start} to ${s.expertRange.end}`).join('; '))}">
                         <div class="map-strip-cap">Experts</div>
                         ${expertSegments}
                     </div>`;
@@ -9542,8 +9542,8 @@ const DEVICE_TEMPLATES = {
             const headerMeta = document.getElementById('headerResultMeta');
             const renderedRate = analysisContainer.querySelector('.rate-value')?.textContent?.replace(/\s+/g, ' ').trim();
             if (headerRate && renderedRate) {
-                const idealRate = analysisContainer.querySelector('.calibration-strip > div:first-child strong')?.textContent?.trim();
-                headerRate.textContent = idealRate ? `${renderedRate} / ${idealRate}` : renderedRate;
+                const idealRate = analysisContainer.querySelector('.ceiling-ladder .ladder-row .ladder-value strong')?.textContent?.trim();
+                headerRate.textContent = idealRate ? `${renderedRate} / ${idealRate} ideal` : renderedRate;
             }
             if (headerMeta) {
                 const config = buildEffectiveModelConfig();
