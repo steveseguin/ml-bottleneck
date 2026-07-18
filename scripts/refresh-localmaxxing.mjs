@@ -20,7 +20,10 @@ const MODEL_PRESET_RULES = [
   [/^google\/gemma-3-12b/i, 'gemma3_12b'],
   [/^google\/gemma-3-4b/i, 'gemma3_4b'],
   [/^google\/gemma-3-1b/i, 'gemma3_1b'],
+  [/^0xsero\/deepseek-v4-flash-180b/i, 'deepseek_v4_flash_reap_180b'],
+  [/^deepseek-ai\/deepseek-v4-pro/i, 'deepseek_v4_pro'],
   [/^deepseek-ai\/deepseek-v4-flash/i, 'deepseek_v4_flash'],
+  [/^deepseek-ai\/deepseek-v3\.2/i, 'deepseek_v3.2'],
   [/deepseek-r1-distill-qwen-32b/i, 'deepseek_r1_distill_32b'],
   [/deepseek-r1-distill-qwen-14b/i, 'deepseek_r1_distill_14b'],
   [/deepseek-r1-distill-qwen-7b/i, 'deepseek_r1_distill_8b'],
@@ -47,8 +50,13 @@ const MODEL_PRESET_RULES = [
   [/^moonshotai\/kimi-k2\.6/i, 'kimi_k2.6'],
   [/^liquidai\/lfm2\.5-8b-a1b/i, 'lfm2.5_8b_a1b'],
   [/^moonshotai\/kimi-k2\.5/i, 'kimi_k2.5'],
+  [/^minimaxai\/minimax-m3/i, 'minimax_m3'],
   [/^minimaxai\/minimax-m2\.7/i, 'minimax_m2.7'],
   [/^minimaxai\/minimax-m2\.5/i, 'minimax_m2.5'],
+  [/^nvidia\/nvidia-nemotron-3-ultra-550b-a55b/i, 'nemotron3_ultra_550b_a55b'],
+  [/^nvidia\/nvidia-nemotron-3-super-120b-a12b/i, 'nemotron3_super_120b_a12b'],
+  [/^nvidia\/nvidia-nemotron-3-nano-30b-a3b/i, 'nemotron3_nano_30b_a3b'],
+  [/^nvidia\/nvidia-nemotron-3-nano-4b/i, 'nemotron3_nano_4b'],
   [/^meta-llama\/meta-llama-3-8b/i, 'llama3_8b'],
   [/^meta-llama\/llama-3\.1-8b/i, 'llama3_8b'],
   [/^meta-llama\/llama-3\.3-70b/i, 'llama3.3_70b'],
@@ -147,7 +155,8 @@ function normalizeModel(model) {
     medianTokS: model.speedStats?.medianTokS || null,
     baseHfId: model.baseModel?.hfId || null,
     format: tags.includes('gguf') ? 'GGUF' : (tags.includes('safetensors') ? 'Safetensors' : ''),
-    presetKey: pickRule(model.baseModel?.hfId || model.hfId, MODEL_PRESET_RULES)
+    presetKey: pickRule(model.hfId, MODEL_PRESET_RULES)
+      || pickRule(model.baseModel?.hfId, MODEL_PRESET_RULES)
   };
 }
 

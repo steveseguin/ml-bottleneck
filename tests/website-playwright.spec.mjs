@@ -103,6 +103,24 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
     { label: 'Gemma 4 E4B (8B resident)', value: 'gemma4_e4b' },
     { label: 'Gemma 4 E2B (5.1B resident)', value: 'gemma4_e2b' }
   ]);
+  const organizedPresetGroups = await page.evaluate(() => Object.fromEntries(
+    [...document.querySelectorAll('#modelPreset optgroup')].map(group => [
+      group.label,
+      [...group.querySelectorAll('option')].map(option => option.value)
+    ])
+  ));
+  expect(organizedPresetGroups['New & popular']).toEqual(expect.arrayContaining([
+    'minimax_m3', 'deepseek_v4_pro', 'deepseek_v4_flash',
+    'deepseek_v4_flash_reap_180b', 'nemotron3_super_120b_a12b'
+  ]));
+  expect(organizedPresetGroups.DeepSeek).toEqual(expect.arrayContaining([
+    'deepseek_v4_pro', 'deepseek_v4_flash', 'deepseek_v4_flash_reap_180b', 'deepseek_v3.2'
+  ]));
+  expect(organizedPresetGroups.MiniMax).toEqual(expect.arrayContaining(['minimax_m3', 'minimax_m2.7']));
+  expect(organizedPresetGroups['NVIDIA Nemotron 3']).toEqual([
+    'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b',
+    'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b'
+  ]);
 
   await page.getByRole('button', { name: 'Models', exact: true }).click();
   await page.locator('#catalogSearch').fill('Gemma 4');

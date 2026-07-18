@@ -158,11 +158,36 @@ test('current Localmaxxing leaders have first-class architecture presets', () =>
 
   app.applyPreset('deepseek_v4_flash');
   model = app.hooks.buildEffectiveModelConfig();
-  // 158B per the canonical deepseek-ai/DeepSeek-V4-Flash repo (the 284B figure
-  // came from a mislabeled community variant).
-  assert.equal(model.totalParamsB, 158);
+  assert.equal(model.totalParamsB, 284);
   assert.equal(model.activeParamsB, 13);
   assert.equal(model.contextLength, 1048576);
+
+  app.applyPreset('deepseek_v4_flash_reap_180b');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.totalParamsB, 180);
+  assert.equal(model.numExperts, 160);
+  assert.equal(model.activeExperts, 6);
+  assert.equal(model.specStatus, 'derived');
+
+  app.applyPreset('deepseek_v4_pro');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.totalParamsB, 1600);
+  assert.equal(model.activeParamsB, 49);
+  assert.equal(model.numExperts, 384);
+
+  app.applyPreset('minimax_m3');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.totalParamsB, 428);
+  assert.equal(model.activeParamsB, 23);
+  assert.equal(model.architectureType, 'multimodal_transformer');
+  assert.equal(model.contextLength, 1048576);
+
+  app.applyPreset('nemotron3_super_120b_a12b');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.totalParamsB, 120);
+  assert.equal(model.activeParamsB, 12);
+  assert.equal(model.architectureType, 'hybrid_ssm_transformer');
+  assert.equal(model.numExperts, 512);
 
   app.applyPreset('qwen3_coder_next');
   model = app.hooks.buildEffectiveModelConfig();

@@ -4419,10 +4419,29 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    routingType: 'moe',
 	    attentionMechanism: 'mla'
 	  },
+	  'deepseek_v3.2': {
+	    label: 'DeepSeek V3.2 671B A37B',
+	    hfId: 'deepseek-ai/DeepSeek-V3.2',
+	    totalParamsB: 671,
+	    hiddenSize: 7168,
+	    numLayers: 61,
+	    numHeads: 128,
+	    numKVHeads: 128,
+	    intermediateSize: 2048,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 37,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla',
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 163840
+	  },
 	  'deepseek_v4_flash': {
-	    label: 'DeepSeek V4 Flash 158B A13B',
+	    label: 'DeepSeek V4 Flash 284B A13B',
 	    hfId: 'deepseek-ai/DeepSeek-V4-Flash',
-	    totalParamsB: 158,
+	    totalParamsB: 284,
 	    hiddenSize: 4096,
 	    numLayers: 43,
 	    numHeads: 64,
@@ -4432,6 +4451,49 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numExperts: 256,
 	    activeExperts: 6,
 	    activeParamsB: 13,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    slidingWindow: 128,
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 1048576
+	  },
+	  'deepseek_v4_flash_reap_180b': {
+	    label: 'DeepSeek V4 Flash REAP 180B A13B',
+	    hfId: '0xSero/DeepSeek-V4-Flash-180B',
+	    totalParamsB: 180,
+	    hiddenSize: 4096,
+	    numLayers: 43,
+	    numHeads: 64,
+	    numKVHeads: 1,
+	    intermediateSize: 2048,
+	    isMoE: true,
+	    numExperts: 160,
+	    activeExperts: 6,
+	    activeParamsB: 13,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    slidingWindow: 128,
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 200000,
+	    specStatus: 'derived',
+	    specSourceUrl: 'https://huggingface.co/0xSero/DeepSeek-V4-Flash-180B',
+	    specNote: 'Community REAP-pruned derivative of DeepSeek V4 Flash. It keeps 160 routed experts, activates 6 per token, and has a validated 200K serving profile; it is not the official 284B checkpoint.'
+	  },
+	  'deepseek_v4_pro': {
+	    label: 'DeepSeek V4 Pro 1.6T A49B',
+	    hfId: 'deepseek-ai/DeepSeek-V4-Pro',
+	    totalParamsB: 1600,
+	    hiddenSize: 7168,
+	    numLayers: 61,
+	    numHeads: 128,
+	    numKVHeads: 1,
+	    intermediateSize: 3072,
+	    isMoE: true,
+	    numExperts: 384,
+	    activeExperts: 6,
+	    activeParamsB: 49,
 	    routingType: 'moe',
 	    attentionMechanism: 'hybrid_linear',
 	    slidingWindow: 128,
@@ -5188,6 +5250,100 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    useMTP: true,
 	    mtpModules: 3,
 	    contextLength: 204800
+	  },
+	  'minimax_m3': {
+	    label: 'MiniMax M3 428B A23B',
+	    hfId: 'MiniMaxAI/MiniMax-M3',
+	    totalParamsB: 428,
+	    hiddenSize: 6144,
+	    headDim: 128,
+	    numLayers: 60,
+	    numHeads: 64,
+	    numKVHeads: 4,
+	    intermediateSize: 3072,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 4,
+	    activeParamsB: 23,
+	    routingType: 'moe',
+	    architectureType: 'multimodal_transformer',
+	    attentionMechanism: 'hybrid_linear',
+	    hasVision: true,
+	    useMTP: true,
+	    mtpModules: 7,
+	    contextLength: 1048576
+	  },
+	  // NVIDIA Nemotron 3 Family
+	  'nemotron3_nano_4b': {
+	    label: 'Nemotron 3 Nano 4B',
+	    hfId: 'nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16',
+	    totalParamsB: 4,
+	    hiddenSize: 3136,
+	    numLayers: 42,
+	    numHeads: 40,
+	    numKVHeads: 8,
+	    intermediateSize: 12544,
+	    architectureType: 'hybrid_ssm_transformer',
+	    attentionMechanism: 'hybrid_ssm',
+	    contextLength: 262144
+	  },
+	  'nemotron3_nano_30b_a3b': {
+	    label: 'Nemotron 3 Nano 30B A3.5B',
+	    hfId: 'nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16',
+	    totalParamsB: 30,
+	    hiddenSize: 2688,
+	    numLayers: 52,
+	    numHeads: 32,
+	    numKVHeads: 2,
+	    intermediateSize: 1856,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 6,
+	    activeParamsB: 3.5,
+	    routingType: 'moe',
+	    architectureType: 'hybrid_ssm_transformer',
+	    attentionMechanism: 'hybrid_ssm',
+	    contextLength: 262144
+	  },
+	  'nemotron3_super_120b_a12b': {
+	    label: 'Nemotron 3 Super 120B A12B',
+	    hfId: 'nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16',
+	    totalParamsB: 120,
+	    hiddenSize: 4096,
+	    numLayers: 88,
+	    numHeads: 32,
+	    numKVHeads: 2,
+	    intermediateSize: 2688,
+	    isMoE: true,
+	    numExperts: 512,
+	    activeExperts: 22,
+	    activeParamsB: 12,
+	    routingType: 'moe',
+	    architectureType: 'hybrid_ssm_transformer',
+	    attentionMechanism: 'hybrid_ssm',
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 1048576
+	  },
+	  'nemotron3_ultra_550b_a55b': {
+	    label: 'Nemotron 3 Ultra 550B A55B',
+	    hfId: 'nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16',
+	    totalParamsB: 550,
+	    hiddenSize: 8192,
+	    numLayers: 106,
+	    numHeads: 64,
+	    numKVHeads: 2,
+	    intermediateSize: 5120,
+	    isMoE: true,
+	    numExperts: 512,
+	    activeExperts: 22,
+	    activeParamsB: 55,
+	    routingType: 'moe',
+	    architectureType: 'hybrid_ssm_transformer',
+	    attentionMechanism: 'hybrid_ssm',
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 1048576
 	  },
 	  // Video Generation Models
 	  'sora_est': {
@@ -10358,9 +10514,18 @@ const DEVICE_TEMPLATES = {
                 presetKey
             }));
             if (!LOCALMAXXING_DATA.models?.length) return builtIns;
-            const snapshotPresetKeys = new Set(LOCALMAXXING_DATA.models.map(model => model.presetKey).filter(Boolean));
-            const supplemental = builtIns.filter(model => model.specStatus && !snapshotPresetKeys.has(model.presetKey));
-            return [...supplemental, ...LOCALMAXXING_DATA.models];
+            const builtInByHfId = new Map(builtIns
+                .filter(model => model.hfId?.includes('/'))
+                .map(model => [model.hfId.toLowerCase(), model]));
+            const snapshotModels = LOCALMAXXING_DATA.models.map(model => {
+                if (model.presetKey) return model;
+                const builtIn = builtInByHfId.get(String(model.hfId || '').toLowerCase())
+                    || builtInByHfId.get(String(model.baseHfId || '').toLowerCase());
+                return builtIn ? { ...model, presetKey: builtIn.presetKey, specStatus: builtIn.specStatus } : model;
+            });
+            const snapshotPresetKeys = new Set(snapshotModels.map(model => model.presetKey).filter(Boolean));
+            const supplemental = builtIns.filter(model => !snapshotPresetKeys.has(model.presetKey));
+            return [...supplemental, ...snapshotModels];
         }
 
         let catalogShowAll = false;
@@ -11835,7 +12000,7 @@ const DEVICE_TEMPLATES = {
             }
             const label = preset.specStatus === 'preview' ? 'Preview architecture — known limits shown honestly' : 'Specification note';
             const source = preset.specSourceUrl
-                ? ` <a href="${escapeHtml(preset.specSourceUrl)}" target="_blank" rel="noopener noreferrer">Moonshot source</a>`
+                ? ` <a href="${escapeHtml(preset.specSourceUrl)}" target="_blank" rel="noopener noreferrer">Source</a>`
                 : '';
             notice.innerHTML = `<strong>${label}</strong>${escapeHtml(preset.specNote)}${source}`;
             notice.hidden = false;
@@ -12406,20 +12571,28 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	    const modelPresetSelect = document.getElementById('modelPreset');
 	    modelPresetSelect.innerHTML = '<option value="">Custom</option>';
 
-	    // Organize models into categories for better UX
+	    // Keep a short featured group for discovery, then list every model again
+	    // under its actual family so popular entries never disappear from it.
+	    const featuredModelKeys = [
+	        'minimax_m3', 'deepseek_v4_pro', 'deepseek_v4_flash', 'deepseek_v4_flash_reap_180b',
+	        'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b', 'nemotron3_nano_30b_a3b',
+	        'kimi_k3', 'gemma4_31b', 'gemma4_26b_a4b', 'qwen3.6_27b', 'qwen3.6_35b_a3b',
+	        'glm5_2', 'minimax_m2.7'
+	    ];
+
+	    // Family groups are intentionally mutually exclusive.
 	    const modelCategories = {
-	        'New & preview': ['kimi_k3'],
 	        'Gemma 4': ['gemma4_31b', 'gemma4_26b_a4b', 'gemma4_12b', 'gemma4_e4b', 'gemma4_e2b'],
-	        'Most benchmarked right now': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'ornith_1_9b', 'ornith_1_35b_a3b', 'deepseek_v4_flash', 'qwen3_coder_next', 'glm4.7_flash', 'gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'minicpm5_1b', 'minimax_m2.7', 'kimi_k2.5'],
 	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision', 'llama4_scout', 'llama4_maverick'],
-	        'DeepSeek': ['deepseek_v4_flash', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
+	        'DeepSeek': ['deepseek_v4_pro', 'deepseek_v4_flash', 'deepseek_v4_flash_reap_180b', 'deepseek_v3.2', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
 	        'Qwen': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
 	        'Gemma 3 and earlier': ['gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
 	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
 	        'Kimi': ['kimi_k3', 'kimi_k2.7_code', 'kimi_k2.6', 'kimi_k2.5', 'kimi_k2'],
-	        'MiniMax': ['minimax_m2', 'minimax_m2.5', 'minimax_m2.7'],
+	        'MiniMax': ['minimax_m3', 'minimax_m2.7', 'minimax_m2.5', 'minimax_m2'],
+	        'NVIDIA Nemotron 3': ['nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b', 'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b'],
 	        'GLM': ['glm5_2', 'glm5_1', 'glm5', 'glm4.7_flash', 'glm4_9b'],
 	        'Ornith': ['ornith_1_9b', 'ornith_1_35b_a3b'],
 	        'Small & edge': ['minicpm5_1b', 'lfm2_350m'],
@@ -12436,28 +12609,28 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 
 	    const formatName = (key) => getModelPresetLabel(key) || formatModelPresetName(key);
 
-	    // Track which models we've added to avoid duplicates
+	    // Track family entries only; featured entries deliberately repeat.
 	    const addedModels = new Set();
-
-	    // Add categorized models
-	    Object.entries(modelCategories).forEach(([category, modelKeys]) => {
+	    const appendModelGroup = (category, modelKeys, trackModels = true) => {
 	        const optgroup = document.createElement('optgroup');
 	        optgroup.label = category;
-
 	        modelKeys.forEach(key => {
-	            if (MODEL_PRESETS[key] && !addedModels.has(key)) {
-	                addedModels.add(key);
-	                const option = document.createElement('option');
-	                option.value = key;
-	                option.textContent = formatName(key);
-	                if (key === 'llama3_8b') option.selected = true;
-	                optgroup.appendChild(option);
-	            }
+	            if (!MODEL_PRESETS[key] || (trackModels && addedModels.has(key))) return;
+	            if (trackModels) addedModels.add(key);
+	            const option = document.createElement('option');
+	            option.value = key;
+	            option.textContent = formatName(key);
+	            if (key === 'llama3_8b') option.selected = true;
+	            optgroup.appendChild(option);
 	        });
+	        if (optgroup.children.length > 0) modelPresetSelect.appendChild(optgroup);
+	    };
 
-	        if (optgroup.children.length > 0) {
-	            modelPresetSelect.appendChild(optgroup);
-	        }
+	    appendModelGroup('New & popular', featuredModelKeys, false);
+
+	    // Add every model under its stable family group.
+	    Object.entries(modelCategories).forEach(([category, modelKeys]) => {
+	        appendModelGroup(category, modelKeys, true);
 	    });
 
 	    // Add any remaining models not in categories
