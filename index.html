@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ML Bottleneck - Visual Local LLM Deployment Planner</title>
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjgwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMyZGQ0YmYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMyNTYzZWIiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB4PSIxIiB5PSIxIiB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHJ4PSI5IiBmaWxsPSJ1cmwoI2cpIi8+PHBhdGggZD0iTTkgNSBIMjMgQzIwLjUgOS41IDIwIDEyIDIwIDE2IEMyMCAyMCAyMC41IDIyLjUgMjMgMjcgSDkgQzExLjUgMjIuNSAxMiAyMCAxMiAxNiBDMTIgMTIgMTEuNSA5LjUgOSA1IFoiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuOTYiLz48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxLjciIGZpbGw9IiMyNTYzZWIiLz48L3N2Zz4=">
+    <!-- A small, high-contrast mark that stays legible at favicon size. -->
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
 
     <!-- Primary Meta Tags -->
     <meta name="title" content="ML Bottleneck - Visual Local LLM Deployment Planner">
@@ -1554,6 +1554,22 @@ option {
     padding: 0 0.65rem;
 }
 
+/* The planner rail is intentionally narrow. Keep device actions on their own
+   line so long GPU labels never squeeze or overlap the controls. */
+.planner-controls .device-name-row { grid-template-columns: minmax(0, 1fr); }
+.planner-controls .device-name-input { width: 100%; min-width: 0; }
+.planner-controls .device-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+}
+.planner-controls .device-actions .icon-button { min-width: 0; padding-inline: 0.45rem; }
+.hardware-spec-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; margin: -0.05rem 0 0.65rem; color: var(--text-secondary); font-size: 0.63rem; }
+.hardware-spec-meta a { margin-left: auto; white-space: nowrap; }
+.spec-pill { display: inline-flex; align-items: center; min-height: 1.3rem; padding: 0.1rem 0.38rem; border: 1px solid color-mix(in srgb, var(--primary) 38%, var(--border)); border-radius: 999px; color: var(--primary); font-size: 0.57rem; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; }
+.spec-pill.is-derived, .spec-pill.is-preview { border-color: color-mix(in srgb, #f59e0b 48%, var(--border)); color: #d97706; }
+.hardware-spec-detail { margin: 0 0 0.8rem; padding: 0.65rem 0.7rem; border-left: 2px solid var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); color: var(--text-secondary); font-size: 0.68rem; line-height: 1.5; }
+
 .device-chip:hover,
 .device-chip.selected {
     border-color: var(--primary);
@@ -2216,6 +2232,17 @@ td {
     line-height: 1.45;
 }
 
+.execution-deep-dive { margin-top: 0.9rem; border: 1px solid var(--border); border-radius: 9px; background: color-mix(in srgb, var(--background) 70%, transparent); overflow: hidden; }
+.execution-deep-dive > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3.2rem; padding: 0.65rem 0.8rem; cursor: pointer; list-style: none; }
+.execution-deep-dive > summary::-webkit-details-marker { display: none; }
+.execution-deep-dive > summary::after { content: '+'; color: var(--primary); font-size: 1.1rem; font-weight: 500; }
+.execution-deep-dive[open] > summary::after { content: '−'; }
+.execution-deep-dive > summary:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.execution-deep-dive-summary { display: grid; gap: 0.12rem; }
+.execution-deep-dive-summary strong { font-size: 0.74rem; }
+.execution-deep-dive-summary small { color: var(--text-secondary); font-size: 0.62rem; font-weight: 400; }
+.execution-deep-dive-content { padding: 0.85rem; border-top: 1px solid var(--border); }
+
 @media (max-width: 720px) {
     body {
         padding: 0.8rem;
@@ -2699,14 +2726,12 @@ body {
     width: 2.35rem;
     height: 2.35rem;
     place-items: center;
-    border-radius: 0.75rem;
-    background: linear-gradient(145deg, #2dd4bf, #2563eb);
-    color: #04111d;
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.38);
+    flex: 0 0 auto;
+    overflow: hidden;
+    border-radius: 0.7rem;
+    box-shadow: 0 4px 12px rgb(2 8 23 / 0.2);
 }
+.brand-mark img { display: block; width: 100%; height: 100%; }
 
 .workspace-tabs { display: flex; justify-content: center; gap: 0.25rem; min-width: 0; }
 .workspace-tab {
@@ -2746,6 +2771,9 @@ body {
 .planner-stage > .card { margin-bottom: 1rem; }
 .execution-card { min-height: 28rem; }
 .results-card { min-height: 14rem; }
+.results-card #alerts .alert { padding: 0.78rem 0.9rem; margin-bottom: 0.75rem; }
+.results-card #alerts .alert > div:first-child { margin-bottom: 0.25rem !important; font-size: 0.76rem; }
+.results-card #alerts .alert > div:not(:first-child) { margin-left: 0 !important; font-size: 0.71rem; line-height: 1.45; }
 .ceiling-ladder { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--border); display: grid; gap: 0.4rem; --ladder-1: #86b6ef; --ladder-2: #5598e7; --ladder-3: #2a78d6; }
 @media (prefers-color-scheme: dark) {
     .ceiling-ladder { --ladder-1: #6da7ec; --ladder-2: #3987e5; --ladder-3: #256abf; }
@@ -2771,12 +2799,12 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 12rem;
-    padding: clamp(1.25rem, 3vw, 2.5rem) 0.5rem;
+    min-height: 9.5rem;
+    padding: clamp(1.1rem, 2.5vw, 2rem) 0.5rem;
     border-bottom: 1px solid var(--border);
     margin-bottom: 1.25rem;
 }
-.workspace-heading h1 { max-width: 22ch; margin: 0.35rem 0 0.65rem; font-size: clamp(2rem, 4vw, 3.7rem); line-height: 0.98; }
+.workspace-heading h1 { max-width: 24ch; margin: 0.35rem 0 0.6rem; font-size: clamp(1.9rem, 3.4vw, 3.15rem); line-height: 1; }
 .workspace-heading p { max-width: 67ch; margin: 0; color: var(--text-secondary); }
 .evidence-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
 .source-link { align-self: end; padding: 0.65rem 0; font-size: 0.76rem; }
@@ -2889,6 +2917,11 @@ body {
 .gold-table { width: 100%; min-width: 48rem; border-collapse: collapse; }
 .gold-table th, .gold-table td { padding: 0.75rem 0.45rem; border-bottom: 1px solid var(--border); text-align: right; font-size: 0.7rem; }
 .gold-table th:first-child, .gold-table td:first-child { text-align: left; }
+@media (min-width: 861px) {
+    .gold-table-wrap { overflow: visible; }
+    .gold-table { overflow: visible; }
+    .gold-table thead { position: sticky; top: 5rem; z-index: 3; background: var(--background); box-shadow: 0 1px 0 var(--border); }
+}
 .gold-run-title { display: block; font-weight: 650; }
 .gold-run-meta { display: block; color: var(--text-secondary); font-size: 0.61rem; }
 .error-good { color: #22c55e; }.error-near { color: #f59e0b; }.error-far { color: var(--destructive); }
@@ -2897,6 +2930,15 @@ body {
 .interpreter-form, .interpreter-output { padding: clamp(1rem, 2.5vw, 1.6rem); border: 1px solid var(--border); border-radius: 0.9rem; background: color-mix(in srgb, var(--card) 72%, transparent); }
 .interpreter-form label span { float: right; font-weight: 400; }
 .interpreter-form textarea { resize: vertical; }
+.result-import-option { display: flex; align-items: flex-start; gap: 0.5rem; margin: 0.15rem 0 0.75rem; color: var(--text-secondary); font-size: 0.7rem; font-weight: 500; line-height: 1.4; }
+.result-import-option input { flex: 0 0 auto; margin-top: 0.15rem; }
+.result-import-option[hidden] { display: none; }
+.result-import-status { min-height: 1.15rem; margin: -0.35rem 0 0.55rem; color: var(--text-secondary); font-size: 0.67rem; line-height: 1.45; }
+.result-import-status.is-ready { color: #0f766e; }
+.result-import-status.is-error { color: #dc2626; }
+.model-spec-notice { margin: -0.25rem 0 0.8rem; padding: 0.65rem 0.7rem; border: 1px solid color-mix(in srgb, #f59e0b 42%, var(--border)); border-radius: 0.55rem; background: color-mix(in srgb, #f59e0b 7%, transparent); color: var(--text-secondary); font-size: 0.66rem; line-height: 1.45; }
+.model-spec-notice strong { display: block; margin-bottom: 0.15rem; color: var(--text); font-size: 0.69rem; }
+.model-spec-notice a { white-space: nowrap; }
 .interpreter-output { display: grid; align-content: center; min-height: 23rem; background: radial-gradient(circle at 75% 20%, rgb(45 212 191 / 0.13), transparent 34%), color-mix(in srgb, var(--card) 72%, transparent); }
 .interpreter-output h2 { max-width: 20ch; margin: 0.35rem 0 0.8rem; font-size: clamp(1.45rem, 3vw, 2.5rem); }
 .interpreter-output p { max-width: 62ch; color: var(--text-secondary); }
@@ -2907,8 +2949,13 @@ body {
 .interpret-metric span { color: var(--text-secondary); font-size: 0.62rem; }
 .recommendation-list { margin: 0.8rem 0 0; padding-left: 1.1rem; color: var(--text-secondary); font-size: 0.72rem; }
 .api-contract { display: grid; grid-template-columns: minmax(0, 1fr) minmax(21rem, 0.8fr); gap: 2rem; align-items: center; margin-top: 1rem; padding: 1.3rem 0; border-top: 1px solid var(--border); }
+.api-contract > * { min-width: 0; }
 .api-contract p { max-width: 58ch; color: var(--text-secondary); }
-.api-contract pre { max-width: 100%; overflow: auto; margin: 0; padding: 1rem; border-radius: 0.8rem; background: #07101d; color: #b7f7e8; font-size: 0.69rem; }
+.api-contract pre { width: 100%; max-width: 100%; overflow: auto; box-sizing: border-box; margin: 0; padding: 1rem; border-radius: 0.8rem; background: #07101d; color: #b7f7e8; font-size: 0.69rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.api-contract-disclosure { margin-top: 1rem; border-top: 1px solid var(--border); }
+.api-contract-disclosure > summary { padding: 1rem 0; color: var(--text-secondary); cursor: pointer; font-size: 0.72rem; font-weight: 650; }
+.api-contract-disclosure > summary:hover { color: var(--primary); }
+.api-contract-disclosure .api-contract { margin-top: 0; border-top: 0; }
 
 @media (max-width: 1120px) {
     .planner-shell { grid-template-columns: minmax(19rem, 22rem) minmax(0, 1fr); }
@@ -2956,7 +3003,7 @@ body {
 <body>
     <header class="product-nav">
         <a class="product-brand" href="#home" data-workspace-link="home" aria-label="ML Bottleneck home">
-            <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" focusable="false"><path d="M9 5 H23 C20.5 9.5 20 12 20 16 C20 20 20.5 22.5 23 27 H9 C11.5 22.5 12 20 12 16 C12 12 11.5 9.5 9 5 Z" fill="#ffffff" opacity="0.96"/><circle cx="16" cy="16" r="1.7" fill="#2563eb"/></svg></span>
+            <span class="brand-mark" aria-hidden="true"><img src="icon.svg" alt=""></span>
             <span><strong>ML Bottleneck</strong></span>
         </a>
         <nav class="workspace-tabs" aria-label="Primary">
@@ -3071,6 +3118,7 @@ body {
                             <option value="very_large_model_1kb">Very Large Model (1T+)</option>
                         </optgroup>
                     </select>
+                <div id="modelSpecNotice" class="model-spec-notice" hidden></div>
 
                 <div class="hf-import">
                     <div>
@@ -3457,8 +3505,8 @@ body {
     <section id="workspace-models" class="workspace-view" data-workspace-view="models" hidden>
         <header class="workspace-heading">
             <span class="eyebrow">Model intelligence</span>
-            <h1>Browse the ecosystem, not a dropdown.</h1>
-            <p>Base models, fine-tunes, quantizations, active parameters, and community performance signals in one catalog.</p>
+            <h1>Find a model, then plan the hardware.</h1>
+            <p>Compare base models, fine-tunes, quantizations, active parameters, and measured performance without digging through a giant select menu.</p>
         </header>
         <div class="catalog-toolbar" role="search">
             <label class="catalog-search"><span>Search model or organization</span><input class="input" id="catalogSearch" type="search" placeholder="Gemma 4, Qwen, MiniMax, coding…"></label>
@@ -3475,7 +3523,7 @@ body {
         <header class="workspace-heading evidence-heading">
             <div>
                 <span class="eyebrow">Calibration lab</span>
-                <h1>Ideal physics, checked against real machines.</h1>
+                <h1>Compare the estimate with real machines.</h1>
                 <p>The gold set keeps only community-measured runs that map cleanly to a known model, device, quantization, runtime, and command.</p>
             </div>
         </header>
@@ -3499,8 +3547,8 @@ body {
     <section id="workspace-explain" class="workspace-view" data-workspace-view="explain" hidden>
         <header class="workspace-heading">
             <span class="eyebrow">Result interpreter</span>
-            <h1>Turn a measured run into headroom.</h1>
-            <p>Use the active plan, enter the speed you measured, and get the implied efficiency, ideal ceiling, and highest-value changes.</p>
+            <h1>Compare a measured run with the plan.</h1>
+            <p>Paste a result or enter its speed to see implied efficiency, the ideal ceiling, and the changes most likely to help.</p>
         </header>
         <div class="interpreter-layout">
             <form class="interpreter-form" id="resultInterpreterForm">
@@ -3508,6 +3556,11 @@ body {
                 <input class="input" id="measuredTokS" type="number" min="0.01" step="0.01" placeholder="32.2" required>
                 <label for="resultJson">Optional measured-result JSON</label>
                 <textarea class="input" id="resultJson" rows="8" placeholder='Paste a result object; tokSOut, model, hardware, engine, and engineFlags will be recognized.'></textarea>
+                <div id="resultImportStatus" class="result-import-status" role="status"></div>
+                <label id="resultImportOption" class="result-import-option" hidden>
+                    <input id="useImportedConfiguration" type="checkbox" checked>
+                    <span>Use the recognized model, hardware, runtime, quantization, and context for this explanation. Your saved Plan will not be changed.</span>
+                </label>
                 <button class="button" type="submit">Explain this run</button>
             </form>
             <section class="interpreter-output" id="interpreterOutput" aria-live="polite">
@@ -3516,14 +3569,17 @@ body {
                 <p>We will compare the entered result with both its physical ceiling and the peer-calibrated expectation.</p>
             </section>
         </div>
-        <section class="api-contract">
-            <div><span class="eyebrow">Future API contract</span><h2>One payload in, an optimization envelope out.</h2><p>The same result shape can power a public endpoint once the static site gains a small backend.</p></div>
-            <pre id="apiContractPreview"><code>{
+        <details class="api-contract-disclosure">
+            <summary>View the normalized result JSON</summary>
+            <section class="api-contract">
+                <div><span class="eyebrow">Portable result</span><h2>One payload, with its assumptions made explicit.</h2><p>Copy this normalized result into a report or a future API call.</p></div>
+                <pre id="apiContractPreview"><code>{
   "observedTokS": 32.2,
   "configuration": "active-plan",
   "return": ["idealTokS", "expectedTokS", "headroom", "recommendations"]
 }</code></pre>
-        </section>
+            </section>
+        </details>
     </section>
     </main>
 
@@ -5072,6 +5128,33 @@ body {
 	    isAudioModel: true
 	  },
 	  // EXO-supported models
+	  'kimi_k3': {
+	    label: 'Kimi K3 2.8T (preview spec)',
+	    organization: 'Moonshot AI',
+	    apiModelId: 'kimi-k3',
+	    totalParamsB: 2800,
+	    // Moonshot has not published the full config yet. These K2-family
+	    // dimensions keep the planner usable until the K3 weights/report land.
+	    hiddenSize: 7168,
+	    numLayers: 61,
+	    numHeads: 64,
+	    numKVHeads: 64,
+	    intermediateSize: 18432,
+	    isMoE: true,
+	    numExperts: 896,
+	    activeExperts: 16,
+	    routingType: 'moe',
+	    architectureType: 'multimodal_transformer',
+	    attentionMechanism: 'hybrid_linear',
+	    hasHybridLinearAttention: true,
+	    hasVision: true,
+	    modelType: 'multimodal-moe',
+	    contextLength: 1000000,
+	    nativeWeightFormat: 'MXFP4',
+	    specStatus: 'preview',
+	    specSourceUrl: 'https://www.kimi.com/fr-fr/blog/kimi-k3',
+	    specNote: 'Moonshot confirms 2.8T parameters, 1M context, native vision, KDA/Attention Residuals, and 16 of 896 active experts. Layer dimensions and active parameter count are not public yet; this planner uses a clearly marked K2-shaped routing proxy until the technical report and weights arrive.'
+	  },
 	  'kimi_k2': {
 	    label: 'Kimi K2 1T A32B',
 	    totalParamsB: 1000,
@@ -5158,21 +5241,44 @@ const DEVICE_TEMPLATES = {
   // NVIDIA GPUs (High-End to Low-End)
   'B200': {
     name: 'NVIDIA B200',
-    memoryGB: 192,
-    localBandwidthGBps: 4800,
-    networkBandwidthGBps: 900 / 8,
+    memoryGB: 180,
+    localBandwidthGBps: 8000,
+    networkBandwidthGBps: 900,
     computeTFlops: {
-      'float32': 950,
-      'float16': 1900,
-      'bfloat16': 1900,
-      'int8': 3800,
-      'q4': 5700
+      'float32': 75,
+      'float16': 4500,
+      'bfloat16': 4500,
+      'fp8': 9000,
+      'int8': 9000,
+      'q4': 9000
     },
+    powerWatts: 1000,
+    sourceUrl: 'https://docs.nvidia.com/enterprise-reference-architectures/hgx-ai-factory/latest/components.html',
+    specStatus: 'verified',
+    specNote: '180 GB HBM3e and up to 8 TB/s are NVIDIA HGX specifications; compute values use dense per-GPU headline rates.',
+    type: 'GPU'
+  },
+  'B300': {
+    name: 'NVIDIA B300 Blackwell Ultra',
+    memoryGB: 288,
+    localBandwidthGBps: 8000,
+    networkBandwidthGBps: 900,
+    computeTFlops: {
+      'float32': 75,
+      'float16': 4500,
+      'bfloat16': 4500,
+      'fp8': 9000,
+      'int8': 9000,
+      'q4': 13500
+    },
+    sourceUrl: 'https://docs.nvidia.com/enterprise-reference-architectures/hgx-ai-factory/latest/components.html',
+    specStatus: 'verified',
+    specNote: '288 GB HBM3e and up to 8 TB/s are NVIDIA HGX specifications; low-bit rates are dense per-GPU planning values.',
     type: 'GPU'
   },
   'H100': {
-    name: 'NVIDIA H100',
-    memoryGB: 120,
+    name: 'NVIDIA H100 SXM 80GB',
+    memoryGB: 80,
     localBandwidthGBps: 3350,
     networkBandwidthGBps: 450,
     computeTFlops: {
@@ -5182,6 +5288,9 @@ const DEVICE_TEMPLATES = {
       'int8': 1979,
       'q4': 2500
     },
+    sourceUrl: 'https://www.nvidia.com/en-us/data-center/h100/',
+    specStatus: 'verified',
+    specNote: 'This preset represents the 80 GB SXM model at 3.35 TB/s, not an unpublished 120 GB variant.',
     type: 'GPU'
   },
   'H200': {
@@ -5213,17 +5322,21 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'RTX 6000': {
-    name: 'NVIDIA RTX 6000',
+    name: 'NVIDIA RTX 6000 Ada',
     memoryGB: 48,
-    localBandwidthGBps: 2000,
+    localBandwidthGBps: 960,
     networkBandwidthGBps: 100 / 8,
     computeTFlops: {
-      'float32': 150,
-      'float16': 300,
-      'bfloat16': 300,
-      'int8': 600,
-      'q4': 900
+      'float32': 91.1,
+      'float16': 364.2,
+      'bfloat16': 364.2,
+      'fp8': 728.5,
+      'int8': 728.5,
+      'q4': 728.5
     },
+    sourceUrl: 'https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/proviz-print-rtx6000-datasheet-web-2504660.pdf',
+    specStatus: 'verified',
+    specNote: '48 GB and 960 GB/s are NVIDIA specifications; low-bit inference varies by kernel and quantization format.',
     type: 'GPU'
   },
   'RTX PRO 6000 Blackwell': {
@@ -5272,6 +5385,9 @@ const DEVICE_TEMPLATES = {
       'int8': 636,
       'q4': 954
     },
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/',
+    specStatus: 'verified',
+    specNote: '32 GB and 1,792 GB/s are NVIDIA specifications. Low-precision planning rates are derived estimates because NVIDIA publishes AI TOPS rather than directly comparable dense inference TFLOPS.',
     type: 'GPU'
   },
   'RTX 5080': {
@@ -5355,16 +5471,17 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'DGX Spark': {
-    name: 'DGX Spark',
+    name: 'DGX Spark (legacy alias)',
     memoryGB: 128,
     localBandwidthGBps: 273,
-    networkBandwidthGBps: 50/8,
+    networkBandwidthGBps: 200/8,
     computeTFlops: {
       'float32': 50,
       'float16': 100,
       'int8': 200,
-      'q4': 830
+      'q4': 1000
     },
+    hidden: true,
     type: 'GPU'
   },
   'RTX 4090': {
@@ -5661,16 +5778,21 @@ const DEVICE_TEMPLATES = {
     name: 'AMD MI355X',
     memoryGB: 288,
     localBandwidthGBps: 8000,
-    networkBandwidthGBps: 400 / 8,
+    networkBandwidthGBps: 153,
     pcieGeneration: 5,
     pcieLanes: 16,
     computeTFlops: {
-      'float32': 450,
-      'float16': 1800,
-      'bfloat16': 1800,
-      'int8': 3600,
-      'q4': 7200
+      'float32': 157.3,
+      'float16': 2500,
+      'bfloat16': 2500,
+      'fp8': 5000,
+      'int8': 5000,
+      'q4': 10100
     },
+    powerWatts: 1400,
+    sourceUrl: 'https://www.amd.com/en/products/accelerators/instinct/mi350/mi355x.html',
+    specStatus: 'verified',
+    specNote: 'AMD dense matrix rates: 2.5 PFLOPS FP16/BF16, 5 PFLOPS FP8, and 10.1 PFLOPS MXFP4.',
     type: 'GPU'
   },
   'AMD MI350X': {
@@ -6029,20 +6151,31 @@ const DEVICE_TEMPLATES = {
       'int8': 500,
       'q4': 1000                         // 1 PFLOP at FP4
     },
+    sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/dgx-spark/',
+    specStatus: 'verified',
+    specNote: '128 GB unified memory, 273 GB/s bandwidth, 200 Gb/s ConnectX networking, and 1 PFLOP headline FP4.',
     type: 'AI PC'
   },
   'NVIDIA DGX Station (GB300)': {
-    name: 'NVIDIA DGX Station (GB300)',
-    memoryGB: 768,
-    localBandwidthGBps: 16000,          // HBM3e across 4 GPUs
-    networkBandwidthGBps: 400 / 8,
+    name: 'NVIDIA DGX Station GB300 (252GB HBM)',
+    memoryGB: 252,
+    localBandwidthGBps: 7100,
+    networkBandwidthGBps: 800 / 8,
     computeTFlops: {
-      'float32': 800,
-      'float16': 1600,
-      'bfloat16': 1600,
-      'int8': 3200,
-      'q4': 4800
+      'float32': 80,
+      'float16': 5000,
+      'bfloat16': 5000,
+      'fp8': 10000,
+      'int8': 330,
+      'q4': 15000
     },
+    hostMemoryGB: 496,
+    hostMemoryBandwidthGBps: 396,
+    nvlinkC2CGBps: 900,
+    powerWatts: 1600,
+    sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/dgx-station/',
+    specStatus: 'verified',
+    specNote: 'The fast tier is 252 GB HBM3e at 7.1 TB/s. An additional 496 GB CPU tier runs at 396 GB/s and is not counted as HBM.',
     type: 'AI Workstation'
   },
 
@@ -6090,17 +6223,39 @@ const DEVICE_TEMPLATES = {
     type: 'Cloud Accelerator'
   },
   'AWS Trainium2 (trn2.xlarge)': {
-    name: 'AWS Trainium2 (trn2.xlarge)',
-    memoryGB: 64,
-    localBandwidthGBps: 1600,
+    name: 'AWS Trainium2 (per chip)',
+    memoryGB: 96,
+    localBandwidthGBps: 2900,
     networkBandwidthGBps: 100 / 8,
     computeTFlops: {
-      'float32': 95,
-      'float16': 380,
-      'bfloat16': 380,
-      'int8': 760,
-      'q4': 1140
+      'float32': 81,
+      'float16': 650,
+      'bfloat16': 650,
+      'fp8': 1300,
+      'int8': 1300,
+      'q4': 2600
     },
+    sourceUrl: 'https://aws.amazon.com/ec2/instance-types/trn2/',
+    specStatus: 'verified',
+    specNote: 'Per-chip values: 96 GiB HBM, 2.9 TB/s, and up to 1.3 PFLOPS dense FP8. Other precisions are planning conversions.',
+    type: 'Cloud Accelerator'
+  },
+  'AWS Trainium3': {
+    name: 'AWS Trainium3 (per chip)',
+    memoryGB: 144,
+    localBandwidthGBps: 4900,
+    networkBandwidthGBps: 1000,
+    computeTFlops: {
+      'float32': 157.5,
+      'float16': 1260,
+      'bfloat16': 1260,
+      'fp8': 2520,
+      'int8': 2520,
+      'q4': 5040
+    },
+    sourceUrl: 'https://aws.amazon.com/about-aws/whats-new/2025/12/amazon-ec2-trn3-ultraservers/',
+    specStatus: 'verified',
+    specNote: 'AWS confirms 144 GB HBM3e, 4.9 TB/s, 2.52 PFLOPS FP8, and 2 TB/s bidirectional NeuronLink-v4 per chip; non-FP8 rates are planning conversions.',
     type: 'Cloud Accelerator'
   },
   'Google TPU v5e': {
@@ -6129,6 +6284,42 @@ const DEVICE_TEMPLATES = {
       'int8': 918,
       'q4': 1377
     },
+    type: 'TPU'
+  },
+  'Google TPU v6e (Trillium)': {
+    name: 'Google TPU v6e (Trillium)',
+    memoryGB: 32,
+    localBandwidthGBps: 1638,
+    networkBandwidthGBps: 400,
+    computeTFlops: {
+      'float32': 229.5,
+      'float16': 918,
+      'bfloat16': 918,
+      'fp8': 918,
+      'int8': 1836,
+      'q4': 2754
+    },
+    sourceUrl: 'https://docs.cloud.google.com/tpu/docs/tpu7x',
+    specStatus: 'verified',
+    specNote: 'Per-chip Google Cloud specification; ICI is 800 GB/s bidirectional.',
+    type: 'TPU'
+  },
+  'Google TPU7x (Ironwood)': {
+    name: 'Google TPU7x (Ironwood)',
+    memoryGB: 192,
+    localBandwidthGBps: 7380,
+    networkBandwidthGBps: 600,
+    computeTFlops: {
+      'float32': 576.75,
+      'float16': 2307,
+      'bfloat16': 2307,
+      'fp8': 4614,
+      'int8': 4614,
+      'q4': 9228
+    },
+    sourceUrl: 'https://docs.cloud.google.com/tpu/docs/tpu7x',
+    specStatus: 'verified',
+    specNote: 'Per-chip Google Cloud specification; ICI is 1,200 GB/s bidirectional. Q4 is a planning conversion, not a native published rate.',
     type: 'TPU'
   },
 
@@ -6175,6 +6366,23 @@ const DEVICE_TEMPLATES = {
     },
     type: 'CPU/Integrated GPU'
   },
+  'Mac M5 Max (128)': {
+    name: 'Apple M5 Max (128GB)',
+    memoryGB: 128,
+    localBandwidthGBps: 614,
+    networkBandwidthGBps: 80 / 8,
+    computeTFlops: {
+      'float32': 24,
+      'bfloat16': 48,
+      'float16': 48,
+      'int8': 96,
+      'q4': 144
+    },
+    sourceUrl: 'https://www.apple.com/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/',
+    specStatus: 'derived',
+    specNote: 'Apple confirms 128 GB and 614 GB/s. Apple does not publish comparable tensor TFLOPS, so compute rates remain conservative planning estimates.',
+    type: 'CPU/Integrated GPU'
+  },
   'Mac Mini M2 (10G Ethernet)': {
     name: 'Mac Mini M2 (10G)',
     memoryGB: 16,
@@ -6192,9 +6400,9 @@ const DEVICE_TEMPLATES = {
   
   // Intel
   'Intel Gaudi3': {
-    name: 'Intel Gaudi3',
+    name: 'Intel Gaudi 3',
     memoryGB: 128,
-    localBandwidthGBps: 3600,
+    localBandwidthGBps: 3700,
     networkBandwidthGBps: 400 / 8,
     computeTFlops: {
       'float32': 320,
@@ -6203,6 +6411,9 @@ const DEVICE_TEMPLATES = {
       'int8': 1280,
       'q4': 1920
     },
+    sourceUrl: 'https://newsroom.intel.com/artificial-intelligence/vision-2024-gaudi-3-ai-accelerator',
+    specStatus: 'verified',
+    specNote: '128 GB HBM2e and 3.7 TB/s are Intel specifications; precision conversions are planner-normalized.',
     type: 'AI Accelerator'
   },
   'Intel Xeon CPU (High-End)': {
@@ -6251,17 +6462,18 @@ const DEVICE_TEMPLATES = {
   // Google
   // Cerebras
   'Cerebras WSE-3': {
-    name: 'Cerebras WSE-3',
-    memoryGB: 40000,
-    localBandwidthGBps: 20000,
-    networkBandwidthGBps: 800 / 8,
+    name: 'Cerebras WSE-3 (legacy alias)',
+    memoryGB: 44,
+    localBandwidthGBps: 21000,
+    networkBandwidthGBps: 2400 / 8,
     computeTFlops: {
-      'float32': 2400,
-      'float16': 4800,
-      'bfloat16': 4800,
-      'int8': 9600,
-      'q4': 14400
+      'float32': 125,
+      'float16': 250,
+      'bfloat16': 250,
+      'int8': 500,
+      'q4': 750
     },
+    hidden: true,
     type: 'Wafer-Scale AI'
   },
   
@@ -9298,33 +9510,38 @@ const DEVICE_TEMPLATES = {
                     <span class="execution-chip"><strong>${plan.communication}</strong></span>
                 </div>
                 ${buildLayerStripHtml(plan)}
-                ${buildDecodeWaterfallHtml(plan)}
-                ${shards.length > 1 ? `
-                <div class="strategy-diagram">
-                    <div class="diagram-title-row">
-                        <strong>${strategyCopy.title}</strong>
-                        <span>${plan.communication}</span>
+                <details class="execution-deep-dive">
+                    <summary><span class="execution-deep-dive-summary"><strong>Timing, device map &amp; evidence</strong><small>Decode step, shard ownership, comparisons, and assumptions</small></span></summary>
+                    <div class="execution-deep-dive-content">
+                        ${buildDecodeWaterfallHtml(plan)}
+                        ${shards.length > 1 ? `
+                        <div class="strategy-diagram">
+                            <div class="diagram-title-row">
+                                <strong>${strategyCopy.title}</strong>
+                                <span>${plan.communication}</span>
+                            </div>
+                            ${strategyDiagram}
+                        </div>` : ''}
+                        <div class="evidence-panel">
+                            <div class="evidence-lead">
+                                <strong>${exactEvidence ? 'Measured comparison available' : 'Estimate - validate before buying'}</strong>
+                                ${exactEvidence
+                                    ? 'A matching community run is shown beside the prediction. Batch, context, quantization, and engine still matter.'
+                                    : 'No exact model + hardware run is embedded for this plan. Related model or hardware runs provide bounds, not validation.'}
+                                <div style="margin-top:0.35rem;"><a href="${liveUrl}" target="_blank" rel="noopener noreferrer">Verify against live community measurements</a></div>
+                            </div>
+                            <div class="evidence-runs">
+                                ${evidenceRows.length ? evidenceRows.map(run => `
+                                    <a class="evidence-run" href="${run.source}" target="_blank" rel="noopener noreferrer">
+                                        <span><strong>${run.exact ? 'Matching run' : 'Related evidence'}: ${run.model} on ${run.hardware}</strong>${run.quantization} - ${run.runtime} - batch ${run.batchSize} - ${formatTokenCount(run.contextLength)} context</span>
+                                        <span class="evidence-rate">${run.rate.toFixed(1)} ${run.metric}</span>
+                                    </a>
+                                `).join('') : '<div class="evidence-run"><span><strong>No nearby measured run in the embedded evidence set</strong>Use the live leaderboard link to search current community results.</span></div>'}
+                            </div>
+                        </div>
+                        <p class="execution-footnote">The map is a planning abstraction. Tensor and expert collectives, framework support, quantization kernels, PCIe topology, and routing imbalance can materially change real throughput.</p>
                     </div>
-                    ${strategyDiagram}
-                </div>` : ''}
-                <div class="evidence-panel">
-                    <div class="evidence-lead">
-                        <strong>${exactEvidence ? 'Measured comparison available' : 'Estimate - validate before buying'}</strong>
-                        ${exactEvidence
-                            ? 'A matching community run is shown beside the prediction. Batch, context, quantization, and engine still matter.'
-                            : 'No exact model + hardware run is embedded for this plan. Related model or hardware runs provide bounds, not validation.'}
-                        <div style="margin-top:0.35rem;"><a href="${liveUrl}" target="_blank" rel="noopener noreferrer">Verify against live community measurements</a></div>
-                    </div>
-                    <div class="evidence-runs">
-                        ${evidenceRows.length ? evidenceRows.map(run => `
-                            <a class="evidence-run" href="${run.source}" target="_blank" rel="noopener noreferrer">
-                                <span><strong>${run.exact ? 'Matching run' : 'Related evidence'}: ${run.model} on ${run.hardware}</strong>${run.quantization} - ${run.runtime} - batch ${run.batchSize} - ${formatTokenCount(run.contextLength)} context</span>
-                                <span class="evidence-rate">${run.rate.toFixed(1)} ${run.metric}</span>
-                            </a>
-                        `).join('') : '<div class="evidence-run"><span><strong>No nearby measured run in the embedded evidence set</strong>Use the live leaderboard link to search current community results.</span></div>'}
-                    </div>
-                </div>
-                <p class="execution-footnote">The map is a planning abstraction. Tensor and expert collectives, framework support, quantization kernels, PCIe topology, and routing imbalance can materially change real throughput.</p>
+                </details>
             `;
         }
 
@@ -9986,11 +10203,10 @@ const DEVICE_TEMPLATES = {
         }
 
         function getCatalogModels() {
-            if (LOCALMAXXING_DATA.models?.length) return LOCALMAXXING_DATA.models;
-            return Object.entries(MODEL_PRESETS).map(([presetKey, preset]) => ({
+            const builtIns = Object.entries(MODEL_PRESETS).map(([presetKey, preset]) => ({
                 hfId: preset.hfId || presetKey,
                 name: preset.label || formatModelPresetName(presetKey),
-                organization: preset.hfId?.split('/')[0] || 'Built in',
+                organization: preset.organization || preset.hfId?.split('/')[0] || 'Built in',
                 family: (preset.label || presetKey).split(/[\s_.-]/)[0],
                 paramsB: preset.totalParamsB,
                 activeParamsB: preset.activeParamsB || null,
@@ -10001,8 +10217,13 @@ const DEVICE_TEMPLATES = {
                 medianTokS: null,
                 baseHfId: null,
                 format: '',
+                specStatus: preset.specStatus || '',
                 presetKey
             }));
+            if (!LOCALMAXXING_DATA.models?.length) return builtIns;
+            const snapshotPresetKeys = new Set(LOCALMAXXING_DATA.models.map(model => model.presetKey).filter(Boolean));
+            const supplemental = builtIns.filter(model => model.specStatus && !snapshotPresetKeys.has(model.presetKey));
+            return [...supplemental, ...LOCALMAXXING_DATA.models];
         }
 
         let catalogShowAll = false;
@@ -10188,13 +10409,14 @@ const DEVICE_TEMPLATES = {
                 const catalogIsMoE = Boolean(preset.isMoE ?? model.isMoE);
                 const params = model.paramsB ? `${model.paramsB}B total` : 'Size unknown';
                 const activeParams = preset.activeParamsB || model.activeParamsB;
-                const active = activeParams ? `${activeParams}B active` : (catalogIsMoE ? 'Active size unknown' : 'Dense');
+                const active = activeParams ? `${activeParams}B active` : (catalogIsMoE ? (preset.specStatus === 'preview' ? 'Active size undisclosed' : 'Active size unknown') : 'Dense');
+                const specTag = preset.specStatus === 'preview' ? '<span class="catalog-tag">Preview spec</span>' : '';
                 return `
                     <article class="catalog-row">
                         <div class="catalog-identity">
                             <strong>${escapeHtml(model.name)}</strong>
                             <span>${escapeHtml(model.organization)} · ${escapeHtml(model.hfId)}</span>
-                            <div class="catalog-tags"><span class="catalog-tag">${catalogIsMoE ? 'MoE' : 'Dense'}</span><span class="catalog-tag">${escapeHtml(model.modality || 'text')}</span>${model.baseHfId ? '<span class="catalog-tag">Variant</span>' : '<span class="catalog-tag">Base</span>'}</div>
+                            <div class="catalog-tags"><span class="catalog-tag">${catalogIsMoE ? 'MoE' : 'Dense'}</span><span class="catalog-tag">${escapeHtml(model.modality || 'text')}</span>${model.baseHfId ? '<span class="catalog-tag">Variant</span>' : '<span class="catalog-tag">Base</span>'}${specTag}</div>
                         </div>
                         <div class="catalog-cell"><strong>${params}</strong><span>${active}</span></div>
                         <div class="catalog-cell"><strong>${model.benchmarkCount.toLocaleString()} runs</strong><span>measured community runs</span></div>
@@ -10210,7 +10432,7 @@ const DEVICE_TEMPLATES = {
                 select.value = presetKey;
                 document.getElementById('modelSearch').value = getModelPresetLabel(presetKey);
                 updateModelConfigFromPreset();
-                document.getElementById('hfId').value = hfId;
+                document.getElementById('hfId').value = MODEL_PRESETS[presetKey].hfId || '';
                 updateSystemAnalysis();
                 switchWorkspace('plan');
                 return;
@@ -10259,7 +10481,7 @@ const DEVICE_TEMPLATES = {
             document.getElementById('calibrationMethodStats').innerHTML = `
                 <div><dt>Median real / ideal</dt><dd>${(medianReality * 100).toFixed(0)}%</dd></div>
                 <div><dt>Runs scanned</dt><dd>${(LOCALMAXXING_DATA.stats?.benchmarkRunsScanned || 0).toLocaleString()}</dd></div>
-                <div><dt>Catalog models</dt><dd>${(LOCALMAXXING_DATA.stats?.models || 0).toLocaleString()}</dd></div>
+                <div><dt>Catalog models</dt><dd>${getCatalogModels().length.toLocaleString()}</dd></div>
                 <div><dt>Validation</dt><dd>leave one out</dd></div>`;
             renderGoldTable();
         }
@@ -10275,6 +10497,256 @@ const DEVICE_TEMPLATES = {
             }).join('') || '<tr><td colspan="5">No gold cases match this filter.</td></tr>';
         }
 
+        const RESULT_PLAN_FIELD_IDS = [
+            'modelPreset', 'hfId', 'quantizationType', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'seqLength',
+            'hiddenSize', 'numLayers', 'numHeads', 'numKVHeads', 'intermediateSize', 'architectureType', 'activeParamsB',
+            'numExperts', 'activeExperts', 'routingType', 'attentionMechanism', 'dtype', 'parallelismStrategy',
+            'optimizationMode', 'runtimeFramework', 'kvCacheCompression'
+        ];
+
+        function normalizeResultLookup(value) {
+            return String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        }
+
+        function findResultField(payload, aliases) {
+            if (!payload || typeof payload !== 'object') return undefined;
+            const wanted = new Set(aliases.map(alias => normalizeResultLookup(alias).replace(/\s/g, '')));
+            const queue = [{ value: payload, depth: 0 }];
+            const seen = new Set();
+            while (queue.length) {
+                const current = queue.shift();
+                if (!current.value || typeof current.value !== 'object' || seen.has(current.value)) continue;
+                seen.add(current.value);
+                for (const [key, value] of Object.entries(current.value)) {
+                    if (wanted.has(normalizeResultLookup(key).replace(/\s/g, ''))) return value;
+                }
+                if (current.depth < 2) {
+                    for (const value of Object.values(current.value)) {
+                        if (value && typeof value === 'object') queue.push({ value, depth: current.depth + 1 });
+                    }
+                }
+            }
+            return undefined;
+        }
+
+        function resultValueText(value) {
+            if (typeof value === 'string' || typeof value === 'number') return String(value);
+            if (!value || typeof value !== 'object') return '';
+            return String(value.hfId || value.modelId || value.model_id || value.template || value.name || value.label || value.id || '');
+        }
+
+        function findModelPresetForResult(value) {
+            const candidate = normalizeResultLookup(resultValueText(value));
+            if (!candidate) return null;
+            let best = null;
+            for (const [key, preset] of Object.entries(MODEL_PRESETS)) {
+                const identities = [key, preset.label, preset.hfId, preset.apiModelId].map(normalizeResultLookup).filter(text => text.length >= 3);
+                for (const identity of identities) {
+                    const exact = candidate === identity;
+                    const contains = candidate.includes(identity) || identity.includes(candidate);
+                    if (!exact && !contains) continue;
+                    const score = (exact ? 10000 : 0) + Math.min(candidate.length, identity.length);
+                    if (!best || score > best.score) best = { key, score };
+                }
+            }
+            return best?.key || null;
+        }
+
+        function findHardwareTemplateForResult(value) {
+            const candidate = normalizeResultLookup(resultValueText(value).replace(/^\s*\d+\s*[x×]\s*/i, ''));
+            if (!candidate) return null;
+            let best = null;
+            for (const [key, template] of Object.entries(DEVICE_TEMPLATES)) {
+                if (key === 'Custom' || template.hidden) continue;
+                const identities = [key, template.name].map(normalizeResultLookup).filter(text => text.length >= 2);
+                for (const identity of identities) {
+                    const exact = candidate === identity;
+                    const contains = candidate.includes(identity) || identity.includes(candidate);
+                    if (!exact && !contains) continue;
+                    const score = (exact ? 10000 : 0) + Math.min(candidate.length, identity.length);
+                    if (!best || score > best.score) best = { key, score };
+                }
+            }
+            return best?.key || null;
+        }
+
+        function normalizeImportedHardware(rawHardware) {
+            if (rawHardware === undefined || rawHardware === null || rawHardware === '') return { devices: [], unmatched: [] };
+            const values = Array.isArray(rawHardware) ? rawHardware : [rawHardware];
+            const devicesFound = [];
+            const unmatched = [];
+            for (const value of values) {
+                const valueText = resultValueText(value);
+                const prefixCount = valueText.match(/^\s*(\d+)\s*[x×]\s*/i);
+                const objectCount = value && typeof value === 'object' ? Number(value.count || value.deviceCount || value.quantity) : NaN;
+                const count = Math.max(1, Math.min(256, Number.isFinite(objectCount) && objectCount > 0 ? objectCount : (prefixCount ? Number(prefixCount[1]) : 1)));
+                const template = findHardwareTemplateForResult(value);
+                if (template) devicesFound.push({ template, count });
+                else if (valueText) unmatched.push(valueText);
+            }
+            const merged = new Map();
+            for (const item of devicesFound) merged.set(item.template, (merged.get(item.template) || 0) + item.count);
+            return { devices: [...merged.entries()].map(([template, count]) => ({ template, count })), unmatched };
+        }
+
+        function normalizeImportedRuntime(value) {
+            const valueText = normalizeResultLookup(resultValueText(value));
+            if (!valueText) return null;
+            const matches = [
+                ['tensorrt_llm', /tensor ?rt/], ['llama_cpp', /llama ?cpp|ggml|gguf/], ['sglang', /sglang/],
+                ['vllm', /\bvllm\b/], ['ollama', /ollama/], ['mlx', /\bmlx\b/], ['exo', /\bexo\b/]
+            ];
+            return matches.find(([, pattern]) => pattern.test(valueText))?.[0] || null;
+        }
+
+        function normalizeImportedQuantization(value) {
+            const valueText = normalizeResultLookup(resultValueText(value));
+            if (!valueText) return null;
+            if (/\b(fp32|float32)\b/.test(valueText)) return 'float32';
+            if (/\b(bf16|bfloat16)\b/.test(valueText)) return 'bfloat16';
+            if (/\b(fp16|float16|half)\b/.test(valueText)) return 'float16';
+            if (/\b(fp8|nvfp8|mxfp8)\b/.test(valueText)) return 'fp8';
+            if (/\b(int8|q8)\b/.test(valueText)) return 'int8';
+            if (/\b(q4|int4|awq|gptq|mxfp4|nvfp4|4 bit)\b/.test(valueText)) return 'q4';
+            if (/\b(q3|iq3|3 bit)\b/.test(valueText)) return 'q3';
+            if (/\b(q2|iq2|2 bit)\b/.test(valueText)) return 'q2';
+            return null;
+        }
+
+        function parseMeasuredResultPayload(payload) {
+            if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('The result JSON must be an object.');
+            let observedTokS = Number(findResultField(payload, ['tokSOut', 'observedTokS', 'tokensPerSecond', 'decodeTokS', 'generationTokensPerSecond', 'evalRate']));
+            if (!Number.isFinite(observedTokS) || observedTokS <= 0) {
+                const evalCount = Number(findResultField(payload, ['eval_count', 'evalCount']));
+                const evalDuration = Number(findResultField(payload, ['eval_duration', 'evalDuration']));
+                if (evalCount > 0 && evalDuration > 0) observedTokS = evalCount / (evalDuration / 1e9);
+            }
+            const modelRaw = findResultField(payload, ['model', 'modelId', 'model_id', 'modelName', 'hfId', 'hf_id']);
+            const hardwareRaw = findResultField(payload, ['hardware', 'devices', 'gpus', 'gpu', 'device', 'accelerator']);
+            const runtimeRaw = findResultField(payload, ['engine', 'runtime', 'framework', 'backend']);
+            const quantRaw = findResultField(payload, ['quantization', 'quant', 'precision', 'dtype', 'format']);
+            const contextRaw = findResultField(payload, ['contextLength', 'context_length', 'context', 'contextSize', 'ctxSize', 'n_ctx', 'num_ctx', 'seqLength', 'sequenceLength', 'maxModelLen']);
+            const engineFlags = findResultField(payload, ['engineFlags', 'engine_flags', 'flags', 'arguments', 'args']);
+            const hardware = normalizeImportedHardware(hardwareRaw);
+            const modelPreset = findModelPresetForResult(modelRaw);
+            const runtimeFramework = normalizeImportedRuntime(runtimeRaw);
+            const quantizationType = normalizeImportedQuantization(quantRaw);
+            const contextLength = Number(contextRaw);
+            const recognizedContext = Number.isFinite(contextLength) && contextLength > 0 ? Math.round(contextLength) : null;
+            const unmatched = [];
+            if (modelRaw && !modelPreset) unmatched.push(`model "${resultValueText(modelRaw)}"`);
+            if (hardware.unmatched.length) unmatched.push(`hardware "${hardware.unmatched.join(', ')}"`);
+            if (runtimeRaw && !runtimeFramework) unmatched.push(`runtime "${resultValueText(runtimeRaw)}"`);
+            if (quantRaw && !quantizationType) unmatched.push(`quantization "${resultValueText(quantRaw)}"`);
+            return {
+                observedTokS: Number.isFinite(observedTokS) && observedTokS > 0 ? observedTokS : null,
+                modelPreset,
+                modelRaw: resultValueText(modelRaw),
+                hardware: hardware.devices,
+                runtimeFramework,
+                quantizationType,
+                contextLength: recognizedContext,
+                engineFlags,
+                unmatched,
+                hasConfiguration: Boolean(modelPreset || hardware.devices.length || runtimeFramework || quantizationType || recognizedContext)
+            };
+        }
+
+        function describeMeasuredResultImport(imported) {
+            const parts = [];
+            if (imported.modelPreset) parts.push(getModelPresetLabel(imported.modelPreset));
+            if (imported.hardware.length) parts.push(imported.hardware.map(item => `${item.count > 1 ? `${item.count}x ` : ''}${DEVICE_TEMPLATES[item.template].name}`).join(' + '));
+            if (imported.runtimeFramework) parts.push(FRAMEWORK_PROFILES[imported.runtimeFramework]?.label || imported.runtimeFramework);
+            if (imported.quantizationType) parts.push(imported.quantizationType.toUpperCase());
+            if (imported.contextLength) parts.push(`${imported.contextLength.toLocaleString()} context`);
+            const prefix = parts.length ? `Recognized ${parts.join(' / ')}.` : 'No configuration fields were recognized; the active Plan will be used.';
+            return imported.unmatched.length ? `${prefix} Could not match ${imported.unmatched.join(' or ')}.` : prefix;
+        }
+
+        function updateResultImportPreview() {
+            const raw = document.getElementById('resultJson')?.value.trim() || '';
+            const status = document.getElementById('resultImportStatus');
+            const option = document.getElementById('resultImportOption');
+            if (!raw) {
+                if (status) { status.className = 'result-import-status'; status.textContent = ''; }
+                if (option) option.hidden = true;
+                return null;
+            }
+            try {
+                const parsed = JSON.parse(raw);
+                const imported = parseMeasuredResultPayload(parsed);
+                if (imported.observedTokS) document.getElementById('measuredTokS').value = Number(imported.observedTokS.toFixed(3));
+                if (status) { status.className = `result-import-status${imported.hasConfiguration ? ' is-ready' : ''}`; status.textContent = describeMeasuredResultImport(imported); }
+                if (option) option.hidden = !imported.hasConfiguration;
+                return { parsed, imported };
+            } catch (error) {
+                if (status) { status.className = 'result-import-status is-error'; status.textContent = error instanceof SyntaxError ? 'JSON is not valid yet.' : error.message; }
+                if (option) option.hidden = true;
+                return null;
+            }
+        }
+
+        function captureResultPlanState() {
+            return {
+                fields: Object.fromEntries(RESULT_PLAN_FIELD_IDS.map(id => [id, document.getElementById(id)?.value])),
+                devices: JSON.parse(JSON.stringify(devices)),
+                selectedDeviceId,
+                lastAutoResults,
+                lastPhaseSplitResults
+            };
+        }
+
+        function restoreResultPlanState(snapshot) {
+            for (const [id, value] of Object.entries(snapshot.fields)) {
+                const element = document.getElementById(id);
+                if (element && value !== undefined) element.value = value;
+            }
+            devices = snapshot.devices;
+            selectedDeviceId = snapshot.selectedDeviceId;
+            lastAutoResults = snapshot.lastAutoResults;
+            lastPhaseSplitResults = snapshot.lastPhaseSplitResults;
+        }
+
+        function applyImportedResultForCalculation(imported) {
+            if (imported.modelPreset && MODEL_PRESETS[imported.modelPreset]) {
+                const currentConfig = getModelConfig();
+                const preset = buildEffectiveModelConfig({
+                    modelPreset: imported.modelPreset,
+                    quantizationType: imported.quantizationType || currentConfig.quantizationType,
+                    batchSize: currentConfig.batchSize,
+                    promptTokens: currentConfig.promptTokens,
+                    outputTokens: currentConfig.outputTokens,
+                    seqLength: currentConfig.seqLength,
+                    dtype: currentConfig.dtype,
+                    parallelismStrategy: currentConfig.parallelismStrategy,
+                    optimizationMode: currentConfig.optimizationMode,
+                    runtimeFramework: imported.runtimeFramework || currentConfig.runtimeFramework,
+                    architectureType: 'transformer', routingType: 'auto', attentionMechanism: 'auto'
+                }, { preferUserOverrides: false });
+                for (const [key, value] of Object.entries(preset)) {
+                    const element = document.getElementById(key);
+                    if (element && value !== undefined && value !== null) element.value = value;
+                }
+                document.getElementById('modelPreset').value = imported.modelPreset;
+                document.getElementById('hfId').value = MODEL_PRESETS[imported.modelPreset].hfId || '';
+            }
+            if (imported.quantizationType) document.getElementById('quantizationType').value = imported.quantizationType;
+            if (imported.runtimeFramework) document.getElementById('runtimeFramework').value = imported.runtimeFramework;
+            if (imported.contextLength) {
+                document.getElementById('promptTokens').value = Math.max(1, imported.contextLength - 1);
+                document.getElementById('outputTokens').value = 1;
+                document.getElementById('seqLength').value = imported.contextLength;
+            }
+            if (imported.hardware.length) {
+                let nextId = 1;
+                devices = imported.hardware.flatMap(item => Array.from({ length: item.count }, (_, index) => {
+                    const template = JSON.parse(JSON.stringify(DEVICE_TEMPLATES[item.template]));
+                    return { id: nextId++, template: item.template, ...template, name: `${template.name}${item.count > 1 ? ` #${index + 1}` : ''}` };
+                }));
+                selectedDeviceId = devices[0]?.id || null;
+            }
+        }
+
         function getActivePlanOutcome() {
             let modelConfig = buildEffectiveModelConfig();
             const strategy = modelConfig.parallelismStrategy === 'auto' ? findOptimalStrategy().strategy : modelConfig.parallelismStrategy;
@@ -10284,7 +10756,7 @@ const DEVICE_TEMPLATES = {
             return { modelConfig, strategy, metrics, genericSystemRate, calibration: calculateCurrentCalibration(modelConfig, metrics, genericSystemRate, strategy) };
         }
 
-        function renderResultInterpretation(measuredTokS, parsed = null) {
+        function renderLegacyResultInterpretation(measuredTokS, parsed = null) {
             const output = document.getElementById('interpreterOutput');
             const plan = getActivePlanOutcome();
             const calibration = plan.calibration;
@@ -10309,6 +10781,69 @@ const DEVICE_TEMPLATES = {
                 headroomTokS: Number(headroom.toFixed(2)),
                 confidence: calibration.confidence,
                 sourceResultId: parsed?.id || null,
+                recommendations
+            }, null, 2))}</code>`;
+        }
+
+        function renderResultInterpretation(measuredTokS, parsed = null) {
+            const output = document.getElementById('interpreterOutput');
+            let imported = null;
+            try { if (parsed) imported = parseMeasuredResultPayload(parsed); } catch { imported = null; }
+            const useImported = Boolean(imported?.hasConfiguration && document.getElementById('useImportedConfiguration')?.checked !== false);
+            let plan;
+            let planDevices;
+            if (useImported) {
+                const snapshot = captureResultPlanState();
+                try {
+                    applyImportedResultForCalculation(imported);
+                    plan = getActivePlanOutcome();
+                    planDevices = JSON.parse(JSON.stringify(devices));
+                } finally {
+                    restoreResultPlanState(snapshot);
+                }
+            } else {
+                plan = getActivePlanOutcome();
+                planDevices = JSON.parse(JSON.stringify(devices));
+            }
+            const calibration = plan.calibration;
+            if (!output || !calibration || !Number.isFinite(measuredTokS) || measuredTokS <= 0) return;
+            const efficiency = measuredTokS / calibration.idealTokS;
+            const headroom = Math.max(0, calibration.idealTokS - measuredTokS);
+            const expectedDeltaPct = calibration.expectedTokS > 0 ? ((measuredTokS / calibration.expectedTokS) - 1) * 100 : 0;
+            const recommendations = [];
+            const selectedPreset = MODEL_PRESETS[plan.modelConfig.modelPreset] || MODEL_PRESETS[imported?.modelPreset];
+            if (selectedPreset?.specStatus === 'preview') recommendations.push('This comparison uses the published Kimi K3 limits plus a temporary routing proxy; treat its ceiling as provisional until Moonshot publishes the full configuration.');
+            if (efficiency > 1.05) recommendations.push('The measurement exceeds the modeled physical ceiling. Check tok/s units, device count, batch/concurrency, quantization, and whether this is aggregate rather than single-stream output.');
+            if (plan.metrics.some(metric => metric.hasOverflow)) recommendations.push('Eliminate weight or KV overflow first; a smaller quant or another memory device has the largest upside.');
+            if (efficiency < calibration.realityFactor * 0.72) recommendations.push('This run is below comparable peers. Verify warmup, greedy sampling, GPU offload, flash attention, and the exact kernel/backend build.');
+            if (planDevices.length > 1 && plan.metrics.some(metric => (metric.decodeCoordinationTimeMs || 0) > 1)) recommendations.push('Inter-device coordination is material. Prefer a faster fabric, reduce tensor-parallel degree, or place more work on each device.');
+            if ((plan.modelConfig.optimizationMode || 'none') === 'none' && (plan.modelConfig.batchSize || 1) === 1) recommendations.push('Test MTP, EAGLE, or a draft model; interactive decode is the strongest speculative-decoding use case.');
+            if (useImported && imported.unmatched.length) recommendations.push(`Review the unrecognized input fields (${imported.unmatched.join(', ')}); the active Plan supplied those missing assumptions.`);
+            if (!recommendations.length) recommendations.push('The run is already near the expected envelope; gains now depend on fused kernels, custom quantization, or a faster memory subsystem.');
+            const modelLabel = getSelectedModelLabel(plan.modelConfig);
+            const sameHardware = planDevices.every(device => device.template === planDevices[0]?.template);
+            const hardwareLabel = sameHardware && planDevices.length > 1 ? `${planDevices.length}x ${planDevices[0].name.replace(/ #\d+$/, '')}` : planDevices.map(device => device.name).join(' + ');
+            const headline = efficiency > 1.05 ? 'Above the modeled ceiling.' : `${(efficiency * 100).toFixed(0)}% of the physical ceiling.`;
+            const peerSentence = calibration.peers > 0
+                ? `This is ${Math.abs(expectedDeltaPct).toFixed(0)}% ${expectedDeltaPct >= 0 ? 'above' : 'below'} the peer-calibrated expectation, based on ${calibration.peers} neighboring gold case${calibration.peers === 1 ? '' : 's'}.`
+                : 'No close gold-case peer was available, so the expected rate is uncalibrated.';
+            output.innerHTML = `<span class="empty-kicker">${useImported ? 'Imported setup' : 'Active plan'} / ${escapeHtml(modelLabel)} / ${escapeHtml(hardwareLabel || 'current hardware')}</span><h2>${headline}</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>peer-calibrated expectation</span></div><div class="interpret-metric"><strong>${calibration.idealTokS.toFixed(1)}</strong><span>ideal tok/s ceiling</span></div></div><p>${headroom.toFixed(1)} tok/s of theoretical headroom remains. ${peerSentence}</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+            document.getElementById('apiContractPreview').innerHTML = `<code>${escapeHtml(JSON.stringify({
+                observedTokS: measuredTokS,
+                model: plan.modelConfig.hfId || modelLabel,
+                modelPreset: plan.modelConfig.modelPreset || null,
+                hardware: planDevices.map(device => device.name),
+                runtime: getFrameworkProfile(plan.modelConfig, planDevices).key,
+                quantization: plan.modelConfig.quantizationType,
+                contextLength: plan.modelConfig.seqLength,
+                idealTokS: Number(calibration.idealTokS.toFixed(2)),
+                expectedTokS: Number(calibration.expectedTokS.toFixed(2)),
+                efficiency: Number(efficiency.toFixed(3)),
+                headroomTokS: Number(headroom.toFixed(2)),
+                confidence: calibration.confidence,
+                configurationSource: useImported ? 'recognized-result-json' : 'active-plan',
+                sourceResultId: parsed?.id || null,
+                engineFlags: imported?.engineFlags || null,
                 recommendations
             }, null, 2))}</code>`;
         }
@@ -10440,6 +10975,60 @@ const DEVICE_TEMPLATES = {
             updateDeviceDisplay();
             updateSystemAnalysis();
             if (typeof updateTopology === 'function') setTimeout(updateTopology, 50);
+        }
+
+        function getHardwarePresetGroup(templateKey, template) {
+            const name = `${template?.name || ''} ${templateKey}`;
+            if (/^(NVIDIA )?(B\d{3}|H\d{3}|A100|H200|L40|L4|Tesla|Grace Hopper)/i.test(name)) return 'NVIDIA · data center';
+            if (/NVIDIA DGX|DGX Spark|DGX Station/i.test(name)) return 'NVIDIA · AI systems';
+            if (/NVIDIA.*(RTX PRO|RTX 6000|RTX A|Quadro)|\bRTX PRO\b/i.test(name)) return 'NVIDIA · workstation';
+            if (/NVIDIA|\bRTX\b|\bGTX\b|\bGT \d/i.test(name)) return 'NVIDIA · GeForce';
+            if (/AMD.*(MI\d|Instinct)/i.test(name)) return 'AMD · Instinct';
+            if (/AMD|Radeon|Ryzen|Strix/i.test(name)) return 'AMD · Radeon & unified';
+            if (/Gaudi/i.test(name)) return 'Intel · accelerators';
+            if (/Intel Arc|\bArc [AB]\d/i.test(name)) return 'Intel · graphics';
+            if (/\bMac\b|Apple/i.test(name)) return 'Apple silicon';
+            if (/Google TPU|AWS |Groq|Cerebras|SambaNova|Tenstorrent|TPU/i.test(name)) return 'Cloud & exotic accelerators';
+            if (/CPU|DDR|NVMe|RAM|Memory|Storage|EPYC|Xeon/i.test(name)) return 'CPU, memory & storage';
+            return 'Other hardware';
+        }
+
+        function buildHardwareTemplateOptions(selectedTemplate, isEditedPreset = false) {
+            const order = [
+                'NVIDIA · data center', 'NVIDIA · AI systems', 'NVIDIA · workstation', 'NVIDIA · GeForce',
+                'AMD · Instinct', 'AMD · Radeon & unified', 'Intel · accelerators', 'Intel · graphics',
+                'Apple silicon', 'Cloud & exotic accelerators', 'CPU, memory & storage', 'Other hardware'
+            ];
+            const groups = new Map(order.map(label => [label, []]));
+            Object.entries(DEVICE_TEMPLATES)
+                .filter(([key, template]) => key !== 'Custom' && (!template.hidden || key === selectedTemplate))
+                .forEach(([key, template]) => {
+                    const group = getHardwarePresetGroup(key, template);
+                    if (!groups.has(group)) groups.set(group, []);
+                    const suffix = key === selectedTemplate && isEditedPreset ? ' - modified' : '';
+                    groups.get(group).push(`<option value="${escapeHtml(key)}" ${selectedTemplate === key ? 'selected' : ''}>${escapeHtml(template.name)}${suffix}</option>`);
+                });
+            return [...groups.entries()]
+                .filter(([, options]) => options.length)
+                .map(([label, options]) => `<optgroup label="${escapeHtml(label)}">${options.join('')}</optgroup>`)
+                .join('');
+        }
+
+        function buildHardwareSpecMeta(device) {
+            if (!device) return '';
+            const status = device.specStatus === 'verified'
+                ? { label: 'Vendor spec', className: '' }
+                : (device.specStatus === 'derived'
+                    ? { label: 'Spec + estimate', className: ' is-derived' }
+                    : (device.specStatus === 'preview'
+                        ? { label: 'Preview', className: ' is-preview' }
+                        : { label: 'Planning preset', className: ' is-derived' }));
+            const memory = Number(device.memoryGB || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+            const bandwidth = Number(device.localBandwidthGBps || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+            const source = device.sourceUrl
+                ? `<a href="${escapeHtml(device.sourceUrl)}" target="_blank" rel="noopener noreferrer">source</a>`
+                : '';
+            return `<div class="hardware-spec-meta"><span class="spec-pill${status.className}">${status.label}</span><span>${memory} GB · ${bandwidth} GB/s memory BW</span>${source}</div>`;
         }
 
 	function updateDeviceDisplay() {
@@ -10721,13 +11310,7 @@ const DEVICE_TEMPLATES = {
             const libraryOptions = deviceLibrary.map(device =>
                 `<option value="lib_${device.id}">${escapeHtml(device.name)}</option>`
             ).join('');
-            const templateOptions = Object.keys(DEVICE_TEMPLATES)
-                .filter(key => key !== 'Custom')
-                .map(template => `
-                    <option value="${template}" ${selectedDevice.template === template ? 'selected' : ''}>
-                        ${escapeHtml(DEVICE_TEMPLATES[template].name)}${selectedDevice.template === template && isEditedPreset ? ' - modified' : ''}
-                    </option>
-                `).join('');
+            const templateOptions = buildHardwareTemplateOptions(selectedDevice.template, isEditedPreset);
             const selectedIdx = devices.findIndex(d => d.id === selectedDevice.id);
             const prevId = devices.length > 1 ? devices[(selectedIdx - 1 + devices.length) % devices.length].id : null;
             const nextId = devices.length > 1 ? devices[(selectedIdx + 1) % devices.length].id : null;
@@ -10756,12 +11339,13 @@ const DEVICE_TEMPLATES = {
                                 <optgroup label="Custom">
                                     <option value="Custom" ${isCustom ? 'selected' : ''}>Custom device</option>
                                 </optgroup>
-                                <optgroup label="Presets">${templateOptions}</optgroup>
+                                ${templateOptions}
                                 ${deviceLibrary.length > 0 ? `<optgroup label="My saved devices">${libraryOptions}</optgroup>` : ''}
                             </select>
                             <button class="button add-device-inline" onclick="addDevice()" title="Add another device to the system">+ Add device</button>
                         </div>
                     </div>
+                    ${buildHardwareSpecMeta(selectedDevice)}
                     <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.6rem; display: block;">Label</label>
                     <div class="device-name-row">
                         <input class="input device-name-input" title="Rename this device (label only)" value="${escapeHtml(selectedDevice.name)}"
@@ -10775,6 +11359,7 @@ const DEVICE_TEMPLATES = {
                     <details class="hardware-advanced"${advancedOpen}>
                         <summary>Advanced hardware settings</summary>
                         <div class="hardware-advanced-content">
+                            ${selectedDevice.specNote ? `<div class="hardware-spec-detail">${escapeHtml(selectedDevice.specNote)}</div>` : ''}
                             <div class="device-grid">
                                 <div>
                                     <label title="Total GPU/unified memory on the device">Memory (GB)</label>
@@ -11056,7 +11641,7 @@ const DEVICE_TEMPLATES = {
 	    saveDevices();
 	}
 
-	function updateModelConfigFromPreset() {
+        function updateModelConfigFromPreset() {
 		const modelPresetId = document.getElementById('modelPreset').value;
 		if (modelPresetId && MODEL_PRESETS[modelPresetId]) {
 			const currentConfig = getModelConfig();
@@ -11098,8 +11683,26 @@ const DEVICE_TEMPLATES = {
 				document.getElementById('attentionMechanism').value = 'auto';
 			}
 		}
+		updateModelSpecNotice();
 		updateSystemAnalysis();
 	}
+
+        function updateModelSpecNotice() {
+            const notice = document.getElementById('modelSpecNotice');
+            if (!notice) return;
+            const preset = MODEL_PRESETS[document.getElementById('modelPreset')?.value];
+            if (!preset?.specNote) {
+                notice.hidden = true;
+                notice.innerHTML = '';
+                return;
+            }
+            const label = preset.specStatus === 'preview' ? 'Preview architecture — known limits shown honestly' : 'Specification note';
+            const source = preset.specSourceUrl
+                ? ` <a href="${escapeHtml(preset.specSourceUrl)}" target="_blank" rel="noopener noreferrer">Moonshot source</a>`
+                : '';
+            notice.innerHTML = `<strong>${label}</strong>${escapeHtml(preset.specNote)}${source}`;
+            notice.hidden = false;
+        }
 
         function updateSpeculativeControls() {
             const controls = document.getElementById('speculativeControls');
@@ -11112,6 +11715,9 @@ const DEVICE_TEMPLATES = {
             Array.from(select.options).forEach(option => {
                 const isSpecial = option.value === 'Custom' || option.value.startsWith('lib_');
                 option.hidden = Boolean(normalizedQuery) && !isSpecial && !option.textContent.toLowerCase().includes(normalizedQuery) && option.value !== select.value;
+            });
+            Array.from(select.querySelectorAll('optgroup')).forEach(group => {
+                group.hidden = Array.from(group.querySelectorAll('option')).every(option => option.hidden);
             });
         }
 
@@ -11664,6 +12270,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 
 	    // Organize models into categories for better UX
 	    const modelCategories = {
+	        'New & preview': ['kimi_k3'],
 	        'Most benchmarked right now': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'gemma4_31b', 'gemma4_26b_a4b', 'gemma4_12b', 'gemma4_e4b', 'gemma4_e2b', 'ornith_1_9b', 'ornith_1_35b_a3b', 'deepseek_v4_flash', 'qwen3_coder_next', 'glm4.7_flash', 'gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'minicpm5_1b', 'minimax_m2.7', 'kimi_k2.5'],
 	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision', 'llama4_scout', 'llama4_maverick'],
 	        'DeepSeek': ['deepseek_v4_flash', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
@@ -11672,7 +12279,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
 	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
-	        'Kimi': ['kimi_k2.7_code', 'kimi_k2.6', 'kimi_k2.5', 'kimi_k2'],
+	        'Kimi': ['kimi_k3', 'kimi_k2.7_code', 'kimi_k2.6', 'kimi_k2.5', 'kimi_k2'],
 	        'MiniMax': ['minimax_m2', 'minimax_m2.5', 'minimax_m2.7'],
 	        'GLM': ['glm5_2', 'glm5_1', 'glm5', 'glm4.7_flash', 'glm4_9b'],
 	        'Ornith': ['ornith_1_9b', 'ornith_1_35b_a3b'],
@@ -11750,7 +12357,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
         const freshness = document.getElementById('dataFreshness');
         if (freshness) {
             const generated = LOCALMAXXING_DATA.generatedAt ? new Date(LOCALMAXXING_DATA.generatedAt).toLocaleDateString() : 'offline';
-            freshness.textContent = `${(LOCALMAXXING_DATA.stats?.models || 0).toLocaleString()} models · ${(LOCALMAXXING_DATA.stats?.goldCases || 0).toLocaleString()} gold runs · ${generated}`;
+            freshness.textContent = `${getCatalogModels().length.toLocaleString()} models · ${(LOCALMAXXING_DATA.stats?.goldCases || 0).toLocaleString()} gold runs · ${generated}`;
         }
 
         const familySelect = document.getElementById('catalogFamily');
@@ -11772,23 +12379,27 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             if (button) useCatalogModel(button.dataset.useModel, button.dataset.presetKey);
         });
         document.getElementById('goldSearch')?.addEventListener('input', renderGoldTable);
-        document.getElementById('resultJson')?.addEventListener('input', event => {
-            const value = event.target.value.trim();
-            if (!value) return;
-            try {
-                const parsed = JSON.parse(value);
-                const tokSOut = Number(parsed.tokSOut ?? parsed.observedTokS);
-                if (Number.isFinite(tokSOut)) document.getElementById('measuredTokS').value = tokSOut;
-            } catch { /* keep manual input available while JSON is incomplete */ }
-        });
+        document.getElementById('resultJson')?.addEventListener('input', updateResultImportPreview);
         document.getElementById('resultInterpreterForm')?.addEventListener('submit', event => {
             event.preventDefault();
             let parsed = null;
             const raw = document.getElementById('resultJson').value.trim();
             if (raw) {
-                try { parsed = JSON.parse(raw); } catch { parsed = null; }
+                try {
+                    parsed = JSON.parse(raw);
+                    parseMeasuredResultPayload(parsed);
+                } catch (error) {
+                    updateResultImportPreview();
+                    return;
+                }
             }
-            const measured = Number(document.getElementById('measuredTokS').value || parsed?.tokSOut || parsed?.observedTokS);
+            const imported = parsed ? parseMeasuredResultPayload(parsed) : null;
+            const measured = Number(document.getElementById('measuredTokS').value || imported?.observedTokS);
+            if (!Number.isFinite(measured) || measured <= 0) {
+                const status = document.getElementById('resultImportStatus');
+                if (status) { status.className = 'result-import-status is-error'; status.textContent = 'Enter a measured output speed greater than zero.'; }
+                return;
+            }
             renderResultInterpretation(measured, parsed);
         });
 
@@ -12251,6 +12862,10 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             getExecutionEvidence,
             getLocalmaxxingUrl,
             parseHuggingFaceModelMetadata,
+            parseMeasuredResultPayload,
+            updateResultImportPreview,
+            renderResultInterpretation,
+            buildHardwareTemplateOptions,
             calculateGoldCaseProjection,
             getGoldValidationRows,
             calculateCurrentCalibration,

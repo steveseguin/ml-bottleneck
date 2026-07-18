@@ -114,6 +114,18 @@ test('new Qwen, Kimi, GLM, and MiniMax presets carry routing and attention metad
   assert.equal(modelConfig.attentionMechanism, 'mla');
   assert.equal(modelConfig.hasVision, true);
 
+  app.applyPreset('kimi_k3');
+  modelConfig = app.hooks.buildEffectiveModelConfig();
+  assert.equal(modelConfig.totalParamsB, 2800);
+  assert.equal(modelConfig.routingType, 'moe');
+  assert.equal(modelConfig.numExperts, 896);
+  assert.equal(modelConfig.activeExperts, 16);
+  assert.equal(modelConfig.activeParamsB, 50);
+  assert.equal(modelConfig.attentionMechanism, 'hybrid_linear');
+  assert.equal(modelConfig.architectureType, 'multimodal_transformer');
+  assert.equal(modelConfig.contextLength, 1000000);
+  assert.equal(modelConfig.specStatus, 'preview');
+
   app.applyPreset('glm5_1');
   modelConfig = app.hooks.buildEffectiveModelConfig();
   assert.equal(modelConfig.routingType, 'moe');
@@ -433,8 +445,8 @@ test('validation matrix stays inside broad benchmark-justified ranges', () => {
       maxMemoryUtilization: 80
     },
     {
-      name: 'GLM 5.1 FP8 needs many H100s but should fit on 8-way tensor parallel',
-      devices: [1, 2, 3, 4, 5, 6, 7, 8].map(id => cloneTemplate(app.hooks, 'H100', id, `H100 #${id}`)),
+      name: 'GLM 5.1 FP8 needs ten 80GB H100s to fit without overflow',
+      devices: Array.from({ length: 10 }, (_, index) => cloneTemplate(app.hooks, 'H100', index + 1, `H100 #${index + 1}`)),
       preset: 'glm5_1',
       quant: 'fp8',
       framework: 'vllm',
@@ -621,6 +633,55 @@ test('hardware templates include corrected RTX PRO 6000 and 5090 SOC options', (
   assert.equal(soc5090.memoryGB, 32);
   assert.equal(soc5090.localBandwidthGBps, 1792);
   assert.equal(soc5090.computeTFlops.q4, 1020);
+});
+
+test('current and exotic hardware presets use first-party capacity and bandwidth specs', () => {
+  const app = loadApp();
+  const { DEVICE_TEMPLATES: hardware } = app.hooks;
+
+  assert.equal(hardware.B200.memoryGB, 180);
+  assert.equal(hardware.B200.localBandwidthGBps, 8000);
+  assert.equal(hardware.B300.memoryGB, 288);
+  assert.equal(hardware.H100.memoryGB, 80);
+  assert.equal(hardware['RTX 6000'].localBandwidthGBps, 960);
+  assert.equal(hardware['NVIDIA DGX Station (GB300)'].memoryGB, 252);
+  assert.equal(hardware['NVIDIA DGX Station (GB300)'].hostMemoryGB, 496);
+  assert.equal(hardware['AMD MI355X'].computeTFlops.float16, 2500);
+  assert.equal(hardware['AWS Trainium2 (trn2.xlarge)'].memoryGB, 96);
+  assert.equal(hardware['AWS Trainium3'].localBandwidthGBps, 4900);
+  assert.equal(hardware['Google TPU7x (Ironwood)'].memoryGB, 192);
+  assert.equal(hardware['Mac M5 Max (128)'].localBandwidthGBps, 614);
+  assert.equal(hardware['Intel Gaudi3'].localBandwidthGBps, 3700);
+  assert.equal(hardware['Cerebras WSE-3'].hidden, true);
+});
+
+test('measured-result importer recognizes common nested fields without mutating the plan', () => {
+  const app = loadApp();
+  const imported = app.hooks.parseMeasuredResultPayload({
+    id: 'run-42',
+    result: { tokens_per_second: 42.5 },
+    configuration: {
+      model: { id: 'kimi-k3' },
+      hardware: '2x NVIDIA RTX 5090',
+      engine: 'llama.cpp CUDA',
+      quantization: 'Q4_K_M',
+      context_length: 32768,
+      engine_flags: ['-ngl', '999']
+    }
+  });
+
+  assert.equal(imported.observedTokS, 42.5);
+  assert.equal(imported.modelPreset, 'kimi_k3');
+  assert.equal(imported.hardware.length, 1);
+  assert.equal(imported.hardware[0].template, 'RTX 5090');
+  assert.equal(imported.hardware[0].count, 2);
+  assert.equal(imported.runtimeFramework, 'llama_cpp');
+  assert.equal(imported.quantizationType, 'q4');
+  assert.equal(imported.contextLength, 32768);
+  assert.deepEqual(Array.from(imported.engineFlags), ['-ngl', '999']);
+  assert.equal(imported.hasConfiguration, true);
+  assert.equal(app.hooks.parseMeasuredResultPayload({ tokSOut: 1, context: 65536 }).contextLength, 65536);
+  assert.throws(() => app.hooks.parseMeasuredResultPayload([]), /must be an object/);
 });
 
 test('official task-score benchmark rows render but stay out of throughput matching', () => {

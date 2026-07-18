@@ -116,6 +116,25 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
   await page.getByRole('button', { name: 'Explain this run', exact: true }).click();
   await expect(page.locator('#interpreterOutput')).toContainText('physical ceiling');
   await expect(page.locator('#apiContractPreview')).toContainText('expectedTokS');
+
+  const activePreset = await page.locator('#modelPreset').inputValue();
+  await page.locator('#resultJson').fill(JSON.stringify({
+    id: 'browser-import',
+    tokSOut: 18.4,
+    model: 'kimi-k3',
+    hardware: '2x NVIDIA RTX 5090',
+    engine: 'llama.cpp',
+    quantization: 'Q4_K_M',
+    contextLength: 32768
+  }));
+  await expect(page.locator('#resultImportStatus')).toContainText('Kimi K3');
+  await expect(page.locator('#resultImportOption')).toBeVisible();
+  await page.getByRole('button', { name: 'Explain this run', exact: true }).click();
+  await expect(page.locator('#interpreterOutput')).toContainText('Imported setup');
+  await expect(page.locator('#interpreterOutput')).toContainText('Kimi K3');
+  await expect(page.locator('#apiContractPreview')).toContainText('recognized-result-json');
+  await expect(page.locator('#apiContractPreview')).toContainText('"contextLength": 32768');
+  await expect(page.locator('#modelPreset')).toHaveValue(activePreset);
 });
 
 async function setDevices(page, specs) {
@@ -144,12 +163,21 @@ async function setDevices(page, specs) {
 }
 
 test('hardware editor keeps one selected device and adds new devices to topology selection', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await loadApp(page);
 
   await expect(page.locator('#devices > .device')).toHaveCount(1);
   await expect(page.locator('#devices .hardware-advanced')).toHaveCount(1);
   await expect(page.locator('#devices .hardware-advanced')).not.toHaveAttribute('open', '');
   await expect(page.locator('#hardwareHeadMeta')).toBeEmpty();
+  await expect(page.locator('#devices .hardware-spec-meta')).toBeVisible();
+  await expect(page.locator('#devices optgroup[label="NVIDIA · GeForce"]')).toHaveCount(1);
+
+  const labelInputBox = await page.locator('#devices .device-name-input').boundingBox();
+  const actionsBox = await page.locator('#devices .device-actions').boundingBox();
+  const deviceBox = await page.locator('#devices > .device').boundingBox();
+  expect(actionsBox?.y).toBeGreaterThan((labelInputBox?.y || 0) + (labelInputBox?.height || 0) - 1);
+  expect((actionsBox?.x || 0) + (actionsBox?.width || 0)).toBeLessThanOrEqual((deviceBox?.x || 0) + (deviceBox?.width || 0) + 1);
 
   await page.locator('#devices .add-device-inline').click();
   await expect(page.locator('#devices > .device')).toHaveCount(1);
