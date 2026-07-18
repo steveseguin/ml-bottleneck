@@ -40,7 +40,11 @@ const MODEL_PRESET_RULES = [
   [/^qwen\/qwen2\.5-3b/i, 'qwen2.5_3b'],
   [/^openai\/gpt-oss-120b/i, 'gpt_oss_120b'],
   [/^openai\/gpt-oss-20b/i, 'gpt_oss_20b'],
+  [/glm-5\.2/i, 'glm5_2'],
+  [/glm-5\.1/i, 'glm5_1'],
   [/^zai-org\/glm-4\.7-flash/i, 'glm4.7_flash'],
+  [/^moonshotai\/kimi-k2\.7/i, 'kimi_k2.7_code'],
+  [/^moonshotai\/kimi-k2\.6/i, 'kimi_k2.6'],
   [/^liquidai\/lfm2\.5-8b-a1b/i, 'lfm2.5_8b_a1b'],
   [/^moonshotai\/kimi-k2\.5/i, 'kimi_k2.5'],
   [/^minimaxai\/minimax-m2\.7/i, 'minimax_m2.7'],
@@ -90,6 +94,8 @@ function pickRule(value, rules) {
 function normalizeQuantization(value) {
   const quant = (value || '').toLowerCase();
   if (/mxfp4|nvfp4|int4|4bit|4-bit|q4|iq4|awq/.test(quant)) return 'q4';
+  if (/q3|iq3|3bit|3-bit|3\.5bpw|3bpw/.test(quant)) return 'q3';
+  if (/q2|iq2|2bit|2-bit|2\.\dbpw/.test(quant)) return 'q2';
   if (/q8|int8/.test(quant)) return 'int8';
   if (/fp8/.test(quant)) return 'fp8';
   if (/bf16|bfloat16/.test(quant)) return 'bfloat16';
@@ -181,7 +187,7 @@ function normalizeGoldCase(run) {
   // heavy-offload dense runs decode slowly and are kept. (MoE models can
   // legitimately overflow, so they are handled by the cross-quant check in
   // chooseGoldCases instead.)
-  const bytesPerParam = { q4: 0.6, int8: 1.06, fp8: 1.06, float16: 2.1, bfloat16: 2.1, float32: 4.2 }[quantKey] || 2.1;
+  const bytesPerParam = { q4: 0.6, q3: 0.5, q2: 0.42, int8: 1.06, fp8: 1.06, float16: 2.1, bfloat16: 2.1, float32: 4.2 }[quantKey] || 2.1;
   const claimedWeightGB = (run.model?.params || 0) * bytesPerParam;
   const recordedMemoryGB = run.hardware?.vramGb || run.hardware?.unifiedMemoryGb || 0;
   if (!run.model?.isMoE && recordedMemoryGB > 0 && claimedWeightGB > recordedMemoryGB * 1.5 && run.tokSOut > 5) return null;

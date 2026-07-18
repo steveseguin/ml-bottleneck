@@ -6,7 +6,7 @@
     <title>ML Bottleneck - Visual Local LLM Deployment Planner</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjgwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMyZGQ0YmYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMyNTYzZWIiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB4PSIxIiB5PSIxIiB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHJ4PSI5IiBmaWxsPSJ1cmwoI2cpIi8+PHRleHQgeD0iMTYiIHk9IjIxLjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMy41IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmZmZmIj5NQjwvdGV4dD48L3N2Zz4=">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjgwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMyZGQ0YmYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMyNTYzZWIiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB4PSIxIiB5PSIxIiB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHJ4PSI5IiBmaWxsPSJ1cmwoI2cpIi8+PHBhdGggZD0iTTkgNSBIMjMgQzIwLjUgOS41IDIwIDEyIDIwIDE2IEMyMCAyMCAyMC41IDIyLjUgMjMgMjcgSDkgQzExLjUgMjIuNSAxMiAyMCAxMiAxNiBDMTIgMTIgMTEuNSA5LjUgOSA1IFoiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuOTYiLz48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxLjciIGZpbGw9IiMyNTYzZWIiLz48L3N2Zz4=">
 
     <!-- Primary Meta Tags -->
     <meta name="title" content="ML Bottleneck - Visual Local LLM Deployment Planner">
@@ -2956,7 +2956,7 @@ body {
 <body>
     <header class="product-nav">
         <a class="product-brand" href="#home" data-workspace-link="home" aria-label="ML Bottleneck home">
-            <span class="brand-mark" aria-hidden="true">MB</span>
+            <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" focusable="false"><path d="M9 5 H23 C20.5 9.5 20 12 20 16 C20 20 20.5 22.5 23 27 H9 C11.5 22.5 12 20 12 16 C12 12 11.5 9.5 9 5 Z" fill="#ffffff" opacity="0.96"/><circle cx="16" cy="16" r="1.7" fill="#2563eb"/></svg></span>
             <span><strong>ML Bottleneck</strong></span>
         </a>
         <nav class="workspace-tabs" aria-label="Primary">
@@ -3087,8 +3087,10 @@ body {
 
                 <label for="quantizationType">Quantization</label>
                 <select id="quantizationType" class="input">
-                    <option value="q4" selected>Q4 (Recommended)</option>
-                    <option value="int8">INT8</option>
+                    <option value="q4" selected>4-bit · Q4 / INT4 / AWQ / MXFP4 / NVFP4 (recommended)</option>
+                    <option value="q3">3-bit · Q3 / IQ3</option>
+                    <option value="q2">2-bit · Q2 / IQ2 (quality risk)</option>
+                    <option value="int8">INT8 / Q8</option>
                     <option value="fp8">FP8</option>
                     <option value="float16">FP16</option>
                     <option value="bfloat16">BF16</option>
@@ -3540,7 +3542,9 @@ body {
             'float16': 2,
             'int8': 1,
             'fp8': 1,
-            'q4': 0.5
+            'q4': 0.5,
+            'q3': 0.42,   // Q3_K_M / IQ3 land around 3.3 bits per weight
+            'q2': 0.34    // Q2_K / IQ2 / 2.5-2.7 bpw dynamic quants
         };
 
         // PCIe bandwidth in GB/s per direction (theoretical max)
@@ -4624,6 +4628,25 @@ body {
 	    kvLoraRank: 512,
 	    qLoraRank: 2048
 	  },
+	  'glm5_2': {
+	    label: 'GLM 5.2 753B A40B',
+	    hfId: 'zai-org/GLM-5.2',
+	    totalParamsB: 753,
+	    hiddenSize: 6144,
+	    numLayers: 78,
+	    numHeads: 64,
+	    numKVHeads: 64,
+	    intermediateSize: 12288,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 40,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla',
+	    contextLength: 1048576,
+	    kvLoraRank: 512,
+	    qLoraRank: 2048
+	  },
 	  'glm5_1': {
 	    label: 'GLM 5.1 744B A40B',
 	    totalParamsB: 744,
@@ -5064,6 +5087,40 @@ body {
 	    routingType: 'moe',
 	    attentionMechanism: 'mla',
 	    contextLength: 128000
+	  },
+	  'kimi_k2.7_code': {
+	    label: 'Kimi K2.7 Code 1T A32B',
+	    hfId: 'moonshotai/Kimi-K2.7-Code',
+	    totalParamsB: 1000,
+	    hiddenSize: 7168,
+	    numLayers: 61,
+	    numHeads: 64,
+	    numKVHeads: 64,
+	    intermediateSize: 18432,
+	    isMoE: true,
+	    numExperts: 384,
+	    activeExperts: 8,
+	    activeParamsB: 32,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla',
+	    contextLength: 262144
+	  },
+	  'kimi_k2.6': {
+	    label: 'Kimi K2.6 1T A32B',
+	    hfId: 'moonshotai/Kimi-K2.6',
+	    totalParamsB: 1000,
+	    hiddenSize: 7168,
+	    numLayers: 61,
+	    numHeads: 64,
+	    numKVHeads: 64,
+	    intermediateSize: 18432,
+	    isMoE: true,
+	    numExperts: 384,
+	    activeExperts: 8,
+	    activeParamsB: 32,
+	    routingType: 'moe',
+	    attentionMechanism: 'mla',
+	    contextLength: 262144
 	  },
 	  'kimi_k2.5': {
 	    label: 'Kimi K2.5 1T A32B',
@@ -6080,7 +6137,7 @@ const DEVICE_TEMPLATES = {
     name: 'Mac M3 Ultra (512GB)',
     memoryGB: 512,
     localBandwidthGBps: 819,
-    networkBandwidthGBps: 40/8,
+    networkBandwidthGBps: 80 / 8,   // Thunderbolt 5
     computeTFlops: {
       'float32': 35,
       'bfloat16': 70,
@@ -6108,7 +6165,7 @@ const DEVICE_TEMPLATES = {
     name: 'Mac M4 Max (128)',
     memoryGB: 128,
     localBandwidthGBps: 546,
-    networkBandwidthGBps: 40/8,
+    networkBandwidthGBps: 80 / 8,   // Thunderbolt 5
     computeTFlops: {
       'float32': 18,
       'bfloat16': 35,
@@ -6264,6 +6321,21 @@ const DEVICE_TEMPLATES = {
       'float16': 4,
       'int8': 8,
       'q4': 12
+    },
+    type: 'CPU/NVMe'
+  },
+  'NVMe 8xRAID CPU (Gen5)': {
+    name: '8× 4TB NVMe RAID (Gen5)',
+    memoryGB: 32000,
+    // 8 drives at ~14.5 GB/s Gen5 x4 sequential reads; RAID striping and
+    // host overhead cap the sustained aggregate below the raw 116 GB/s.
+    localBandwidthGBps: 95,
+    networkBandwidthGBps: 40 / 8,
+    computeTFlops: {
+      'float32': 4,
+      'float16': 8,
+      'int8': 16,
+      'q4': 24
     },
     type: 'CPU/NVMe'
   },
@@ -6723,7 +6795,7 @@ const DEVICE_TEMPLATES = {
                 return getDeviceComputeTflops(device, quant) * 0.95;
             }
             const halfTflops = getDeviceComputeTflops(device, 'float16');
-            const dequantTax = (quant === 'q4' || quant === 'int8' || quant === 'fp8') ? 0.94 : 1.0;
+            const dequantTax = ['q4', 'q3', 'q2', 'int8', 'fp8'].includes(quant) ? 0.94 : 1.0;
             return halfTflops * dequantTax;
         }
 
@@ -8304,7 +8376,7 @@ const DEVICE_TEMPLATES = {
 				
 				// Memory traffic calculation adjusted for distributed setup
 				// For inference, we only need forward pass (no gradients), so 1x activations not 3x
-				const memoryTrafficScale = modelConfig.quantizationType === 'q4' ? 1.10 : (modelConfig.quantizationType === 'fp8' ? 1.03 : 1.0);
+				const memoryTrafficScale = ['q4', 'q3', 'q2'].includes(modelConfig.quantizationType) ? 1.10 : (modelConfig.quantizationType === 'fp8' ? 1.03 : 1.0);
 				const totalPrefillMemoryTraffic = optimization.prefillTrafficMultiplier * memoryTrafficScale * (
 					prefillMemoryBreakdown.paramsMemory +
 					(2 * prefillMemoryBreakdown.kvCacheMemory) +
@@ -8748,7 +8820,7 @@ const DEVICE_TEMPLATES = {
             const strategy = strategyOverride || config.parallelismStrategy || 'pipeline';
             const count = Math.max(devicesArray.length, 1);
             const dtypeSize = DTYPE_SIZES[config.quantizationType] || 2;
-            const quantOverhead = config.quantizationType === 'q4' ? 1.08 : (config.quantizationType === 'fp8' ? 1.03 : 1);
+            const quantOverhead = ['q4', 'q3', 'q2'].includes(config.quantizationType) ? 1.08 : (config.quantizationType === 'fp8' ? 1.03 : 1);
             const composition = deriveMoEComposition(config);
             const weightBytes = getWeightBytesPerParam(config, dtypeSize);
             const totalWeightsGB = config.totalParamsB * weightBytes * quantOverhead;
@@ -9944,6 +10016,20 @@ const DEVICE_TEMPLATES = {
         // measured median — one click loads the full plan.
         let quickStartCombos = [];
 
+        // Data-derived rows that stopped being interesting.
+        const QUICKSTART_EXCLUDED_PRESETS = new Set(['qwen2.5_72b', 'gpt_oss_20b']);
+
+        // Curated projection-only showcases (no measured median yet): setups
+        // people wonder about, computed by the same engine.
+        const QUICKSTART_SHOWCASES = [
+            // Four Mac Studios pooling 2 TB of unified memory over EXO
+            { presetKey: 'kimi_k2.6', hardwareTemplate: 'Mac M3 Ultra (512)', deviceCount: 4, quantKey: 'q4', runtimeKey: 'exo', contextLength: 8192 },
+            // NVIDIA's desktop box with its signature open model
+            { presetKey: 'gpt_oss_120b', hardwareTemplate: 'NVIDIA DGX Spark (GB10)', deviceCount: 1, quantKey: 'q4', runtimeKey: 'llama_cpp', contextLength: 8192 },
+            // 1.5 TB of bf16 weights streamed straight off flash — very slow, very fun
+            { presetKey: 'glm5_2', hardwareTemplate: 'NVMe 8xRAID CPU (Gen5)', deviceCount: 1, quantKey: 'bfloat16', runtimeKey: 'llama_cpp', contextLength: 4096 }
+        ];
+
         function buildQuickStartCombos() {
             const goldCases = LOCALMAXXING_DATA.goldCases || [];
             const groups = new Map();
@@ -9973,11 +10059,28 @@ const DEVICE_TEMPLATES = {
             const seenPresets = new Set();
             const varied = [];
             for (const combo of combos) {
+                if (QUICKSTART_EXCLUDED_PRESETS.has(combo.reference.presetKey)) continue;
                 if (seenPresets.has(combo.reference.presetKey)) continue;
                 seenPresets.add(combo.reference.presetKey);
                 varied.push(combo);
-                if (varied.length >= 9) break;
+                if (varied.length >= 7) break;
             }
+
+            const seenPairs = new Set(varied.map(combo => `${combo.reference.presetKey}|${combo.reference.hardwareTemplate}`));
+            for (const showcase of QUICKSTART_SHOWCASES) {
+                if (seenPairs.has(`${showcase.presetKey}|${showcase.hardwareTemplate}`)) continue;
+                const projection = calculateGoldCaseProjection(showcase);
+                if (!projection) continue;
+                seenPairs.add(`${showcase.presetKey}|${showcase.hardwareTemplate}`);
+                varied.push({
+                    reference: showcase,
+                    runs: 0,
+                    measuredMedianTokS: null,
+                    expectedTokS: projection.genericTokS,
+                    idealTokS: projection.idealTokS
+                });
+            }
+
             return varied;
         }
 
@@ -11569,9 +11672,9 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
 	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
-	        'Kimi': ['kimi_k2', 'kimi_k2.5'],
+	        'Kimi': ['kimi_k2.7_code', 'kimi_k2.6', 'kimi_k2.5', 'kimi_k2'],
 	        'MiniMax': ['minimax_m2', 'minimax_m2.5', 'minimax_m2.7'],
-	        'GLM': ['glm5', 'glm5_1', 'glm4.7_flash', 'glm4_9b'],
+	        'GLM': ['glm5_2', 'glm5_1', 'glm5', 'glm4.7_flash', 'glm4_9b'],
 	        'Ornith': ['ornith_1_9b', 'ornith_1_35b_a3b'],
 	        'Small & edge': ['minicpm5_1b', 'lfm2_350m'],
 	        'Other MoE': ['gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],

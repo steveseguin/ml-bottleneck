@@ -294,8 +294,15 @@ test('quick-start gallery derives clickable community setups with honest rates',
     assert.ok(Number.isFinite(combo.expectedTokS) && combo.expectedTokS > 0);
     assert.ok(combo.idealTokS >= combo.expectedTokS,
       `ideal (${combo.idealTokS}) must sit at or above expected (${combo.expectedTokS})`);
-    assert.ok(Number.isFinite(combo.measuredMedianTokS) && combo.measuredMedianTokS > 0);
+    if (combo.runs > 0) {
+      assert.ok(Number.isFinite(combo.measuredMedianTokS) && combo.measuredMedianTokS > 0);
+    }
   }
+
+  // Curated showcases render as projection-only rows; boring rows stay out.
+  assert.ok(combos.some(combo => combo.runs === 0), 'showcase rows present');
+  assert.ok(combos.every(combo => !['qwen2.5_72b', 'gpt_oss_20b'].includes(combo.reference.presetKey)),
+    'excluded presets stay off the landing chart');
 
   app.hooks.renderQuickStart();
   const grid = app.elements.get('quickstartGrid');
