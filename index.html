@@ -158,7 +158,7 @@ a:hover {
 
 .button {
     background: var(--primary);
-    color: white;
+    color: var(--on-primary);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: var(--radius);
@@ -466,7 +466,7 @@ h3 {
 
 .button {
     background: var(--primary);
-    color: white;
+    color: var(--on-primary);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: var(--radius);
@@ -625,7 +625,7 @@ input, select {
     top: 0.5rem;
     right: 0.5rem;
     background: var(--primary);
-    color: white;
+    color: var(--on-primary);
     font-size: 0.7rem;
     padding: 0.15rem 0.45rem;
     border-radius: 0.25rem;
@@ -1328,6 +1328,7 @@ input, select {
 :root {
     --primary: #0f766e;
     --primary-hover: #0d9488;
+    --on-primary: #ffffff;
     --destructive: #dc2626;
     --destructive-hover: #b91c1c;
     --border: #d3dee8;
@@ -1345,6 +1346,7 @@ input, select {
     :root {
         --primary: #2dd4bf;
         --primary-hover: #5eead4;
+        --on-primary: #04211c;
         --destructive: #f87171;
         --destructive-hover: #ef4444;
         --border: #20313b;
@@ -2813,7 +2815,7 @@ body {
 .home-hero .home-trust { margin-top: 0.55rem; font-size: 0.72rem; }
 #workspace-home .quickstart-section { max-width: 960px; margin: 2.2rem auto 0; }
 .home-cta { display: flex; justify-content: center; margin: 1.9rem 0 3rem; }
-.home-cta-button { display: inline-block; padding: 0.6rem 1.35rem; border-radius: 10px; background: var(--primary); color: #fff; font-size: 0.86rem; font-weight: 600; text-decoration: none; }
+.home-cta-button { display: inline-block; padding: 0.6rem 1.35rem; border-radius: 10px; background: var(--primary); color: var(--on-primary); font-size: 0.86rem; font-weight: 600; text-decoration: none; }
 .home-cta-button:hover { background: var(--primary-hover); }
 .home-cta-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
@@ -3353,17 +3355,6 @@ body {
 
     <div class="planner-stage">
 
-    <section class="card execution-card" aria-labelledby="executionMapTitle">
-        <div class="execution-head">
-            <div>
-                <h2 id="executionMapTitle">Model execution map</h2>
-                <p>See the active model path, what each device stores, and where devices communicate.</p>
-            </div>
-            <div id="executionStrategyControls" class="execution-strategies" aria-label="Compare distribution layouts"></div>
-        </div>
-        <div id="executionMap" aria-live="polite"></div>
-    </section>
-
     <div class="card results-card" style="margin-top: 0;">
         <div class="section-heading">
             <div>
@@ -3375,6 +3366,17 @@ body {
         <div id="alerts"></div>
         <div id="systemAnalysis"></div>
     </div>
+
+    <section class="card execution-card" aria-labelledby="executionMapTitle">
+        <div class="execution-head">
+            <div>
+                <h2 id="executionMapTitle">Why: the model execution map</h2>
+                <p>How the model maps onto your devices — what each one stores, where they communicate, and where the milliseconds go.</p>
+            </div>
+            <div id="executionStrategyControls" class="execution-strategies" aria-label="Compare distribution layouts"></div>
+        </div>
+        <div id="executionMap" aria-live="polite"></div>
+    </section>
     </div>
     </div>
 
