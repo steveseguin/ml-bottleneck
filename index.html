@@ -7074,16 +7074,27 @@ const DEVICE_TEMPLATES = {
             const theoreticalTokensPerSec = (bandwidthInfo.effectiveBandwidthGBps * 1e9) /
                 bandwidthInfo.accessedModelSizeBytes;
 
+            // Efficiency losses are capped below the per-pass roofline.
+            // Speculative decoding is NOT an efficiency loss: it emits extra
+            // accepted tokens per weight pass, so it multiplies on top and can
+            // legitimately push token rates past the per-pass ceiling — which
+            // is exactly why published MTP/EAGLE numbers exceed naive
+            // bandwidth math.
+            const speculationMultiplier = optimization.speculation ? optimization.decodeMultiplier : 1;
+            const efficiencyMultiplier = optimization.speculation ? 1 : optimization.decodeMultiplier;
             const efficiencyFactor = Math.min(
                 0.97,
                 frameworkProfile.decodeEfficiency *
                 frameworkProfile.bandwidthEfficiency *
-                optimization.decodeMultiplier
+                efficiencyMultiplier
             );
-            const actualTokensPerSec = theoreticalTokensPerSec * efficiencyFactor;
+            const baselineTokensPerSec = theoreticalTokensPerSec * efficiencyFactor;
+            const actualTokensPerSec = baselineTokensPerSec * speculationMultiplier;
 
             return {
                 tokensPerSecond: actualTokensPerSec,
+                tokensPerSecondWithoutSpeculation: baselineTokensPerSec,
+                speculationMultiplier,
                 theoreticalMax: theoreticalTokensPerSec,
                 modelSizeGB: modelSizeBytes / 1e9,
                 activeModelSizeGB: bandwidthInfo.accessedModelSizeBytes / 1e9,
@@ -8217,15 +8228,23 @@ const DEVICE_TEMPLATES = {
 				const theoreticalDecodeTime = decodeFlops / (deviceTflops * 1e12);
 				const decodeCoordinationTime = calculateDecodeCoordinationTimeSeconds(modelConfig, devices);
 
-				const localDecodeTime = tokenRateInfo.tokensPerSecond > 0
-					? 1 / tokenRateInfo.tokensPerSecond
+				// One verified forward pass reads the weights once and pays
+				// coordination once; speculation amortizes that whole pass
+				// across its accepted tokens.
+				const speculationMultiplier = tokenRateInfo.speculationMultiplier || 1;
+				const memorySecondsPerPass = tokenRateInfo.tokensPerSecondWithoutSpeculation > 0
+					? 1 / tokenRateInfo.tokensPerSecondWithoutSpeculation
 					: Infinity;
-				const actualDecodeTime = localDecodeTime + decodeCoordinationTime;
+				const perPassSeconds = memorySecondsPerPass + decodeCoordinationTime;
+				const actualDecodeTime = perPassSeconds / speculationMultiplier;
 				const decodeBandwidthLimitedTime = tokenRateInfo.accessedModelSizeBytes /
 					(Math.max(device.localBandwidthGBps * frameworkProfile.bandwidthEfficiency, 1) * 1e9);
 				const rawPrefillTokensPerSecond = modelConfig.batchSize * tokenLengths.promptTokens / actualPrefillTime;
 				const decodeTokensPerSecond = Number.isFinite(actualDecodeTime) && actualDecodeTime > 0
 					? 1 / actualDecodeTime
+					: 0;
+				const decodeTokensPerSecondWithoutSpeculation = Number.isFinite(perPassSeconds) && perPassSeconds > 0
+					? 1 / perPassSeconds
 					: 0;
 				// No artificial prefill/decode ratio cap: the compute-precision
 				// model and measured kernel efficiencies bound prefill honestly.
@@ -8234,13 +8253,17 @@ const DEVICE_TEMPLATES = {
 				// Per-token decode time budget: where each millisecond goes.
 				// Memory reads split between weights and KV by their byte share;
 				// GEMV compute overlaps the reads and is reported as busy-%.
-				const memoryMsPerToken = Number.isFinite(localDecodeTime) ? localDecodeTime * 1000 : 0;
+				// All bands are amortized per accepted token, so they still sum
+				// to the per-token total under speculation.
+				const memoryMsPerToken = Number.isFinite(memorySecondsPerPass)
+					? (memorySecondsPerPass / speculationMultiplier) * 1000
+					: 0;
 				const accessedGB = Math.max(tokenRateInfo.activeModelSizeGB || 0, 1e-9);
 				const weightShareOfReads = Math.min(1, (tokenRateInfo.activeWeightSizeGB || 0) / accessedGB);
 				const decodeTimeBreakdown = {
 					weightReadMs: memoryMsPerToken * weightShareOfReads,
 					kvReadMs: memoryMsPerToken * (1 - weightShareOfReads),
-					coordinationMs: decodeCoordinationTime * 1000,
+					coordinationMs: (decodeCoordinationTime / speculationMultiplier) * 1000,
 					totalMs: Number.isFinite(actualDecodeTime) ? actualDecodeTime * 1000 : Infinity,
 					computeBusyPct: Number.isFinite(actualDecodeTime) && actualDecodeTime > 0
 						? Math.min(100, (theoreticalDecodeTime / actualDecodeTime) * 100)
@@ -8284,6 +8307,8 @@ const DEVICE_TEMPLATES = {
 					rawPrefillTokensPerSecond,
 					prefillTokensPerSecond,
 					decodeTokensPerSecond,
+					decodeTokensPerSecondWithoutSpeculation,
+					speculationMultiplier,
 					decodeTimePerTokenSeconds: actualDecodeTime,
 					decodeResponseTimeSeconds: decodeTokensPerSecond > 0 ? (tokenLengths.outputTokens * modelConfig.batchSize) / decodeTokensPerSecond : Infinity,
 					theoreticalMaxTokensPerSecond: tokenRateInfo.theoreticalMax,
@@ -8859,6 +8884,11 @@ const DEVICE_TEMPLATES = {
                 ? `<div class="wf-system">${aggregation} System decode: <strong>${formatTokenRate(plan.systemDecodeRate)}</strong></div>`
                 : (aggregation ? `<div class="wf-system">${aggregation}</div>` : '');
 
+            const specLane = lanes.find(shard => (shard.metric.speculationMultiplier || 1) > 1);
+            const speculationLine = specLane
+                ? `<div class="wf-system">Speculative decoding modeled ×${specLane.metric.speculationMultiplier.toFixed(2)}: several tokens accepted per verified pass — bands show amortized per-token time. Without it: <strong>${formatTokenRate(specLane.metric.decodeTokensPerSecondWithoutSpeculation)}</strong>.</div>`
+                : '';
+
             const busiest = lanes.reduce((best, shard) => {
                 const t = shard.metric.prefillTimeBreakdown?.totalSeconds || 0;
                 return t > (best.metric.prefillTimeBreakdown?.totalSeconds || 0) ? shard : best;
@@ -8898,6 +8928,7 @@ const DEVICE_TEMPLATES = {
                         <span class="map-legend-item wf-overlap-note">GEMV compute overlaps the reads (${busyPct < 1 ? '<1' : busyPct.toFixed(busyPct < 10 ? 1 : 0)}% busy)</span>
                     </div>
                     ${systemLine}
+                    ${speculationLine}
                     ${prefillLine}
                     <details class="map-table-view">
                         <summary>View as table</summary>
@@ -9462,22 +9493,41 @@ const DEVICE_TEMPLATES = {
                 const rateNum = currentCalibration ? formatCompactRate(currentCalibration.expectedTokS) : rateParts[0];
                 const rateUnits = currentCalibration ? 'tok/s' : (rateParts.slice(1).join(' ') || (isImageGen ? 'img/s' : 'tok/s'));
                 const nearestMeasured = benchmarkAlignment.length > 0 ? benchmarkAlignment[0] : null;
+                const specMultiplier = metrics[0]?.speculationMultiplier || 1;
+                const speculationOn = specMultiplier > 1;
                 const calibrationSummaryHtml = currentCalibration ? (() => {
-                    const ceiling = Math.max(currentCalibration.idealTokS, 1e-9);
+                    const expectedWithoutSpec = speculationOn
+                        ? currentCalibration.expectedTokS / specMultiplier
+                        : currentCalibration.expectedTokS;
+                    const rungValues = [
+                        currentCalibration.idealTokS,
+                        currentCalibration.genericTokS,
+                        currentCalibration.expectedTokS,
+                        nearestMeasured?.referenceRate || 0
+                    ];
+                    const scale = Math.max(...rungValues.filter(Number.isFinite), 1e-9);
                     const rung = (cls, label, value, note) => `
                         <div class="ladder-row">
                             <span class="ladder-label">${label}</span>
-                            <span class="ladder-bar"><span class="ladder-fill ${cls}" style="width:${Math.min(100, (value / ceiling) * 100).toFixed(1)}%"></span></span>
+                            <span class="ladder-bar"><span class="ladder-fill ${cls}" style="width:${Math.min(100, (value / scale) * 100).toFixed(1)}%"></span></span>
                             <span class="ladder-value"><strong>${formatCompactRate(value)}</strong> tok/s${note ? ` <span class="ladder-note">${note}</span>` : ''}</span>
                         </div>`;
+                    const title = speculationOn
+                        ? `Speculative decoding emits several tokens per weight pass, so it can pass the per-pass ceiling — rates without it cannot.`
+                        : `Nothing above the ceiling is physically possible; software tuning moves you between the rungs.`;
                     return `
-                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: hardware ceiling ${formatCompactRate(currentCalibration.idealTokS)}, engine model ${formatCompactRate(currentCalibration.genericTokS)}, expected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second">
-                        <div class="ladder-title">Nothing above the ceiling is physically possible; software tuning moves you between the rungs.</div>
-                        ${rung('is-ceiling', 'Hardware ceiling', currentCalibration.idealTokS, 'bandwidth ÷ bytes/token, perfect software')}
+                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: hardware ceiling ${formatCompactRate(currentCalibration.idealTokS)}, engine model ${formatCompactRate(currentCalibration.genericTokS)}, expected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second${speculationOn ? ' with speculative decoding' : ', no speculative decoding'}">
+                        <div class="ladder-title">${title}</div>
+                        ${rung('is-ceiling', 'Hardware ceiling', currentCalibration.idealTokS, speculationOn ? 'bandwidth ÷ bytes, one forward pass' : 'bandwidth ÷ bytes/token, perfect software')}
                         ${rung('is-engine', 'Engine model', currentCalibration.genericTokS, 'your framework and settings')}
-                        ${rung('is-expected', 'Expected real', currentCalibration.expectedTokS, `${currentCalibration.peers} peers · ${currentCalibration.confidence} confidence`)}
+                        ${rung('is-expected', 'Expected real', currentCalibration.expectedTokS, speculationOn
+                            ? `speculation ×${specMultiplier.toFixed(2)} modeled · ${currentCalibration.peers} peers`
+                            : `no speculation · ${currentCalibration.peers} peers · ${currentCalibration.confidence} confidence`)}
+                        ${speculationOn
+                            ? rung('is-measured', 'Without speculation', expectedWithoutSpec, '≈ same setup, speculation off')
+                            : ''}
                         ${nearestMeasured && Number.isFinite(nearestMeasured.referenceRate)
-                            ? rung('is-measured', 'Nearest measured', nearestMeasured.referenceRate, escapeHtml(`${nearestMeasured.model} · ${nearestMeasured.hardware}`))
+                            ? rung('is-measured', 'Nearest measured', nearestMeasured.referenceRate, escapeHtml(`${nearestMeasured.model} · ${nearestMeasured.hardware}`) + ' · may include speculation')
                             : ''}
                     </div>`;
                 })() : '';
@@ -9491,7 +9541,7 @@ const DEVICE_TEMPLATES = {
                         <div class="phase-summary-card">
                             <div class="phase-summary-label">Decode</div>
                             <div class="phase-summary-value">${formatTokenRate(workflowSummary.decodeSystemRate)}</div>
-                            <div class="phase-summary-sub">${formatDuration(workflowSummary.decodeSeconds)} for ${formatTokenCount(workflowSummary.outputTokens)} output tokens</div>
+                            <div class="phase-summary-sub">${formatDuration(workflowSummary.decodeSeconds)} for ${formatTokenCount(workflowSummary.outputTokens)} output tokens · ${speculationOn ? `speculation ×${specMultiplier.toFixed(2)}` : 'no speculation'}</div>
                         </div>
                         <div class="phase-summary-card">
                             <div class="phase-summary-label">Total</div>

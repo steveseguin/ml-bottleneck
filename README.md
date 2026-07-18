@@ -9,6 +9,7 @@ A powerful web-based tool for analyzing hardware bottlenecks in machine learning
 - 🗺️ **Model Map**: layer strip showing exactly which layers, tensor slices, experts, or replicas live on each device
 - ⏱️ **Per-token time waterfall**: where each decode millisecond goes (weight reads / KV reads / cross-device sync) — the widest band is the direction to optimize
 - 🪜 **Ceiling ladder**: hardware ceiling → engine model → expected real → nearest measured run, so predictions never overpromise past physics
+- 🔀 **Explicit speculation labeling**: every decode estimate says whether speculative decoding is modeled in, and shows the with/without counterpart — so you can compare fairly against published MTP/EAGLE numbers that exceed naive bandwidth math
 - 🧠 Model execution map showing attention, MoE routing, active experts, and MTP
 - 🎯 Benchmark-calibrated token rate estimation (prefill and decode modeled separately, with honest computation-precision physics)
 - 🔄 Pipeline, tensor, expert, data, and hybrid parallelism — plus AUTO strategy search

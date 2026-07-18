@@ -239,6 +239,59 @@ test('engine predictions stay statistically anchored to the gold-case corpus', (
     `only ${(withinTwoX * 100).toFixed(0)}% of gold cases within 2x (need >= 50%)`);
 });
 
+test('speculation is labeled, split from efficiency, and can pass the per-pass ceiling', () => {
+  const app = loadApp();
+  const t4090 = app.hooks.DEVICE_TEMPLATES['RTX 4090'];
+  app.hooks.setDevices([{ id: 1, template: 'RTX 4090', ...JSON.parse(JSON.stringify(t4090)), name: 'RTX 4090' }]);
+  app.applyPreset('llama3_8b');
+  app.setValue('quantizationType', 'q4');
+  app.setValue('runtimeFramework', 'llama_cpp');
+  app.setValue('parallelismStrategy', 'pipeline');
+  app.setValue('batchSize', 1);
+  app.setValue('promptTokens', 2048);
+  app.setValue('outputTokens', 256);
+  app.setValue('seqLength', 2304);
+
+  app.setValue('optimizationMode', 'none');
+  const off = app.hooks.calculateMetrics()[0];
+  assert.equal(off.speculationMultiplier, 1);
+  assert.equal(off.decodeTokensPerSecondWithoutSpeculation.toFixed(3), off.decodeTokensPerSecond.toFixed(3));
+  // Without speculation the rate must respect the per-pass roofline.
+  assert.ok(off.decodeTokensPerSecond <= off.theoreticalMaxTokensPerSecond,
+    `no-spec decode ${off.decodeTokensPerSecond} must not exceed the per-pass ceiling ${off.theoreticalMaxTokensPerSecond}`);
+
+  app.hooks.updateSystemAnalysis();
+  assert.match(app.elements.get('systemAnalysis').innerHTML, /no speculation/,
+    'ladder labels the estimate as speculation-free when speculation is off');
+
+  // High-acceptance EAGLE-3: several tokens accepted per verified pass.
+  app.setValue('optimizationMode', 'speculative');
+  app.setValue('specMethod', 'eagle3');
+  app.setValue('specTokens', 5);
+  app.setValue('specAcceptance', 90); // the input is a percentage field
+  const on = app.hooks.calculateMetrics()[0];
+
+  assert.ok(on.speculationMultiplier > 2, `high-acceptance multiplier was ${on.speculationMultiplier}`);
+  const ratio = on.decodeTokensPerSecond / on.decodeTokensPerSecondWithoutSpeculation;
+  assert.ok(Math.abs(ratio - on.speculationMultiplier) < 0.01,
+    `with/without ratio ${ratio} should equal the modeled multiplier ${on.speculationMultiplier}`);
+  // Speculation is extra tokens per weight pass, not an efficiency gain, so
+  // it may legitimately exceed the per-pass bandwidth ceiling — exactly why
+  // published MTP/EAGLE numbers beat naive bandwidth math.
+  assert.ok(on.decodeTokensPerSecond > on.theoreticalMaxTokensPerSecond,
+    `high-acceptance speculation ${on.decodeTokensPerSecond} should exceed the per-pass ceiling ${on.theoreticalMaxTokensPerSecond}`);
+  // The waterfall bands must still sum to the amortized per-token total.
+  const b = on.decodeTimeBreakdown;
+  const segmentSum = b.weightReadMs + b.kvReadMs + b.coordinationMs;
+  assert.ok(Math.abs(segmentSum - b.totalMs) < 0.01,
+    `waterfall segments (${segmentSum}) must sum to the total (${b.totalMs}) under speculation`);
+
+  app.hooks.updateSystemAnalysis();
+  const html = app.elements.get('systemAnalysis').innerHTML;
+  assert.match(html, /speculation ×\d/, 'ladder labels the modeled speculation multiplier');
+  assert.match(html, /Without speculation/, 'ladder shows the speculation-free counterpart rate');
+});
+
 test('user-controlled device names are escaped in every rendered surface', () => {
   const app = loadApp();
   const hostile = `<img src=x onerror=alert(1)>"'`;
