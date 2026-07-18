@@ -1,0 +1,220 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadApp } from './load-index-app.mjs';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
+
+function stripStringsAndComments(line) {
+  return line
+    .replace(/'[^']*'/g, "''")
+    .replace(/"[^"]*"/g, '""')
+    .replace(/\/\/.*$/, '');
+}
+
+function extractTopLevelObjectKeys(source, constName) {
+  const startMatch = source.match(new RegExp(`const ${constName} = \\{`));
+  assert.ok(startMatch, `Could not locate "const ${constName} = {" in index.html`);
+  const lines = source.slice(startMatch.index).split('\n');
+  const keys = [];
+  let depth = 0;
+  for (const line of lines) {
+    if (depth === 1) {
+      const keyMatch = line.match(/^\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_$][\w$]*))\s*:/);
+      if (keyMatch) {
+        keys.push(keyMatch[1] ?? keyMatch[2] ?? keyMatch[3]);
+      }
+    }
+    const cleaned = stripStringsAndComments(line);
+    for (const char of cleaned) {
+      if (char === '{') depth += 1;
+      if (char === '}') depth -= 1;
+    }
+    if (depth <= 0 && keys.length > 0) break;
+  }
+  assert.ok(keys.length > 0, `Extracted zero keys from ${constName}; scanner is broken`);
+  return keys;
+}
+
+function findDuplicates(values) {
+  const seen = new Set();
+  const duplicates = new Set();
+  for (const value of values) {
+    if (seen.has(value)) duplicates.add(value);
+    seen.add(value);
+  }
+  return [...duplicates];
+}
+
+test('catalog object literals contain no duplicate keys (later keys silently override earlier ones)', () => {
+  for (const constName of ['MODEL_PRESETS', 'DEVICE_TEMPLATES', 'FRAMEWORK_PROFILES', 'ARCHITECTURE_PROFILES', 'INTERCONNECT_BANDWIDTH', 'DTYPE_SIZES']) {
+    const keys = extractTopLevelObjectKeys(html, constName);
+    const duplicates = findDuplicates(keys);
+    assert.deepEqual(duplicates, [], `${constName} has duplicate keys: ${duplicates.join(', ')}`);
+  }
+});
+
+test('no duplicate top-level function declarations (hoisting makes the earlier one dead code)', () => {
+  const names = [...html.matchAll(/^(?:\t| {8})(?:async )?function ([A-Za-z0-9_]+)\(/gm)].map(match => match[1]);
+  assert.ok(names.length > 50, `Function scanner found only ${names.length} declarations; heuristic is broken`);
+  const duplicates = findDuplicates(names);
+  assert.deepEqual(duplicates, [], `Duplicate top-level function declarations: ${duplicates.join(', ')}`);
+});
+
+test('deduped catalog entries keep the physically correct specs', () => {
+  const app = loadApp();
+  const presets = app.hooks.MODEL_PRESETS;
+  const templates = app.hooks.DEVICE_TEMPLATES;
+
+  // Mixtral experts share attention weights: 8x7B is 46.7B total / 12.9B active, not 56/14.
+  assert.equal(presets.mixtral_8x7b.totalParamsB, 46.7);
+  assert.equal(presets.mixtral_8x7b.activeParamsB, 12.9);
+  assert.equal(presets.mixtral_8x22b.totalParamsB, 141);
+  assert.equal(presets.mixtral_8x22b.activeParamsB, 39);
+
+  // Gemma 3 27B official config: hidden 5376, 62 layers, intermediate 21504.
+  assert.equal(presets.gemma3_27b.hiddenSize, 5376);
+  assert.equal(presets.gemma3_27b.numLayers, 62);
+  assert.equal(presets.gemma3_27b.intermediateSize, 21504);
+
+  // TPU v5p: 95 GB HBM, 2765 GB/s, 459 bf16 TFLOPS per chip.
+  assert.equal(templates['Google TPU v5p'].memoryGB, 95);
+  assert.equal(templates['Google TPU v5p'].localBandwidthGBps, 2765);
+  assert.equal(templates['Google TPU v5p'].computeTFlops.bfloat16, 459);
+});
+
+test('physics stays anchored to measured hardware behavior', () => {
+  const app = loadApp();
+  const clone = (name) => [{ id: 1, template: name, ...JSON.parse(JSON.stringify(app.hooks.DEVICE_TEMPLATES[name])) }];
+  const run = (dev, preset, quant, framework) => {
+    app.hooks.setDevices(clone(dev));
+    app.applyPreset(preset);
+    app.setValue('quantizationType', quant);
+    app.setValue('runtimeFramework', framework);
+    app.setValue('parallelismStrategy', 'pipeline');
+    app.setValue('batchSize', 1);
+    app.setValue('promptTokens', 2048);
+    app.setValue('outputTokens', 256);
+    app.setValue('seqLength', 2304);
+    return app.hooks.calculateMetrics()[0];
+  };
+
+  // llama.cpp on RTX 4090, Llama 3 8B Q4: ~4.5-5k tok/s prefill, ~110-130 decode measured.
+  const consumer = run('RTX 4090', 'llama3_8b', 'q4', 'llama_cpp');
+  assert.ok(consumer.prefillTokensPerSecond > 3000 && consumer.prefillTokensPerSecond < 7000,
+    `4090 q4 prefill was ${consumer.prefillTokensPerSecond}`);
+  assert.ok(consumer.decodeTokensPerSecond > 90 && consumer.decodeTokensPerSecond < 170,
+    `4090 q4 decode was ${consumer.decodeTokensPerSecond}`);
+
+  // TensorRT-LLM on H100, Llama 3 8B FP16: ~25-30k tok/s prefill measured. The old
+  // q4-TFLOPS-times-quant-factor model overpromised prefill by up to 7x.
+  const datacenter = run('H100', 'llama3_8b', 'float16', 'tensorrt_llm');
+  assert.ok(datacenter.prefillTokensPerSecond > 18000 && datacenter.prefillTokensPerSecond < 38000,
+    `H100 fp16 prefill was ${datacenter.prefillTokensPerSecond}`);
+
+  // Memory at long context: Llama 3.3 70B Q4 at 131k tokens is ~78 GB real
+  // (40 GB weights + 43 GB fp16 KV). The old S^2 attention term claimed 659 GB.
+  app.applyPreset('llama3.3_70b');
+  app.setValue('quantizationType', 'q4');
+  app.setValue('seqLength', 131072);
+  app.setValue('promptTokens', 130816);
+  app.setValue('outputTokens', 256);
+  const config = app.hooks.buildEffectiveModelConfig();
+  const breakdown = app.hooks.calculateMemoryBreakdown(config, 0.5, 1, true, 0);
+  const totalGB = breakdown.total / 1e9;
+  assert.ok(totalGB > 55 && totalGB < 105, `70B @131k total memory was ${totalGB} GB`);
+  const kvGB = breakdown.kvCacheMemory / 1e9;
+  assert.ok(kvGB > 30 && kvGB < 55, `70B @131k KV cache was ${kvGB} GB (GQA math says 42.9)`);
+});
+
+test('model map waterfall stays consistent with the decode engine', () => {
+  const app = loadApp();
+  const t4090 = app.hooks.DEVICE_TEMPLATES['RTX 4090'];
+  const t3090 = app.hooks.DEVICE_TEMPLATES['RTX 3090'];
+  app.hooks.setDevices([
+    { id: 1, template: 'RTX 4090', ...JSON.parse(JSON.stringify(t4090)), name: 'RTX 4090' },
+    { id: 2, template: 'RTX 3090', ...JSON.parse(JSON.stringify(t3090)), name: 'RTX 3090' }
+  ]);
+  app.applyPreset('llama3.3_70b');
+  app.setValue('quantizationType', 'q4');
+  app.setValue('runtimeFramework', 'llama_cpp');
+  app.setValue('parallelismStrategy', 'pipeline');
+  app.setValue('batchSize', 1);
+  app.setValue('promptTokens', 2048);
+  app.setValue('outputTokens', 256);
+  app.setValue('seqLength', 2304);
+
+  const config = app.hooks.buildEffectiveModelConfig();
+  const metrics = app.hooks.calculateMetrics();
+  for (const metric of metrics) {
+    const b = metric.decodeTimeBreakdown;
+    const segmentSum = b.weightReadMs + b.kvReadMs + b.coordinationMs;
+    assert.ok(Math.abs(segmentSum - b.totalMs) < 0.01,
+      `waterfall segments (${segmentSum}) must sum to the engine total (${b.totalMs})`);
+    assert.ok(['compute', 'bandwidth', 'network'].includes(metric.prefillTimeBreakdown.binding));
+  }
+
+  const plan = app.hooks.buildExecutionPlan(config, app.hooks.getDevices(), metrics, 'pipeline');
+  const html = app.hooks.buildExecutionMapHtml(plan, []);
+  assert.match(html, /map-strip-track/, 'layer strip renders');
+  assert.match(html, /L1–40/, 'first device layer range');
+  assert.match(html, /L41–80/, 'second device layer range');
+  assert.match(html, /map-cross-label/, 'pipeline boundary crossing chip renders');
+  assert.match(html, /One decode step, millisecond by millisecond/, 'waterfall section renders');
+  assert.match(html, /System decode: <strong>/, 'system aggregation line renders');
+  assert.match(html, /Prompt phase is <strong>/, 'prefill limiter line renders');
+  assert.match(html, /map-table-view/, 'accessible table view renders');
+  assert.ok(Number.isFinite(plan.systemDecodeRate) && plan.systemDecodeRate > 0);
+});
+
+test('ceiling ladder keeps predictions at or below the physical ceiling', () => {
+  const app = loadApp();
+  const t4090 = app.hooks.DEVICE_TEMPLATES['RTX 4090'];
+  app.hooks.setDevices([{ id: 1, template: 'RTX 4090', ...JSON.parse(JSON.stringify(t4090)), name: 'RTX 4090' }]);
+  app.applyPreset('llama3_8b');
+  app.setValue('quantizationType', 'q4');
+  app.setValue('runtimeFramework', 'llama_cpp');
+  app.setValue('parallelismStrategy', 'pipeline');
+  app.setValue('batchSize', 1);
+  app.setValue('promptTokens', 2048);
+  app.setValue('outputTokens', 256);
+  app.setValue('seqLength', 2304);
+
+  const config = app.hooks.buildEffectiveModelConfig();
+  const metrics = app.hooks.calculateMetrics();
+  const systemRate = app.hooks.calculateSystemRateFromDeviceRates(
+    metrics.map(metric => metric.decodeTokensPerSecond), 'pipeline', 1, app.hooks.getDevices());
+  const calibration = app.hooks.calculateCurrentCalibration(config, metrics, systemRate, 'pipeline');
+
+  assert.ok(calibration.idealTokS >= calibration.genericTokS,
+    `engine model (${calibration.genericTokS}) must sit at or below the ceiling (${calibration.idealTokS})`);
+  assert.ok(calibration.expectedTokS <= calibration.idealTokS * 1.05,
+    `expected real (${calibration.expectedTokS}) must not exceed the physical ceiling (${calibration.idealTokS})`);
+
+  app.hooks.updateSystemAnalysis();
+  const html = app.elements.get('systemAnalysis').innerHTML;
+  assert.match(html, /ceiling-ladder/, 'ceiling ladder renders in system analysis');
+  assert.match(html, /Hardware ceiling/);
+  assert.match(html, /Expected real/);
+});
+
+test('user-controlled device names are escaped in every rendered surface', () => {
+  const app = loadApp();
+  const hostile = `<img src=x onerror=alert(1)>"'`;
+  const template = app.hooks.DEVICE_TEMPLATES['RTX 4090'];
+  app.hooks.setDevices([
+    { id: 1, template: 'RTX 4090', ...JSON.parse(JSON.stringify(template)), name: hostile },
+    { id: 2, template: 'RTX 4090', ...JSON.parse(JSON.stringify(template)), name: 'Plain device' }
+  ]);
+
+  app.hooks.updateDeviceDisplay();
+  app.hooks.updateSystemAnalysis();
+
+  for (const [id, element] of app.elements) {
+    const rendered = `${element.innerHTML || ''}`;
+    assert.ok(!rendered.includes('<img src=x'), `Raw hostile device name leaked into #${id}`);
+  }
+});

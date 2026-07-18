@@ -42,7 +42,7 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 
     <!-- Chart.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
 	<script src="data/localmaxxing-snapshot.js"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
@@ -2567,7 +2567,7 @@ td {
 .tensor-layer-key strong { font-size: 0.76rem; }
 .tensor-layer-key span { color: var(--text-secondary); font-size: 0.62rem; }
 .tensor-slices { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 0.45rem; }
-.tensor-slice { min-width: 0; border-top: 3px solid var(--primary); }
+.tensor-slice { min-width: 0; }
 .collective-bus { grid-column: 1 / -1; display: flex; justify-content: center; margin-top: 0.55rem; border-top: 2px solid #f59e0b; }
 .collective-bus span { margin-top: -0.65rem; border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 999px; background: var(--background); color: #f59e0b; padding: 0.22rem 0.55rem; font-size: 0.62rem; font-weight: 700; }
 
@@ -2576,10 +2576,63 @@ td {
 .router-node strong { color: #f59e0b; font-size: 0.75rem; }
 .router-node span { color: var(--text-secondary); font-size: 0.62rem; }
 .expert-devices { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 0.45rem; }
-.expert-device { min-width: 0; border-top: 3px solid #a855f7; }
+.expert-device { min-width: 0; }
 .expert-pool { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; margin-top: 0.45rem; }
 .expert-cell { height: 9px; border-radius: 2px; background: rgba(168, 85, 247, 0.24); }
 .expert-cell.active { background: #a855f7; box-shadow: 0 0 7px rgba(168, 85, 247, 0.6); }
+
+/* Model map: layer strip + decode waterfall (palette validated for both surfaces) */
+#executionMap {
+    --map-dev-1: #2a78d6; --map-dev-2: #1baf7a; --map-dev-3: #eda100; --map-dev-4: #008300;
+    --map-dev-5: #4a3aa7; --map-dev-6: #e34948; --map-dev-7: #e87ba4; --map-dev-8: #eb6834;
+    --map-mem-weights: #2a78d6; --map-mem-kv: #86b6ef; --map-sync: #eb6834;
+}
+@media (prefers-color-scheme: dark) {
+    #executionMap {
+        --map-dev-1: #3987e5; --map-dev-2: #199e70; --map-dev-3: #c98500; --map-dev-4: #008300;
+        --map-dev-5: #9085e9; --map-dev-6: #e66767; --map-dev-7: #d55181; --map-dev-8: #d95926;
+        --map-mem-weights: #3987e5; --map-mem-kv: #6da7ec; --map-sync: #d95926;
+    }
+}
+.map-section { margin-top: 0.9rem; }
+.map-strip-track { display: flex; align-items: stretch; gap: 2px; min-height: 34px; margin-top: 0.5rem; }
+.map-strip-cap { flex: 0 0 auto; display: grid; place-content: center; padding: 0 0.5rem; border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); font-size: 0.62rem; font-weight: 700; }
+.map-strip-seg { position: relative; display: grid; place-content: center; min-width: 34px; border-radius: 6px; background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0 1px, transparent 1px 8px); }
+.map-strip-seg-label { color: #fff; background: rgba(0, 0, 0, 0.38); border-radius: 4px; font-size: 0.62rem; font-weight: 700; padding: 0.12rem 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.map-strip-seg.is-shared { background: var(--card); border: 1px dashed var(--border); }
+.map-strip-seg.is-shared .map-strip-seg-label { color: var(--text-secondary); background: none; }
+.map-cross { flex: 0 0 auto; display: grid; justify-items: center; align-content: center; gap: 2px; padding: 0 0.15rem; }
+.map-cross-line { width: 1px; height: 10px; background: var(--text-secondary); }
+.map-cross-label { color: var(--text-secondary); font-size: 0.56rem; white-space: nowrap; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 0.8rem; margin-top: 0.45rem; align-items: center; }
+.map-legend-item { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--text-secondary); font-size: 0.64rem; }
+.map-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.map-strip-note { color: var(--text-secondary); font-size: 0.64rem; margin-left: auto; }
+.map-wf { display: grid; gap: 0.4rem; margin-top: 0.55rem; }
+.wf-lane { display: grid; grid-template-columns: minmax(110px, 0.22fr) minmax(0, 1fr) minmax(120px, auto); gap: 0.55rem; align-items: center; }
+.wf-lane-name { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.68rem; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wf-bar { display: flex; gap: 2px; height: 14px; }
+.wf-seg { border-radius: 3px; min-width: 3px; }
+.wf-seg.is-weights, .wf-key.is-weights { background: var(--map-mem-weights); }
+.wf-seg.is-kv, .wf-key.is-kv { background: var(--map-mem-kv); }
+.wf-seg.is-sync, .wf-key.is-sync { background: var(--map-sync); }
+.wf-meta { font-size: 0.66rem; color: var(--text-secondary); white-space: nowrap; }
+.wf-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 0.8rem; margin-top: 0.5rem; align-items: center; }
+.wf-key { width: 12px; height: 8px; border-radius: 2px; display: inline-block; }
+.wf-overlap-note { margin-left: auto; }
+.wf-system { margin-top: 0.5rem; font-size: 0.68rem; color: var(--text-secondary); }
+.wf-prefill { margin-top: 0.35rem; font-size: 0.68rem; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.wf-prefill-chips { display: inline-flex; gap: 0.3rem; flex-wrap: wrap; }
+.wf-prefill-chips span { border: 1px solid var(--border); border-radius: 999px; padding: 0.12rem 0.5rem; font-size: 0.62rem; }
+.wf-prefill-chips span.is-binding { border-color: var(--text); color: var(--text); font-weight: 700; }
+.map-table-view { margin-top: 0.55rem; }
+.map-table-view summary { cursor: pointer; color: var(--text-secondary); font-size: 0.66rem; }
+.map-table-view table { width: 100%; border-collapse: collapse; margin-top: 0.4rem; font-size: 0.66rem; }
+.map-table-view th, .map-table-view td { border: 1px solid var(--border); padding: 0.3rem 0.45rem; text-align: left; }
+@media (max-width: 640px) {
+    .wf-lane { grid-template-columns: 1fr; gap: 0.2rem; }
+    .map-strip-seg-label { font-size: 0.56rem; }
+}
 
 .replica-flow { justify-content: center; }
 .replica-card { flex: 1 0 190px; max-width: 280px; border-top: 3px solid #22c55e; }
@@ -2735,16 +2788,25 @@ body {
 .planner-stage > .card { margin-bottom: 1rem; }
 .execution-card { min-height: 28rem; }
 .results-card { min-height: 14rem; }
-.calibration-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.65rem;
-    margin-top: 0.8rem;
-    padding-top: 0.8rem;
-    border-top: 1px solid var(--border);
+.ceiling-ladder { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--border); display: grid; gap: 0.4rem; --ladder-1: #86b6ef; --ladder-2: #5598e7; --ladder-3: #2a78d6; }
+@media (prefers-color-scheme: dark) {
+    .ceiling-ladder { --ladder-1: #6da7ec; --ladder-2: #3987e5; --ladder-3: #256abf; }
 }
-.calibration-strip span { display: block; color: var(--text-secondary); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; }
-.calibration-strip strong { display: block; margin-top: 0.2rem; font-size: 0.78rem; }
+.ladder-title { color: var(--text-secondary); font-size: 0.66rem; }
+.ladder-row { display: grid; grid-template-columns: minmax(112px, 0.24fr) minmax(0, 1fr) minmax(170px, auto); gap: 0.55rem; align-items: center; }
+.ladder-label { font-size: 0.66rem; color: var(--text-secondary); font-weight: 600; }
+.ladder-bar { height: 10px; background: var(--background); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.ladder-fill { display: block; height: 100%; border-radius: 3px; min-width: 2px; }
+.ladder-fill.is-ceiling { background: var(--ladder-1); }
+.ladder-fill.is-engine { background: var(--ladder-2); }
+.ladder-fill.is-expected { background: var(--ladder-3); }
+.ladder-fill.is-measured { background: var(--text-secondary); opacity: 0.6; }
+.ladder-value { font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ladder-note { color: var(--text-secondary); font-size: 0.62rem; }
+@media (max-width: 640px) {
+    .ladder-row { grid-template-columns: 1fr; gap: 0.15rem; }
+    .ladder-value { white-space: normal; }
+}
 .topology-card, .utilization-card, .reference-card { margin-top: 1rem; }
 
 .workspace-heading {
@@ -2889,7 +2951,6 @@ body {
     .plot-legend { white-space: normal; }
     .gold-set-head .input { width: 100%; }
     .interpret-metrics { grid-template-columns: 1fr; }
-    .calibration-strip { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 </head>
@@ -3301,7 +3362,7 @@ body {
             <span class="topology-sub">Inspect links and utilization after understanding the logical deployment</span>
         </summary>
         <div id="topologyContainer">
-            <canvas id="topologyCanvas"></canvas>
+            <canvas id="topologyCanvas" role="img" aria-label="Device topology diagram. The same device assignments, memory utilization, and interconnects are described in text in the model execution map and hardware editor.">Device topology diagram; see the model execution map for the same information as text.</canvas>
         </div>
         <div class="topology-legend">
             <span class="legend-group-label">Status</span>
@@ -3318,7 +3379,7 @@ body {
             <span class="summary-sub">Memory, compute, local bandwidth, and network</span>
         </summary>
         <div class="chart-container">
-            <canvas id="utilizationChart"></canvas>
+            <canvas id="utilizationChart" role="img" aria-label="Per-device utilization bar chart. The same percentages appear as text in the per-device breakdown above.">Per-device utilization chart; the same percentages appear as text in the per-device breakdown.</canvas>
         </div>
     </details>
 
@@ -3526,7 +3587,7 @@ body {
             auto: {
                 label: 'AUTO',
                 decodeEfficiency: 0.74,
-                prefillEfficiency: 0.72,
+                prefillEfficiency: 0.36,
                 bandwidthEfficiency: 0.80,
                 speculativeMultiplier: 1.45,
                 batchingMultiplier: 1.18,
@@ -3536,7 +3597,7 @@ body {
             llama_cpp: {
                 label: 'llama.cpp',
                 decodeEfficiency: 0.70,
-                prefillEfficiency: 0.76,
+                prefillEfficiency: 0.38,
                 bandwidthEfficiency: 0.78,
                 speculativeMultiplier: 1.32,
                 batchingMultiplier: 1.10,
@@ -3545,8 +3606,8 @@ body {
             },
             mlx: {
                 label: 'MLX / MLX-LM',
-                decodeEfficiency: 0.84,
-                prefillEfficiency: 0.80,
+                decodeEfficiency: 0.66,
+                prefillEfficiency: 0.22,
                 bandwidthEfficiency: 0.86,
                 speculativeMultiplier: 1.22,
                 batchingMultiplier: 1.08,
@@ -3556,7 +3617,7 @@ body {
             ollama: {
                 label: 'Ollama',
                 decodeEfficiency: 0.62,
-                prefillEfficiency: 0.70,
+                prefillEfficiency: 0.34,
                 bandwidthEfficiency: 0.76,
                 speculativeMultiplier: 1.18,
                 batchingMultiplier: 1.05,
@@ -3566,7 +3627,7 @@ body {
             vllm: {
                 label: 'vLLM',
                 decodeEfficiency: 0.76,
-                prefillEfficiency: 0.80,
+                prefillEfficiency: 0.35,
                 bandwidthEfficiency: 0.83,
                 speculativeMultiplier: 1.60,
                 batchingMultiplier: 1.26,
@@ -3576,7 +3637,7 @@ body {
             sglang: {
                 label: 'SGLang',
                 decodeEfficiency: 0.80,
-                prefillEfficiency: 0.83,
+                prefillEfficiency: 0.36,
                 bandwidthEfficiency: 0.85,
                 speculativeMultiplier: 1.70,
                 batchingMultiplier: 1.28,
@@ -3586,7 +3647,7 @@ body {
             tensorrt_llm: {
                 label: 'TensorRT-LLM',
                 decodeEfficiency: 0.72,
-                prefillEfficiency: 0.86,
+                prefillEfficiency: 0.38,
                 bandwidthEfficiency: 0.82,
                 speculativeMultiplier: 1.85,
                 batchingMultiplier: 1.30,
@@ -3596,7 +3657,7 @@ body {
             exo: {
                 label: 'EXO',
                 decodeEfficiency: 0.77,
-                prefillEfficiency: 0.74,
+                prefillEfficiency: 0.36,
                 bandwidthEfficiency: 0.78,
                 speculativeMultiplier: 1.05,
                 batchingMultiplier: 1.06,
@@ -3737,7 +3798,9 @@ body {
             },
             grouped_query: {
                 label: 'Grouped-Query Attention',
-                kvCacheMultiplier: 0.62,
+                // KV shrinkage comes from the explicit numKVHeads in the KV
+                // formula; a multiplier here would double-count it.
+                kvCacheMultiplier: 1,
                 attentionMemoryMultiplier: 0.94,
                 activationMultiplier: 0.98,
                 prefillAttentionMultiplier: 0.98,
@@ -3748,7 +3811,9 @@ body {
             },
             multi_query: {
                 label: 'Multi-Query Attention',
-                kvCacheMultiplier: 0.24,
+                // Single-KV-head shrinkage is carried by numKVHeads = 1 in the
+                // KV formula; a multiplier here would double-count it.
+                kvCacheMultiplier: 1,
                 attentionMemoryMultiplier: 0.88,
                 activationMultiplier: 0.96,
                 prefillAttentionMultiplier: 0.94,
@@ -3820,15 +3885,19 @@ body {
 	const MODEL_PRESETS = {
 	  'llama3_8b': {
 	    totalParamsB: 8,
-	    hiddenSize: 3072,
+	    hiddenSize: 4096,
 	    numLayers: 32,
-	    numHeads: 32
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    intermediateSize: 14336
 	  },
 	  'llama3_70b': {
 	    totalParamsB: 70,
 	    hiddenSize: 8192,
 	    numLayers: 80,
-	    numHeads: 64
+	    numHeads: 64,
+	    numKVHeads: 8,
+	    intermediateSize: 28672
 	  },
 	  'llama4_scout': {
 	    totalParamsB: 109,
@@ -3860,7 +3929,9 @@ body {
 	    totalParamsB: 7,
 	    hiddenSize: 4096,
 	    numLayers: 32,
-	    numHeads: 32
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    intermediateSize: 14336
 	  },
 	  'mistral_small_3.1_24b': {
 	    totalParamsB: 24,
@@ -3905,7 +3976,7 @@ body {
 	    intermediateSize: 12288
 	  },
 	  'mixtral_8x7b': {
-	    totalParamsB: 47,
+	    totalParamsB: 46.7,
 	    hiddenSize: 4096,
 	    numLayers: 32,
 	    numHeads: 32,
@@ -3913,7 +3984,8 @@ body {
 	    isMoE: true,
 	    numExperts: 8,
 	    activeExperts: 2,
-	    activeParamsB: 12.9
+	    activeParamsB: 12.9,
+	    contextLength: 32768
 	  },
 	  'mixtral_8x22b': {
 	    totalParamsB: 141,
@@ -3924,7 +3996,8 @@ body {
 	    isMoE: true,
 	    numExperts: 8,
 	    activeExperts: 2,
-	    activeParamsB: 39
+	    activeParamsB: 39,
+	    contextLength: 65536
 	  },
 	  'gemma_7b': {
 	    totalParamsB: 8.5,
@@ -3949,6 +4022,7 @@ body {
 	    numHeads: 32,
 	    numKVHeads: 16,
 	    intermediateSize: 21504,
+	    contextLength: 128000,
 	    slidingWindow: 1024,
 	    hasVision: true,
 	    visionHiddenSize: 1152,
@@ -4497,15 +4571,6 @@ body {
 	    flopsPerImage: 4e12
 	  },
 	  // Gemma 3 Family
-	  'gemma3_27b': {
-	    totalParamsB: 27,
-	    hiddenSize: 4608,
-	    numLayers: 46,
-	    numHeads: 32,
-	    numKVHeads: 16,
-	    contextLength: 128000,
-	    hasVision: true
-	  },
 	  'gemma3_12b': {
 	    totalParamsB: 12,
 	    hiddenSize: 3840,
@@ -4605,29 +4670,6 @@ body {
 	    contextLength: 128000
 	  },
 	  // Mixtral 8x22B (MoE)
-	  'mixtral_8x22b': {
-	    totalParamsB: 176,
-	    hiddenSize: 6144,
-	    numLayers: 56,
-	    numHeads: 48,
-	    numKVHeads: 8,
-	    isMoE: true,
-	    numExperts: 8,
-	    activeExperts: 2,
-	    activeParamsB: 44,
-	    contextLength: 65000
-	  },
-	  'mixtral_8x7b': {
-	    totalParamsB: 56,
-	    hiddenSize: 4096,
-	    numLayers: 32,
-	    numHeads: 32,
-	    numKVHeads: 8,
-	    isMoE: true,
-	    numExperts: 8,
-	    activeExperts: 2,
-	    activeParamsB: 14
-	  },
 	  // DBRX (Databricks MoE)
 	  'dbrx_132b': {
 	    totalParamsB: 132,
@@ -6040,21 +6082,6 @@ const DEVICE_TEMPLATES = {
   },
   
   // Google
-  'Google TPU v5p': {
-    name: 'Google TPU v5p',
-    memoryGB: 256,
-    localBandwidthGBps: 3200,
-    networkBandwidthGBps: 400 / 8,
-    computeTFlops: {
-      'float32': 450,
-      'float16': 900,
-      'bfloat16': 900,
-      'int8': 1800,
-      'q4': 2700
-    },
-    type: 'AI Accelerator'
-  },
-  
   // Cerebras
   'Cerebras WSE-3': {
     name: 'Cerebras WSE-3',
@@ -6544,6 +6571,26 @@ const DEVICE_TEMPLATES = {
                 1;
         }
 
+        // Prefill GEMMs run at the *computation* precision, not the storage
+        // precision. Weight-only quantization (q4, and int8/fp8 outside engines
+        // with true low-precision kernels) dequantizes tiles to half precision
+        // for the matmul, so low-bit storage shrinks memory traffic but does
+        // not raise compute throughput. Only TensorRT-LLM, vLLM, and SGLang
+        // ship real W8A8/FP8 GEMM paths.
+        function getComputationPrecisionTflops(device, modelConfig, frameworkKey) {
+            const quant = modelConfig.quantizationType;
+            const lowPrecisionEngine = frameworkKey === 'tensorrt_llm' || frameworkKey === 'vllm' || frameworkKey === 'sglang';
+            if (quant === 'float32') {
+                return getDeviceComputeTflops(device, 'float32');
+            }
+            if ((quant === 'int8' || quant === 'fp8') && lowPrecisionEngine) {
+                return getDeviceComputeTflops(device, quant) * 0.95;
+            }
+            const halfTflops = getDeviceComputeTflops(device, 'float16');
+            const dequantTax = (quant === 'q4' || quant === 'int8' || quant === 'fp8') ? 0.94 : 1.0;
+            return halfTflops * dequantTax;
+        }
+
         function getDefaultFrameworkForDevice(device) {
             const name = (device.template || device.name || '').toLowerCase();
             if (/mac|m[1-5]/.test(name)) return 'mlx';
@@ -6724,31 +6771,45 @@ const DEVICE_TEMPLATES = {
 	function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex ) {
 		const architectureProfile = getArchitectureProfile(modelConfig);
 		const parallelScales = getParallelismScales(modelConfig, devices, deviceIndex);
-		const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, dtypeSize);
+		// KV cache entries are stored at fp16 by every mainstream runtime
+		// regardless of weight quantization; only explicit KV compression
+		// (the TurboQuant modes) shrinks them.
+		const kvCacheDtypeSize = 2;
+		const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, kvCacheDtypeSize);
 		const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
 		const kvHeads = getKVHeads(modelConfig);
-		const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength * 
-			(modelConfig.hiddenSize / modelConfig.numHeads) * 
-			kvHeads * dtypeSize;
+		const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength *
+			(modelConfig.hiddenSize / modelConfig.numHeads) *
+			kvHeads * kvCacheDtypeSize;
 		const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers * architectureProfile.kvCacheMultiplier * kvCompressionProfile.kvByteMultiplier;
 		const intermediateSize = modelConfig.intermediateSize || (4 * modelConfig.hiddenSize);
-		const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength * 
+		const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength *
 			(modelConfig.hiddenSize + intermediateSize * 0.35) * dtypeSize * architectureProfile.activationMultiplier;
-		const activationMemory = activationSizePerLayer * modelConfig.numLayers;
-		const attentionMemory = modelConfig.batchSize * (modelConfig.seqLength ** 2) * 
-			modelConfig.numHeads * dtypeSize * architectureProfile.attentionMemoryMultiplier;
+		// Inference reuses activation buffers layer to layer: only a couple of
+		// layers are ever in flight, unlike training which keeps all of them
+		// for the backward pass. Traffic still touches every layer once.
+		const activationWorkingSetLayers = Math.min(modelConfig.numLayers, 2);
+		const activationMemory = activationSizePerLayer * activationWorkingSetLayers;
+		const activationTrafficMemory = activationSizePerLayer * modelConfig.numLayers;
+		// Flash/tiled attention (every modern runtime) never materializes the
+		// S x S score matrix in device memory; the workspace is linear in
+		// sequence length (Q/O tiles plus softmax statistics).
+		const attentionMemory = modelConfig.batchSize * modelConfig.seqLength *
+			modelConfig.hiddenSize * 2 * dtypeSize * architectureProfile.attentionMemoryMultiplier;
 
 		const adjustedParamsMemory = paramsMemory * parallelScales.residentScale;
 		const adjustedKVCacheMemory = kvCacheMemory * parallelScales.kvScale;
 		const adjustedActivationMemory = activationMemory * parallelScales.activationScale;
+		const adjustedActivationTrafficMemory = activationTrafficMemory * parallelScales.activationScale;
 		const adjustedAttentionMemory = attentionMemory * parallelScales.activationScale;
 
 		return {
 			paramsMemory: adjustedParamsMemory,
 			kvCacheMemory: adjustedKVCacheMemory,
 			activationMemory: adjustedActivationMemory,
+			activationTrafficMemory: adjustedActivationTrafficMemory,
 			attentionMemory: adjustedAttentionMemory,
-			total: adjustedParamsMemory + adjustedKVCacheMemory + 
+			total: adjustedParamsMemory + adjustedKVCacheMemory +
 				   adjustedActivationMemory + adjustedAttentionMemory
 		};
 	}
@@ -6813,7 +6874,10 @@ const DEVICE_TEMPLATES = {
 
         function calculateDecodeKVCacheBytes(modelConfig, dtypeSize, kvScale = 1) {
             const architectureProfile = getArchitectureProfile(modelConfig);
-            const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, dtypeSize);
+            // KV cache lives at fp16 regardless of weight quantization; see
+            // calculateMemoryBreakdown. Explicit KV compression still applies.
+            const kvCacheDtypeSize = 2;
+            const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, kvCacheDtypeSize);
             const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
             const seqLength = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
             const hiddenSize = Math.max(parseFloat(modelConfig.hiddenSize) || 1, 1);
@@ -6827,7 +6891,7 @@ const DEVICE_TEMPLATES = {
                 seqLength *
                 headDim *
                 kvHeads *
-                dtypeSize *
+                kvCacheDtypeSize *
                 numLayers *
                 architectureProfile.kvCacheMultiplier *
                 architectureProfile.decodeAttentionMultiplier *
@@ -7723,33 +7787,6 @@ const DEVICE_TEMPLATES = {
 	    localStorage.setItem('savedDevices', JSON.stringify(devices));
 	}
 	
-	// Add a new empty device with a default template
-	function addDevice() {
-	    const newId = devices.length > 0 ? Math.max(...devices.map(d => d.id)) + 1 : 1;
-	    const selectedDevice = getSelectedDevice();
-	    const defaultTemplate = selectedDevice?.template && DEVICE_TEMPLATES[selectedDevice.template]
-            ? selectedDevice.template
-            : 'RTX 5090';
-	    const newDevice = {
-	        id: newId,
-	        ...JSON.parse(JSON.stringify(DEVICE_TEMPLATES[defaultTemplate])),
-	        template: defaultTemplate,
-	        name: `Device ${newId}`,
-            ...(selectedDevice ? {
-                memoryGB: selectedDevice.memoryGB,
-                localBandwidthGBps: selectedDevice.localBandwidthGBps,
-                networkBandwidthGBps: selectedDevice.networkBandwidthGBps,
-                interconnectType: selectedDevice.interconnectType,
-                computeTFlops: JSON.parse(JSON.stringify(selectedDevice.computeTFlops || DEVICE_TEMPLATES[defaultTemplate].computeTFlops))
-            } : {})
-	    };
-	    devices.push(newDevice);
-        selectedDeviceId = newId;
-	    updateDeviceDisplay();
-	    updateSystemAnalysis();
-	    saveDevices();
-	}
-
 	// Load scenario preset configurations
 	function loadScenarioPreset(scenario) {
 	    if (!scenario) return;
@@ -8008,20 +8045,6 @@ const DEVICE_TEMPLATES = {
 	    saveDevices();
 	}
 	
-	// Remove a device
-	function removeDevice(id) {
-	    if (devices.length > 1) {
-	        const removedIndex = devices.findIndex(d => d.id === id);
-	        devices = devices.filter(d => d.id !== id);
-            if (selectedDeviceId === id) {
-                selectedDeviceId = devices[Math.max(0, Math.min(removedIndex, devices.length - 1))]?.id || null;
-            }
-	        updateDeviceDisplay();
-	        updateSystemAnalysis();
-	        saveDevices();
-	    }
-	}
-	
 	// Device library management
 	function saveToLibrary(id) {
 	    const device = devices.find(d => d.id === id);
@@ -8087,18 +8110,9 @@ const DEVICE_TEMPLATES = {
 				const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex);
 				const prefillMemoryBreakdown = calculateMemoryBreakdown(prefillConfig, dtypeSize, deviceCount, isPipeline, deviceIndex);
 				const networkTraffic = calculateNetworkTraffic(prefillConfig, dtypeSize, deviceCount, isPipeline);
-				const deviceTflops = getDeviceComputeTflops(device, modelConfig.quantizationType);
-				
-				const quantSpeedFactor = {
-					'float32': 0.5,
-					'bfloat16': 1.0,
-					'float16': 1.0,
-					'int8': 1.2,
-					'fp8': 1.1,
-					'q4': 1.45
-				}[modelConfig.quantizationType] || 1.0;
+				const deviceTflops = getComputationPrecisionTflops(device, modelConfig, frameworkProfile.key);
 
-				const totalPrefillFlops = calculateTransformerFlops(prefillConfig) / (deviceCount * quantSpeedFactor);
+				const totalPrefillFlops = calculateTransformerFlops(prefillConfig) / deviceCount;
 				const theoreticalPrefillComputeTime = totalPrefillFlops / (deviceTflops * 1e12);
 
 
@@ -8112,23 +8126,31 @@ const DEVICE_TEMPLATES = {
 				const totalPrefillMemoryTraffic = optimization.prefillTrafficMultiplier * memoryTrafficScale * (
 					prefillMemoryBreakdown.paramsMemory +
 					(2 * prefillMemoryBreakdown.kvCacheMemory) +
-					(1 * prefillMemoryBreakdown.activationMemory) +
+					(1 * prefillMemoryBreakdown.activationTrafficMemory) +
 					(1 * prefillMemoryBreakdown.attentionMemory)
 				);
 
-				const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic /
-					(Math.max(device.localBandwidthGBps * frameworkProfile.bandwidthEfficiency, 1) * 1e9);
+				// Overflow-aware bandwidth: when weights spill past device memory,
+				// prefill streams them at the same harmonic-mean bandwidth decode does.
+				const tokenRateInfo = calculateDecodeTokenRate(device, modelConfig, dtypeSize, devices, deviceIndex);
 
-				// Include network time in actual execution time
-				// Prefill overhead accounts for kernel launch, memory access patterns, etc.
+				const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic /
+					(Math.max(tokenRateInfo.effectiveBandwidthGBps * frameworkProfile.bandwidthEfficiency, 1) * 1e9);
+
+				// prefillEfficiency is the sustained fraction of peak tensor
+				// throughput real prefill kernels achieve (measured 0.22-0.34);
+				// it applies to the compute term only. Bandwidth and network
+				// terms already carry their own efficiency factors.
+				const effectivePrefillComputeTime = theoreticalPrefillComputeTime /
+					Math.max(frameworkProfile.prefillEfficiency * optimization.prefillMultiplier, 0.05);
 				const actualPrefillTime = Math.max(
-					theoreticalPrefillComputeTime,
+					effectivePrefillComputeTime,
 					prefillBandwidthLimitedTime,
 					networkTime
-				) / Math.max(frameworkProfile.prefillEfficiency * optimization.prefillMultiplier, 0.25);
+				);
 
 				// Calculate utilizations
-				const prefillComputeUtilization = (theoreticalPrefillComputeTime / actualPrefillTime) * 100;
+				const prefillComputeUtilization = (effectivePrefillComputeTime / actualPrefillTime) * 100;
 				const prefillLocalBandwidthUtilization = (prefillBandwidthLimitedTime / actualPrefillTime) * 100;
 				const networkBandwidthUtilization = (networkTime / actualPrefillTime) * 100;
 				const memoryUtilization = (memoryBreakdown.total / (device.memoryGB * 1e9)) * 100;
@@ -8147,8 +8169,6 @@ const DEVICE_TEMPLATES = {
 				const theoreticalDecodeTime = decodeFlops / (deviceTflops * 1e12);
 				const decodeCoordinationTime = calculateDecodeCoordinationTimeSeconds(modelConfig, devices);
 
-				// NEW: Calculate overflow-aware token rate using the new bandwidth model
-				const tokenRateInfo = calculateDecodeTokenRate(device, modelConfig, dtypeSize, devices, deviceIndex);
 				const localDecodeTime = tokenRateInfo.tokensPerSecond > 0
 					? 1 / tokenRateInfo.tokensPerSecond
 					: Infinity;
@@ -8156,13 +8176,38 @@ const DEVICE_TEMPLATES = {
 				const decodeBandwidthLimitedTime = tokenRateInfo.accessedModelSizeBytes /
 					(Math.max(device.localBandwidthGBps * frameworkProfile.bandwidthEfficiency, 1) * 1e9);
 				const rawPrefillTokensPerSecond = modelConfig.batchSize * tokenLengths.promptTokens / actualPrefillTime;
-				const maxPrefillToDecodeRatio = Math.min(32, 4 + (Math.log2(tokenLengths.promptTokens || 1) * 2.5));
 				const decodeTokensPerSecond = Number.isFinite(actualDecodeTime) && actualDecodeTime > 0
 					? 1 / actualDecodeTime
 					: 0;
-				const prefillTokensPerSecond = decodeTokensPerSecond > 0
-					? Math.min(rawPrefillTokensPerSecond, decodeTokensPerSecond * maxPrefillToDecodeRatio)
-					: rawPrefillTokensPerSecond;
+				// No artificial prefill/decode ratio cap: the compute-precision
+				// model and measured kernel efficiencies bound prefill honestly.
+				const prefillTokensPerSecond = rawPrefillTokensPerSecond;
+
+				// Per-token decode time budget: where each millisecond goes.
+				// Memory reads split between weights and KV by their byte share;
+				// GEMV compute overlaps the reads and is reported as busy-%.
+				const memoryMsPerToken = Number.isFinite(localDecodeTime) ? localDecodeTime * 1000 : 0;
+				const accessedGB = Math.max(tokenRateInfo.activeModelSizeGB || 0, 1e-9);
+				const weightShareOfReads = Math.min(1, (tokenRateInfo.activeWeightSizeGB || 0) / accessedGB);
+				const decodeTimeBreakdown = {
+					weightReadMs: memoryMsPerToken * weightShareOfReads,
+					kvReadMs: memoryMsPerToken * (1 - weightShareOfReads),
+					coordinationMs: decodeCoordinationTime * 1000,
+					totalMs: Number.isFinite(actualDecodeTime) ? actualDecodeTime * 1000 : Infinity,
+					computeBusyPct: Number.isFinite(actualDecodeTime) && actualDecodeTime > 0
+						? Math.min(100, (theoreticalDecodeTime / actualDecodeTime) * 100)
+						: 0,
+					hasOverflow: tokenRateInfo.hasOverflow
+				};
+				const prefillTimeBreakdown = {
+					computeSeconds: effectivePrefillComputeTime,
+					bandwidthSeconds: prefillBandwidthLimitedTime,
+					networkSeconds: networkTime,
+					totalSeconds: actualPrefillTime,
+					binding: actualPrefillTime === effectivePrefillComputeTime
+						? 'compute'
+						: (actualPrefillTime === prefillBandwidthLimitedTime ? 'bandwidth' : 'network')
+				};
 
 				// Check if this is an image generation model
 				const isImageGen = modelConfig.isImageGen || architectureProfile.key === 'diffusion_transformer';
@@ -8197,6 +8242,8 @@ const DEVICE_TEMPLATES = {
 					decodeComputeUtilization: (theoreticalDecodeTime / actualDecodeTime) * 100,
 					decodeLocalBandwidthUtilization: (decodeBandwidthLimitedTime / actualDecodeTime) * 100,
 					decodeCoordinationTimeMs: decodeCoordinationTime * 1000,
+					decodeTimeBreakdown,
+					prefillTimeBreakdown,
 					decodeBottleneckFactor: Math.max(
 						theoreticalDecodeTime / actualDecodeTime,
 						decodeBandwidthLimitedTime / actualDecodeTime
@@ -8577,11 +8624,14 @@ const DEVICE_TEMPLATES = {
                     residentWeightsGB,
                     activeModelSizeGB,
                     kvCacheGB: metric.decodeKvCacheGB || 0,
-                    memoryUtilization
+                    memoryUtilization,
+                    layerRange,
+                    expertRange,
+                    metric
                 };
             });
 
-            const communication = {
+            const communication = count <= 1 ? 'Single device - no inter-device traffic' : {
                 pipeline: `${Math.max(0, count - 1)} activation ${count === 2 ? 'boundary' : 'boundaries'} per token`,
                 tensor: `${config.numLayers} collective steps per token across ${count} devices`,
                 expert: `${config.numLayers} router all-to-all steps; ${config.activeExperts} expert routes per token`,
@@ -8592,6 +8642,10 @@ const DEVICE_TEMPLATES = {
                 hybrid_tp_dp: `Independent replicas with ${tensorDegree}-way collectives inside each replica`
             }[strategy] || 'Single-device execution path';
 
+            const systemDecodeRate = metricsArray.length
+                ? calculateSystemRateFromDeviceRates(metricsArray.map(metric => metric.decodeTokensPerSecond), strategy, config.batchSize, devicesArray)
+                : null;
+
             return {
                 config,
                 strategy,
@@ -8599,8 +8653,210 @@ const DEVICE_TEMPLATES = {
                 composition,
                 totalWeightsGB,
                 activeWeightsGB,
-                communication
+                communication,
+                systemDecodeRate
             };
+        }
+
+        function formatMsCompact(ms) {
+            if (!Number.isFinite(ms)) return '—';
+            if (ms < 0.001) return '<1 µs';
+            if (ms < 1) return `${(ms * 1000).toFixed(0)} µs`;
+            if (ms < 100) return `${ms.toFixed(1)} ms`;
+            if (ms < 1000) return `${ms.toFixed(0)} ms`;
+            if (ms < 10000) return `${(ms / 1000).toFixed(2)} s`;
+            return `${(ms / 1000).toFixed(1)} s`;
+        }
+
+        function formatBytesCompact(bytes) {
+            if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+            if (bytes < 1024) return `${bytes.toFixed(0)} B`;
+            if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+            if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+            return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        }
+
+        function mapDeviceColorVar(index) {
+            return `var(--map-dev-${(index % 8) + 1})`;
+        }
+
+        // The layer strip: which layers, slices, experts, or replicas live on
+        // which device — the model drawn as a physical object across hardware.
+        function buildLayerStripHtml(plan) {
+            const { config, strategy, shards, composition } = plan;
+            const dtypeSize = DTYPE_SIZES[config.quantizationType] || 2;
+            const layerCount = Math.max(1, config.numLayers);
+
+            const legend = shards.map(shard => `
+                <span class="map-legend-item"><span class="map-legend-dot" style="background:${mapDeviceColorVar(shard.index)}"></span>${escapeHtml(shard.device.name || shard.device.template)}</span>
+            `).join('');
+
+            const crossChip = (left, right) => {
+                const bytesPerToken = config.hiddenSize * dtypeSize * Math.max(1, config.batchSize);
+                const linkGBps = Math.max(0.1, Math.min(left.device.networkBandwidthGBps || 0.1, right.device.networkBandwidthGBps || 0.1));
+                const microseconds = (bytesPerToken / (linkGBps * 1e9)) * 1e6;
+                return `<div class="map-cross" title="Activation handoff between ${escapeHtml(left.device.name || '')} and ${escapeHtml(right.device.name || '')}">
+                    <span class="map-cross-line" aria-hidden="true"></span>
+                    <span class="map-cross-label">${formatBytesCompact(bytesPerToken)}/token · ${microseconds < 1 ? '<1 µs' : `~${microseconds.toFixed(0)} µs`}</span>
+                </div>`;
+            };
+
+            let stripBody;
+            if (strategy === 'pipeline' || shards.length === 1) {
+                const segments = shards.map((shard, i) => {
+                    const range = shard.layerRange;
+                    const span = Math.max(1, range.end - range.start + 1);
+                    return `
+                        ${i > 0 ? crossChip(shards[i - 1], shard) : ''}
+                        <div class="map-strip-seg" style="flex-grow:${span}; background:${mapDeviceColorVar(shard.index)}"
+                             title="${escapeHtml(shard.device.name || '')}: layers ${range.start}-${range.end} (${span} of ${layerCount})">
+                            <span class="map-strip-seg-label">L${range.start}–${range.end}</span>
+                        </div>`;
+                }).join('');
+                stripBody = `
+                    <div class="map-strip-track" role="img" aria-label="Layer ownership: ${shards.map(s => `${s.device.name || 'device'} holds layers ${s.layerRange.start} to ${s.layerRange.end}`).join('; ')}">
+                        <div class="map-strip-cap">Embed</div>
+                        ${segments}
+                        <div class="map-strip-cap">LM head</div>
+                    </div>`;
+            } else if (strategy === 'expert') {
+                const expertSegments = shards.map((shard, i) => {
+                    const range = shard.expertRange;
+                    const span = Math.max(1, range.end - range.start + 1);
+                    return `<div class="map-strip-seg" style="flex-grow:${span}; background:${mapDeviceColorVar(shard.index)}"
+                        title="${escapeHtml(shard.device.name || '')}: experts ${range.start}-${range.end}">
+                        <span class="map-strip-seg-label">E${range.start}–${range.end}</span>
+                    </div>`;
+                }).join('');
+                stripBody = `
+                    <div class="map-strip-track is-replicated" role="img" aria-label="Attention and routers replicated on every device">
+                        <div class="map-strip-cap">Embed</div>
+                        <div class="map-strip-seg is-shared" style="flex-grow:${layerCount}">
+                            <span class="map-strip-seg-label">Attention + routers × ${layerCount} · on every device</span>
+                        </div>
+                        <div class="map-strip-cap">LM head</div>
+                    </div>
+                    <div class="map-strip-track" role="img" aria-label="Expert ownership: ${shards.map(s => `${s.device.name || 'device'} holds experts ${s.expertRange.start} to ${s.expertRange.end}`).join('; ')}">
+                        <div class="map-strip-cap">Experts</div>
+                        ${expertSegments}
+                    </div>`;
+            } else {
+                const rowNote = {
+                    tensor: index => `slice ${index + 1}/${shards.length} of every matrix · all ${layerCount} layers`,
+                    data: () => `full ${layerCount}-layer replica`,
+                    sequence: index => `sequence shard ${index + 1}/${shards.length} · weights replicated`,
+                    context: index => `context shard ${index + 1}/${shards.length} · weights replicated`
+                }[strategy] || (index => shards[index].assignment);
+                stripBody = shards.map(shard => `
+                    <div class="map-strip-track" role="img" aria-label="${escapeHtml(shard.device.name || 'device')}: ${escapeHtml(String(rowNote(shard.index)))}">
+                        <div class="map-strip-cap">${strategy === 'data' ? 'Replica' : 'Slice'} ${shard.index + 1}</div>
+                        <div class="map-strip-seg" style="flex-grow:${layerCount}; background:${mapDeviceColorVar(shard.index)}">
+                            <span class="map-strip-seg-label">${escapeHtml(String(rowNote(shard.index)))}</span>
+                        </div>
+                    </div>`).join('');
+            }
+
+            const compositionNote = config.isMoE
+                ? `<span class="map-strip-note">${composition.denseParamsB.toFixed(1)}B always-on spine (attention + routers) + ${composition.expertParamsB.toFixed(0)}B expert pool; ${getActiveParamsB(config).toFixed(1)}B touched per token.</span>`
+                : `<span class="map-strip-note">${config.totalParamsB}B dense — every parameter is read for every token.</span>`;
+
+            return `
+                <div class="map-section">
+                    <div class="diagram-title-row"><strong>Layer map</strong><span>${layerCount} layers · ${config.hiddenSize.toLocaleString()} wide</span></div>
+                    ${stripBody}
+                    <div class="map-legend">${legend}${compositionNote}</div>
+                </div>`;
+        }
+
+        // The per-token decode time waterfall: where each millisecond goes,
+        // per device, on a shared time scale so stragglers are visible.
+        function buildDecodeWaterfallHtml(plan) {
+            const { strategy, shards } = plan;
+            const lanes = shards.filter(shard => shard.metric && shard.metric.decodeTimeBreakdown);
+            if (!lanes.length) return '';
+
+            const maxTotalMs = Math.max(...lanes.map(shard => {
+                const b = shard.metric.decodeTimeBreakdown;
+                return Number.isFinite(b.totalMs) ? b.totalMs : 0;
+            }), 1e-6);
+
+            const laneHtml = lanes.map(shard => {
+                const b = shard.metric.decodeTimeBreakdown;
+                const pct = value => Math.max(0, (value / maxTotalMs) * 100);
+                const seg = (cls, ms, label) => ms / maxTotalMs > 0.005
+                    ? `<span class="wf-seg ${cls}" style="width:${pct(ms).toFixed(2)}%" title="${label}: ${formatMsCompact(ms)}"></span>`
+                    : '';
+                const rate = shard.metric.decodeTokensPerSecond;
+                return `
+                    <div class="wf-lane">
+                        <span class="wf-lane-name"><span class="map-legend-dot" style="background:${mapDeviceColorVar(shard.index)}"></span>${escapeHtml(shard.device.name || shard.device.template)}</span>
+                        <span class="wf-bar" role="img" aria-label="${escapeHtml(shard.device.name || 'device')}: ${formatMsCompact(b.weightReadMs)} weight reads, ${formatMsCompact(b.kvReadMs)} KV reads, ${formatMsCompact(b.coordinationMs)} sync; ${formatMsCompact(b.totalMs)} per token">
+                            ${seg('is-weights', b.weightReadMs, 'Weight reads')}
+                            ${seg('is-kv', b.kvReadMs, 'KV-cache reads')}
+                            ${seg('is-sync', b.coordinationMs, 'Cross-device sync')}
+                        </span>
+                        <span class="wf-meta">${formatMsCompact(b.totalMs)} → <strong>${formatTokenRate(rate)}</strong>${b.hasOverflow ? ' · <em>overflowing</em>' : ''}</span>
+                    </div>`;
+            }).join('');
+
+            const aggregation = {
+                pipeline: lanes.length > 1 ? 'Stages run in series: one token pays every lane in turn.' : '',
+                tensor: 'Lanes run in lockstep: the slowest lane plus sync sets the pace.',
+                expert: 'Token routes touch a subset of lanes; the busiest expert owner sets the pace.',
+                data: 'Replicas serve separate requests: rates add for throughput, not per-request speed.'
+            }[strategy] || '';
+            const systemLine = Number.isFinite(plan.systemDecodeRate)
+                ? `<div class="wf-system">${aggregation} System decode: <strong>${formatTokenRate(plan.systemDecodeRate)}</strong></div>`
+                : (aggregation ? `<div class="wf-system">${aggregation}</div>` : '');
+
+            const busiest = lanes.reduce((best, shard) => {
+                const t = shard.metric.prefillTimeBreakdown?.totalSeconds || 0;
+                return t > (best.metric.prefillTimeBreakdown?.totalSeconds || 0) ? shard : best;
+            }, lanes[0]);
+            const pb = busiest.metric.prefillTimeBreakdown;
+            const bindingLabel = { compute: 'compute-bound', bandwidth: 'memory-bandwidth-bound', network: 'network-bound' }[pb?.binding] || '';
+            const prefillLine = pb ? `
+                <div class="wf-prefill">Prompt phase is <strong>${bindingLabel}</strong>
+                    <span class="wf-prefill-chips">
+                        <span class="${pb.binding === 'compute' ? 'is-binding' : ''}">compute ${formatMsCompact(pb.computeSeconds * 1000)}</span>
+                        <span class="${pb.binding === 'bandwidth' ? 'is-binding' : ''}">memory ${formatMsCompact(pb.bandwidthSeconds * 1000)}</span>
+                        <span class="${pb.binding === 'network' ? 'is-binding' : ''}">network ${formatMsCompact(pb.networkSeconds * 1000)}</span>
+                    </span>
+                </div>` : '';
+
+            const busyPct = Math.max(...lanes.map(shard => shard.metric.decodeTimeBreakdown.computeBusyPct || 0));
+            const tableRows = lanes.map(shard => {
+                const b = shard.metric.decodeTimeBreakdown;
+                return `<tr>
+                    <td>${escapeHtml(shard.device.name || shard.device.template)}</td>
+                    <td>${formatMsCompact(b.weightReadMs)}</td>
+                    <td>${formatMsCompact(b.kvReadMs)}</td>
+                    <td>${formatMsCompact(b.coordinationMs)}</td>
+                    <td>${formatMsCompact(b.totalMs)}</td>
+                    <td>${formatTokenRate(shard.metric.decodeTokensPerSecond)}</td>
+                </tr>`;
+            }).join('');
+
+            return `
+                <div class="map-section">
+                    <div class="diagram-title-row"><strong>One decode step, millisecond by millisecond</strong><span>The widest band is the direction to optimize</span></div>
+                    <div class="map-wf">${laneHtml}</div>
+                    <div class="wf-legend">
+                        <span class="map-legend-item"><span class="wf-key is-weights"></span>Weight reads</span>
+                        <span class="map-legend-item"><span class="wf-key is-kv"></span>KV-cache reads</span>
+                        <span class="map-legend-item"><span class="wf-key is-sync"></span>Cross-device sync</span>
+                        <span class="map-legend-item wf-overlap-note">GEMV compute overlaps the reads (${busyPct < 1 ? '<1' : busyPct.toFixed(busyPct < 10 ? 1 : 0)}% busy)</span>
+                    </div>
+                    ${systemLine}
+                    ${prefillLine}
+                    <details class="map-table-view">
+                        <summary>View as table</summary>
+                        <table>
+                            <thead><tr><th scope="col">Device</th><th scope="col">Weight reads</th><th scope="col">KV reads</th><th scope="col">Sync</th><th scope="col">Total/token</th><th scope="col">Decode</th></tr></thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </details>
+                </div>`;
         }
 
         function buildExecutionMapHtml(plan, evidenceRows = []) {
@@ -8778,13 +9034,16 @@ const DEVICE_TEMPLATES = {
                     <span class="execution-chip"><strong>${plan.totalWeightsGB.toFixed(1)} GB</strong> quantized weights</span>
                     <span class="execution-chip"><strong>${plan.communication}</strong></span>
                 </div>
+                ${buildLayerStripHtml(plan)}
+                ${buildDecodeWaterfallHtml(plan)}
+                ${shards.length > 1 ? `
                 <div class="strategy-diagram">
                     <div class="diagram-title-row">
                         <strong>${strategyCopy.title}</strong>
                         <span>${plan.communication}</span>
                     </div>
                     ${strategyDiagram}
-                </div>
+                </div>` : ''}
                 <div class="evidence-panel">
                     <div class="evidence-lead">
                         <strong>${exactEvidence ? 'Measured comparison available' : 'Estimate - validate before buying'}</strong>
@@ -8853,7 +9112,7 @@ const DEVICE_TEMPLATES = {
                 const device = devices[idx];
                 systemAnalysisHtml += `
                     <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background); border-radius: var(--radius); border: 1px solid var(--border);">
-                        <h3 style="margin-top: 0;">${m.name}</h3>
+                        <h3 style="margin-top: 0;">${escapeHtml(m.name)}</h3>
                         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
                             Framework: ${m.framework} | Resident Weights: ${m.modelSizeGB ? m.modelSizeGB.toFixed(1) : 'N/A'} GB | Active Weights: ${m.activeModelSizeGB ? m.activeModelSizeGB.toFixed(1) : 'N/A'} GB | Device Memory: ${device.memoryGB} GB
                         </div>
@@ -9057,7 +9316,7 @@ const DEVICE_TEMPLATES = {
                 let powerCostHtml = '';
                 if (!isImageGen && systemRate > 0) {
                     powerCostHtml = `
-                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24; border-radius: 6px;">
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(251, 191, 36, 0.07); border: 1px solid var(--border); border-radius: 6px;">
                             <div style="color: #fbbf24; font-weight: 600; margin-bottom: 0.5rem;">
                                 ⚡ Power & Cost Estimate
                             </div>
@@ -9087,7 +9346,7 @@ const DEVICE_TEMPLATES = {
                 let benchmarkHtml = '';
                 if (benchmarkMatches.length > 0) {
                     benchmarkHtml = `
-                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(96, 165, 250, 0.08); border: 1px solid #60a5fa; border-radius: 6px;">
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(96, 165, 250, 0.06); border: 1px solid var(--border); border-radius: 6px;">
                             <div style="color: #60a5fa; font-weight: 600; margin-bottom: 0.5rem;">
                                 Benchmark References
                             </div>
@@ -9107,7 +9366,7 @@ const DEVICE_TEMPLATES = {
                 let benchmarkAlignmentHtml = '';
                 if (benchmarkAlignment.length > 0) {
                     benchmarkAlignmentHtml = `
-                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(34, 197, 94, 0.08); border: 1px solid #22c55e; border-radius: 6px;">
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(34, 197, 94, 0.06); border: 1px solid var(--border); border-radius: 6px;">
                             <div style="color: #22c55e; font-weight: 600; margin-bottom: 0.5rem;">
                                 Benchmark Alignment
                             </div>
@@ -9152,13 +9411,26 @@ const DEVICE_TEMPLATES = {
                 const currentCalibration = !isImageGen ? calculateCurrentCalibration(modelConfig, metrics, systemRate, parallelism) : null;
                 const rateNum = currentCalibration ? formatCompactRate(currentCalibration.expectedTokS) : rateParts[0];
                 const rateUnits = currentCalibration ? 'tok/s' : (rateParts.slice(1).join(' ') || (isImageGen ? 'img/s' : 'tok/s'));
-                const calibrationSummaryHtml = currentCalibration ? `
-                    <div class="calibration-strip">
-                        <div><span>Ideal ceiling</span><strong>${formatCompactRate(currentCalibration.idealTokS)} tok/s</strong></div>
-                        <div><span>Generic engine model</span><strong>${formatCompactRate(currentCalibration.genericTokS)} tok/s</strong></div>
-                        <div><span>Reality factor</span><strong>${(currentCalibration.realityFactor * 100).toFixed(0)}%</strong></div>
-                        <div><span>Evidence</span><strong>${currentCalibration.peers} peers · ${currentCalibration.confidence}</strong></div>
-                    </div>` : '';
+                const nearestMeasured = benchmarkAlignment.length > 0 ? benchmarkAlignment[0] : null;
+                const calibrationSummaryHtml = currentCalibration ? (() => {
+                    const ceiling = Math.max(currentCalibration.idealTokS, 1e-9);
+                    const rung = (cls, label, value, note) => `
+                        <div class="ladder-row">
+                            <span class="ladder-label">${label}</span>
+                            <span class="ladder-bar"><span class="ladder-fill ${cls}" style="width:${Math.min(100, (value / ceiling) * 100).toFixed(1)}%"></span></span>
+                            <span class="ladder-value"><strong>${formatCompactRate(value)}</strong> tok/s${note ? ` <span class="ladder-note">${note}</span>` : ''}</span>
+                        </div>`;
+                    return `
+                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: hardware ceiling ${formatCompactRate(currentCalibration.idealTokS)}, engine model ${formatCompactRate(currentCalibration.genericTokS)}, expected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second">
+                        <div class="ladder-title">Nothing above the ceiling is physically possible; software tuning moves you between the rungs.</div>
+                        ${rung('is-ceiling', 'Hardware ceiling', currentCalibration.idealTokS, 'bandwidth ÷ bytes/token, perfect software')}
+                        ${rung('is-engine', 'Engine model', currentCalibration.genericTokS, 'your framework and settings')}
+                        ${rung('is-expected', 'Expected real', currentCalibration.expectedTokS, `${currentCalibration.peers} peers · ${currentCalibration.confidence} confidence`)}
+                        ${nearestMeasured && Number.isFinite(nearestMeasured.referenceRate)
+                            ? rung('is-measured', 'Nearest measured', nearestMeasured.referenceRate, escapeHtml(`${nearestMeasured.model} · ${nearestMeasured.hardware}`))
+                            : ''}
+                    </div>`;
+                })() : '';
                 const phaseSummaryHtml = (!isImageGen && workflowSummary) ? `
                     <div class="phase-summary-grid">
                         <div class="phase-summary-card">
@@ -9755,7 +10027,7 @@ const DEVICE_TEMPLATES = {
 	    
 	    // Create custom library options
 	    const libraryOptions = deviceLibrary.map(device => 
-	        `<option value="lib_${device.id}">${device.name}</option>`
+	        `<option value="lib_${device.id}">${escapeHtml(device.name)}</option>`
 	    ).join('');
 	    
 	    devicesContainer.innerHTML = devices.map(device => {
@@ -9791,7 +10063,7 @@ const DEVICE_TEMPLATES = {
 	            </select>
 	            <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.25rem;">Label (for your reference)</label>
 	            <div class="device-name-row">
-	                <input class="input device-name-input" title="Rename this device (label only)" value="${device.name}"
+	                <input class="input device-name-input" title="Rename this device (label only)" value="${escapeHtml(device.name)}"
 	                       onchange="updateDevice(${device.id}, 'name', this.value)">
 	                <div class="device-actions">
 	                    <button class="icon-button"
@@ -9903,7 +10175,7 @@ const DEVICE_TEMPLATES = {
 	                        <option value="ddr5" ${device.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 system RAM (~115 GB/s)</option>
 	                        ${devices.filter(d => d.id !== device.id).map(d =>
 	                            `<option value="${d.id}" ${device.overflowTarget === d.id ? 'selected' : ''}>
-	                                ${d.name} (via PCIe)
+	                                ${escapeHtml(d.name)} (via PCIe)
 	                            </option>`
 	                        ).join('')}
 	                    </select>
@@ -10127,7 +10399,7 @@ const DEVICE_TEMPLATES = {
                         </div>
                         ${metrics.filter(m => m.isBottleneck).map(m => `
                             <div style="margin-left: 1rem;">
-                                • ${m.name}:
+                                • ${escapeHtml(m.name)}:
                                 ${m.memoryUtilization > 100 ?
                     ` Requires ${(m.memoryUtilization / 100).toFixed(1)}x more memory` : ''}
                                 ${m.localBandwidthUtilization > 100 ?

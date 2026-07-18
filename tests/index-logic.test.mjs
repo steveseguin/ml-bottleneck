@@ -90,7 +90,7 @@ test('effective config keeps user overrides on top of preset defaults', () => {
 
   assert.equal(modelConfig.totalParamsB, 9);
   assert.equal(modelConfig.numKVHeads, 6);
-  assert.equal(modelConfig.hiddenSize, 3072);
+  assert.equal(modelConfig.hiddenSize, 4096);
 });
 
 test('new Qwen, Kimi, GLM, and MiniMax presets carry routing and attention metadata', () => {

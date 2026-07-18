@@ -6,22 +6,21 @@ A powerful web-based tool for analyzing hardware bottlenecks in machine learning
 
 ## ✨ Key Features
 
-- 📊 Real-time visualization of system bottlenecks
+- 🗺️ **Model Map**: layer strip showing exactly which layers, tensor slices, experts, or replicas live on each device
+- ⏱️ **Per-token time waterfall**: where each decode millisecond goes (weight reads / KV reads / cross-device sync) — the widest band is the direction to optimize
+- 🪜 **Ceiling ladder**: hardware ceiling → engine model → expected real → nearest measured run, so predictions never overpromise past physics
 - 🧠 Model execution map showing attention, MoE routing, active experts, and MTP
-- 🧩 Per-device layer, tensor, expert, and replica shard visualization
-- 🎯 Precise token rate estimation
-- 🔄 Support for pipeline and tensor parallelism
-- 💾 Advanced memory usage analysis
-- 🖥️ Multi-device configuration support
-- ⚡ Bandwidth and compute utilization metrics
-- 📱 Responsive design for all devices
-- 🌐 No installation required - runs in browser!
-- 📏 Measured-evidence links and clearly labeled prediction confidence
+- 🎯 Benchmark-calibrated token rate estimation (prefill and decode modeled separately, with honest computation-precision physics)
+- 🔄 Pipeline, tensor, expert, data, and hybrid parallelism — plus AUTO strategy search
+- 💾 Memory fit analysis with fp16 KV cache, GQA/MLA awareness, and overflow modeling
+- 📏 Measured-evidence links (Localmaxxing snapshot) and clearly labeled prediction confidence
+- 🖥️ Multi-device, heterogeneous hardware support
+- 📱 Responsive design; runs entirely in your browser
 
 ## 🎮 Quick Start
 
 1. Visit [MLBottleneck.com](https://mlbottleneck.com)
-2. Or download `index.html` to run locally
+2. Or clone the repo and serve it with any static server (`index.html` loads the benchmark snapshot from `data/`)
 3. Configure your model parameters
 4. Add devices to analyze
 5. Get instant insights! 
