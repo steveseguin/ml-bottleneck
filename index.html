@@ -2414,10 +2414,17 @@ td {
     border: 1px dashed rgba(45, 212, 191, 0.38);
     border-radius: 10px;
     background: rgba(45, 212, 191, 0.04);
-    padding: 0.8rem;
+    overflow: hidden;
 }
 
-.hf-import label { margin: 0; color: var(--text); }
+.hf-import > summary { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.72rem 0.8rem; cursor: pointer; list-style: none; }
+.hf-import > summary::-webkit-details-marker { display: none; }
+.hf-import > summary::after { content: '+'; flex: 0 0 auto; color: var(--primary); font-size: 1rem; }
+.hf-import[open] > summary::after { content: '−'; }
+.hf-import > summary strong { color: var(--text); font-size: 0.72rem; }
+.hf-import > summary span { color: var(--text-secondary); font-size: 0.62rem; }
+.hf-import-content { padding: 0 0.8rem 0.8rem; border-top: 1px dashed rgba(45, 212, 191, 0.25); }
+.hf-import label { margin-top: 0.7rem; color: var(--text); }
 .hf-import p { margin: 0.12rem 0 0.65rem; color: var(--text-secondary); font-size: 0.7rem; }
 .hf-import-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
 .hf-import-row .input,
@@ -2767,6 +2774,14 @@ body {
 .planner-controls h2 { font-size: 1.05rem; }
 .planner-controls label { font-size: 0.72rem; }
 .planner-controls .input, .planner-controls select { margin-bottom: 0.7rem; }
+.planner-input-card { min-width: 0; }
+.planner-input-summary,
+.mobile-execution-summary { display: none; }
+.planner-input-summary-copy { min-width: 0; }
+.planner-input-summary-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.planner-input-summary-action::after { content: 'Edit'; }
+details[open] > .planner-input-summary .planner-input-summary-action::after,
+details[open] > .mobile-execution-summary .planner-input-summary-action::after { content: 'Done'; }
 .planner-stage { min-width: 0; }
 .planner-stage > .card { margin-bottom: 1rem; }
 .execution-card { min-height: 28rem; }
@@ -2774,6 +2789,7 @@ body {
 .results-card #alerts .alert { padding: 0.78rem 0.9rem; margin-bottom: 0.75rem; }
 .results-card #alerts .alert > div:first-child { margin-bottom: 0.25rem !important; font-size: 0.76rem; }
 .results-card #alerts .alert > div:not(:first-child) { margin-left: 0 !important; font-size: 0.71rem; line-height: 1.45; }
+.mobile-calibration-summary { display: none; }
 .ceiling-ladder { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--border); display: grid; gap: 0.4rem; --ladder-1: #86b6ef; --ladder-2: #5598e7; --ladder-3: #2a78d6; }
 @media (prefers-color-scheme: dark) {
     .ceiling-ladder { --ladder-1: #6da7ec; --ladder-2: #3987e5; --ladder-3: #256abf; }
@@ -2980,11 +2996,70 @@ body {
 
 @media (max-width: 620px) {
     .data-freshness { display: none; }
-    .product-nav { grid-template-columns: 1fr; }
-    .workspace-tabs { grid-column: auto; }
-    .workspace-tab { flex: 0 0 auto; padding-inline: 0.7rem; }
-    .app-header { grid-template-columns: 1fr; }
-    .planner-controls > .grid { display: block; }
+    body { padding: 0.45rem 0.65rem 1.5rem; }
+    .product-nav { position: sticky; top: 0.3rem; grid-template-columns: auto minmax(0, 1fr); gap: 0.4rem; min-height: 3.2rem; padding: 0.3rem 0.35rem; border-radius: 0.75rem; }
+    .product-brand > span:last-child { display: none; }
+    .brand-mark { width: 2.05rem; height: 2.05rem; border-radius: 0.58rem; }
+    .workspace-tabs { grid-column: 2; order: initial; justify-content: flex-start; gap: 0; overflow-x: auto; padding: 0; scrollbar-width: none; }
+    .workspace-tabs::-webkit-scrollbar { display: none; }
+    .workspace-tab { flex: 0 0 auto; min-height: 2.5rem; padding: 0.48rem 0.43rem; border-radius: 0.52rem; font-size: 0.66rem; }
+    .app-header { display: block; margin: 0.7rem 0 0.6rem; }
+    .app-header h1 { margin: 0; font-size: 1.18rem; }
+    .app-subtitle,
+    .header-result { display: none; }
+    .planner-controls > .grid { display: block; margin: 0; }
+    .planner-controls > .grid > .card { margin: 0 0 0.5rem; }
+    .planner-shell { gap: 0.55rem; }
+    .planner-input-card { padding: 0 !important; overflow: hidden; }
+    .planner-input-summary,
+    .mobile-execution-summary { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; min-height: 3.8rem; padding: 0.65rem 0.75rem; cursor: pointer; list-style: none; }
+    .planner-input-summary::-webkit-details-marker,
+    .mobile-execution-summary::-webkit-details-marker { display: none; }
+    .planner-input-summary .eyebrow,
+    .mobile-execution-summary .eyebrow { margin-bottom: 0.12rem; font-size: 0.55rem; }
+    .planner-input-summary strong,
+    .mobile-execution-summary strong { font-size: 0.78rem; }
+    .planner-input-summary-action { flex: 0 0 auto; color: var(--primary); font-size: 0.65rem; font-weight: 700; }
+    .planner-input-body { padding: 0.75rem; border-top: 1px solid var(--border); }
+    .planner-input-title,
+    .hardware-card-head h2 { display: none; }
+    .hardware-card-head { min-height: 0; margin: 0; }
+    .hf-import:not([open]) { background: transparent; }
+    .hf-import > summary span { display: none; }
+    .results-card { min-height: 0; padding: 0.75rem; }
+    .results-card .section-heading { margin-bottom: 0.55rem; }
+    .results-card .approximate-badge { display: none; }
+    .result-hero { grid-template-columns: minmax(7rem, 0.78fr) minmax(0, 1.22fr); }
+    .result-hero-main,
+    .result-hero-side { padding: 0.68rem; }
+    .result-hero-side { border-top: 0; border-left: 1px solid var(--border); }
+    .result-hero .rate-label { font-size: 0; }
+    .result-hero .rate-label::before { content: 'Expected decode'; font-size: 0.58rem; }
+    .result-hero .rate-number { font-size: 2rem; }
+    .result-hero .rate-units { font-size: 0.78rem; }
+    .result-hero .bottleneck-line { padding: 0.35rem 0.5rem; font-size: 0.65rem; }
+    .result-hero .result-hero-meta { font-size: 0.62rem; }
+    .phase-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.3rem; margin-top: 0.45rem; }
+    .phase-summary-card { padding: 0.5rem 0.4rem; }
+    .phase-summary-label { margin-bottom: 0.15rem; font-size: 0.55rem; }
+    .phase-summary-value { font-size: 0.78rem; white-space: nowrap; }
+    .phase-summary-sub { display: none; }
+    .desktop-calibration-summary { display: none; }
+    .mobile-calibration-summary { display: block; margin-top: 0.55rem; border: 1px solid var(--border); border-radius: 0.6rem; background: color-mix(in srgb, var(--background) 72%, transparent); }
+    .mobile-calibration-summary > summary { padding: 0.65rem 0.7rem; cursor: pointer; color: var(--text-secondary); font-size: 0.67rem; font-weight: 650; }
+    .mobile-calibration-summary .ceiling-ladder { margin: 0; padding: 0.7rem; border-top: 1px solid var(--border); }
+    .details-disclosure { margin-top: 0.55rem !important; }
+    .execution-card { min-height: 0; padding: 0; }
+    .execution-card-content { padding: 0.75rem; border-top: 1px solid var(--border); }
+    .execution-card:not([open]) { background: color-mix(in srgb, var(--card) 82%, transparent); }
+    .topology-card .topology-sub,
+    .section-summary .summary-sub { display: none; }
+    .topology-card,
+    .utilization-card,
+    .reference-card { margin-top: 0.5rem; }
+    .topology-card > summary,
+    .utilization-card > summary,
+    .reference-card > summary { min-height: 3.4rem; padding: 0.65rem 0.75rem; }
     .catalog-toolbar { grid-template-columns: 1fr 1fr; }
     .catalog-summary { display: block; }
     .catalog-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0.65rem; }
@@ -3011,7 +3086,7 @@ body {
             <button class="workspace-tab" type="button" data-workspace="plan">Plan</button>
             <button class="workspace-tab" type="button" data-workspace="models">Models</button>
             <button class="workspace-tab" type="button" data-workspace="evidence">Evidence</button>
-            <button class="workspace-tab" type="button" data-workspace="explain">Explain a result</button>
+            <button class="workspace-tab" type="button" data-workspace="explain">Explain</button>
         </nav>
         <span class="data-freshness" id="dataFreshness">Loading evidence…</span>
     </header>
@@ -3058,8 +3133,13 @@ body {
     <div class="planner-shell">
     <aside class="planner-controls" aria-label="Deployment inputs">
     <div class="grid">
-        <div class="card">
-            <h2 style="margin-top: 0;">Model</h2>
+        <details class="card planner-input-card" id="modelInputCard" open>
+            <summary class="planner-input-summary">
+                <span class="planner-input-summary-copy"><span class="eyebrow">Model</span><strong id="mobileModelSummary">Llama3 8B · 4-bit</strong></span>
+                <span class="planner-input-summary-action" aria-hidden="true"></span>
+            </summary>
+            <div class="planner-input-body">
+            <h2 class="planner-input-title" style="margin-top: 0;">Model</h2>
             <div id="modelConfigContent">
                 <label for="modelSearch">Find a built-in model</label>
                 <input id="modelSearch" class="input" type="search" list="modelSearchOptions" placeholder="Search Llama, Qwen, MiniMax, GLM…" autocomplete="off">
@@ -3120,17 +3200,18 @@ body {
                     </select>
                 <div id="modelSpecNotice" class="model-spec-notice" hidden></div>
 
-                <div class="hf-import">
-                    <div>
-                        <label for="hfModelId">Or load any Hugging Face model</label>
-                        <p>Imports its public config, parameter count, attention shape, and MoE routing fields.</p>
-                    </div>
+                <details class="hf-import" id="hfImportDisclosure" open>
+                    <summary><strong>Load a Hugging Face model</strong><span>Use a model not listed above</span></summary>
+                    <div class="hf-import-content">
+                    <label for="hfModelId">Hugging Face model ID</label>
+                    <p>Imports its public config, parameter count, attention shape, and MoE routing fields.</p>
                     <div class="hf-import-row">
                         <input id="hfModelId" class="input" type="text" placeholder="org/model-name" spellcheck="false">
                         <button id="hfImportButton" class="button" type="button">Load model</button>
                     </div>
                     <div id="hfImportStatus" class="import-status" role="status"></div>
-                </div>
+                    </div>
+                </details>
                 <input id="hfId" type="hidden" value="">
 
                 <label for="quantizationType">Quantization</label>
@@ -3391,15 +3472,22 @@ body {
                     <option value="q4" selected>q4</option>
                 </select>
             </div>
-        </div>
+            </div>
+        </details>
 
-        <div class="card">
+        <details class="card planner-input-card" id="hardwareInputCard" open>
+            <summary class="planner-input-summary">
+                <span class="planner-input-summary-copy"><span class="eyebrow">Hardware</span><strong id="mobileHardwareSummary">NVIDIA RTX 5090 · 32 GB</strong></span>
+                <span class="planner-input-summary-action" aria-hidden="true"></span>
+            </summary>
+            <div class="planner-input-body">
             <div class="hardware-card-head">
                 <h2 style="margin: 0;">Hardware</h2>
                 <div id="hardwareHeadMeta" class="hardware-head-meta"></div>
             </div>
             <div id="devices"></div>
-        </div>
+            </div>
+        </details>
     </div>
     </aside>
 
@@ -3417,7 +3505,12 @@ body {
         <div id="systemAnalysis"></div>
     </div>
 
-    <section class="card execution-card" aria-labelledby="executionMapTitle">
+    <details class="card execution-card" aria-labelledby="executionMapTitle" open>
+        <summary class="mobile-execution-summary">
+            <span><span class="eyebrow">Execution</span><strong>How this runs on your hardware</strong></span>
+            <span class="planner-input-summary-action" aria-hidden="true"></span>
+        </summary>
+        <div class="execution-card-content">
         <div class="execution-head">
             <div>
                 <h2 id="executionMapTitle">Why: the model execution map</h2>
@@ -3426,7 +3519,8 @@ body {
             <div id="executionStrategyControls" class="execution-strategies" aria-label="Compare distribution layouts"></div>
         </div>
         <div id="executionMap" aria-live="polite"></div>
-    </section>
+        </div>
+    </details>
     </div>
     </div>
 
@@ -9579,6 +9673,41 @@ const DEVICE_TEMPLATES = {
 
         let _latestMetricsByDeviceId = new Map();
         let _topologyNodes = [];
+
+        function updatePlannerInputSummaries() {
+            const modelSummary = document.getElementById('mobileModelSummary');
+            const hardwareSummary = document.getElementById('mobileHardwareSummary');
+            if (modelSummary) {
+                const config = buildEffectiveModelConfig();
+                const label = config.label || getModelPresetLabel(config.modelPreset) || config.hfId || `${Number(config.totalParamsB || 0).toFixed(1)}B model`;
+                const quantLabel = document.getElementById('quantizationType')?.selectedOptions?.[0]?.textContent?.split('·')?.[0]?.trim() || String(config.quantizationType || '').toUpperCase();
+                modelSummary.textContent = `${label} · ${quantLabel}`;
+            }
+            if (hardwareSummary && devices.length) {
+                const totalMemory = devices.reduce((sum, device) => sum + (Number(device.memoryGB) || 0), 0);
+                const sameTemplate = devices.every(device => device.template === devices[0].template);
+                const baseName = String(devices[0].name || devices[0].template || 'Device').replace(/ #\d+$/, '');
+                const deviceLabel = devices.length === 1 ? baseName : (sameTemplate ? `${devices.length}× ${baseName}` : `${devices.length} devices`);
+                hardwareSummary.textContent = `${deviceLabel} · ${Number.isInteger(totalMemory) ? totalMemory : totalMemory.toFixed(1)} GB`;
+            }
+        }
+
+        function initializeMobilePlannerDisclosures() {
+            const isMobile = () => typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 620px)').matches;
+            const inputCards = [...document.querySelectorAll('.planner-input-card')];
+            if (isMobile()) {
+                inputCards.forEach(card => { card.open = false; });
+                const hfImport = document.getElementById('hfImportDisclosure');
+                const executionCard = document.querySelector('.execution-card');
+                if (hfImport) hfImport.open = false;
+                if (executionCard) executionCard.open = false;
+            }
+            inputCards.forEach(card => card.addEventListener('toggle', () => {
+                if (!card.open || !isMobile()) return;
+                inputCards.forEach(other => { if (other !== card) other.open = false; });
+            }));
+        }
+
         function updateSystemAnalysis() {
             const metrics = calculateMetrics();
             _latestMetricsByDeviceId = new Map();
@@ -9949,6 +10078,13 @@ const DEVICE_TEMPLATES = {
                         </div>
                     </div>
                 ` : '';
+                const responsiveCalibrationSummaryHtml = calibrationSummaryHtml ? `
+                    <div class="desktop-calibration-summary">${calibrationSummaryHtml}</div>
+                    <details class="mobile-calibration-summary">
+                        <summary>Speed ceiling &amp; nearest measurement</summary>
+                        ${calibrationSummaryHtml}
+                    </details>
+                ` : '';
 
                 systemAnalysisHtml += `
                     <div class="result-hero">
@@ -9962,7 +10098,7 @@ const DEVICE_TEMPLATES = {
                         </div>
                     </div>
                     ${phaseSummaryHtml}
-                    ${calibrationSummaryHtml}
+                    ${responsiveCalibrationSummaryHtml}
 
                     <details class="details-disclosure" style="margin-top: 1rem;">
                         <summary>Breakdown &amp; details</summary>
@@ -9998,6 +10134,7 @@ const DEVICE_TEMPLATES = {
                 const config = buildEffectiveModelConfig();
                 headerMeta.textContent = `${config.label || getModelPresetLabel(config.modelPreset) || config.hfId || `${config.totalParamsB.toFixed(1)}B model`} · ${devices.length} device${devices.length === 1 ? '' : 's'} · ${formatStrategyLabel(config.parallelismStrategy)}`;
             }
+            updatePlannerInputSummaries();
 
             // Update model summary in collapsed header
             if (typeof updateModelSummary === 'function') {
@@ -12265,6 +12402,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
         window.updateModelSummary = updateModelSummary;
 
 	document.addEventListener('DOMContentLoaded', function() {
+	    initializeMobilePlannerDisclosures();
 	    const modelPresetSelect = document.getElementById('modelPreset');
 	    modelPresetSelect.innerHTML = '<option value="">Custom</option>';
 

@@ -111,7 +111,7 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
   const goldRows = await page.locator('#goldTableBody tr').count();
   expect(goldRows).toBeGreaterThanOrEqual(40);
 
-  await page.getByRole('button', { name: 'Explain a result', exact: true }).click();
+  await page.getByRole('button', { name: 'Explain', exact: true }).click();
   await page.locator('#measuredTokS').fill('45');
   await page.getByRole('button', { name: 'Explain this run', exact: true }).click();
   await expect(page.locator('#interpreterOutput')).toContainText('physical ceiling');
@@ -468,17 +468,47 @@ test('public Hugging Face model import populates a custom architecture', async (
   await expect(page.locator('#executionMap')).toContainText('top 4 of 64 experts active');
 });
 
-test('mobile layout stays within the viewport with benchmark table collapsed', async ({ page }) => {
+test('mobile planner stays compact, readable, and within the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await loadApp(page);
 
-  const dimensions = await page.evaluate(() => ({
-    viewport: window.innerWidth,
-    document: document.documentElement.scrollWidth,
-    body: document.body.scrollWidth
-  }));
+  const dimensions = await page.evaluate(() => {
+    const rect = selector => document.querySelector(selector)?.getBoundingClientRect();
+    const tabs = document.querySelector('.workspace-tabs');
+    const phaseCards = [...document.querySelectorAll('.phase-summary-card')].map(card => Math.round(card.getBoundingClientRect().top));
+    return {
+      viewport: window.innerWidth,
+      document: document.documentElement.scrollWidth,
+      body: document.body.scrollWidth,
+      navHeight: rect('.product-nav')?.height,
+      resultTop: rect('#systemAnalysis')?.top,
+      tabsClientWidth: tabs?.clientWidth,
+      tabsScrollWidth: tabs?.scrollWidth,
+      phaseRows: new Set(phaseCards).size
+    };
+  });
   expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport);
   expect(dimensions.body).toBeLessThanOrEqual(dimensions.viewport);
+  expect(dimensions.navHeight).toBeLessThan(64);
+  expect(dimensions.tabsScrollWidth).toBeLessThanOrEqual(dimensions.tabsClientWidth);
+  expect(dimensions.resultTop).toBeLessThan(400);
+  expect(dimensions.phaseRows).toBe(1);
+  await expect(page.locator('#modelInputCard')).toHaveJSProperty('open', false);
+  await expect(page.locator('#hardwareInputCard')).toHaveJSProperty('open', false);
+  await expect(page.locator('.execution-card')).toHaveJSProperty('open', false);
+  await expect(page.locator('.mobile-calibration-summary')).toBeVisible();
+  await expect(page.locator('.mobile-calibration-summary')).toHaveJSProperty('open', false);
+  await expect(page.locator('.desktop-calibration-summary')).toBeHidden();
+
+  await page.locator('#modelInputCard > summary').click();
+  await expect(page.locator('#modelInputCard')).toHaveJSProperty('open', true);
+  await expect(page.locator('#hardwareInputCard')).toHaveJSProperty('open', false);
+  await expect(page.locator('#hfImportDisclosure')).toHaveJSProperty('open', false);
+
+  await page.locator('#hardwareInputCard > summary').click();
+  await expect(page.locator('#hardwareInputCard')).toHaveJSProperty('open', true);
+  await expect(page.locator('#modelInputCard')).toHaveJSProperty('open', false);
+
   await page.locator('.reference-card > summary').click();
   const expandedWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(expandedWidth).toBeLessThanOrEqual(390);
