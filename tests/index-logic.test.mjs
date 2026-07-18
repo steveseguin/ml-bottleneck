@@ -146,7 +146,9 @@ test('current Localmaxxing leaders have first-class architecture presets', () =>
 
   app.applyPreset('deepseek_v4_flash');
   model = app.hooks.buildEffectiveModelConfig();
-  assert.equal(model.totalParamsB, 284);
+  // 158B per the canonical deepseek-ai/DeepSeek-V4-Flash repo (the 284B figure
+  // came from a mislabeled community variant).
+  assert.equal(model.totalParamsB, 158);
   assert.equal(model.activeParamsB, 13);
   assert.equal(model.contextLength, 1048576);
 
@@ -499,7 +501,11 @@ test('quantization and sharding monotonic checks catch obvious regressions', () 
   setLlmDefaults(app, { preset: 'qwen3.6_35b_a3b', quant: 'fp8', framework: 'sglang', strategy: 'tensor' });
   const fourH100 = getSystemResult(app, 'tensor').systemRate;
 
-  assert.ok(fourH100 > singleH100 * 2.5, `4x H100 ${fourH100} should materially beat 1x H100 ${singleH100}`);
+  // Batch-1 tensor parallelism exposes every all-reduce (nothing to overlap
+  // behind a GEMV), so real 4-way scaling on a small-active MoE is ~1.5-2.2x,
+  // not linear. The old >2.5x expectation encoded a zero-latency fantasy.
+  assert.ok(fourH100 > singleH100 * 1.4, `4x H100 ${fourH100} should materially beat 1x H100 ${singleH100}`);
+  assert.ok(fourH100 < singleH100 * 4, `4x H100 ${fourH100} cannot exceed linear scaling of 1x ${singleH100}`);
 });
 
 test('deterministic config fuzzing keeps metrics finite and UI output sane', () => {

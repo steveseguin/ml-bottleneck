@@ -4158,9 +4158,9 @@ body {
 	    attentionMechanism: 'mla'
 	  },
 	  'deepseek_v4_flash': {
-	    label: 'DeepSeek V4 Flash 284B A13B',
+	    label: 'DeepSeek V4 Flash 158B A13B',
 	    hfId: 'deepseek-ai/DeepSeek-V4-Flash',
-	    totalParamsB: 284,
+	    totalParamsB: 158,
 	    hiddenSize: 4096,
 	    numLayers: 43,
 	    numHeads: 64,
@@ -4694,6 +4694,7 @@ body {
 	    isMoE: true,
 	    numExperts: 128,
 	    activeExperts: 4,
+	    nativeBytesPerParam: 0.56,
 	    activeParamsB: 5.1,
 	    routingType: 'moe',
 	    attentionMechanism: 'sliding_window',
@@ -4712,6 +4713,7 @@ body {
 	    isMoE: true,
 	    numExperts: 32,
 	    activeExperts: 4,
+	    nativeBytesPerParam: 0.66,
 	    activeParamsB: 3.6,
 	    routingType: 'moe',
 	    attentionMechanism: 'sliding_window',
@@ -6474,7 +6476,10 @@ const DEVICE_TEMPLATES = {
                 activeExperts,
                 numKVHeads: modelConfig.numKVHeads || numHeads,
                 intermediateSize: modelConfig.intermediateSize || (4 * modelConfig.hiddenSize),
-                activeParamsB: isMoE ? (modelConfig.activeParamsB || inferredActiveParamsB) : modelConfig.totalParamsB
+                // Honor an explicit activeParamsB for dense models too:
+                // per-layer-embedding designs (Gemma E-series) read fewer
+                // bytes per token than they keep resident.
+                activeParamsB: modelConfig.activeParamsB || (isMoE ? inferredActiveParamsB : modelConfig.totalParamsB)
             };
         }
 
@@ -6514,6 +6519,14 @@ const DEVICE_TEMPLATES = {
         function getActiveParamsB(modelConfig) {
             const normalizedConfig = normalizeModelConfig(modelConfig);
             return normalizedConfig.activeParamsB || normalizedConfig.totalParamsB;
+        }
+
+        // Some models ship natively quantized (gpt-oss stores its experts as
+        // MXFP4): selecting "fp16" cannot inflate the weights past their
+        // native storage, so weight sizing is capped at the native width.
+        function getWeightBytesPerParam(modelConfig, dtypeSize) {
+            const nativeBytes = modelConfig?.nativeBytesPerParam;
+            return Number.isFinite(nativeBytes) && nativeBytes > 0 ? Math.min(dtypeSize, nativeBytes) : dtypeSize;
         }
 
         const KV_CACHE_COMPRESSION_PROFILES = {
@@ -6677,25 +6690,54 @@ const DEVICE_TEMPLATES = {
             return adjustments;
         }
 
+        // Per-token, per-device coordination time. Multi-device decode pays
+        // real fixed latency on every collective: ~2 all-reduces per layer for
+        // tensor parallelism, one activation handoff per stage boundary for
+        // pipelines. This is why tensor parallel over PCIe scales far worse
+        // than the bandwidth math alone suggests.
         function calculateDecodeCoordinationTimeSeconds(modelConfig, devicesArray) {
             if (!devicesArray || devicesArray.length <= 1) return 0;
 
             const frameworkProfile = getFrameworkProfile(modelConfig, devicesArray);
             const strategy = modelConfig.parallelismStrategy || 'pipeline';
-            if (!['tensor', 'hybrid_tp_pp', 'hybrid_tp_dp', 'expert', 'sequence', 'context'].includes(strategy)) {
-                return 0;
+            if (strategy === 'data') return 0;
+
+            const tensorLike = ['tensor', 'hybrid_tp_pp', 'hybrid_tp_dp', 'expert', 'sequence', 'context'].includes(strategy);
+
+            if (frameworkProfile.key === 'exo' && tensorLike) {
+                // EXO coordinates whole nodes over a network fabric; its
+                // per-step cost is dominated by cross-node round trips.
+                const minInterconnectBandwidth = Math.max(1, getMinInterconnectBandwidth(devicesArray));
+                const baseLatencyMs = ((devicesArray.length - 1) * 6) + (modelConfig.isMoE ? 4 : 0);
+                const rdmaReferenceBandwidth = INTERCONNECT_BANDWIDTH.thunderbolt5_rdma;
+                return (baseLatencyMs * (rdmaReferenceBandwidth / minInterconnectBandwidth)) / 1000;
             }
 
-            if (frameworkProfile.key !== 'exo') {
-                return 0;
+            const deviceCount = devicesArray.length;
+            const minBw = Math.max(0.5, getMinInterconnectBandwidth(devicesArray));
+            // Fixed exposed latency per collective by link class, in seconds.
+            // NVLink/NVSwitch with fused custom all-reduce kernels ~4 us;
+            // PCIe peer copies ~30 us; network links ~120 us. At batch 1 the
+            // collective cannot hide behind compute, so it is fully exposed.
+            const latencySeconds = (minBw >= 300 ? 4 : (minBw >= 60 ? 20 : (minBw >= 16 ? 30 : 120))) / 1e6;
+            // Activations move at fp16 regardless of weight quantization.
+            const activationBytes = 2 * Math.max(1, modelConfig.hiddenSize || 4096) * Math.max(1, modelConfig.batchSize || 1);
+            const layers = Math.max(1, modelConfig.numLayers || 1);
+
+            if (tensorLike) {
+                const latencyScale = strategy === 'expert' ? 1.5 : 1;
+                const ringPayloadSeconds = (activationBytes * 2 * (deviceCount - 1) / deviceCount) / (minBw * 1e9);
+                return layers * 2 * ((latencySeconds * latencyScale) + ringPayloadSeconds);
             }
 
-            const minInterconnectBandwidth = Math.max(1, getMinInterconnectBandwidth(devicesArray));
-            const baseLatencyMs = ((devicesArray.length - 1) * 6) + (modelConfig.isMoE ? 4 : 0);
-            const rdmaReferenceBandwidth = INTERCONNECT_BANDWIDTH.thunderbolt5_rdma;
-            const scaledLatencyMs = baseLatencyMs * (rdmaReferenceBandwidth / minInterconnectBandwidth);
+            if (strategy === 'pipeline') {
+                // One handoff per stage boundary; each device carries its
+                // share so the summed pipeline time counts each hop once.
+                const hopSeconds = latencySeconds + activationBytes / (minBw * 1e9);
+                return ((deviceCount - 1) * hopSeconds) / deviceCount;
+            }
 
-            return scaledLatencyMs / 1000;
+            return 0;
         }
         function getMemoryProportion(devicesArray, deviceIndex) {
             const totalSystemMemory = devicesArray.reduce((sum, device) => sum + device.memoryGB * 1e9, 0);
@@ -6733,11 +6775,14 @@ const DEVICE_TEMPLATES = {
 
             const minBw = Math.min(...devicesArray.map(device => device.networkBandwidthGBps || 0));
 
-            if (minBw >= 300) return 0.96;
-            if (minBw >= 64) return 0.92;
-            if (minBw >= 32) return 0.88;
-            if (minBw >= 16) return 0.80;
-            return 0.68;
+            // Collective latency is modeled explicitly per token in
+            // calculateDecodeCoordinationTimeSeconds; this factor covers only
+            // residual kernel-overlap and contention losses.
+            if (minBw >= 300) return 0.97;
+            if (minBw >= 64) return 0.95;
+            if (minBw >= 32) return 0.93;
+            if (minBw >= 16) return 0.88;
+            return 0.80;
         }
 
         function calculateSystemRateFromDeviceRates(deviceRates, strategy, batchSize, devicesArray) {
@@ -6776,7 +6821,7 @@ const DEVICE_TEMPLATES = {
 		// (the TurboQuant modes) shrinks them.
 		const kvCacheDtypeSize = 2;
 		const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, kvCacheDtypeSize);
-		const paramsMemory = modelConfig.totalParamsB * 1e9 * dtypeSize;
+		const paramsMemory = modelConfig.totalParamsB * 1e9 * getWeightBytesPerParam(modelConfig, dtypeSize);
 		const kvHeads = getKVHeads(modelConfig);
 		const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength *
 			(modelConfig.hiddenSize / modelConfig.numHeads) *
@@ -6821,14 +6866,16 @@ const DEVICE_TEMPLATES = {
 		const batchSize = modelConfig.batchSize;
 		const seqLength = modelConfig.seqLength;
 		const hiddenSize = modelConfig.hiddenSize;
-		
+		// Activations cross devices at fp16 regardless of weight quantization.
+		const activationDtypeSize = 2;
+
 		if (isPipeline) {
 			// Pipeline parallelism: activation handoff between stages during inference
-			const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
+			const activationSize = batchSize * seqLength * hiddenSize * activationDtypeSize;
 			return activationSize * (deviceCount - 1) * architectureProfile.networkTrafficMultiplier;
 		} else {
 			// Tensor parallelism: activation collectives for each forward step
-			const activationSize = batchSize * seqLength * hiddenSize * dtypeSize;
+			const activationSize = batchSize * seqLength * hiddenSize * activationDtypeSize;
 			return activationSize * 2 * (deviceCount - 1) / deviceCount * architectureProfile.networkTrafficMultiplier;
 		}
 	}
@@ -7015,7 +7062,7 @@ const DEVICE_TEMPLATES = {
          * bytes_per_token ≈ model_size_bytes (must read all weights per token)
          */
         function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, deviceIndex = 0) {
-            const modelSizeBytes = modelConfig.totalParamsB * 1e9 * dtypeSize;
+            const modelSizeBytes = modelConfig.totalParamsB * 1e9 * getWeightBytesPerParam(modelConfig, dtypeSize);
             const frameworkProfile = getFrameworkProfile(modelConfig, allDevices);
             const optimization = getOptimizationAdjustments(modelConfig);
 
@@ -8567,8 +8614,9 @@ const DEVICE_TEMPLATES = {
             const dtypeSize = DTYPE_SIZES[config.quantizationType] || 2;
             const quantOverhead = config.quantizationType === 'q4' ? 1.08 : (config.quantizationType === 'fp8' ? 1.03 : 1);
             const composition = deriveMoEComposition(config);
-            const totalWeightsGB = config.totalParamsB * dtypeSize * quantOverhead;
-            const activeWeightsGB = getActiveParamsB(config) * dtypeSize * quantOverhead;
+            const weightBytes = getWeightBytesPerParam(config, dtypeSize);
+            const totalWeightsGB = config.totalParamsB * weightBytes * quantOverhead;
+            const activeWeightsGB = getActiveParamsB(config) * weightBytes * quantOverhead;
             const tensorDegree = Math.max(1, Math.floor(Math.sqrt(count)));
             const pipelineDegree = Math.max(1, Math.ceil(count / tensorDegree));
 
@@ -8692,7 +8740,8 @@ const DEVICE_TEMPLATES = {
             `).join('');
 
             const crossChip = (left, right) => {
-                const bytesPerToken = config.hiddenSize * dtypeSize * Math.max(1, config.batchSize);
+                // Activations hand off at fp16 regardless of weight quant.
+                const bytesPerToken = config.hiddenSize * 2 * Math.max(1, config.batchSize);
                 const linkGBps = Math.max(0.1, Math.min(left.device.networkBandwidthGBps || 0.1, right.device.networkBandwidthGBps || 0.1));
                 const microseconds = (bytesPerToken / (linkGBps * 1e9)) * 1e6;
                 return `<div class="map-cross" title="Activation handoff between ${escapeHtml(left.device.name || '')} and ${escapeHtml(right.device.name || '')}">
@@ -9546,7 +9595,11 @@ const DEVICE_TEMPLATES = {
                 ...JSON.parse(JSON.stringify(template)),
                 ...(Number.isFinite(reference.memoryGB) && reference.memoryGB > 0 ? { memoryGB: reference.memoryGB } : {})
             }));
-            const strategy = caseDevices.length > 1 ? 'tensor' : 'pipeline';
+            // Only vLLM/SGLang/TensorRT-LLM aggregate bandwidth via tensor
+            // parallelism; llama.cpp, Ollama, and MLX split by layers, so a
+            // multi-GPU run decodes at roughly single-GPU pace.
+            const tensorCapable = ['vllm', 'sglang', 'tensorrt_llm'].includes(reference.runtimeKey);
+            const strategy = caseDevices.length > 1 ? (tensorCapable ? 'tensor' : 'pipeline') : 'pipeline';
             const contextLength = Math.max(2, reference.contextLength || 2048);
             const modelConfig = normalizeModelConfig({
                 ...preset,

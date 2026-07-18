@@ -2,11 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { loadApp } from './load-index-app.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
+
+function loadSnapshot() {
+  const source = fs.readFileSync(path.join(repoRoot, 'data', 'localmaxxing-snapshot.js'), 'utf8');
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  return context.window.LOCALMAXXING_SNAPSHOT;
+}
 
 function stripStringsAndComments(line) {
   return line
@@ -199,6 +208,35 @@ test('ceiling ladder keeps predictions at or below the physical ceiling', () => 
   assert.match(html, /ceiling-ladder/, 'ceiling ladder renders in system analysis');
   assert.match(html, /Hardware ceiling/);
   assert.match(html, /Expected real/);
+});
+
+test('engine predictions stay statistically anchored to the gold-case corpus', () => {
+  const snapshot = loadSnapshot();
+  const cases = snapshot?.goldCases || [];
+  assert.ok(cases.length >= 50, `expected a meaningful gold-case corpus, got ${cases.length}`);
+
+  const app = loadApp();
+  const ratios = [];
+  for (const goldCase of cases) {
+    const projection = app.hooks.calculateGoldCaseProjection(goldCase);
+    if (projection && Number.isFinite(projection.observedToGeneric)) {
+      ratios.push(projection.observedToGeneric);
+    }
+  }
+  assert.ok(ratios.length >= cases.length * 0.8, `only ${ratios.length}/${cases.length} gold cases were projectable`);
+
+  ratios.sort((a, b) => a - b);
+  const median = ratios[Math.floor(ratios.length / 2)];
+  const withinTwoX = ratios.filter(r => r >= 0.5 && r <= 2).length / ratios.length;
+
+  // The generic engine model should be centered near reality across the whole
+  // measured corpus, without a large systematic bias in either direction.
+  // (Residual per-vendor kernel gaps are absorbed by the peer-evidence
+  // calibration layer, not by these bounds.)
+  assert.ok(median >= 0.4 && median <= 1.6,
+    `median observed/predicted drifted to ${median.toFixed(2)} — systematic bias`);
+  assert.ok(withinTwoX >= 0.5,
+    `only ${(withinTwoX * 100).toFixed(0)}% of gold cases within 2x (need >= 50%)`);
 });
 
 test('user-controlled device names are escaped in every rendered surface', () => {
