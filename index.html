@@ -2849,6 +2849,7 @@ body {
 .catalog-identity span, .catalog-cell span { display: block; color: var(--text-secondary); font-size: 0.66rem; }
 .catalog-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
 .catalog-tag { padding: 0.16rem 0.36rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--text-secondary); font-size: 0.58rem; }
+.catalog-show-all { border: none; background: none; padding: 0; color: var(--primary); font-size: inherit; cursor: pointer; text-decoration: underline; }
 .catalog-cell strong { font-size: 0.8rem; }
 .catalog-use {
     border: 1px solid var(--border);
@@ -9772,6 +9773,12 @@ const DEVICE_TEMPLATES = {
             }));
         }
 
+        let catalogShowAll = false;
+        function toggleCatalogShowAll() {
+            catalogShowAll = !catalogShowAll;
+            renderModelCatalog();
+        }
+
         function renderModelCatalog() {
             const container = document.getElementById('modelCatalog');
             if (!container) return;
@@ -9801,9 +9808,13 @@ const DEVICE_TEMPLATES = {
                 size: (a, b) => (a.paramsB || Infinity) - (b.paramsB || Infinity)
             };
             filtered.sort(sorters[sort] || sorters.benchmarks);
-            const visible = filtered.slice(0, 150);
+            const catalogLimit = catalogShowAll ? filtered.length : 60;
+            const visible = filtered.slice(0, catalogLimit);
             const baseCount = filtered.filter(model => !model.baseHfId).length;
-            document.getElementById('catalogSummary').innerHTML = `<span><strong>${filtered.length.toLocaleString()}</strong> matching models · ${baseCount.toLocaleString()} base models · ${Math.max(0, filtered.length - baseCount).toLocaleString()} variants</span><span>Snapshot ${LOCALMAXXING_DATA.generatedAt ? new Date(LOCALMAXXING_DATA.generatedAt).toLocaleDateString() : 'unavailable'} · first ${visible.length} shown</span>`;
+            const showAllControl = filtered.length > visible.length
+                ? ` · <button type="button" class="catalog-show-all" onclick="toggleCatalogShowAll()">Show all ${filtered.length.toLocaleString()}</button>`
+                : (catalogShowAll && filtered.length > 60 ? ` · <button type="button" class="catalog-show-all" onclick="toggleCatalogShowAll()">Show fewer</button>` : '');
+            document.getElementById('catalogSummary').innerHTML = `<span><strong>${filtered.length.toLocaleString()}</strong> matching models · ${baseCount.toLocaleString()} base models · ${Math.max(0, filtered.length - baseCount).toLocaleString()} variants</span><span>Snapshot ${LOCALMAXXING_DATA.generatedAt ? new Date(LOCALMAXXING_DATA.generatedAt).toLocaleDateString() : 'unavailable'} · first ${visible.length} shown${showAllControl}</span>`;
             container.innerHTML = visible.length ? visible.map(model => {
                 const preset = MODEL_PRESETS[model.presetKey] || {};
                 const catalogIsMoE = Boolean(preset.isMoE ?? model.isMoE);

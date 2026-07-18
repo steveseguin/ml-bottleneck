@@ -85,8 +85,14 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
   await expect(page.locator('#modelPreset')).toHaveValue('gemma4_26b_a4b');
 
   await page.getByRole('button', { name: 'Evidence', exact: true }).click();
-  await expect(page.locator('#evidenceStats')).toContainText('120');
-  await expect(page.locator('#goldTableBody tr')).toHaveCount(80);
+  // The snapshot refreshes weekly in CI, so assert a meaningful corpus rather
+  // than pinning an exact count that rots on every refresh.
+  await expect(page.locator('#evidenceStats')).toContainText('reproducible Localmaxxing gold cases');
+  const goldStat = await page.locator('#evidenceStats').innerText();
+  const goldCount = parseInt(goldStat.match(/(\d+)\s*reproducible/)?.[1] || '0', 10);
+  expect(goldCount).toBeGreaterThanOrEqual(50);
+  const goldRows = await page.locator('#goldTableBody tr').count();
+  expect(goldRows).toBeGreaterThanOrEqual(40);
 
   await page.getByRole('button', { name: 'Explain a result', exact: true }).click();
   await page.locator('#measuredTokS').fill('45');
