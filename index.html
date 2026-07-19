@@ -1569,6 +1569,39 @@ option {
 .spec-pill { display: inline-flex; align-items: center; min-height: 1.3rem; padding: 0.1rem 0.38rem; border: 1px solid color-mix(in srgb, var(--primary) 38%, var(--border)); border-radius: 999px; color: var(--primary); font-size: 0.57rem; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; }
 .spec-pill.is-derived, .spec-pill.is-preview { border-color: color-mix(in srgb, #f59e0b 48%, var(--border)); color: #d97706; }
 .hardware-spec-detail { margin: 0 0 0.8rem; padding: 0.65rem 0.7rem; border-left: 2px solid var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); color: var(--text-secondary); font-size: 0.68rem; line-height: 1.5; }
+.device-roster-wrap { margin: 0 0 1rem; }
+.device-roster-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
+.device-roster-head strong { font-size: 0.76rem; }
+.device-roster-head span { color: var(--text-secondary); font-size: 0.62rem; }
+.device-roster {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+    gap: 0.5rem;
+}
+.device-roster-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    padding: 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 0.7rem;
+    background: color-mix(in srgb, var(--background) 78%, transparent);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+}
+.device-roster-card:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+.device-roster-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.device-roster-card.is-selected { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--card)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent); }
+.device-roster-icon { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 0.55rem; background: color-mix(in srgb, var(--primary) 10%, var(--card)); color: var(--primary); }
+.device-roster-icon svg { width: 1.35rem; height: 1.35rem; stroke: currentColor; }
+.device-roster-copy { min-width: 0; }
+.device-roster-copy strong { display: block; overflow: hidden; font-size: 0.69rem; text-overflow: ellipsis; white-space: nowrap; }
+.device-roster-copy small { display: block; overflow: hidden; margin-top: 0.15rem; color: var(--text-secondary); font-size: 0.58rem; text-overflow: ellipsis; white-space: nowrap; }
+.device-roster-index { color: var(--primary); font-weight: 800; }
 
 .device-chip:hover,
 .device-chip.selected {
@@ -3139,6 +3172,9 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     .plan-card-icon svg { width: 1.55rem; height: 1.55rem; }
     .plan-card-intro h2 { display: block; font-size: 0.95rem; }
     .plan-card-intro p { font-size: 0.65rem; }
+    .device-roster { grid-auto-flow: column; grid-auto-columns: minmax(10rem, 78%); grid-template-columns: none; overflow-x: auto; padding-bottom: 0.25rem; scroll-snap-type: x proximity; }
+    .device-roster-card { scroll-snap-align: start; }
+    .device-roster-head span { display: none; }
     .mode-choice-grid { grid-template-columns: 1fr; gap: 0.55rem; }
     .mode-field-wide { grid-column: auto; }
     .mode-field { padding: 0.65rem; }
@@ -3638,6 +3674,10 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                     <svg viewBox="0 0 32 32" fill="none" stroke-width="1.7"><rect x="5" y="8" width="22" height="16" rx="2.5"/><circle cx="13" cy="16" r="4.2"/><path d="M19.5 12.5h4M19.5 16h4M19.5 19.5h4M9 5v3M14 5v3M19 5v3M24 5v3M9 24v3M14 24v3M19 24v3M24 24v3"/></svg>
                 </span>
                 <div><h2>Choose your hardware</h2><p>Pick the GPU, accelerator, CPU, or Apple system you actually have. Add more devices only when they participate in the same run.</p></div>
+            </div>
+            <div class="device-roster-wrap">
+                <div class="device-roster-head"><strong id="deviceRosterCount">Devices in this plan</strong><span>Click a device to edit it</span></div>
+                <div id="deviceRoster" class="device-roster" aria-label="Devices in this plan"></div>
             </div>
             <div class="hardware-card-head">
                 <h2 style="margin: 0;">Device setup</h2>
@@ -11834,11 +11874,38 @@ const DEVICE_TEMPLATES = {
             `).join('');
         }
 
+        function renderDeviceRoster() {
+            const roster = document.getElementById('deviceRoster');
+            const count = document.getElementById('deviceRosterCount');
+            if (!roster) return;
+            const totalMemory = devices.reduce((sum, device) => sum + Number(device.memoryGB || 0), 0);
+            if (count) count.textContent = `${devices.length} device${devices.length === 1 ? '' : 's'} in this plan · ${Number.isInteger(totalMemory) ? totalMemory : totalMemory.toFixed(1)} GB total`;
+            roster.innerHTML = devices.map((device, index) => {
+                const selected = device.id === selectedDeviceId;
+                const templateLabel = device.template === 'Custom'
+                    ? 'Custom hardware'
+                    : (DEVICE_TEMPLATES[device.template]?.name || device.type || device.template || 'Hardware');
+                return `
+                    <button type="button" class="device-roster-card${selected ? ' is-selected' : ''}"
+                            data-device-roster-id="${device.id}" onclick="selectDevice(${device.id})"
+                            aria-pressed="${selected}" aria-label="Edit device ${index + 1}: ${escapeHtml(device.name)}">
+                        <span class="device-roster-icon" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" fill="none" stroke-width="1.7"><rect x="5" y="8" width="22" height="16" rx="2.5"/><circle cx="13" cy="16" r="4.2"/><path d="M19.5 12.5h4M19.5 16h4M19.5 19.5h4M9 5v3M14 5v3M19 5v3M24 5v3M9 24v3M14 24v3M19 24v3M24 24v3"/></svg>
+                        </span>
+                        <span class="device-roster-copy">
+                            <strong><span class="device-roster-index">${index + 1}</span> · ${escapeHtml(device.name)}</strong>
+                            <small>${escapeHtml(templateLabel)} · ${Number(device.memoryGB || 0).toLocaleString(undefined, { maximumFractionDigits: 1 })} GB</small>
+                        </span>
+                    </button>`;
+            }).join('');
+        }
+
         // Space-managed hardware editor: one selected device is open while the topology shows the full system.
         updateDeviceDisplay = function() {
             const currentQuant = document.getElementById('quantizationType').value;
             const devicesContainer = document.getElementById('devices');
             const selectedDevice = getSelectedDevice();
+            renderDeviceRoster();
 
             let deviceLibrary = [];
             try {
@@ -12182,6 +12249,7 @@ const DEVICE_TEMPLATES = {
 	    // Rebuilding the devices container mid-blur can destroy a button the user just clicked
 	    // (e.g. "+ Add device") before its click event dispatches, forcing a second click.
 	    if (field === 'name') {
+	        renderDeviceRoster();
 	        if (typeof updateTopology === 'function') updateTopology();
 	        updateSystemAnalysis();
 	        saveDevices();

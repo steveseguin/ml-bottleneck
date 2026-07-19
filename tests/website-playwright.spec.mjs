@@ -208,6 +208,8 @@ test('hardware editor keeps one selected device and adds new devices to topology
   await advancePlanTo(page, 2);
 
   await expect(page.locator('#devices > .device')).toHaveCount(1);
+  await expect(page.locator('#deviceRoster .device-roster-card')).toHaveCount(1);
+  await expect(page.locator('#deviceRosterCount')).toContainText('1 device in this plan');
   await expect(page.locator('#devices .hardware-advanced')).toHaveCount(1);
   await expect(page.locator('#devices .hardware-advanced')).not.toHaveAttribute('open', '');
   await expect(page.locator('#hardwareHeadMeta')).toBeEmpty();
@@ -224,6 +226,17 @@ test('hardware editor keeps one selected device and adds new devices to topology
   await expect(page.locator('#devices > .device')).toHaveCount(1);
   await expect(page.locator('#devices .device-name-input')).toHaveValue('Device 2');
   await expect(page.locator('#hardwareHeadMeta')).toContainText('Editing device 2 of 2');
+  await expect(page.locator('#deviceRoster .device-roster-card')).toHaveCount(2);
+  await expect(page.locator('#deviceRosterCount')).toContainText('2 devices in this plan');
+  await expect(page.locator('#deviceRoster .device-roster-card').nth(1)).toHaveAttribute('aria-pressed', 'true');
+
+  await page.locator('#deviceRoster .device-roster-card').first().click();
+  await expect(page.locator('#hardwareHeadMeta')).toContainText('Editing device 1 of 2');
+  await page.locator('#deviceRoster .device-roster-card').nth(1).click();
+  await expect(page.locator('#hardwareHeadMeta')).toContainText('Editing device 2 of 2');
+  await page.locator('#devices .device-name-input').fill('Render GPU');
+  await page.locator('#devices .device-name-input').dispatchEvent('change');
+  await expect(page.locator('#deviceRoster .device-roster-card').nth(1)).toContainText('Render GPU');
 
   const state = await page.evaluate(() => ({
     count: window.__mlBottleneckTestHooks.getDevices().length,
