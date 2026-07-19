@@ -15,7 +15,7 @@ async function loadApp(page) {
   });
   // The landing is its own Home workspace now; workbench tests start in Plan.
   await page.goto(`${appUrl}#plan`);
-  await page.waitForSelector('#systemAnalysis .result-hero');
+  await page.waitForSelector('#systemAnalysis .result-hero', { state: 'attached' });
 }
 
 async function selectAndChange(page, selector, value) {
@@ -45,7 +45,14 @@ async function applyConfig(page, { scenario, model, quant, framework, strategy =
   await setInputAndChange(page, '#promptTokens', resolvedPromptTokens);
   await setInputAndChange(page, '#outputTokens', resolvedOutputTokens);
   await setInputAndChange(page, '#seqLength', seqLength);
-  await page.waitForSelector('#systemAnalysis .result-hero');
+  await page.waitForSelector('#systemAnalysis .result-hero', { state: 'attached' });
+}
+
+async function advancePlanTo(page, step) {
+  for (let next = 2; next <= step; next += 1) {
+    const button = page.locator(`[data-plan-next="${next}"]`);
+    if (await button.isVisible()) await button.click();
+  }
 }
 
 async function displayedRate(page) {
@@ -93,6 +100,11 @@ test('home landing shows the popular-setup chart and clicks through to the plann
 
 test('new workspaces connect catalog, evidence, and result interpretation', async ({ page }) => {
   await loadApp(page);
+  await expect(page.locator('.plan-step-button')).toHaveCount(4);
+  await expect(page.locator('[data-plan-step="4"]')).toBeDisabled();
+  await expect(page.locator('#modelInputCard')).toBeVisible();
+  await expect(page.locator('.planner-stage')).toBeHidden();
+  await expect(page.locator('#headerResult')).toBeHidden();
 
   const gemma4PresetOptions = await page.evaluate(() => [...document.querySelectorAll('#modelPreset optgroup[label="Gemma 4"] option')]
     .map(option => ({ label: option.textContent.trim(), value: option.value })));
@@ -193,6 +205,7 @@ async function setDevices(page, specs) {
 test('hardware editor keeps one selected device and adds new devices to topology selection', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await loadApp(page);
+  await advancePlanTo(page, 2);
 
   await expect(page.locator('#devices > .device')).toHaveCount(1);
   await expect(page.locator('#devices .hardware-advanced')).toHaveCount(1);
@@ -218,6 +231,7 @@ test('hardware editor keeps one selected device and adds new devices to topology
   }));
   expect(state).toEqual({ count: 2, selected: 2 });
 
+  await advancePlanTo(page, 4);
   await page.locator('.topology-card > summary').click();
   const topologyBox = await page.locator('#topologyCanvas').boundingBox();
   expect(topologyBox?.width).toBeGreaterThan(200);
@@ -251,6 +265,7 @@ test('displayed result rates match core calculations across different configs', 
 
 test('published benchmark filters include official task-score rows', async ({ page }) => {
   await loadApp(page);
+  await advancePlanTo(page, 4);
   await page.evaluate(() => {
     document.querySelector('#llmTable')?.closest('details')?.setAttribute('open', '');
   });
@@ -269,6 +284,7 @@ test('published benchmark filters include official task-score rows', async ({ pa
 
 test('published benchmark filters include community Qwen throughput rows', async ({ page }) => {
   await loadApp(page);
+  await advancePlanTo(page, 4);
   await page.evaluate(() => {
     document.querySelector('#llmTable')?.closest('details')?.setAttribute('open', '');
   });
@@ -343,7 +359,7 @@ test('browser long-context Qwen config slows down from KV-cache pressure', async
   await setInputAndChange(page, '#promptTokens', 262143);
   await setInputAndChange(page, '#outputTokens', 1);
   await setInputAndChange(page, '#seqLength', 262144);
-  await page.waitForSelector('#systemAnalysis .result-hero');
+  await page.waitForSelector('#systemAnalysis .result-hero', { state: 'attached' });
   const longRate = await displayedRate(page);
   const longKv = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics()[0].decodeKvCacheGB);
 
@@ -414,7 +430,7 @@ test('browser TurboQuant option reduces long-context KV pressure', async ({ page
   const baselineKv = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics()[0].decodeKvCacheGB);
 
   await selectAndChange(page, '#kvCacheCompression', 'turboquant_3_5');
-  await page.waitForSelector('#systemAnalysis .result-hero');
+  await page.waitForSelector('#systemAnalysis .result-hero', { state: 'attached' });
   const turboRate = await displayedRate(page);
   const turboKv = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics()[0].decodeKvCacheGB);
 
@@ -427,6 +443,8 @@ test('execution map visualizes MiniMax across four Arc Pro B70 GPUs and compares
   await loadApp(page);
 
   await selectAndChange(page, '#scenarioPreset', 'b70_x4_minimax_m27');
+  await advancePlanTo(page, 4);
+  await page.locator('.execution-card > summary').click();
 
   await expect(page.locator('#executionMap .shard-card')).toHaveCount(4);
   await expect(page.locator('#executionMap')).toContainText('Attention → router → selected experts');
@@ -451,7 +469,7 @@ test('execution map visualizes MiniMax across four Arc Pro B70 GPUs and compares
 
 test('speculative decoding exposes proposer verification flow and modeled inputs', async ({ page }) => {
   await loadApp(page);
-  await page.locator('details.tuning-panel > summary').click();
+  await advancePlanTo(page, 3);
   await selectAndChange(page, '#optimizationMode', 'speculative');
 
   await expect(page.locator('#speculativeControls')).toBeVisible();
@@ -487,6 +505,7 @@ test('public Hugging Face model import populates a custom architecture', async (
   }));
   await loadApp(page);
 
+  await page.locator('#hfImportDisclosure > summary').click();
   await page.locator('#hfModelId').fill('demo/Sparse-12B');
   await page.locator('#hfImportButton').click();
   await expect(page.locator('#hfImportStatus')).toContainText('Loaded 12.0B parameters');
@@ -500,42 +519,40 @@ test('mobile planner stays compact, readable, and within the viewport', async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await loadApp(page);
 
-  const dimensions = await page.evaluate(() => {
+  const initialDimensions = await page.evaluate(() => {
     const rect = selector => document.querySelector(selector)?.getBoundingClientRect();
     const tabs = document.querySelector('.workspace-tabs');
-    const phaseCards = [...document.querySelectorAll('.phase-summary-card')].map(card => Math.round(card.getBoundingClientRect().top));
     return {
       viewport: window.innerWidth,
       document: document.documentElement.scrollWidth,
       body: document.body.scrollWidth,
       navHeight: rect('.product-nav')?.height,
-      resultTop: rect('#systemAnalysis')?.top,
       tabsClientWidth: tabs?.clientWidth,
-      tabsScrollWidth: tabs?.scrollWidth,
-      phaseRows: new Set(phaseCards).size
+      tabsScrollWidth: tabs?.scrollWidth
     };
   });
-  expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport);
-  expect(dimensions.body).toBeLessThanOrEqual(dimensions.viewport);
-  expect(dimensions.navHeight).toBeLessThan(64);
-  expect(dimensions.tabsScrollWidth).toBeLessThanOrEqual(dimensions.tabsClientWidth);
-  expect(dimensions.resultTop).toBeLessThan(400);
-  expect(dimensions.phaseRows).toBe(1);
-  await expect(page.locator('#modelInputCard')).toHaveJSProperty('open', false);
-  await expect(page.locator('#hardwareInputCard')).toHaveJSProperty('open', false);
+  expect(initialDimensions.document).toBeLessThanOrEqual(initialDimensions.viewport);
+  expect(initialDimensions.body).toBeLessThanOrEqual(initialDimensions.viewport);
+  expect(initialDimensions.navHeight).toBeLessThan(64);
+  expect(initialDimensions.tabsScrollWidth).toBeLessThanOrEqual(initialDimensions.tabsClientWidth);
+  await expect(page.locator('.plan-step-button')).toHaveCount(4);
+  await expect(page.locator('#modelInputCard')).toBeVisible();
+  await expect(page.locator('#modelInputCard')).toHaveJSProperty('open', true);
+  await expect(page.locator('#hardwareInputCard')).toBeHidden();
+  await expect(page.locator('[data-plan-step="4"]')).toBeDisabled();
+
+  await advancePlanTo(page, 2);
+  await expect(page.locator('#hardwareInputCard')).toBeVisible();
+  await expect(page.locator('#modelInputCard')).toBeHidden();
+  await advancePlanTo(page, 3);
+  await expect(page.locator('#modeInputCard')).toBeVisible();
+  await advancePlanTo(page, 4);
+  await expect(page.locator('.planner-stage')).toBeVisible();
+  await expect(page.locator('.result-reason')).toBeVisible();
   await expect(page.locator('.execution-card')).toHaveJSProperty('open', false);
   await expect(page.locator('.mobile-calibration-summary')).toBeVisible();
   await expect(page.locator('.mobile-calibration-summary')).toHaveJSProperty('open', false);
   await expect(page.locator('.desktop-calibration-summary')).toBeHidden();
-
-  await page.locator('#modelInputCard > summary').click();
-  await expect(page.locator('#modelInputCard')).toHaveJSProperty('open', true);
-  await expect(page.locator('#hardwareInputCard')).toHaveJSProperty('open', false);
-  await expect(page.locator('#hfImportDisclosure')).toHaveJSProperty('open', false);
-
-  await page.locator('#hardwareInputCard > summary').click();
-  await expect(page.locator('#hardwareInputCard')).toHaveJSProperty('open', true);
-  await expect(page.locator('#modelInputCard')).toHaveJSProperty('open', false);
 
   await page.locator('.reference-card > summary').click();
   const expandedWidth = await page.evaluate(() => document.documentElement.scrollWidth);
