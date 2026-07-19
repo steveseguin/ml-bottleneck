@@ -2832,6 +2832,10 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     scroll-margin-top: 10.25rem;
 }
 .header-result[hidden] { display: none !important; }
+.plan-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; margin-left: auto; }
+.plan-reset-button { min-height: 2rem; padding: 0.35rem 0.65rem; border: 1px solid var(--border); border-radius: 0.55rem; background: transparent; color: var(--text-secondary); cursor: pointer; font: inherit; font-size: 0.64rem; font-weight: 650; }
+.plan-reset-button:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); color: var(--text); }
+.plan-reset-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .plan-step-button {
     display: flex;
     align-items: center;
@@ -3147,6 +3151,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     .app-header h1 { margin: 0; font-size: 1.18rem; }
     .app-subtitle,
     .header-result { display: none; }
+    .plan-header-actions { justify-content: flex-start; margin: 0.35rem 0 0; }
     .plan-progress { gap: 0.25rem; margin-bottom: 0.55rem; scroll-margin-top: 7.25rem; }
     .plan-step-button { justify-content: center; gap: 0.35rem; min-height: 3.2rem; padding: 0.35rem 0.25rem; border-radius: 0.65rem; text-align: center; }
     .plan-step-number { width: 1.55rem; height: 1.55rem; font-size: 0.62rem; }
@@ -3283,10 +3288,13 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             <h1>Plan a deployment</h1>
             <p class="app-subtitle">Make three choices, then see the prediction and what limits it.</p>
         </div>
-        <div class="header-result" id="headerResult" aria-live="polite" hidden>
-            <span class="header-result-label">Current plan · expected / ideal</span>
-            <strong id="headerResultRate">Calculating…</strong>
-            <span id="headerResultMeta">Choose a model and hardware</span>
+        <div class="plan-header-actions">
+            <button class="plan-reset-button" id="resetPlanButton" type="button" title="Restore the factory model, hardware, and run-mode defaults">Reset plan</button>
+            <div class="header-result" id="headerResult" aria-live="polite" hidden>
+                <span class="header-result-label">Current plan · expected / ideal</span>
+                <strong id="headerResultRate">Calculating…</strong>
+                <span id="headerResultMeta">Choose a model and hardware</span>
+            </div>
         </div>
     </header>
 
@@ -7139,6 +7147,99 @@ const DEVICE_TEMPLATES = {
             ...DEVICE_TEMPLATES["RTX 5090"]
         }];
         let selectedDeviceId = devices[0]?.id || null;
+	    const LAST_PLAN_STORAGE_KEY = 'mlBottleneck:lastPlan:v1';
+	    let lastPlanPreferencesReady = false;
+
+	    function createFactoryDevice() {
+	        return {
+	            id: 1,
+	            name: 'NVIDIA RTX 5090',
+	            template: 'RTX 5090',
+	            ...JSON.parse(JSON.stringify(DEVICE_TEMPLATES['RTX 5090']))
+	        };
+	    }
+
+	    function saveLastPlanPreferences() {
+	        if (!lastPlanPreferencesReady) return;
+	        try {
+	            localStorage.setItem(LAST_PLAN_STORAGE_KEY, JSON.stringify({
+	                version: 1,
+	                model: getModelConfig(),
+	                selectedDeviceId,
+	                hoursPerDay: document.getElementById('hoursPerDay')?.value || '8',
+	                costPerKwh: document.getElementById('costPerKwh')?.value || '0.12'
+	            }));
+	        } catch (error) {
+	            console.warn('Could not save the last plan:', error);
+	        }
+	    }
+
+	    function setStoredControlValue(id, value) {
+	        const control = document.getElementById(id);
+	        if (!control || value === undefined || value === null) return;
+	        const nextValue = String(value);
+	        if (control.tagName === 'SELECT' && !Array.from(control.options).some(option => option.value === nextValue)) return;
+	        control.value = nextValue;
+	    }
+
+	    function restoreLastPlanPreferences() {
+	        try {
+	            const raw = localStorage.getItem(LAST_PLAN_STORAGE_KEY);
+	            if (!raw) return false;
+	            const saved = JSON.parse(raw);
+	            const model = saved?.model;
+	            if (!model || typeof model !== 'object') return false;
+
+	            setStoredControlValue('modelPreset', MODEL_PRESETS[model.modelPreset] ? model.modelPreset : '');
+	            setStoredControlValue('quantizationType', model.quantizationType || 'q4');
+	            updateModelConfigFromPreset();
+
+	            const directFields = [
+	                'hfId', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'hiddenSize',
+	                'numLayers', 'numHeads', 'numKVHeads', 'intermediateSize', 'architectureType',
+	                'activeParamsB', 'numExperts', 'activeExperts', 'routingType', 'attentionMechanism',
+	                'parallelismStrategy', 'optimizationMode', 'specMethod', 'specTokens', 'specDraftModel',
+	                'kvCacheCompression', 'runtimeFramework'
+	            ];
+	            directFields.forEach(id => setStoredControlValue(id, model[id]));
+	            setStoredControlValue('seqLength', model.seqLength);
+	            setStoredControlValue('specAcceptance', Number.isFinite(model.specAcceptance) ? Math.round(model.specAcceptance * 100) : 70);
+	            setStoredControlValue('specDraftRatio', Number.isFinite(model.specDraftRatio) ? Math.round(model.specDraftRatio * 100) : 8);
+	            setStoredControlValue('hoursPerDay', saved.hoursPerDay);
+	            setStoredControlValue('costPerKwh', saved.costPerKwh);
+	            if (devices.some(device => device.id === saved.selectedDeviceId)) selectedDeviceId = saved.selectedDeviceId;
+	            updateSpeculativeControls();
+	            updateDeviceDisplay();
+	            return true;
+	        } catch (error) {
+	            console.warn('Could not restore the last plan:', error);
+	            return false;
+	        }
+	    }
+
+	    function resetPlanToDefaults() {
+	        localStorage.removeItem(LAST_PLAN_STORAGE_KEY);
+	        localStorage.removeItem('savedDevices');
+	        devices = [createFactoryDevice()];
+	        selectedDeviceId = 1;
+	        setStoredControlValue('modelPreset', 'llama3_8b');
+	        setStoredControlValue('quantizationType', 'q4');
+	        updateModelConfigFromPreset();
+	        [
+	            ['batchSize', 1], ['promptTokens', 16384], ['outputTokens', 4096], ['seqLength', 20480],
+	            ['parallelismStrategy', 'auto'], ['optimizationMode', 'none'], ['runtimeFramework', 'auto'],
+	            ['kvCacheCompression', 'none'], ['specMethod', 'draft_model'], ['specTokens', 5],
+	            ['specAcceptance', 70], ['specDraftRatio', 8], ['specDraftModel', ''],
+	            ['hoursPerDay', 8], ['costPerKwh', 0.12]
+	        ].forEach(([id, value]) => setStoredControlValue(id, value));
+	        updateSpeculativeControls();
+	        furthestPlanStep = 1;
+	        showPlanStep(1);
+	        updateDeviceDisplay();
+	        updateSystemAnalysis();
+	        saveDevices();
+	        saveLastPlanPreferences();
+	    }
 	    
 	    let utilizationChart = null;
         const DEFAULT_PROMPT_TOKENS = 16384;
@@ -10589,6 +10690,7 @@ const DEVICE_TEMPLATES = {
 
             // Refresh topology so node accent colours reflect the new metrics
             if (typeof updateTopology === 'function') updateTopology();
+            saveLastPlanPreferences();
         }
 	    
         function escapeHtml(value) {
@@ -12329,16 +12431,42 @@ const DEVICE_TEMPLATES = {
             if (controls) controls.hidden = document.getElementById('optimizationMode')?.value !== 'speculative';
         }
 
-        function filterHardwarePresets(query, select) {
+        let hardwareFilterApplyTimer = null;
+        function filterHardwarePresets(query, select, autoApply = true) {
             if (!select) return;
             const normalizedQuery = String(query || '').trim().toLowerCase();
             Array.from(select.options).forEach(option => {
-                const isSpecial = option.value === 'Custom' || option.value.startsWith('lib_');
-                option.hidden = Boolean(normalizedQuery) && !isSpecial && !option.textContent.toLowerCase().includes(normalizedQuery) && option.value !== select.value;
+                option.hidden = Boolean(normalizedQuery) && !option.textContent.toLowerCase().includes(normalizedQuery);
             });
             Array.from(select.querySelectorAll('optgroup')).forEach(group => {
                 group.hidden = Array.from(group.querySelectorAll('option')).every(option => option.hidden);
             });
+
+            if (!normalizedQuery) {
+                clearTimeout(hardwareFilterApplyTimer);
+                return;
+            }
+            const matches = Array.from(select.options).filter(option => !option.hidden);
+            if (!matches.length) return;
+            const bestMatch = matches.find(option => option.textContent.trim().toLowerCase().startsWith(normalizedQuery)) || matches[0];
+            const previousValue = select.value;
+            select.value = bestMatch.value;
+            if (!autoApply || bestMatch.value === previousValue) return;
+
+            clearTimeout(hardwareFilterApplyTimer);
+            hardwareFilterApplyTimer = setTimeout(() => {
+                if (!select.isConnected || select.value !== bestMatch.value) return;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                setTimeout(() => {
+                    const nextSearch = document.querySelector('#hardwareInputCard .hardware-search');
+                    const nextSelect = nextSearch?.closest('.hardware-preset-row')?.querySelector('select');
+                    if (!nextSearch || !nextSelect) return;
+                    nextSearch.value = query;
+                    filterHardwarePresets(query, nextSelect, false);
+                    nextSearch.focus();
+                    nextSearch.setSelectionRange?.(nextSearch.value.length, nextSearch.value.length);
+                }, 0);
+            }, 250);
         }
 
 
@@ -12965,6 +13093,13 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        });
 	        modelPresetSelect.appendChild(optgroup);
 	    }
+
+	    // Resume the last working plan. The separate saved-device library is
+	    // untouched; this is simply the user's most recent planner state.
+	    loadDevices();
+	    restoreLastPlanPreferences();
+	    lastPlanPreferencesReady = true;
+	    document.getElementById('resetPlanButton')?.addEventListener('click', resetPlanToDefaults);
 
         const modelSearch = document.getElementById('modelSearch');
         const modelSearchOptions = document.getElementById('modelSearchOptions');

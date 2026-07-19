@@ -254,6 +254,39 @@ test('hardware editor keeps one selected device and adds new devices to topology
   await expect(page.locator('#devices .hardware-advanced')).toHaveAttribute('open', '');
 });
 
+test('planner resumes the last choices, hardware search applies its match, and reset restores defaults', async ({ page }) => {
+  await loadApp(page);
+  await advancePlanTo(page, 2);
+
+  await page.locator('#devices .hardware-search').fill('RTX 5070 Ti');
+  await page.waitForTimeout(400);
+  await expect(page.locator('#devices .hardware-preset-line select')).toHaveValue('RTX 5070 Ti');
+  await expect(page.locator('#deviceRoster .device-roster-card.is-selected')).toContainText('NVIDIA RTX 5070 Ti');
+  await expect(page.locator('#devices .hardware-spec-meta')).toContainText('16 GB');
+
+  await selectAndChange(page, '#modelPreset', 'qwen3_8b');
+  await selectAndChange(page, '#quantizationType', 'int8');
+  await selectAndChange(page, '#runtimeFramework', 'llama_cpp');
+  await selectAndChange(page, '#parallelismStrategy', 'tensor');
+  await page.reload();
+  await page.waitForSelector('#systemAnalysis .result-hero', { state: 'attached' });
+
+  await expect(page.locator('#modelPreset')).toHaveValue('qwen3_8b');
+  await expect(page.locator('#quantizationType')).toHaveValue('int8');
+  await expect(page.locator('#runtimeFramework')).toHaveValue('llama_cpp');
+  await expect(page.locator('#parallelismStrategy')).toHaveValue('tensor');
+  await expect(page.locator('#deviceRoster .device-roster-card.is-selected')).toContainText('NVIDIA RTX 5070 Ti');
+
+  await page.locator('#resetPlanButton').click();
+  await expect(page.locator('#modelPreset')).toHaveValue('llama3_8b');
+  await expect(page.locator('#quantizationType')).toHaveValue('q4');
+  await expect(page.locator('#runtimeFramework')).toHaveValue('auto');
+  await expect(page.locator('#parallelismStrategy')).toHaveValue('auto');
+  await expect(page.locator('#deviceRoster .device-roster-card')).toHaveCount(1);
+  await expect(page.locator('#deviceRoster .device-roster-card')).toContainText('NVIDIA RTX 5090');
+  await expect(page.locator('[data-plan-step="1"]')).toHaveClass(/is-active/);
+});
+
 test('displayed result rates match core calculations across different configs', async ({ page }) => {
   await loadApp(page);
 
