@@ -2623,13 +2623,13 @@ td {
 #executionMap {
     --map-dev-1: #2a78d6; --map-dev-2: #1baf7a; --map-dev-3: #eda100; --map-dev-4: #008300;
     --map-dev-5: #4a3aa7; --map-dev-6: #e34948; --map-dev-7: #e87ba4; --map-dev-8: #eb6834;
-    --map-mem-weights: #2a78d6; --map-mem-kv: #86b6ef; --map-sync: #eb6834;
+    --map-mem-weights: #2a78d6; --map-mem-kv: #86b6ef; --map-compute: #8b5cf6; --map-runtime: #d69e2e; --map-sync: #eb6834;
 }
 @media (prefers-color-scheme: dark) {
     #executionMap {
         --map-dev-1: #3987e5; --map-dev-2: #199e70; --map-dev-3: #c98500; --map-dev-4: #008300;
         --map-dev-5: #9085e9; --map-dev-6: #e66767; --map-dev-7: #d55181; --map-dev-8: #d95926;
-        --map-mem-weights: #3987e5; --map-mem-kv: #6da7ec; --map-sync: #d95926;
+        --map-mem-weights: #3987e5; --map-mem-kv: #6da7ec; --map-compute: #a78bfa; --map-runtime: #d69e2e; --map-sync: #d95926;
     }
 }
 .map-section { margin-top: 0.9rem; }
@@ -2653,6 +2653,8 @@ td {
 .wf-seg { border-radius: 3px; min-width: 3px; }
 .wf-seg.is-weights, .wf-key.is-weights { background: var(--map-mem-weights); }
 .wf-seg.is-kv, .wf-key.is-kv { background: var(--map-mem-kv); }
+.wf-seg.is-compute, .wf-key.is-compute { background: var(--map-compute); }
+.wf-seg.is-runtime, .wf-key.is-runtime { background: var(--map-runtime); }
 .wf-seg.is-sync, .wf-key.is-sync { background: var(--map-sync); }
 .wf-meta { font-size: 0.66rem; color: var(--text-secondary); white-space: nowrap; }
 .wf-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 0.8rem; margin-top: 0.5rem; align-items: center; }
@@ -2902,6 +2904,9 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .plan-back-button { border-color: var(--border); background: var(--background); color: var(--text) !important; opacity: 1; }
 .plan-run-button { display: inline-flex; align-items: center; gap: 0.45rem; }
 .mode-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.decode-profile-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+.decode-profile-fields label { display: block; margin-bottom: 0.25rem; font-size: 0.68rem; }
+.decode-profile-note { margin: 0.55rem 0 0; color: var(--text-secondary); font-size: 0.67rem; line-height: 1.45; }
 .mode-field { padding: 0.8rem; border: 1px solid var(--border); border-radius: 0.75rem; background: color-mix(in srgb, var(--background) 75%, transparent); }
 .mode-field label { display: block; margin-bottom: 0.35rem; }
 .mode-field .input { margin-bottom: 0; }
@@ -2916,7 +2921,17 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     line-height: 1.5;
 }
 .result-reason strong { color: var(--text); }
-.result-step-footer { display: flex; justify-content: flex-start; margin-top: 0.8rem; }
+.result-step-footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; margin-top: 0.8rem; }
+.plan-export { margin-left: auto; }
+.plan-export > summary { list-style: none; cursor: pointer; color: var(--primary); font-size: 0.72rem; font-weight: 750; }
+.plan-export > summary::-webkit-details-marker { display: none; }
+.plan-export > summary::before { content: '⇩'; margin-right: 0.35rem; }
+.plan-export[open] > summary::before { content: '×'; }
+.plan-export-menu { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.45rem; margin-top: 0.55rem; padding: 0.65rem; border: 1px solid var(--border); border-radius: 0.7rem; background: var(--background); }
+.plan-export-menu .button { min-height: 2rem; padding: 0.4rem 0.65rem; font-size: 0.67rem; }
+.plan-export-status { flex-basis: 100%; min-height: 1em; color: var(--text-secondary); text-align: right; font-size: 0.62rem; }
+.plan-export-status.is-success { color: #15803d; }
+.plan-export-status.is-error { color: var(--destructive); }
 .execution-card > .mobile-execution-summary {
     display: flex;
     align-items: center;
@@ -3181,6 +3196,12 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     .device-roster-card { scroll-snap-align: start; }
     .device-roster-head span { display: none; }
     .mode-choice-grid { grid-template-columns: 1fr; gap: 0.55rem; }
+    .decode-profile-fields { grid-template-columns: 1fr; }
+    .result-step-footer { align-items: stretch; flex-direction: column; }
+    .plan-export { margin-left: 0; }
+    .plan-export-menu { justify-content: stretch; }
+    .plan-export-menu .button { flex: 1 1 9rem; }
+    .plan-export-status { text-align: left; }
     .mode-field-wide { grid-column: auto; }
     .mode-field { padding: 0.65rem; }
     .plan-step-actions { margin-top: 0.7rem; padding-top: 0.7rem; }
@@ -3198,7 +3219,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     .result-hero-side { padding: 0.68rem; }
     .result-hero-side { border-top: 1px solid var(--border); border-left: 0; }
     .result-hero .rate-label { font-size: 0; }
-    .result-hero .rate-label::before { content: 'Expected decode'; font-size: 0.58rem; }
+    .result-hero .rate-label::before { content: 'Projected decode'; font-size: 0.58rem; }
     .result-hero .rate-number { font-size: 2rem; }
     .result-hero .rate-units { font-size: 0.78rem; }
     .result-hero .bottleneck-line { padding: 0.35rem 0.5rem; font-size: 0.65rem; }
@@ -3532,6 +3553,31 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                                 <option value="tensorrt_llm">TensorRT-LLM</option>
                                 <option value="exo">EXO / MLX Distributed</option>
                             </select>
+                            <details class="nested-details" id="decodeProfileDisclosure">
+                                <summary>Measured or mixed execution profile</summary>
+                                <div class="nested-details-content">
+                                    <p class="field-help" style="margin-top: 0;">Optional measurements replace only the matching estimate. The ideal still uses official peak hardware bandwidth; the projected result uses sustained bandwidth and exposed overhead.</p>
+                                    <div class="decode-profile-fields">
+                                        <div>
+                                            <label for="decodeBytesPerPassGB">Aggregate bytes / decode pass (GB)</label>
+                                            <input id="decodeBytesPerPassGB" class="input" type="number" min="0" step="0.01" placeholder="Estimated from model + quant">
+                                        </div>
+                                        <div>
+                                            <label for="residentWeightsGB">Aggregate resident weights (GB)</label>
+                                            <input id="residentWeightsGB" class="input" type="number" min="0" step="0.01" placeholder="Estimated from model + quant">
+                                        </div>
+                                        <div>
+                                            <label for="decodeOverheadMs">Exposed non-memory overhead (ms/pass)</label>
+                                            <input id="decodeOverheadMs" class="input" type="number" min="0" step="0.01" placeholder="Estimated from runtime">
+                                        </div>
+                                        <div>
+                                            <label for="executionProfileName">Profile label</label>
+                                            <input id="executionProfileName" class="input" type="text" placeholder="e.g. native mixed XPU">
+                                        </div>
+                                    </div>
+                                    <p class="decode-profile-note">Bytes/pass can describe mixed precision across attention, experts, heads, compressors, and routers. Resident weights controls capacity separately; sustained bandwidth is set on each device.</p>
+                                </div>
+                            </details>
                         </div>
 
                         <div class="tuning-section">
@@ -3560,9 +3606,10 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                                     <option value="h100_single">Single H100</option>
                                     <option value="h100_x8">8x H100 (NVLink)</option>
                                 </optgroup>
-                                <optgroup label="Workstation AI">
-                                    <option value="b70_x4_minimax_m27">4x Intel Arc Pro B70 + MiniMax M2.7 (Q4 plan)</option>
-                                </optgroup>
+                            <optgroup label="Workstation AI">
+                                <option value="b70_x4_minimax_m27">4x Intel Arc Pro B70 + MiniMax M2.7 (Q4 plan)</option>
+                                <option value="b70_x4_dsv4_reap_record">4x Intel Arc Pro B70 + DeepSeek V4 REAP (measured mixed profile)</option>
+                            </optgroup>
                             </select>
                         </div>
 
@@ -3732,7 +3779,18 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         </div>
         <div id="alerts"></div>
         <div id="systemAnalysis"></div>
-        <div class="result-step-footer"><button class="button plan-back-button" type="button" data-plan-back="3">Adjust run mode</button></div>
+        <div class="result-step-footer">
+            <button class="button plan-back-button" type="button" data-plan-back="3">Adjust run mode</button>
+            <details class="plan-export">
+                <summary>Export this plan</summary>
+                <div class="plan-export-menu">
+                    <button class="button" id="copyAiHandoffButton" type="button">Copy AI handoff</button>
+                    <button class="button" id="copyPlanJsonButton" type="button">Copy Plan JSON</button>
+                    <button class="button" id="downloadPlanJsonButton" type="button">Download JSON</button>
+                    <div class="plan-export-status" id="planExportStatus" role="status" aria-live="polite"></div>
+                </div>
+            </details>
+        </div>
     </div>
 
     <details class="card execution-card" aria-labelledby="executionMapTitle">
@@ -3890,7 +3948,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             <section class="interpreter-output" id="interpreterOutput" aria-live="polite">
                 <span class="empty-kicker">Waiting for a measurement</span>
                 <h2>Your active plan supplies the model and hardware.</h2>
-                <p>We will compare the entered result with both its physical ceiling and the peer-calibrated expectation.</p>
+                <p>We will compare the entered result with the primary projected outcome and the extreme, zero-overhead ideal.</p>
             </section>
         </div>
         <details class="api-contract-disclosure">
@@ -7199,7 +7257,8 @@ const DEVICE_TEMPLATES = {
 	                'numLayers', 'numHeads', 'numKVHeads', 'intermediateSize', 'architectureType',
 	                'activeParamsB', 'numExperts', 'activeExperts', 'routingType', 'attentionMechanism',
 	                'parallelismStrategy', 'optimizationMode', 'specMethod', 'specTokens', 'specDraftModel',
-	                'kvCacheCompression', 'runtimeFramework'
+	                'kvCacheCompression', 'runtimeFramework', 'decodeBytesPerPassGB', 'residentWeightsGB', 'decodeOverheadMs',
+	                'executionProfileName'
 	            ];
 	            directFields.forEach(id => setStoredControlValue(id, model[id]));
 	            setStoredControlValue('seqLength', model.seqLength);
@@ -7230,6 +7289,7 @@ const DEVICE_TEMPLATES = {
 	            ['parallelismStrategy', 'auto'], ['optimizationMode', 'none'], ['runtimeFramework', 'auto'],
 	            ['kvCacheCompression', 'none'], ['specMethod', 'draft_model'], ['specTokens', 5],
 	            ['specAcceptance', 70], ['specDraftRatio', 8], ['specDraftModel', ''],
+	            ['decodeBytesPerPassGB', ''], ['residentWeightsGB', ''], ['decodeOverheadMs', ''], ['executionProfileName', ''],
 	            ['hoursPerDay', 8], ['costPerKwh', 0.12]
 	        ].forEach(([id, value]) => setStoredControlValue(id, value));
 	        updateSpeculativeControls();
@@ -7353,7 +7413,11 @@ const DEVICE_TEMPLATES = {
                 specDraftRatio: Math.min(1, Math.max(0, parseFloat(document.getElementById('specDraftRatio')?.value || '8') / 100)),
                 specDraftModel: document.getElementById('specDraftModel')?.value?.trim() || '',
                 kvCacheCompression: document.getElementById('kvCacheCompression')?.value || 'none',
-                runtimeFramework: document.getElementById('runtimeFramework')?.value || 'auto'
+                runtimeFramework: document.getElementById('runtimeFramework')?.value || 'auto',
+                decodeBytesPerPassGB: parseOptionalNumber('decodeBytesPerPassGB'),
+                residentWeightsGB: parseOptionalNumber('residentWeightsGB'),
+                decodeOverheadMs: parseOptionalNumber('decodeOverheadMs'),
+                executionProfileName: document.getElementById('executionProfileName')?.value?.trim() || ''
             };
         }
 
@@ -7507,6 +7571,43 @@ const DEVICE_TEMPLATES = {
         function getWeightBytesPerParam(modelConfig, dtypeSize) {
             const nativeBytes = modelConfig?.nativeBytesPerParam;
             return Number.isFinite(nativeBytes) && nativeBytes > 0 ? Math.min(dtypeSize, nativeBytes) : dtypeSize;
+        }
+
+        // Packed formats carry block scales, zero-points, alignment, and
+        // metadata. Keep this explicit and shared so the capacity view,
+        // execution map, and decode roofline cannot silently use different
+        // byte widths for the same plan.
+        function getWeightStorageOverhead(quantizationType) {
+            if (['q4', 'q3', 'q2'].includes(quantizationType)) return 1.08;
+            if (quantizationType === 'int8' || quantizationType === 'fp8') return 1.03;
+            return 1;
+        }
+
+        function getResidentWeightBytes(modelConfig, dtypeSize) {
+            const profiledResidentGB = Number(modelConfig?.residentWeightsGB);
+            if (Number.isFinite(profiledResidentGB) && profiledResidentGB > 0) return profiledResidentGB * 1e9;
+            return modelConfig.totalParamsB * 1e9 * getWeightBytesPerParam(modelConfig, dtypeSize) * getWeightStorageOverhead(modelConfig.quantizationType);
+        }
+
+        function getDecodeWeightProfile(modelConfig, dtypeSize) {
+            const customAggregateGB = Number(modelConfig?.decodeBytesPerPassGB);
+            if (Number.isFinite(customAggregateGB) && customAggregateGB > 0) {
+                return {
+                    aggregateWeightBytes: customAggregateGB * 1e9,
+                    includesKv: true,
+                    source: 'measured',
+                    label: modelConfig.executionProfileName || 'Measured / mixed execution profile'
+                };
+            }
+            const bytesPerParam = getWeightBytesPerParam(modelConfig, dtypeSize);
+            const overhead = getWeightStorageOverhead(modelConfig.quantizationType);
+            const architectureProfile = getArchitectureProfile(modelConfig);
+            return {
+                aggregateWeightBytes: getActiveParamsB(modelConfig) * 1e9 * bytesPerParam * overhead * architectureProfile.decodeWeightAccessMultiplier,
+                includesKv: false,
+                source: 'estimated',
+                label: `Uniform ${String(modelConfig.quantizationType || '').toUpperCase()} estimate`
+            };
         }
 
         const KV_CACHE_COMPRESSION_PROFILES = {
@@ -7750,6 +7851,15 @@ const DEVICE_TEMPLATES = {
             return { residentScale: 1, accessedScale: 1, kvScale: 1, activationScale: 1 };
         }
 
+        function getParallelismComputeScale(modelConfig, devicesArray, deviceIndex) {
+            const count = Math.max(devicesArray.length, 1);
+            const strategy = modelConfig.parallelismStrategy || 'pipeline';
+            if (strategy === 'data') return 1;
+            if (strategy === 'pipeline') return getMemoryProportion(devicesArray, deviceIndex);
+            if (strategy === 'expert') return 1 / Math.min(count, Math.max(modelConfig.activeExperts || 1, 1));
+            return 1 / count;
+        }
+
         function getTensorCommunicationEfficiency(devicesArray) {
             if (devicesArray.length <= 1) return 1;
 
@@ -7765,7 +7875,7 @@ const DEVICE_TEMPLATES = {
             return 0.80;
         }
 
-        function calculateSystemRateFromDeviceRates(deviceRates, strategy, batchSize, devicesArray) {
+        function calculateSystemRateFromDeviceRates(deviceRates, strategy, batchSize, devicesArray, options = {}) {
             const validRates = deviceRates.filter(rate => Number.isFinite(rate) && rate > 0);
             if (validRates.length === 0) return 0;
 
@@ -7777,8 +7887,10 @@ const DEVICE_TEMPLATES = {
                 return sumRate;
             }
 
+            const applyAggregationPenalty = options.applyAggregationPenalty !== false;
+
             if (strategy === 'tensor' || strategy === 'hybrid_tp_pp' || strategy === 'hybrid_tp_dp') {
-                return minRate * getTensorCommunicationEfficiency(devicesArray);
+                return minRate * (applyAggregationPenalty ? getTensorCommunicationEfficiency(devicesArray) : 1);
             }
 
             if (strategy === 'pipeline') {
@@ -7788,10 +7900,33 @@ const DEVICE_TEMPLATES = {
             }
 
             if (strategy === 'expert') {
-                return minRate * 0.9;
+                return minRate * (applyAggregationPenalty ? 0.9 : 1);
             }
 
-            return minRate * 0.92;
+            return minRate * (applyAggregationPenalty ? 0.92 : 1);
+        }
+
+        // Extreme-ideal aggregation deliberately removes every modeled
+        // software, collective, scheduling, and pipeline-warmup loss. Device
+        // rates passed here are already based on official peak hardware specs.
+        function calculateIdealSystemRateFromDeviceRates(deviceRates, strategy, batchSize) {
+            const validRates = deviceRates.filter(rate => Number.isFinite(rate) && rate > 0);
+            if (validRates.length === 0) return 0;
+
+            const minRate = Math.min(...validRates);
+            if (strategy === 'data') return validRates.reduce((sum, rate) => sum + rate, 0);
+            if (strategy === 'pipeline' && batchSize <= 1) {
+                return 1 / validRates.reduce((seconds, rate) => seconds + (1 / rate), 0);
+            }
+            return minRate;
+        }
+
+        function getSystemRateOptions(modelConfig) {
+            // A supplied end-to-end overhead already contains the runtime and
+            // collective loss. Applying the generic topology haircut as well
+            // would charge the same loss twice.
+            const hasProfiledOverhead = Number.isFinite(modelConfig?.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
+            return { applyAggregationPenalty: !hasProfiledOverhead };
         }
 	function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex ) {
 		const architectureProfile = getArchitectureProfile(modelConfig);
@@ -7801,7 +7936,7 @@ const DEVICE_TEMPLATES = {
 		// (the TurboQuant modes) shrinks them.
 		const kvCacheDtypeSize = 2;
 		const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, kvCacheDtypeSize);
-		const paramsMemory = modelConfig.totalParamsB * 1e9 * getWeightBytesPerParam(modelConfig, dtypeSize);
+		const paramsMemory = getResidentWeightBytes(modelConfig, dtypeSize);
 		const kvHeads = getKVHeads(modelConfig);
 		const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength *
 			(modelConfig.hiddenSize / modelConfig.numHeads) *
@@ -7943,17 +8078,29 @@ const DEVICE_TEMPLATES = {
             const parallelScales = modelConfig
                 ? getParallelismScales(modelConfig, allDevices, deviceIndex)
                 : { residentScale: 1, accessedScale: 1 };
-            const dtypeSize = modelConfig && modelConfig.totalParamsB > 0
-                ? modelSizeBytes / (modelConfig.totalParamsB * 1e9)
+            const dtypeSize = modelConfig
+                ? (DTYPE_SIZES[modelConfig.quantizationType] || (modelConfig.totalParamsB > 0
+                    ? modelSizeBytes / (modelConfig.totalParamsB * 1e9 * getWeightStorageOverhead(modelConfig.quantizationType))
+                    : 1))
                 : 1;
             const decodeKvCacheBytes = modelConfig
                 ? calculateDecodeKVCacheBytes(modelConfig, dtypeSize, parallelScales.kvScale || 1)
                 : 0;
-            const residentModelSizeBytes = (modelSizeBytes * parallelScales.residentScale) + decodeKvCacheBytes;
-            const accessedWeightBytes = modelConfig
-                ? getActiveParamsB(modelConfig) * 1e9 * (modelSizeBytes / (modelConfig.totalParamsB * 1e9)) * parallelScales.accessedScale * architectureProfile.decodeWeightAccessMultiplier
-                : modelSizeBytes;
-            const accessedModelSizeBytes = accessedWeightBytes + decodeKvCacheBytes;
+            const residentWeightBytes = modelSizeBytes * parallelScales.residentScale;
+            const residentModelSizeBytes = residentWeightBytes + decodeKvCacheBytes;
+            const weightProfile = modelConfig ? getDecodeWeightProfile(modelConfig, dtypeSize) : {
+                aggregateWeightBytes: modelSizeBytes,
+                includesKv: false,
+                source: 'estimated',
+                label: 'Model-size estimate'
+            };
+            const profiledAccessBytes = weightProfile.aggregateWeightBytes * parallelScales.accessedScale;
+            const accessedModelSizeBytes = weightProfile.includesKv
+                ? profiledAccessBytes
+                : profiledAccessBytes + decodeKvCacheBytes;
+            const accessedWeightBytes = weightProfile.includesKv
+                ? Math.max(0, accessedModelSizeBytes - decodeKvCacheBytes)
+                : profiledAccessBytes;
             // Case 1: Model fits entirely in device memory
             if (residentModelSizeBytes <= deviceMemoryBytes) {
                 return {
@@ -7963,9 +8110,13 @@ const DEVICE_TEMPLATES = {
                     overflowBandwidthGBps: 0,
                     bottleneckReason: 'none',
                     hasOverflow: false,
+                    residentWeightBytes,
+                    residentModelSizeBytes,
                     accessedModelSizeBytes,
                     accessedWeightBytes,
-                    decodeKvCacheBytes
+                    decodeKvCacheBytes,
+                    byteProfileSource: weightProfile.source,
+                    byteProfileLabel: weightProfile.label
                 };
             }
 
@@ -8027,9 +8178,13 @@ const DEVICE_TEMPLATES = {
                 totalTimeMs,
                 hasOverflow: true,
                 overflowGB: overflowPortion / 1e9,
+                residentWeightBytes,
+                residentModelSizeBytes,
                 accessedModelSizeBytes,
                 accessedWeightBytes,
-                decodeKvCacheBytes
+                decodeKvCacheBytes,
+                byteProfileSource: weightProfile.source,
+                byteProfileLabel: weightProfile.label
             };
         }
 
@@ -8043,7 +8198,7 @@ const DEVICE_TEMPLATES = {
          * bytes_per_token ≈ model_size_bytes (must read all weights per token)
          */
         function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, deviceIndex = 0) {
-            const modelSizeBytes = modelConfig.totalParamsB * 1e9 * getWeightBytesPerParam(modelConfig, dtypeSize);
+            const modelSizeBytes = getResidentWeightBytes(modelConfig, dtypeSize);
             const frameworkProfile = getFrameworkProfile(modelConfig, allDevices);
             const optimization = getOptimizationAdjustments(modelConfig);
 
@@ -8054,6 +8209,18 @@ const DEVICE_TEMPLATES = {
             const theoreticalTokensPerSec = (bandwidthInfo.effectiveBandwidthGBps * 1e9) /
                 bandwidthInfo.accessedModelSizeBytes;
 
+            const measuredSustainedBandwidth = Number(device.sustainedBandwidthGBps);
+            const usesMeasuredSustainedBandwidth = !bandwidthInfo.hasOverflow && Number.isFinite(measuredSustainedBandwidth) && measuredSustainedBandwidth > 0;
+            const realisticBandwidthGBps = usesMeasuredSustainedBandwidth
+                ? Math.min(device.localBandwidthGBps, measuredSustainedBandwidth)
+                : bandwidthInfo.effectiveBandwidthGBps * frameworkProfile.bandwidthEfficiency;
+            const realisticMemorySeconds = bandwidthInfo.accessedModelSizeBytes /
+                (Math.max(realisticBandwidthGBps, 0.0001) * 1e9);
+            const hasMeasuredOverhead = Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
+            const runtimeOverheadSeconds = hasMeasuredOverhead
+                ? 0
+                : realisticMemorySeconds * ((1 / Math.max(frameworkProfile.decodeEfficiency, 0.05)) - 1);
+
             // Efficiency losses are capped below the per-pass roofline.
             // Speculative decoding is NOT an efficiency loss: it emits extra
             // accepted tokens per weight pass, so it multiplies on top and can
@@ -8062,24 +8229,26 @@ const DEVICE_TEMPLATES = {
             // bandwidth math.
             const speculationMultiplier = optimization.speculation ? optimization.decodeMultiplier : 1;
             const efficiencyMultiplier = optimization.speculation ? 1 : optimization.decodeMultiplier;
-            const efficiencyFactor = Math.min(
-                0.97,
-                frameworkProfile.decodeEfficiency *
-                frameworkProfile.bandwidthEfficiency *
-                efficiencyMultiplier
-            );
-            const baselineTokensPerSec = theoreticalTokensPerSec * efficiencyFactor;
+            const baselinePassSeconds = (realisticMemorySeconds + runtimeOverheadSeconds) / Math.max(efficiencyMultiplier, 0.05);
+            const baselineTokensPerSec = baselinePassSeconds > 0 ? 1 / baselinePassSeconds : 0;
             const actualTokensPerSec = baselineTokensPerSec * speculationMultiplier;
 
             return {
                 tokensPerSecond: actualTokensPerSec,
                 tokensPerSecondWithoutSpeculation: baselineTokensPerSec,
                 speculationMultiplier,
+                efficiencyMultiplier,
                 theoreticalMax: theoreticalTokensPerSec,
                 modelSizeGB: modelSizeBytes / 1e9,
                 activeModelSizeGB: bandwidthInfo.accessedModelSizeBytes / 1e9,
                 activeWeightSizeGB: bandwidthInfo.accessedWeightBytes / 1e9,
                 decodeKvCacheGB: bandwidthInfo.decodeKvCacheBytes / 1e9,
+                residentWeightSizeGB: bandwidthInfo.residentWeightBytes / 1e9,
+                realisticBandwidthGBps,
+                usesMeasuredSustainedBandwidth,
+                realisticMemorySeconds,
+                runtimeOverheadSeconds,
+                hasMeasuredOverhead,
                 frameworkLabel: frameworkProfile.label,
                 ...bandwidthInfo
             };
@@ -8135,6 +8304,9 @@ const DEVICE_TEMPLATES = {
             const seqLength = baseConfig.seqLength || 2048;
             const batchSize = baseConfig.batchSize || 1;
             const isMoE = isMoEModel(baseConfig);
+            const runtimeKey = getFrameworkProfile(baseConfig, devices).key;
+            const tensorCapable = ['vllm', 'sglang', 'tensorrt_llm'].includes(runtimeKey);
+            const expertCapable = ['vllm', 'sglang'].includes(runtimeKey);
             const networkFloor = devices.length > 1
                 ? Math.min(...devices.map(device => device.networkBandwidthGBps || 0))
                 : Infinity;
@@ -8154,8 +8326,10 @@ const DEVICE_TEMPLATES = {
                 {
                     value: 'tensor',
                     name: 'Tensor Parallelism (TP)',
-                    valid: deviceCount >= 2,
-                    reason: deviceCount >= 2 ? 'Requires 2+ devices' : 'Need 2+ devices for tensor parallelism'
+                    valid: deviceCount >= 2 && tensorCapable,
+                    reason: deviceCount < 2
+                        ? 'Need 2+ devices for tensor parallelism'
+                        : (tensorCapable ? `Supported by ${runtimeKey}` : `${runtimeKey} uses layer/model splitting here, not true tensor parallelism`)
                 },
                 {
                     value: 'data',
@@ -8166,32 +8340,34 @@ const DEVICE_TEMPLATES = {
                 {
                     value: 'expert',
                     name: 'Expert Parallelism (EP)',
-                    valid: isMoE && deviceCount >= 2,
-                    reason: isMoE ? (deviceCount >= 2 ? 'Valid for MoE models' : 'Need 2+ devices') : 'Only valid for MoE models'
+                    valid: isMoE && deviceCount >= 2 && expertCapable,
+                    reason: !isMoE
+                        ? 'Only valid for MoE models'
+                        : (deviceCount < 2 ? 'Need 2+ devices' : (expertCapable ? `Supported by ${runtimeKey}` : `${runtimeKey} does not expose expert parallelism in this planner`))
                 },
                 {
                     value: 'sequence',
                     name: 'Sequence Parallelism (SP)',
-                    valid: deviceCount >= 2 && seqLength > 4096,
-                    reason: (deviceCount >= 2 && seqLength > 4096) ? 'Valid for long sequences' : 'Need 2+ devices and seq_len > 4096'
+                    valid: deviceCount >= 2 && seqLength > 4096 && tensorCapable,
+                    reason: (deviceCount >= 2 && seqLength > 4096 && tensorCapable) ? 'Valid for long sequences' : 'Needs a distributed runtime, 2+ devices, and seq_len > 4096'
                 },
                 {
                     value: 'context',
                     name: 'Context Parallelism (CP)',
-                    valid: deviceCount >= 2 && seqLength > 8192,
-                    reason: (deviceCount >= 2 && seqLength > 8192) ? 'Valid for very long contexts' : 'Need 2+ devices and seq_len > 8192'
+                    valid: deviceCount >= 2 && seqLength > 8192 && tensorCapable,
+                    reason: (deviceCount >= 2 && seqLength > 8192 && tensorCapable) ? 'Valid for very long contexts' : 'Needs a distributed runtime, 2+ devices, and seq_len > 8192'
                 },
                 {
                     value: 'hybrid_tp_pp',
                     name: 'Hybrid TP+PP',
-                    valid: deviceCount >= 4,
-                    reason: deviceCount >= 4 ? 'Valid for 4+ devices' : 'Need 4+ devices for hybrid TP+PP'
+                    valid: deviceCount >= 4 && tensorCapable,
+                    reason: deviceCount < 4 ? 'Need 4+ devices for hybrid TP+PP' : (tensorCapable ? `Supported by ${runtimeKey}` : `${runtimeKey} does not expose hybrid tensor parallelism here`)
                 },
                 {
                     value: 'hybrid_tp_dp',
                     name: 'Hybrid TP+DP',
-                    valid: deviceCount >= 4,
-                    reason: deviceCount >= 4 ? 'Valid for 4+ devices' : 'Need 4+ devices for hybrid TP+DP'
+                    valid: deviceCount >= 4 && tensorCapable,
+                    reason: deviceCount < 4 ? 'Need 4+ devices for hybrid TP+DP' : (tensorCapable ? `Supported by ${runtimeKey}` : `${runtimeKey} does not expose hybrid tensor parallelism here`)
                 }
             ];
 
@@ -8230,16 +8406,25 @@ const DEVICE_TEMPLATES = {
                 devices.forEach((device, deviceIndex) => {
                     const memoryBreakdown = calculateMemoryBreakdown(tempConfig, dtypeSize, deviceCount, isPipeline, deviceIndex);
                     const tokenRateInfo = calculateDecodeTokenRate(device, tempConfig, dtypeSize, devices, deviceIndex);
+                    const hasProfiledOverhead = Number.isFinite(tempConfig.decodeOverheadMs) && tempConfig.decodeOverheadMs >= 0;
+                    const overheadScale = strat.value === 'pipeline'
+                        ? getParallelismScales(tempConfig, devices, deviceIndex).accessedScale
+                        : 1;
+                    const coordinationSeconds = hasProfiledOverhead
+                        ? (tempConfig.decodeOverheadMs * overheadScale) / 1000
+                        : calculateDecodeCoordinationTimeSeconds(tempConfig, devices);
+                    const passSeconds = 1 / Math.max(tokenRateInfo.tokensPerSecondWithoutSpeculation, 0.0001);
+                    const deviceRate = tokenRateInfo.speculationMultiplier / Math.max(passSeconds + coordinationSeconds, 0.000001);
 
                     if (tokenRateInfo.hasOverflow) hasOverflow = true;
                     if (memoryBreakdown.total > device.memoryGB * 1e9) memoryOverflow = true;
 
-                    totalRate += tokenRateInfo.tokensPerSecond;
-                    minRate = Math.min(minRate, tokenRateInfo.tokensPerSecond);
-                    deviceRates.push(tokenRateInfo.tokensPerSecond);
+                    totalRate += deviceRate;
+                    minRate = Math.min(minRate, deviceRate);
+                    deviceRates.push(deviceRate);
                 });
 
-                const systemRate = calculateSystemRateFromDeviceRates(deviceRates, strat.value, batchSize, devices);
+                const systemRate = calculateSystemRateFromDeviceRates(deviceRates, strat.value, batchSize, devices, getSystemRateOptions(tempConfig));
 
                 let strategyScore = systemRate;
                 let scoreReason = strat.reason;
@@ -8830,6 +9015,12 @@ const DEVICE_TEMPLATES = {
 	function loadScenarioPreset(scenario) {
 	    if (!scenario) return;
 	    let scenarioUpdatesModel = false;
+	    // A scenario owns its execution measurements. Clear any previous
+	    // measured profile before loading a different one.
+	    setStoredControlValue('decodeBytesPerPassGB', '');
+	    setStoredControlValue('residentWeightsGB', '');
+	    setStoredControlValue('decodeOverheadMs', '');
+	    setStoredControlValue('executionProfileName', '');
 
 	    switch(scenario) {
 	        case '5090_ddr5':
@@ -9053,6 +9244,31 @@ const DEVICE_TEMPLATES = {
 	            scenarioUpdatesModel = true;
 	            break;
 
+	        case 'b70_x4_dsv4_reap_record':
+	            devices = [];
+	            for (let i = 1; i <= 4; i++) {
+	                devices.push({
+	                    id: i,
+	                    template: 'Intel Arc Pro B70',
+	                    ...DEVICE_TEMPLATES['Intel Arc Pro B70'],
+	                    name: `Intel Arc Pro B70 #${i}`,
+	                    sustainedBandwidthGBps: 527,
+	                    networkBandwidthGBps: 64,
+	                    interconnectType: 'pcie5_x16'
+	                });
+	            }
+	            document.getElementById('modelPreset').value = 'deepseek_v4_flash_reap_180b';
+	            document.getElementById('quantizationType').value = 'q4';
+	            document.getElementById('parallelismStrategy').value = 'tensor';
+	            document.getElementById('runtimeFramework').value = 'vllm';
+	            document.getElementById('optimizationMode').value = 'none';
+	            setStoredControlValue('decodeBytesPerPassGB', 15.3);
+	            setStoredControlValue('residentWeightsGB', 90);
+	            setStoredControlValue('decodeOverheadMs', 15.6);
+	            setStoredControlValue('executionProfileName', 'Measured mixed-precision XPU record');
+	            scenarioUpdatesModel = true;
+	            break;
+
 	        default:
 	            return;
 	    }
@@ -9151,7 +9367,8 @@ const DEVICE_TEMPLATES = {
 				const networkTraffic = calculateNetworkTraffic(prefillConfig, dtypeSize, deviceCount, isPipeline);
 				const deviceTflops = getComputationPrecisionTflops(device, modelConfig, frameworkProfile.key);
 
-				const totalPrefillFlops = calculateTransformerFlops(prefillConfig) / deviceCount;
+				const computeScale = getParallelismComputeScale(modelConfig, devices, deviceIndex);
+				const totalPrefillFlops = calculateTransformerFlops(prefillConfig) * computeScale;
 				const theoreticalPrefillComputeTime = totalPrefillFlops / (deviceTflops * 1e12);
 
 
@@ -9204,21 +9421,29 @@ const DEVICE_TEMPLATES = {
 				);
 
 				// Decode calculations
-				const decodeFlops = calculateDecodeFlops(decodeComputeConfig) / deviceCount;
+				const decodeFlops = calculateDecodeFlops(decodeComputeConfig) * computeScale;
 				const theoreticalDecodeTime = decodeFlops / (deviceTflops * 1e12);
-				const decodeCoordinationTime = calculateDecodeCoordinationTimeSeconds(modelConfig, devices);
+				const theoreticalMemoryTime = 1 / Math.max(tokenRateInfo.theoreticalMax, 0.0001);
+				const theoreticalIdealPassRate = 1 / Math.max(theoreticalMemoryTime, theoreticalDecodeTime);
+				const modeledCoordinationTime = calculateDecodeCoordinationTimeSeconds(modelConfig, devices);
+				const hasMeasuredDecodeOverhead = Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
+				const measuredOverheadScale = modelConfig.parallelismStrategy === 'pipeline'
+					? getParallelismScales(modelConfig, devices, deviceIndex).accessedScale
+					: 1;
+				const exposedDecodeOverheadTime = hasMeasuredDecodeOverhead
+					? (modelConfig.decodeOverheadMs * measuredOverheadScale) / 1000
+					: modeledCoordinationTime;
 
 				// One verified forward pass reads the weights once and pays
 				// coordination once; speculation amortizes that whole pass
 				// across its accepted tokens.
 				const speculationMultiplier = tokenRateInfo.speculationMultiplier || 1;
-				const memorySecondsPerPass = tokenRateInfo.tokensPerSecondWithoutSpeculation > 0
-					? 1 / tokenRateInfo.tokensPerSecondWithoutSpeculation
-					: Infinity;
-				const perPassSeconds = memorySecondsPerPass + decodeCoordinationTime;
+				const memorySecondsPerPass = tokenRateInfo.realisticMemorySeconds;
+				const computeOrMemorySeconds = Math.max(memorySecondsPerPass, theoreticalDecodeTime);
+				const engineCoreSeconds = (computeOrMemorySeconds + tokenRateInfo.runtimeOverheadSeconds) /
+					Math.max(tokenRateInfo.efficiencyMultiplier || 1, 0.05);
+				const perPassSeconds = engineCoreSeconds + exposedDecodeOverheadTime;
 				const actualDecodeTime = perPassSeconds / speculationMultiplier;
-				const decodeBandwidthLimitedTime = tokenRateInfo.accessedModelSizeBytes /
-					(Math.max(device.localBandwidthGBps * frameworkProfile.bandwidthEfficiency, 1) * 1e9);
 				const rawPrefillTokensPerSecond = modelConfig.batchSize * tokenLengths.promptTokens / actualPrefillTime;
 				const decodeTokensPerSecond = Number.isFinite(actualDecodeTime) && actualDecodeTime > 0
 					? 1 / actualDecodeTime
@@ -9238,17 +9463,37 @@ const DEVICE_TEMPLATES = {
 				const memoryMsPerToken = Number.isFinite(memorySecondsPerPass)
 					? (memorySecondsPerPass / speculationMultiplier) * 1000
 					: 0;
+				const runtimeMsPerToken = Number.isFinite(tokenRateInfo.runtimeOverheadSeconds)
+					? (tokenRateInfo.runtimeOverheadSeconds / speculationMultiplier) * 1000
+					: 0;
+				const computeMsPerToken = (theoreticalDecodeTime / speculationMultiplier) * 1000;
+				const exposedOverheadMsPerToken = (exposedDecodeOverheadTime / speculationMultiplier) * 1000;
 				const accessedGB = Math.max(tokenRateInfo.activeModelSizeGB || 0, 1e-9);
 				const weightShareOfReads = Math.min(1, (tokenRateInfo.activeWeightSizeGB || 0) / accessedGB);
+				const coreBinding = theoreticalDecodeTime > memorySecondsPerPass ? 'compute' : 'memory';
+				const exposedCoreMsPerToken = (computeOrMemorySeconds / speculationMultiplier) * 1000;
+				const exposedComponents = {
+					memory: coreBinding === 'memory' ? exposedCoreMsPerToken : 0,
+					compute: coreBinding === 'compute' ? exposedCoreMsPerToken : 0,
+					runtime: runtimeMsPerToken,
+					coordination: exposedOverheadMsPerToken
+				};
+				const dominantDecodeComponent = Object.entries(exposedComponents).sort((a, b) => b[1] - a[1])[0]?.[0] || 'memory';
 				const decodeTimeBreakdown = {
-					weightReadMs: memoryMsPerToken * weightShareOfReads,
-					kvReadMs: memoryMsPerToken * (1 - weightShareOfReads),
-					coordinationMs: (decodeCoordinationTime / speculationMultiplier) * 1000,
+					weightReadMs: coreBinding === 'memory' ? exposedCoreMsPerToken * weightShareOfReads : 0,
+					kvReadMs: coreBinding === 'memory' ? exposedCoreMsPerToken * (1 - weightShareOfReads) : 0,
+					computeMs: coreBinding === 'compute' ? exposedCoreMsPerToken : 0,
+					memoryReadMs: memoryMsPerToken,
+					runtimeMs: runtimeMsPerToken,
+					coordinationMs: exposedOverheadMsPerToken,
 					totalMs: Number.isFinite(actualDecodeTime) ? actualDecodeTime * 1000 : Infinity,
 					computeBusyPct: Number.isFinite(actualDecodeTime) && actualDecodeTime > 0
 						? Math.min(100, (theoreticalDecodeTime / actualDecodeTime) * 100)
 						: 0,
-					hasOverflow: tokenRateInfo.hasOverflow
+					hasOverflow: tokenRateInfo.hasOverflow,
+					coreBinding,
+					dominant: dominantDecodeComponent,
+					overheadSource: hasMeasuredDecodeOverhead ? 'measured' : 'modeled'
 				};
 				const prefillTimeBreakdown = {
 					computeSeconds: effectivePrefillComputeTime,
@@ -9291,26 +9536,31 @@ const DEVICE_TEMPLATES = {
 					speculationMultiplier,
 					decodeTimePerTokenSeconds: actualDecodeTime,
 					decodeResponseTimeSeconds: decodeTokensPerSecond > 0 ? (tokenLengths.outputTokens * modelConfig.batchSize) / decodeTokensPerSecond : Infinity,
-					theoreticalMaxTokensPerSecond: tokenRateInfo.theoreticalMax,
-					decodeComputeUtilization: (theoreticalDecodeTime / actualDecodeTime) * 100,
-					decodeLocalBandwidthUtilization: (decodeBandwidthLimitedTime / actualDecodeTime) * 100,
-					decodeCoordinationTimeMs: decodeCoordinationTime * 1000,
+					theoreticalMaxTokensPerSecond: theoreticalIdealPassRate,
+					theoreticalMemoryMaxTokensPerSecond: tokenRateInfo.theoreticalMax,
+					decodeComputeUtilization: Math.min(100, (theoreticalDecodeTime / (actualDecodeTime * speculationMultiplier)) * 100),
+					decodeLocalBandwidthUtilization: Math.min(100, (memorySecondsPerPass / (actualDecodeTime * speculationMultiplier)) * 100),
+					decodeCoordinationTimeMs: exposedDecodeOverheadTime * 1000,
+					decodeRuntimeOverheadTimeMs: tokenRateInfo.runtimeOverheadSeconds * 1000,
+					decodeDominantComponent: dominantDecodeComponent,
 					decodeTimeBreakdown,
 					prefillTimeBreakdown,
-					decodeBottleneckFactor: Math.max(
-						theoreticalDecodeTime / actualDecodeTime,
-						decodeBandwidthLimitedTime / actualDecodeTime
-					),
+					decodeBottleneckFactor: 1,
 					// NEW: Overflow information
 					hasOverflow: tokenRateInfo.hasOverflow,
 					overflowGB: tokenRateInfo.overflowGB || 0,
 					overflowBandwidthGBps: tokenRateInfo.overflowBandwidthGBps || 0,
 					effectiveBandwidthGBps: tokenRateInfo.effectiveBandwidthGBps,
+					realisticBandwidthGBps: tokenRateInfo.realisticBandwidthGBps,
+					usesMeasuredSustainedBandwidth: tokenRateInfo.usesMeasuredSustainedBandwidth,
 					overflowBottleneckReason: tokenRateInfo.bottleneckReason || 'none',
 					modelSizeGB: tokenRateInfo.modelSizeGB,
+					residentWeightSizeGB: tokenRateInfo.residentWeightSizeGB,
 					activeModelSizeGB: tokenRateInfo.activeModelSizeGB,
 					activeWeightSizeGB: tokenRateInfo.activeWeightSizeGB,
 					decodeKvCacheGB: tokenRateInfo.decodeKvCacheGB,
+					byteProfileSource: tokenRateInfo.byteProfileSource,
+					byteProfileLabel: tokenRateInfo.byteProfileLabel,
 					// Image generation info
 					isImageGen,
 					imagesPerSecond: imageGenInfo ? imageGenInfo.imagesPerSecond : null,
@@ -9372,7 +9622,7 @@ const DEVICE_TEMPLATES = {
         function getTopRecommendationReasons(modelConfig, devicesArray, metrics, benchmarkAlignment, parallelism) {
             const reasons = [];
             const avgMemoryUtilization = metrics.reduce((sum, metric) => sum + metric.memoryUtilization, 0) / Math.max(metrics.length, 1);
-            const avgLocalBandwidthUtilization = metrics.reduce((sum, metric) => sum + metric.localBandwidthUtilization, 0) / Math.max(metrics.length, 1);
+            const avgDecodeBandwidthShare = metrics.reduce((sum, metric) => sum + (metric.decodeLocalBandwidthUtilization || 0), 0) / Math.max(metrics.length, 1);
             const avgNetworkUtilization = metrics.reduce((sum, metric) => sum + metric.networkBandwidthUtilization, 0) / Math.max(metrics.length, 1);
             const maxCoordinationMs = Math.max(...metrics.map(metric => metric.decodeCoordinationTimeMs || 0), 0);
 
@@ -9382,7 +9632,7 @@ const DEVICE_TEMPLATES = {
 
             if (avgMemoryUtilization > 90) {
                 reasons.push('Memory capacity is tight; lowering precision or sharding weights should help most.');
-            } else if (avgLocalBandwidthUtilization > 70) {
+            } else if (avgDecodeBandwidthShare > 55) {
                 reasons.push('Decode is mostly memory-bandwidth bound; faster VRAM/unified memory matters more than TFLOPs.');
             }
 
@@ -9469,13 +9719,25 @@ const DEVICE_TEMPLATES = {
         function buildRecommendedSetupHtml(modelConfig, devicesArray, metrics, systemRate, parallelism, benchmarkAlignment, systemRateLabel, workflowSummary = null) {
             if (!metrics.length) return '';
 
-            const confidence = getConfidenceSummary(benchmarkAlignment);
+            const hasMeasuredExecutionProfile = Number(modelConfig.decodeBytesPerPassGB) > 0 &&
+                Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0 &&
+                devicesArray.every(device => Number(device.sustainedBandwidthGBps) > 0);
+            const confidence = hasMeasuredExecutionProfile
+                ? {
+                    label: 'Profiled',
+                    className: 'confidence-medium',
+                    reason: 'Projected from supplied bytes/pass, sustained bandwidth, and exposed overhead. The inputs are measured; the planner has not independently reproduced the run.'
+                }
+                : getConfidenceSummary(benchmarkAlignment);
             const frameworkProfile = getFrameworkProfile(modelConfig, devicesArray);
             const architectureProfile = getArchitectureProfile(modelConfig);
             const workflow = workflowSummary || calculateWorkflowSummary(modelConfig, metrics, systemRate, parallelism, devicesArray);
             const reasons = getTopRecommendationReasons(modelConfig, devicesArray, metrics, benchmarkAlignment, parallelism);
-            const activeWeights = Math.max(...metrics.map(metric => metric.activeModelSizeGB || 0));
-            const residentWeights = Math.max(...metrics.map(metric => metric.modelSizeGB || 0));
+            const activeShards = metrics.map(metric => metric.activeModelSizeGB || 0);
+            const activeBytesPerPass = Number(modelConfig.decodeBytesPerPassGB) > 0
+                ? Number(modelConfig.decodeBytesPerPassGB)
+                : (parallelism === 'data' ? Math.max(...activeShards) : activeShards.reduce((sum, value) => sum + value, 0));
+            const residentWeights = metrics.reduce((sum, metric) => sum + (metric.residentWeightSizeGB || 0), 0);
             const benchmarkHint = benchmarkAlignment?.[0]
                 ? `${benchmarkAlignment[0].referenceRate.toFixed(1)} tok/s reference, ${benchmarkAlignment[0].deltaPct >= 0 ? '+' : ''}${benchmarkAlignment[0].deltaPct.toFixed(1)}% delta`
                 : 'No close reference';
@@ -9510,11 +9772,11 @@ const DEVICE_TEMPLATES = {
                     </div>
                     <div class="recommendation-context">
                         <span class="recommendation-chip">${getSelectedModelLabel(modelConfig)}</span>
-                        <span class="recommendation-chip">${modelConfig.quantizationType.toUpperCase()}</span>
+                        <span class="recommendation-chip">${modelConfig.quantizationType.toUpperCase()}${modelConfig.executionProfileName ? ' selector · mixed/profiled execution' : ''}</span>
                         <span class="recommendation-chip">${architectureProfile.label}</span>
                         <span class="recommendation-chip">Input ${formatTokenCount(workflow.promptTokens)} / output ${formatTokenCount(workflow.outputTokens)}</span>
-                        <span class="recommendation-chip">Active ${activeWeights.toFixed(1)} GB</span>
-                        <span class="recommendation-chip">Resident ${residentWeights.toFixed(1)} GB</span>
+                        <span class="recommendation-chip">Bytes/pass ${activeBytesPerPass.toFixed(2)} GB</span>
+                        <span class="recommendation-chip">Resident ${residentWeights.toFixed(1)} GB total</span>
                         <span class="recommendation-chip">Benchmark: ${benchmarkHint}</span>
                     </div>
                     <div class="recommendation-note">${confidence.reason}</div>
@@ -9605,11 +9867,9 @@ const DEVICE_TEMPLATES = {
             const strategy = strategyOverride || config.parallelismStrategy || 'pipeline';
             const count = Math.max(devicesArray.length, 1);
             const dtypeSize = DTYPE_SIZES[config.quantizationType] || 2;
-            const quantOverhead = ['q4', 'q3', 'q2'].includes(config.quantizationType) ? 1.08 : (config.quantizationType === 'fp8' ? 1.03 : 1);
             const composition = deriveMoEComposition(config);
-            const weightBytes = getWeightBytesPerParam(config, dtypeSize);
-            const totalWeightsGB = config.totalParamsB * weightBytes * quantOverhead;
-            const activeWeightsGB = getActiveParamsB(config) * weightBytes * quantOverhead;
+            const totalWeightsGB = getResidentWeightBytes(config, dtypeSize) / 1e9;
+            const activeWeightsGB = getDecodeWeightProfile(config, dtypeSize).aggregateWeightBytes / 1e9;
             const tensorDegree = Math.max(1, Math.floor(Math.sqrt(count)));
             const pipelineDegree = Math.max(1, Math.ceil(count / tensorDegree));
 
@@ -9684,7 +9944,13 @@ const DEVICE_TEMPLATES = {
             }[strategy] || 'Single-device execution path';
 
             const systemDecodeRate = metricsArray.length
-                ? calculateSystemRateFromDeviceRates(metricsArray.map(metric => metric.decodeTokensPerSecond), strategy, config.batchSize, devicesArray)
+                ? calculateSystemRateFromDeviceRates(
+                    metricsArray.map(metric => metric.decodeTokensPerSecond),
+                    strategy,
+                    config.batchSize,
+                    devicesArray,
+                    getSystemRateOptions(config)
+                )
                 : null;
 
             return {
@@ -9832,10 +10098,12 @@ const DEVICE_TEMPLATES = {
                 return `
                     <div class="wf-lane">
                         <span class="wf-lane-name"><span class="map-legend-dot" style="background:${mapDeviceColorVar(shard.index)}"></span>${escapeHtml(shard.device.name || shard.device.template)}</span>
-                        <span class="wf-bar" role="img" aria-label="${escapeHtml(shard.device.name || 'device')}: ${formatMsCompact(b.weightReadMs)} weight reads, ${formatMsCompact(b.kvReadMs)} KV reads, ${formatMsCompact(b.coordinationMs)} sync; ${formatMsCompact(b.totalMs)} per token">
+                        <span class="wf-bar" role="img" aria-label="${escapeHtml(shard.device.name || 'device')}: ${formatMsCompact(b.weightReadMs)} weight reads, ${formatMsCompact(b.kvReadMs)} KV reads, ${formatMsCompact(b.computeMs)} exposed compute, ${formatMsCompact(b.runtimeMs)} runtime loss, ${formatMsCompact(b.coordinationMs)} coordination; ${formatMsCompact(b.totalMs)} per token">
                             ${seg('is-weights', b.weightReadMs, 'Weight reads')}
                             ${seg('is-kv', b.kvReadMs, 'KV-cache reads')}
-                            ${seg('is-sync', b.coordinationMs, 'Cross-device sync')}
+                            ${seg('is-compute', b.computeMs, 'Exposed compute')}
+                            ${seg('is-runtime', b.runtimeMs, 'Runtime / kernel loss')}
+                            ${seg('is-sync', b.coordinationMs, b.overheadSource === 'measured' ? 'Measured non-memory overhead' : 'Modeled coordination')}
                         </span>
                         <span class="wf-meta">${formatMsCompact(b.totalMs)} → <strong>${formatTokenRate(rate)}</strong>${b.hasOverflow ? ' · <em>overflowing</em>' : ''}</span>
                     </div>`;
@@ -9878,6 +10146,8 @@ const DEVICE_TEMPLATES = {
                     <td>${escapeHtml(shard.device.name || shard.device.template)}</td>
                     <td>${formatMsCompact(b.weightReadMs)}</td>
                     <td>${formatMsCompact(b.kvReadMs)}</td>
+                    <td>${formatMsCompact(b.computeMs)}</td>
+                    <td>${formatMsCompact(b.runtimeMs)}</td>
                     <td>${formatMsCompact(b.coordinationMs)}</td>
                     <td>${formatMsCompact(b.totalMs)}</td>
                     <td>${formatTokenRate(shard.metric.decodeTokensPerSecond)}</td>
@@ -9891,7 +10161,9 @@ const DEVICE_TEMPLATES = {
                     <div class="wf-legend">
                         <span class="map-legend-item"><span class="wf-key is-weights"></span>Weight reads</span>
                         <span class="map-legend-item"><span class="wf-key is-kv"></span>KV-cache reads</span>
-                        <span class="map-legend-item"><span class="wf-key is-sync"></span>Cross-device sync</span>
+                        <span class="map-legend-item"><span class="wf-key is-compute"></span>Exposed compute</span>
+                        <span class="map-legend-item"><span class="wf-key is-runtime"></span>Runtime loss</span>
+                        <span class="map-legend-item"><span class="wf-key is-sync"></span>Coordination</span>
                         <span class="map-legend-item wf-overlap-note">GEMV compute overlaps the reads (${busyPct < 1 ? '<1' : busyPct.toFixed(busyPct < 10 ? 1 : 0)}% busy)</span>
                     </div>
                     ${systemLine}
@@ -9900,7 +10172,7 @@ const DEVICE_TEMPLATES = {
                     <details class="map-table-view">
                         <summary>View as table</summary>
                         <table>
-                            <thead><tr><th scope="col">Device</th><th scope="col">Weight reads</th><th scope="col">KV reads</th><th scope="col">Sync</th><th scope="col">Total/token</th><th scope="col">Decode</th></tr></thead>
+                            <thead><tr><th scope="col">Device</th><th scope="col">Weight reads</th><th scope="col">KV reads</th><th scope="col">Compute</th><th scope="col">Runtime</th><th scope="col">Coordination</th><th scope="col">Total/token</th><th scope="col">Decode</th></tr></thead>
                             <tbody>${tableRows}</tbody>
                         </table>
                     </details>
@@ -10261,13 +10533,13 @@ const DEVICE_TEMPLATES = {
                     <div style="margin-bottom: 1rem; padding: 1rem; background: var(--background); border-radius: var(--radius); border: 1px solid var(--border);">
                         <h3 style="margin-top: 0;">${escapeHtml(m.name)}</h3>
                         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                            Framework: ${m.framework} | Resident Weights: ${m.modelSizeGB ? m.modelSizeGB.toFixed(1) : 'N/A'} GB | Active Weights: ${m.activeModelSizeGB ? m.activeModelSizeGB.toFixed(1) : 'N/A'} GB | Device Memory: ${device.memoryGB} GB
+                            Framework: ${m.framework} | Resident shard: ${Number.isFinite(m.residentWeightSizeGB) ? m.residentWeightSizeGB.toFixed(1) : 'N/A'} GB | Decode bytes/pass shard: ${Number.isFinite(m.activeModelSizeGB) ? m.activeModelSizeGB.toFixed(2) : 'N/A'} GB | Device memory: ${device.memoryGB} GB
                         </div>
                         <div class="device-grid" style="font-size: 0.875rem;">
-                            <div>Memory Usage: ${m.memoryUtilization.toFixed(1)}%</div>
-                            <div>Compute Usage: ${m.computeUtilization.toFixed(1)}%</div>
-                            <div>Local BW Usage: ${m.localBandwidthUtilization.toFixed(1)}%</div>
-                            <div>Network BW Usage: ${m.networkBandwidthUtilization.toFixed(1)}%</div>
+                            <div>Memory fill: ${m.memoryUtilization.toFixed(1)}%</div>
+                            <div>Prefill compute share: ${m.computeUtilization.toFixed(1)}%</div>
+                            <div>Prefill memory share: ${m.localBandwidthUtilization.toFixed(1)}%</div>
+                            <div>Prefill network share: ${m.networkBandwidthUtilization.toFixed(1)}%</div>
                 `;
 
                 // Show image gen metrics if applicable
@@ -10280,11 +10552,20 @@ const DEVICE_TEMPLATES = {
                     systemAnalysisHtml += `
                             <div><strong>Prefill Rate:</strong> ${m.prefillTokensPerSecond.toFixed(1)} tok/s</div>
                             <div><strong>Decode Rate:</strong> ${m.decodeTokensPerSecond.toFixed(1)} tok/s</div>
+                            <div>Decode memory share: ${m.decodeLocalBandwidthUtilization.toFixed(1)}%</div>
+                            <div>Decode compute busy: ${m.decodeComputeUtilization.toFixed(1)}%</div>
                     `;
                     if (m.decodeCoordinationTimeMs > 0) {
                         systemAnalysisHtml += `
                             <div style="grid-column: span 2; color: var(--text-secondary);">
-                                Decode coordination overhead: ${m.decodeCoordinationTimeMs.toFixed(1)} ms/token
+                                ${m.decodeTimeBreakdown?.overheadSource === 'measured' ? 'Profiled non-memory overhead' : 'Modeled coordination'}: ${m.decodeCoordinationTimeMs.toFixed(1)} ms/pass
+                            </div>
+                        `;
+                    }
+                    if (m.decodeRuntimeOverheadTimeMs > 0) {
+                        systemAnalysisHtml += `
+                            <div style="grid-column: span 2; color: var(--text-secondary);">
+                                Modeled runtime/kernel loss: ${m.decodeRuntimeOverheadTimeMs.toFixed(1)} ms/pass
                             </div>
                         `;
                     }
@@ -10373,7 +10654,13 @@ const DEVICE_TEMPLATES = {
                 } else {
                     // LLM inference
                     const decodeRates = metrics.map(m => m.decodeTokensPerSecond || 0);
-                    systemRate = calculateSystemRateFromDeviceRates(decodeRates, parallelism, parseFloat(modelConfig.batchSize) || 1, devices);
+                    systemRate = calculateSystemRateFromDeviceRates(
+                        decodeRates,
+                        parallelism,
+                        parseFloat(modelConfig.batchSize) || 1,
+                        devices,
+                        getSystemRateOptions(modelConfig)
+                    );
 
                     if (parallelism === 'data') rateExplanation = 'Sum (each device handles separate requests)';
                     else if (parallelism === 'tensor' || parallelism === 'hybrid_tp_pp' || parallelism === 'hybrid_tp_dp') rateExplanation = 'Shared inference on sharded weights (communication-adjusted)';
@@ -10395,7 +10682,6 @@ const DEVICE_TEMPLATES = {
 
                 if (anyOverflow) systemBottleneck = 'Memory Overflow';
                 else if (avgMemUtil > 90) systemBottleneck = 'Memory Capacity';
-                else if (avgBwUtil > 80) systemBottleneck = 'Bandwidth';
 
                 // Build AUTO mode section if applicable
                 let autoModeHtml = '';
@@ -10535,29 +10821,44 @@ const DEVICE_TEMPLATES = {
 
                 // Build primary bottleneck line (system-level)
                 let bottleneckLineClass = 'is-good';
-                let bottleneckText = 'No single resource is saturated';
-                let bottleneckReason = 'The model fits with usable headroom, so no single hardware limit dominates this estimate.';
+                let bottleneckText = 'Projected limit: decode path';
+                let bottleneckReason = 'The result combines weight traffic, compute, runtime efficiency, and coordination.';
                 if (systemBottleneck !== 'None') {
                     bottleneckLineClass = 'is-warning';
                     bottleneckText = `Bottleneck: ${systemBottleneck}`;
                     if (systemBottleneck === 'Memory Overflow') bottleneckReason = `The model and its working memory exceed the available ${totalMemory} GB, so weights must be offloaded or the setup cannot fully fit.`;
                     else if (systemBottleneck === 'Memory Capacity') bottleneckReason = `Memory is about ${avgMemUtil.toFixed(0)}% full, leaving too little headroom for longer context or runtime overhead.`;
-                    else if (systemBottleneck === 'Bandwidth') bottleneckReason = `Generation repeatedly streams model weights from memory; bandwidth is about ${avgBwUtil.toFixed(0)}% utilized and sets the pace.`;
                 } else {
-                    const hasDecodeBottleneck = metrics.some(m => !m.isImageGen && m.decodeBottleneckFactor > 1);
-                    const hasPrefillBottleneck = metrics.some(m => m.isBottleneck);
-                    if (hasDecodeBottleneck) {
-                        const worst = metrics.reduce((a, b) => (b.decodeBottleneckFactor || 0) > (a.decodeBottleneckFactor || 0) ? b : a);
-                        const typ = (worst.decodeComputeUtilization || 0) > (worst.decodeLocalBandwidthUtilization || 0) ? 'Compute' : 'Memory bandwidth';
-                        bottleneckLineClass = 'is-warning';
-                        bottleneckText = `Decode bottleneck: ${typ}`;
-                        bottleneckReason = typ === 'Compute'
-                            ? 'Token generation is spending more time on arithmetic than moving weights, so additional compute would help most.'
-                            : 'Each generated token must read a large share of the model weights, so memory speed—not raw compute—is the main limit.';
-                    } else if (hasPrefillBottleneck) {
-                        bottleneckLineClass = 'is-error';
-                        bottleneckText = 'Prefill over capacity — see breakdown';
-                        bottleneckReason = 'Processing the prompt exceeds at least one device limit before generation begins. Reduce context, quantize further, or add capacity.';
+                    const worst = metrics.reduce((a, b) =>
+                        (b.decodeTimeBreakdown?.totalMs || 0) > (a.decodeTimeBreakdown?.totalMs || 0) ? b : a,
+                        metrics[0]
+                    );
+                    const breakdown = worst.decodeTimeBreakdown || {};
+                    const totalMs = Math.max(breakdown.totalMs || 0, 0.0001);
+                    const dominant = worst.decodeDominantComponent || breakdown.dominant || 'memory';
+                    const dominantMs = dominant === 'memory'
+                        ? (breakdown.weightReadMs || 0) + (breakdown.kvReadMs || 0)
+                        : (dominant === 'compute'
+                            ? breakdown.computeMs
+                            : (dominant === 'runtime' ? breakdown.runtimeMs : breakdown.coordinationMs)) || 0;
+                    const share = Math.min(100, Math.max(0, dominantMs / totalMs * 100));
+                    const labels = {
+                        memory: 'Projected limit: memory bandwidth',
+                        compute: 'Projected limit: compute',
+                        runtime: 'Projected limit: runtime efficiency',
+                        coordination: 'Projected limit: runtime / coordination'
+                    };
+                    bottleneckLineClass = 'is-warning';
+                    bottleneckText = labels[dominant] || labels.memory;
+                    if (dominant === 'memory') {
+                        bottleneckReason = `Weight and KV reads occupy about ${share.toFixed(0)}% of projected decode time. Faster sustained memory bandwidth or fewer bytes per pass has the most leverage.`;
+                    } else if (dominant === 'compute') {
+                        bottleneckReason = `Arithmetic occupies about ${share.toFixed(0)}% of projected decode time. Faster kernels or more usable low-precision compute has the most leverage.`;
+                    } else if (dominant === 'runtime') {
+                        bottleneckReason = `Framework and kernel efficiency losses occupy about ${share.toFixed(0)}% of projected decode time, beyond the raw memory-read floor.`;
+                    } else {
+                        const source = breakdown.overheadSource === 'measured' ? 'The supplied execution profile' : 'The runtime/interconnect model';
+                        bottleneckReason = `${source} assigns about ${share.toFixed(0)}% of projected decode time to submissions, synchronization, and other exposed non-memory work.`;
                     }
                 }
 
@@ -10587,16 +10888,18 @@ const DEVICE_TEMPLATES = {
                             <span class="ladder-value"><strong>${formatCompactRate(value)}</strong> tok/s${note ? ` <span class="ladder-note">${note}</span>` : ''}</span>
                         </div>`;
                     const title = speculationOn
-                        ? `Speculative decoding emits several tokens per weight pass, so it can pass the per-pass ceiling — rates without it cannot.`
-                        : `Nothing above the ceiling is physically possible; software tuning moves you between the rungs.`;
+                        ? `Projected is primary. Speculation can emit several accepted tokens per weight pass; the ideal below is the one-pass hardware floor.`
+                        : `Projected is primary. Extreme ideal assumes official peak hardware and perfect drivers, kernels, sharding, and scheduling.`;
                     return `
-                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: hardware ceiling ${formatCompactRate(currentCalibration.idealTokS)}, engine model ${formatCompactRate(currentCalibration.genericTokS)}, expected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second${speculationOn ? ' with speculative decoding' : ', no speculative decoding'}">
+                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: extreme ideal ${formatCompactRate(currentCalibration.idealTokS)}, runtime projection ${formatCompactRate(currentCalibration.genericTokS)}, projected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second${speculationOn ? ' with speculative decoding' : ', no speculative decoding'}">
                         <div class="ladder-title">${title}</div>
-                        ${rung('is-ceiling', 'Hardware ceiling', currentCalibration.idealTokS, speculationOn ? 'bandwidth ÷ bytes, one forward pass' : 'bandwidth ÷ bytes/token, perfect software')}
-                        ${rung('is-engine', 'Engine model', currentCalibration.genericTokS, 'your framework and settings')}
-                        ${rung('is-expected', 'Expected real', currentCalibration.expectedTokS, speculationOn
+                        ${rung('is-ceiling', 'Extreme ideal', currentCalibration.idealTokS, 'official peak memory/compute roofline · zero software overhead')}
+                        ${rung('is-engine', 'Runtime projection', currentCalibration.genericTokS, 'sustained bandwidth + framework + coordination')}
+                        ${rung('is-expected', 'Projected real', currentCalibration.expectedTokS, speculationOn
                             ? `speculation ×${specMultiplier.toFixed(2)} modeled · ${currentCalibration.peers} peers`
-                            : `no speculation · ${currentCalibration.peers} peers · ${currentCalibration.confidence} confidence`)}
+                            : (currentCalibration.hasMeasuredExecutionProfile
+                                ? 'measured bytes/pass + sustained BW + measured overhead'
+                                : `no speculation · ${currentCalibration.peers} peers · ${currentCalibration.confidence} confidence`))}
                         ${speculationOn
                             ? rung('is-measured', 'Without speculation', expectedWithoutSpec, '≈ same setup, speculation off')
                             : ''}
@@ -10635,7 +10938,7 @@ const DEVICE_TEMPLATES = {
                 systemAnalysisHtml += `
                     <div class="result-hero">
                         <div class="result-hero-main">
-                            <div class="rate-label">${isImageGen ? 'System throughput' : 'System decode rate · expected real'}</div>
+                            <div class="rate-label">${isImageGen ? 'System throughput' : 'Projected real decode'}</div>
                             <div class="rate-value"><span class="rate-number">${rateNum}</span> <span class="rate-units">${rateUnits}</span></div>
                         </div>
                         <div class="result-hero-side">
@@ -10756,12 +11059,15 @@ const DEVICE_TEMPLATES = {
 
             caseDevices.forEach((device, index) => {
                 const rate = calculateDecodeTokenRate(device, modelConfig, DTYPE_SIZES[reference.quantKey], caseDevices, index);
+                const deviceTflops = getComputationPrecisionTflops(device, modelConfig, reference.runtimeKey);
+                const decodeFlops = calculateDecodeFlops(modelConfig) * getParallelismComputeScale(modelConfig, caseDevices, index);
+                const computeRoofline = (deviceTflops * 1e12) / Math.max(decodeFlops, 1);
                 genericRates.push(1 / ((1 / Math.max(rate.tokensPerSecond, 0.0001)) + coordinationSeconds));
-                idealRates.push(1 / ((1 / Math.max(rate.theoreticalMax, 0.0001)) + coordinationSeconds));
+                idealRates.push(Math.min(rate.theoreticalMax, computeRoofline));
             });
 
             const genericTokS = calculateSystemRateFromDeviceRates(genericRates, strategy, 1, caseDevices);
-            const idealTokS = calculateSystemRateFromDeviceRates(idealRates, strategy, 1, caseDevices);
+            const idealTokS = calculateIdealSystemRateFromDeviceRates(idealRates, strategy, 1);
             if (!Number.isFinite(genericTokS) || !Number.isFinite(idealTokS) || genericTokS <= 0 || idealTokS <= 0) return null;
 
             return {
@@ -10825,11 +11131,8 @@ const DEVICE_TEMPLATES = {
 
         function calculateCurrentCalibration(modelConfig, metrics, genericSystemRate, strategy) {
             if (!metrics?.length || !Number.isFinite(genericSystemRate)) return null;
-            const idealRates = metrics.map(metric => {
-                const coordination = Math.max(0, metric.decodeCoordinationTimeMs || 0) / 1000;
-                return 1 / ((1 / Math.max(metric.theoreticalMaxTokensPerSecond || 0.0001, 0.0001)) + coordination);
-            });
-            const idealTokS = calculateSystemRateFromDeviceRates(idealRates, strategy, modelConfig.batchSize || 1, devices);
+            const idealRates = metrics.map(metric => metric.theoreticalMaxTokensPerSecond || 0);
+            const idealTokS = calculateIdealSystemRateFromDeviceRates(idealRates, strategy, modelConfig.batchSize || 1);
             const target = {
                 hfId: modelConfig.hfId,
                 presetKey: modelConfig.modelPreset,
@@ -10849,7 +11152,12 @@ const DEVICE_TEMPLATES = {
                 (row.deviceCount || 1) === target.deviceCount &&
                 (row.batchSize || 1) === target.batchSize
             );
-            const calibration = hasComparablePeers
+            const hasMeasuredExecutionProfile = Number(modelConfig.decodeBytesPerPassGB) > 0 &&
+                Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0 &&
+                devices.every(device => Number(device.sustainedBandwidthGBps) > 0);
+            const calibration = hasMeasuredExecutionProfile
+                ? { factor: 1, peers: 0, bestScore: 99 }
+                : hasComparablePeers
                 ? getPeerCorrection(target, validationRows)
                 : { factor: 1, peers: 0, bestScore: 0 };
             const expectedTokS = Math.min(idealTokS * 0.99, genericSystemRate * calibration.factor);
@@ -10860,7 +11168,10 @@ const DEVICE_TEMPLATES = {
                 realityFactor: idealTokS > 0 ? expectedTokS / idealTokS : 0,
                 correctionFactor: calibration.factor,
                 peers: calibration.peers,
-                confidence: calibration.bestScore >= 10 && calibration.peers >= 3 ? 'strong' : (calibration.peers >= 2 ? 'directional' : 'uncalibrated')
+                confidence: hasMeasuredExecutionProfile
+                    ? 'measured inputs'
+                    : (calibration.bestScore >= 10 && calibration.peers >= 3 ? 'strong' : (calibration.peers >= 2 ? 'directional' : 'uncalibrated')),
+                hasMeasuredExecutionProfile
             };
         }
 
@@ -11195,7 +11506,8 @@ const DEVICE_TEMPLATES = {
             'modelPreset', 'hfId', 'quantizationType', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'seqLength',
             'hiddenSize', 'numLayers', 'numHeads', 'numKVHeads', 'intermediateSize', 'architectureType', 'activeParamsB',
             'numExperts', 'activeExperts', 'routingType', 'attentionMechanism', 'dtype', 'parallelismStrategy',
-            'optimizationMode', 'runtimeFramework', 'kvCacheCompression'
+            'optimizationMode', 'runtimeFramework', 'kvCacheCompression', 'decodeBytesPerPassGB',
+            'residentWeightsGB', 'decodeOverheadMs', 'executionProfileName'
         ];
 
         function normalizeResultLookup(value) {
@@ -11309,17 +11621,18 @@ const DEVICE_TEMPLATES = {
 
         function parseMeasuredResultPayload(payload) {
             if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('The result JSON must be an object.');
+            const isPlanExport = payload.schemaVersion === 'mlbottleneck.plan.v1';
             let observedTokS = Number(findResultField(payload, ['tokSOut', 'observedTokS', 'tokensPerSecond', 'decodeTokS', 'generationTokensPerSecond', 'evalRate']));
             if (!Number.isFinite(observedTokS) || observedTokS <= 0) {
                 const evalCount = Number(findResultField(payload, ['eval_count', 'evalCount']));
                 const evalDuration = Number(findResultField(payload, ['eval_duration', 'evalDuration']));
                 if (evalCount > 0 && evalDuration > 0) observedTokS = evalCount / (evalDuration / 1e9);
             }
-            const modelRaw = findResultField(payload, ['model', 'modelId', 'model_id', 'modelName', 'hfId', 'hf_id']);
-            const hardwareRaw = findResultField(payload, ['hardware', 'devices', 'gpus', 'gpu', 'device', 'accelerator']);
-            const runtimeRaw = findResultField(payload, ['engine', 'runtime', 'framework', 'backend']);
-            const quantRaw = findResultField(payload, ['quantization', 'quant', 'precision', 'dtype', 'format']);
-            const contextRaw = findResultField(payload, ['contextLength', 'context_length', 'context', 'contextSize', 'ctxSize', 'n_ctx', 'num_ctx', 'seqLength', 'sequenceLength', 'maxModelLen']);
+            const modelRaw = isPlanExport ? (payload.model?.id || payload.model?.preset || payload.model) : findResultField(payload, ['model', 'modelId', 'model_id', 'modelName', 'hfId', 'hf_id']);
+            const hardwareRaw = isPlanExport ? payload.hardware?.devices : findResultField(payload, ['hardware', 'devices', 'gpus', 'gpu', 'device', 'accelerator']);
+            const runtimeRaw = isPlanExport ? payload.execution?.runtime : findResultField(payload, ['engine', 'runtime', 'framework', 'backend']);
+            const quantRaw = isPlanExport ? payload.model?.quantization : findResultField(payload, ['quantization', 'quant', 'precision', 'dtype', 'format']);
+            const contextRaw = isPlanExport ? payload.workload?.totalContextTokens : findResultField(payload, ['contextLength', 'context_length', 'context', 'contextSize', 'ctxSize', 'n_ctx', 'num_ctx', 'seqLength', 'sequenceLength', 'maxModelLen']);
             const engineFlags = findResultField(payload, ['engineFlags', 'engine_flags', 'flags', 'arguments', 'args']);
             const hardware = normalizeImportedHardware(hardwareRaw);
             const modelPreset = findModelPresetForResult(modelRaw);
@@ -11340,9 +11653,18 @@ const DEVICE_TEMPLATES = {
                 runtimeFramework,
                 quantizationType,
                 contextLength: recognizedContext,
+                parallelismStrategy: isPlanExport ? payload.execution?.parallelism : null,
+                decodeBytesPerPassGB: isPlanExport ? Number(payload.execution?.profile?.aggregateBytesPerDecodePassGB) || null : null,
+                residentWeightsGB: isPlanExport ? Number(payload.execution?.profile?.aggregateResidentWeightsGB) || null : null,
+                decodeOverheadMs: isPlanExport && payload.execution?.profile?.exposedNonMemoryOverheadMsPerPass !== null && payload.execution?.profile?.exposedNonMemoryOverheadMsPerPass !== undefined && Number.isFinite(Number(payload.execution.profile.exposedNonMemoryOverheadMsPerPass))
+                    ? Number(payload.execution.profile.exposedNonMemoryOverheadMsPerPass)
+                    : null,
+                executionProfileName: isPlanExport ? payload.execution?.profile?.name || '' : '',
+                hardwareDetails: isPlanExport && Array.isArray(payload.hardware?.devices) ? payload.hardware.devices : [],
                 engineFlags,
                 unmatched,
-                hasConfiguration: Boolean(modelPreset || hardware.devices.length || runtimeFramework || quantizationType || recognizedContext)
+                hasConfiguration: Boolean(modelPreset || hardware.devices.length || runtimeFramework || quantizationType || recognizedContext || isPlanExport),
+                isPlanExport
             };
         }
 
@@ -11353,7 +11675,9 @@ const DEVICE_TEMPLATES = {
             if (imported.runtimeFramework) parts.push(FRAMEWORK_PROFILES[imported.runtimeFramework]?.label || imported.runtimeFramework);
             if (imported.quantizationType) parts.push(imported.quantizationType.toUpperCase());
             if (imported.contextLength) parts.push(`${imported.contextLength.toLocaleString()} context`);
-            const prefix = parts.length ? `Recognized ${parts.join(' / ')}.` : 'No configuration fields were recognized; the active Plan will be used.';
+            const prefix = parts.length
+                ? `${imported.isPlanExport ? 'Plan JSON recognized' : 'Recognized'} ${parts.join(' / ')}.`
+                : 'No configuration fields were recognized; the active Plan will be used.';
             return imported.unmatched.length ? `${prefix} Could not match ${imported.unmatched.join(' or ')}.` : prefix;
         }
 
@@ -11426,6 +11750,11 @@ const DEVICE_TEMPLATES = {
             }
             if (imported.quantizationType) document.getElementById('quantizationType').value = imported.quantizationType;
             if (imported.runtimeFramework) document.getElementById('runtimeFramework').value = imported.runtimeFramework;
+            if (imported.parallelismStrategy) document.getElementById('parallelismStrategy').value = imported.parallelismStrategy;
+            if (imported.decodeBytesPerPassGB) document.getElementById('decodeBytesPerPassGB').value = imported.decodeBytesPerPassGB;
+            if (imported.residentWeightsGB) document.getElementById('residentWeightsGB').value = imported.residentWeightsGB;
+            if (Number.isFinite(imported.decodeOverheadMs)) document.getElementById('decodeOverheadMs').value = imported.decodeOverheadMs;
+            if (imported.executionProfileName) document.getElementById('executionProfileName').value = imported.executionProfileName;
             if (imported.contextLength) {
                 document.getElementById('promptTokens').value = Math.max(1, imported.contextLength - 1);
                 document.getElementById('outputTokens').value = 1;
@@ -11433,10 +11762,28 @@ const DEVICE_TEMPLATES = {
             }
             if (imported.hardware.length) {
                 let nextId = 1;
-                devices = imported.hardware.flatMap(item => Array.from({ length: item.count }, (_, index) => {
-                    const template = JSON.parse(JSON.stringify(DEVICE_TEMPLATES[item.template]));
-                    return { id: nextId++, template: item.template, ...template, name: `${template.name}${item.count > 1 ? ` #${index + 1}` : ''}` };
-                }));
+                if (imported.hardwareDetails?.length) {
+                    devices = imported.hardwareDetails.map((detail, index) => {
+                        const templateKey = findHardwareTemplateForResult(detail);
+                        const template = templateKey ? JSON.parse(JSON.stringify(DEVICE_TEMPLATES[templateKey])) : JSON.parse(JSON.stringify(DEVICE_TEMPLATES.Custom));
+                        return {
+                            id: nextId++,
+                            template: templateKey || 'Custom',
+                            ...template,
+                            name: detail.name || `${template.name} #${index + 1}`,
+                            memoryGB: Number(detail.memoryGB) || template.memoryGB,
+                            localBandwidthGBps: Number(detail.officialPeakMemoryBandwidthGBps) || template.localBandwidthGBps,
+                            sustainedBandwidthGBps: Number(detail.sustainedMemoryBandwidthGBps) || null,
+                            networkBandwidthGBps: Number(detail.interconnectGBps) || template.networkBandwidthGBps,
+                            interconnectType: detail.interconnect || template.interconnectType
+                        };
+                    });
+                } else {
+                    devices = imported.hardware.flatMap(item => Array.from({ length: item.count }, (_, index) => {
+                        const template = JSON.parse(JSON.stringify(DEVICE_TEMPLATES[item.template]));
+                        return { id: nextId++, template: item.template, ...template, name: `${template.name}${item.count > 1 ? ` #${index + 1}` : ''}` };
+                    }));
+                }
                 selectedDeviceId = devices[0]?.id || null;
             }
         }
@@ -11445,9 +11792,241 @@ const DEVICE_TEMPLATES = {
             let modelConfig = buildEffectiveModelConfig();
             const strategy = modelConfig.parallelismStrategy === 'auto' ? findOptimalStrategy().strategy : modelConfig.parallelismStrategy;
             const metrics = calculateMetrics();
-            const genericSystemRate = calculateSystemRateFromDeviceRates(metrics.map(metric => metric.decodeTokensPerSecond), strategy, modelConfig.batchSize || 1, devices);
+            const genericSystemRate = calculateSystemRateFromDeviceRates(
+                metrics.map(metric => metric.decodeTokensPerSecond),
+                strategy,
+                modelConfig.batchSize || 1,
+                devices,
+                getSystemRateOptions(modelConfig)
+            );
             modelConfig = { ...modelConfig, parallelismStrategy: strategy };
             return { modelConfig, strategy, metrics, genericSystemRate, calibration: calculateCurrentCalibration(modelConfig, metrics, genericSystemRate, strategy) };
+        }
+
+        function roundPlanNumber(value, digits = 3) {
+            if (!Number.isFinite(value)) return null;
+            return Number(value.toFixed(digits));
+        }
+
+        function getAggregateDecodeBytesPerPassGB(plan) {
+            const explicit = Number(plan.modelConfig.decodeBytesPerPassGB);
+            if (Number.isFinite(explicit) && explicit > 0) return explicit;
+            const shardBytes = plan.metrics.map(metric => metric.activeModelSizeGB || 0).filter(value => value > 0);
+            if (!shardBytes.length) return null;
+            return plan.strategy === 'data' ? Math.max(...shardBytes) : shardBytes.reduce((sum, value) => sum + value, 0);
+        }
+
+        function getPlanConfigurationChecklist(plan) {
+            const runtime = getFrameworkProfile(plan.modelConfig, devices).key;
+            const items = [
+                `Load ${plan.modelConfig.hfId || getSelectedModelLabel(plan.modelConfig)} at ${String(plan.modelConfig.quantizationType || '').toUpperCase()} (or reproduce the named mixed-precision profile exactly).`,
+                `Use ${runtime} with ${formatStrategyLabel(plan.strategy)} across ${devices.length} device${devices.length === 1 ? '' : 's'}.`,
+                `Match batch ${plan.modelConfig.batchSize}, ${plan.modelConfig.promptTokens} prompt tokens, and ${plan.modelConfig.outputTokens} generated tokens.`,
+                'Warm up the engine, use deterministic/greedy decoding for the rate check, and report steady-state single-stream decode separately from prefill.'
+            ];
+            if (Number(plan.modelConfig.decodeBytesPerPassGB) > 0) {
+                items.push(`Verify the served tensors move about ${Number(plan.modelConfig.decodeBytesPerPassGB).toFixed(2)} GB per decode pass; the quantization label alone is not sufficient.`);
+            }
+            if (Number(plan.modelConfig.residentWeightsGB) > 0) {
+                items.push(`Verify the loaded weight shards total about ${Number(plan.modelConfig.residentWeightsGB).toFixed(2)} GB before KV cache and runtime workspaces.`);
+            }
+            if (devices.some(device => Number(device.sustainedBandwidthGBps) > 0)) {
+                items.push('Measure sustained device-memory bandwidth on this machine and keep it separate from the official peak specification used for the ideal.');
+            }
+            return items;
+        }
+
+        function buildPlanExport(plan = getActivePlanOutcome(), planDevices = devices) {
+            if (!plan?.calibration) throw new Error('The current plan does not have a valid decode projection.');
+            const config = plan.modelConfig;
+            const aggregateBytesPerPassGB = getAggregateDecodeBytesPerPassGB(plan);
+            const representative = plan.metrics.reduce((worst, metric) =>
+                (metric.decodeTimeBreakdown?.totalMs || 0) > (worst?.decodeTimeBreakdown?.totalMs || 0) ? metric : worst,
+                plan.metrics[0]
+            );
+            const breakdown = representative?.decodeTimeBreakdown || {};
+            const runtimeProfile = getFrameworkProfile(config, planDevices);
+            const totalMemoryGB = planDevices.reduce((sum, device) => sum + (Number(device.memoryGB) || 0), 0);
+            const hasExplicitProfile = Number(config.decodeBytesPerPassGB) > 0;
+            const payload = {
+                schemaVersion: 'mlbottleneck.plan.v1',
+                generatedAt: new Date().toISOString(),
+                source: { name: 'ML System Bottleneck Analyzer', url: 'https://mlbottleneck.com' },
+                model: {
+                    preset: config.modelPreset || null,
+                    id: config.hfId || null,
+                    label: getSelectedModelLabel(config),
+                    architecture: config.architectureType,
+                    attention: config.attentionMechanism,
+                    routing: config.routingType,
+                    totalParametersB: roundPlanNumber(config.totalParamsB),
+                    activeParametersB: roundPlanNumber(getActiveParamsB(config)),
+                    quantization: config.quantizationType,
+                    layers: config.numLayers,
+                    hiddenSize: config.hiddenSize,
+                    attentionHeads: config.numHeads,
+                    kvHeads: config.numKVHeads,
+                    intermediateSize: config.intermediateSize,
+                    experts: config.isMoE ? { total: config.numExperts, activePerToken: config.activeExperts } : null
+                },
+                workload: {
+                    batchSize: config.batchSize,
+                    promptTokens: config.promptTokens,
+                    outputTokens: config.outputTokens,
+                    totalContextTokens: config.seqLength,
+                    kvCacheCompression: config.kvCacheCompression || 'none'
+                },
+                execution: {
+                    runtime: runtimeProfile.key,
+                    runtimeLabel: runtimeProfile.label,
+                    parallelism: plan.strategy,
+                    optimization: config.optimizationMode || 'none',
+                    speculativeMethod: config.optimizationMode === 'speculative' ? (config.specMethod || 'draft_model') : null,
+                    profile: {
+                        name: config.executionProfileName || representative?.byteProfileLabel || null,
+                        source: representative?.byteProfileSource || 'estimated',
+                        aggregateResidentWeightsGB: Number(config.residentWeightsGB) > 0
+                            ? roundPlanNumber(Number(config.residentWeightsGB))
+                            : roundPlanNumber(plan.metrics.reduce((sum, metric) => sum + (metric.residentWeightSizeGB || 0), 0)),
+                        aggregateBytesPerDecodePassGB: roundPlanNumber(aggregateBytesPerPassGB),
+                        includesKvAndAuxiliaryReads: hasExplicitProfile,
+                        exposedNonMemoryOverheadMsPerPass: Number.isFinite(config.decodeOverheadMs) ? roundPlanNumber(config.decodeOverheadMs) : null
+                    }
+                },
+                hardware: {
+                    deviceCount: planDevices.length,
+                    totalMemoryGB: roundPlanNumber(totalMemoryGB),
+                    devices: planDevices.map((device, index) => ({
+                        index: index + 1,
+                        name: device.name,
+                        preset: device.template || null,
+                        type: device.type || null,
+                        memoryGB: roundPlanNumber(Number(device.memoryGB)),
+                        officialPeakMemoryBandwidthGBps: roundPlanNumber(Number(device.localBandwidthGBps)),
+                        sustainedMemoryBandwidthGBps: Number(device.sustainedBandwidthGBps) > 0 ? roundPlanNumber(Number(device.sustainedBandwidthGBps)) : null,
+                        computeTFlops: device.computeTFlops ? JSON.parse(JSON.stringify(device.computeTFlops)) : null,
+                        pcie: Number(device.pcieGeneration) > 0 ? { generation: Number(device.pcieGeneration), lanes: Number(device.pcieLanes) || null } : null,
+                        interconnectGBps: roundPlanNumber(Number(device.networkBandwidthGBps)),
+                        interconnect: device.interconnectType || null,
+                        powerWatts: roundPlanNumber(Number(device.powerWatts)),
+                        specificationSource: device.sourceUrl || null,
+                        specificationStatus: device.specStatus || null,
+                        specificationNote: device.specNote || null,
+                        overflowTarget: device.overflowTarget || null
+                    }))
+                },
+                prediction: {
+                    primary: {
+                        label: 'projected-real',
+                        decodeTokensPerSecond: roundPlanNumber(plan.calibration.expectedTokS),
+                        confidence: plan.calibration.confidence,
+                        benchmarkPeers: plan.calibration.peers
+                    },
+                    runtimeProjectionTokensPerSecond: roundPlanNumber(plan.calibration.genericTokS),
+                    extremeIdeal: {
+                        decodeTokensPerSecond: roundPlanNumber(plan.calibration.idealTokS),
+                        basis: 'Official peak memory-bandwidth/compute roofline and profiled/estimated bytes per pass; zero driver, kernel, scheduling, or coordination overhead.'
+                    },
+                    limitingComponent: representative?.decodeDominantComponent || breakdown.dominant || null,
+                    representativeDecodeTimeBudgetMs: {
+                        weightReads: roundPlanNumber(breakdown.weightReadMs),
+                        kvReads: roundPlanNumber(breakdown.kvReadMs),
+                        exposedCompute: roundPlanNumber(breakdown.computeMs),
+                        runtimeLoss: roundPlanNumber(breakdown.runtimeMs),
+                        coordinationAndOther: roundPlanNumber(breakdown.coordinationMs),
+                        total: roundPlanNumber(breakdown.totalMs),
+                        overheadSource: breakdown.overheadSource || null
+                    }
+                },
+                assumptions: {
+                    primaryResult: 'Projected real is the headline and includes sustained-bandwidth, runtime, and coordination assumptions when available.',
+                    extremeIdeal: 'Uses each device official peak specification. A measured sustained value never lowers this ideal.',
+                    uniformQuantizationWarning: hasExplicitProfile
+                        ? 'The explicit bytes-per-pass profile overrides a uniform quantization estimate.'
+                        : 'Bytes per pass are estimated from active parameters and the selected uniform storage format; mixed-precision tensors can materially change this.',
+                    ratesAre: config.batchSize > 1 ? 'Configured aggregate batch throughput' : 'Single-stream decode throughput'
+                },
+                configurationChecklist: getPlanConfigurationChecklist(plan)
+            };
+            return payload;
+        }
+
+        function buildAiHandoff(payload = buildPlanExport()) {
+            const p = payload.prediction;
+            const profile = payload.execution.profile;
+            const hardware = payload.hardware.devices.map(device => {
+                const sustained = device.sustainedMemoryBandwidthGBps
+                    ? `; ${device.sustainedMemoryBandwidthGBps} GB/s sustained`
+                    : '';
+                return `${device.name}: ${device.memoryGB} GB, ${device.officialPeakMemoryBandwidthGBps} GB/s official peak${sustained}, ${device.interconnectGBps} GB/s interconnect`;
+            });
+            return [
+                '# ML inference plan handoff',
+                '',
+                `Reproduce and tune this setup. Treat **${p.primary.decodeTokensPerSecond} tok/s projected real** as the planning target. Treat **${p.extremeIdeal.decodeTokensPerSecond} tok/s extreme ideal** only as a zero-overhead roofline using official peak hardware specs.`,
+                '',
+                '## Configuration',
+                `- Model: ${payload.model.label}${payload.model.id ? ` (${payload.model.id})` : ''}`,
+                `- Weights/profile: ${String(payload.model.quantization).toUpperCase()} · ${profile.name || profile.source}`,
+                `- Resident weights: ${profile.aggregateResidentWeightsGB} GB before KV/workspaces`,
+                `- Decode traffic: ${profile.aggregateBytesPerDecodePassGB} GB per pass${profile.includesKvAndAuxiliaryReads ? ' (explicit mixed/profiled total)' : ' (estimated)'}`,
+                `- Runtime: ${payload.execution.runtime} · ${payload.execution.parallelism} · ${payload.execution.optimization}`,
+                `- Workload: batch ${payload.workload.batchSize}, ${payload.workload.promptTokens} prompt + ${payload.workload.outputTokens} output tokens`,
+                ...hardware.map(line => `- Hardware: ${line}`),
+                `- Exposed non-memory overhead: ${profile.exposedNonMemoryOverheadMsPerPass ?? 'modeled by planner'} ms/pass`,
+                '',
+                '## Expected result',
+                `- Primary projected decode: ${p.primary.decodeTokensPerSecond} tok/s (${p.primary.confidence})`,
+                `- Runtime projection before evidence adjustment: ${p.runtimeProjectionTokensPerSecond} tok/s`,
+                `- Extreme ideal: ${p.extremeIdeal.decodeTokensPerSecond} tok/s`,
+                `- Limiting component: ${p.limitingComponent || 'unknown'}`,
+                '',
+                '## Implementation checklist',
+                ...payload.configurationChecklist.map(item => `- ${item}`),
+                '',
+                'Return the exact launch command, engine/model revisions, served tensor precisions, measured memory bandwidth, steady-state decode tok/s, and a milliseconds-per-token breakdown.'
+            ].join('\n');
+        }
+
+        async function copyPlanText(textValue, successMessage) {
+            const status = document.getElementById('planExportStatus');
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(textValue);
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = textValue;
+                    textarea.setAttribute('readonly', '');
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    textarea.remove();
+                }
+                if (status) { status.className = 'plan-export-status is-success'; status.textContent = successMessage; }
+            } catch (error) {
+                if (status) { status.className = 'plan-export-status is-error'; status.textContent = 'Copy failed. Try Download JSON instead.'; }
+            }
+        }
+
+        function downloadPlanJson() {
+            const status = document.getElementById('planExportStatus');
+            try {
+                const payload = buildPlanExport();
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement('a');
+                anchor.href = url;
+                anchor.download = 'ml-bottleneck-plan.json';
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+                URL.revokeObjectURL(url);
+                if (status) { status.className = 'plan-export-status is-success'; status.textContent = 'Plan JSON downloaded.'; }
+            } catch (error) {
+                if (status) { status.className = 'plan-export-status is-error'; status.textContent = 'Could not build this export.'; }
+            }
         }
 
         function renderLegacyResultInterpretation(measuredTokS, parsed = null) {
@@ -11464,7 +12043,7 @@ const DEVICE_TEMPLATES = {
             if ((plan.modelConfig.optimizationMode || 'none') === 'none' && (plan.modelConfig.batchSize || 1) === 1) recommendations.push('Test MTP, EAGLE, or a draft model; interactive decode is the strongest speculative-decoding use case.');
             if (!recommendations.length) recommendations.push('The run is already near the expected envelope; gains now depend on fused kernels, custom quantization, or a faster memory subsystem.');
             const modelLabel = getSelectedModelLabel(plan.modelConfig);
-            output.innerHTML = `<span class="empty-kicker">${escapeHtml(modelLabel)} · ${escapeHtml(devices[0]?.name || 'current hardware')}</span><h2>${(efficiency * 100).toFixed(0)}% of the physical ceiling.</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>peer-calibrated expectation</span></div><div class="interpret-metric"><strong>${calibration.idealTokS.toFixed(1)}</strong><span>ideal tok/s ceiling</span></div></div><p>${headroom.toFixed(1)} tok/s of theoretical headroom remains. The peer envelope is based on ${calibration.peers} neighboring gold cases and is ${calibration.confidence}.</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+            output.innerHTML = `<span class="empty-kicker">${escapeHtml(modelLabel)} · ${escapeHtml(devices[0]?.name || 'current hardware')}</span><h2>${(efficiency * 100).toFixed(0)}% of the extreme ideal.</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>projected real</span></div><div class="interpret-metric"><strong>${calibration.idealTokS.toFixed(1)}</strong><span>extreme ideal</span></div></div><p>${headroom.toFixed(1)} tok/s remains to the official-peak, zero-overhead roofline. The evidence envelope uses ${calibration.peers} neighboring gold cases and is ${calibration.confidence}.</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
             document.getElementById('apiContractPreview').innerHTML = `<code>${escapeHtml(JSON.stringify({
                 observedTokS: measuredTokS,
                 model: plan.modelConfig.hfId || modelLabel,
@@ -11507,7 +12086,7 @@ const DEVICE_TEMPLATES = {
             const recommendations = [];
             const selectedPreset = MODEL_PRESETS[plan.modelConfig.modelPreset] || MODEL_PRESETS[imported?.modelPreset];
             if (selectedPreset?.specStatus === 'preview') recommendations.push('This comparison uses the published Kimi K3 limits plus a temporary routing proxy; treat its ceiling as provisional until Moonshot publishes the full configuration.');
-            if (efficiency > 1.05) recommendations.push('The measurement exceeds the modeled physical ceiling. Check tok/s units, device count, batch/concurrency, quantization, and whether this is aggregate rather than single-stream output.');
+            if (efficiency > 1.05) recommendations.push('The measurement exceeds the modeled extreme ideal. Check tok/s units, device count, batch/concurrency, speculation, bytes/pass, and whether this is aggregate rather than single-stream output.');
             if (plan.metrics.some(metric => metric.hasOverflow)) recommendations.push('Eliminate weight or KV overflow first; a smaller quant or another memory device has the largest upside.');
             if (efficiency < calibration.realityFactor * 0.72) recommendations.push('This run is below comparable peers. Verify warmup, greedy sampling, GPU offload, flash attention, and the exact kernel/backend build.');
             if (planDevices.length > 1 && plan.metrics.some(metric => (metric.decodeCoordinationTimeMs || 0) > 1)) recommendations.push('Inter-device coordination is material. Prefer a faster fabric, reduce tensor-parallel degree, or place more work on each device.');
@@ -11517,11 +12096,13 @@ const DEVICE_TEMPLATES = {
             const modelLabel = getSelectedModelLabel(plan.modelConfig);
             const sameHardware = planDevices.every(device => device.template === planDevices[0]?.template);
             const hardwareLabel = sameHardware && planDevices.length > 1 ? `${planDevices.length}x ${planDevices[0].name.replace(/ #\d+$/, '')}` : planDevices.map(device => device.name).join(' + ');
-            const headline = efficiency > 1.05 ? 'Above the modeled ceiling.' : `${(efficiency * 100).toFixed(0)}% of the physical ceiling.`;
-            const peerSentence = calibration.peers > 0
+            const headline = efficiency > 1.05 ? 'Above the modeled extreme ideal.' : `${(efficiency * 100).toFixed(0)}% of the extreme ideal.`;
+            const peerSentence = calibration.hasMeasuredExecutionProfile
+                ? 'The projected result uses the supplied bytes/pass, sustained bandwidth, and exposed overhead rather than a uniform-quant assumption.'
+                : calibration.peers > 0
                 ? `This is ${Math.abs(expectedDeltaPct).toFixed(0)}% ${expectedDeltaPct >= 0 ? 'above' : 'below'} the peer-calibrated expectation, based on ${calibration.peers} neighboring gold case${calibration.peers === 1 ? '' : 's'}.`
                 : 'No close gold-case peer was available, so the expected rate is uncalibrated.';
-            output.innerHTML = `<span class="empty-kicker">${useImported ? 'Imported setup' : 'Active plan'} / ${escapeHtml(modelLabel)} / ${escapeHtml(hardwareLabel || 'current hardware')}</span><h2>${headline}</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>peer-calibrated expectation</span></div><div class="interpret-metric"><strong>${calibration.idealTokS.toFixed(1)}</strong><span>ideal tok/s ceiling</span></div></div><p>${headroom.toFixed(1)} tok/s of theoretical headroom remains. ${peerSentence}</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+            output.innerHTML = `<span class="empty-kicker">${useImported ? 'Imported setup' : 'Active plan'} / ${escapeHtml(modelLabel)} / ${escapeHtml(hardwareLabel || 'current hardware')}</span><h2>${headline}</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>projected real</span></div><div class="interpret-metric"><strong>${calibration.idealTokS.toFixed(1)}</strong><span>extreme ideal</span></div></div><p>${headroom.toFixed(1)} tok/s remains to the official-peak, zero-overhead roofline. ${peerSentence}</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
             document.getElementById('apiContractPreview').innerHTML = `<code>${escapeHtml(JSON.stringify({
                 observedTokS: measuredTokS,
                 model: plan.modelConfig.hfId || modelLabel,
@@ -11719,10 +12300,13 @@ const DEVICE_TEMPLATES = {
                         : { label: 'Planning preset', className: ' is-derived' }));
             const memory = Number(device.memoryGB || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
             const bandwidth = Number(device.localBandwidthGBps || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+            const sustained = Number.isFinite(device.sustainedBandwidthGBps) && device.sustainedBandwidthGBps > 0
+                ? ` · ${Number(device.sustainedBandwidthGBps).toLocaleString(undefined, { maximumFractionDigits: 1 })} GB/s sustained`
+                : '';
             const source = device.sourceUrl
                 ? `<a href="${escapeHtml(device.sourceUrl)}" target="_blank" rel="noopener noreferrer">source</a>`
                 : '';
-            return `<div class="hardware-spec-meta"><span class="spec-pill${status.className}">${status.label}</span><span>${memory} GB · ${bandwidth} GB/s memory BW</span>${source}</div>`;
+            return `<div class="hardware-spec-meta"><span class="spec-pill${status.className}">${status.label}</span><span>${memory} GB · ${bandwidth} GB/s peak${sustained}</span>${source}</div>`;
         }
 
 	function updateDeviceDisplay() {
@@ -12088,9 +12672,14 @@ const DEVICE_TEMPLATES = {
                                            onchange="updateDevice(${selectedDevice.id}, 'memoryGB', parseFloat(this.value) || 0)">
                                 </div>
                                 <div>
-                                    <label title="How fast the device can read weights/KV cache from its own memory">Memory BW (GB/s)</label>
+                                    <label title="Vendor-specified peak memory bandwidth, used for the extreme ideal">Peak memory BW (GB/s)</label>
                                     <input type="number" class="input" value="${selectedDevice.localBandwidthGBps}"
                                            onchange="updateDevice(${selectedDevice.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)">
+                                </div>
+                                <div>
+                                    <label title="Optional measured sustained bandwidth, used for the projected result while leaving the ideal unchanged">Sustained memory BW (GB/s, optional)</label>
+                                    <input type="number" class="input" value="${Number.isFinite(selectedDevice.sustainedBandwidthGBps) ? selectedDevice.sustainedBandwidthGBps : ''}" placeholder="Runtime estimate"
+                                           onchange="updateDevice(${selectedDevice.id}, 'sustainedBandwidthGBps', this.value === '' ? null : (parseFloat(this.value) || 0))">
                                 </div>
                                 <div>
                                     <label title="Bandwidth to other devices">Interconnect BW (GB/s)</label>
@@ -12304,6 +12893,7 @@ const DEVICE_TEMPLATES = {
 	                    ...DEVICE_TEMPLATES[value],
 	                    template: value, // Keep the template name
 	                    name: DEVICE_TEMPLATES[value].name, // Use template name
+	                    sustainedBandwidthGBps: DEVICE_TEMPLATES[value].sustainedBandwidthGBps ?? null,
 	                    isEdited: false
 	                };
 	            } else {
@@ -12927,6 +13517,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	                    id: d.id,
 	                    template: value,
 	                    name: templateName, // Use template name
+	                    sustainedBandwidthGBps: DEVICE_TEMPLATES[value].sustainedBandwidthGBps ?? null,
 	                    isEdited: false
 	                };
 	            } else {
@@ -13100,6 +13691,13 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	    restoreLastPlanPreferences();
 	    lastPlanPreferencesReady = true;
 	    document.getElementById('resetPlanButton')?.addEventListener('click', resetPlanToDefaults);
+	    document.getElementById('copyAiHandoffButton')?.addEventListener('click', () => {
+	        copyPlanText(buildAiHandoff(), 'AI handoff copied.');
+	    });
+	    document.getElementById('copyPlanJsonButton')?.addEventListener('click', () => {
+	        copyPlanText(JSON.stringify(buildPlanExport(), null, 2), 'Plan JSON copied.');
+	    });
+	    document.getElementById('downloadPlanJsonButton')?.addEventListener('click', downloadPlanJson);
 
         const modelSearch = document.getElementById('modelSearch');
         const modelSearchOptions = document.getElementById('modelSearchOptions');
@@ -13660,6 +14258,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             calculateDecodeCoordinationTimeSeconds,
             calculateMetrics,
             calculateSystemRateFromDeviceRates,
+            calculateIdealSystemRateFromDeviceRates,
             findOptimalStrategy,
             findBenchmarkMatches,
             updateDeviceDisplay,
@@ -13676,6 +14275,9 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
                 selectedDeviceId = devices[0]?.id || null;
             },
             getModelConfig,
+            getActivePlanOutcome,
+            buildPlanExport,
+            buildAiHandoff,
             updateSystemAnalysis,
             updateModelConfigFromPreset
         };

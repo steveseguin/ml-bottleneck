@@ -152,7 +152,7 @@ test('model map waterfall stays consistent with the decode engine', () => {
   const metrics = app.hooks.calculateMetrics();
   for (const metric of metrics) {
     const b = metric.decodeTimeBreakdown;
-    const segmentSum = b.weightReadMs + b.kvReadMs + b.coordinationMs;
+    const segmentSum = b.weightReadMs + b.kvReadMs + b.computeMs + b.runtimeMs + b.coordinationMs;
     assert.ok(Math.abs(segmentSum - b.totalMs) < 0.01,
       `waterfall segments (${segmentSum}) must sum to the engine total (${b.totalMs})`);
     assert.ok(['compute', 'bandwidth', 'network'].includes(metric.prefillTimeBreakdown.binding));
@@ -171,7 +171,7 @@ test('model map waterfall stays consistent with the decode engine', () => {
   assert.ok(Number.isFinite(plan.systemDecodeRate) && plan.systemDecodeRate > 0);
 });
 
-test('ceiling ladder keeps predictions at or below the physical ceiling', () => {
+test('ideal ladder keeps non-speculative predictions below the extreme ideal', () => {
   const app = loadApp();
   const t4090 = app.hooks.DEVICE_TEMPLATES['RTX 4090'];
   app.hooks.setDevices([{ id: 1, template: 'RTX 4090', ...JSON.parse(JSON.stringify(t4090)), name: 'RTX 4090' }]);
@@ -193,13 +193,13 @@ test('ceiling ladder keeps predictions at or below the physical ceiling', () => 
   assert.ok(calibration.idealTokS >= calibration.genericTokS,
     `engine model (${calibration.genericTokS}) must sit at or below the ceiling (${calibration.idealTokS})`);
   assert.ok(calibration.expectedTokS <= calibration.idealTokS * 1.05,
-    `expected real (${calibration.expectedTokS}) must not exceed the physical ceiling (${calibration.idealTokS})`);
+    `projected real (${calibration.expectedTokS}) must not exceed the extreme ideal (${calibration.idealTokS})`);
 
   app.hooks.updateSystemAnalysis();
   const html = app.elements.get('systemAnalysis').innerHTML;
   assert.match(html, /ceiling-ladder/, 'ceiling ladder renders in system analysis');
-  assert.match(html, /Hardware ceiling/);
-  assert.match(html, /Expected real/);
+  assert.match(html, /Extreme ideal/);
+  assert.match(html, /Projected real/);
 });
 
 test('engine predictions stay statistically anchored to the gold-case corpus', () => {
@@ -274,7 +274,7 @@ test('speculation is labeled, split from efficiency, and can pass the per-pass c
     `high-acceptance speculation ${on.decodeTokensPerSecond} should exceed the per-pass ceiling ${on.theoreticalMaxTokensPerSecond}`);
   // The waterfall bands must still sum to the amortized per-token total.
   const b = on.decodeTimeBreakdown;
-  const segmentSum = b.weightReadMs + b.kvReadMs + b.coordinationMs;
+  const segmentSum = b.weightReadMs + b.kvReadMs + b.computeMs + b.runtimeMs + b.coordinationMs;
   assert.ok(Math.abs(segmentSum - b.totalMs) < 0.01,
     `waterfall segments (${segmentSum}) must sum to the total (${b.totalMs}) under speculation`);
 

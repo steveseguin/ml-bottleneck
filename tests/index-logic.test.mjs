@@ -219,7 +219,7 @@ test('versioned Localmaxxing snapshot contains a broad catalog and strict gold c
   }
 });
 
-test('gold-case projection separates the physical ceiling from generic real-world efficiency', () => {
+test('gold-case projection separates the extreme ideal from generic real-world efficiency', () => {
   const app = loadApp();
   const projection = app.hooks.calculateGoldCaseProjection({
     id: 'fixture',
@@ -259,7 +259,7 @@ test('DeepSeek R1 still separates resident and active weights under overflow', (
   const [metric] = app.hooks.calculateMetrics();
 
   assert.equal(metric.hasOverflow, true);
-  assert.ok(metric.modelSizeGB > 650 && metric.modelSizeGB < 690, `resident size was ${metric.modelSizeGB}`);
+  assert.ok(metric.modelSizeGB > 690 && metric.modelSizeGB < 692, `resident size was ${metric.modelSizeGB}`);
   assert.ok(metric.activeModelSizeGB > 30 && metric.activeModelSizeGB < 45, `active size was ${metric.activeModelSizeGB}`);
 });
 
@@ -956,7 +956,7 @@ test('system analysis leads with decode rate and collapses breakdown', () => {
   assert.ok(heroIdx >= 0, 'result hero should render at top');
   assert.ok(breakdownIdx > heroIdx, 'breakdown accordion should come after hero');
   assert.ok(recommendationIdx > breakdownIdx, 'recommendation should be inside collapsed breakdown');
-  assert.match(html, /System decode rate/);
+  assert.match(html, /Projected real decode/);
   assert.match(html, /Per-device/);
 });
 
@@ -1172,4 +1172,98 @@ test('four B70 scenario loads a complete MiniMax planning configuration', () => 
   assert.equal(app.elements.get('runtimeFramework').value, 'vllm');
   assert.match(app.elements.get('executionMap').innerHTML, /Intel Arc Pro B70 #1/);
   assert.match(app.elements.get('executionMap').innerHTML, /Matching run|Related evidence/);
+});
+
+test('profiled four-B70 DeepSeek run stays inside narrow measured and ideal ranges', () => {
+  const app = loadApp({ snapshot: loadSnapshot() });
+  app.hooks.loadScenarioPreset('b70_x4_dsv4_reap_record');
+
+  const plan = app.hooks.getActivePlanOutcome();
+  const firstMetric = plan.metrics[0];
+
+  assert.ok(plan.calibration.expectedTokS >= 43.70 && plan.calibration.expectedTokS <= 43.80,
+    `projected real was ${plan.calibration.expectedTokS} tok/s`);
+  assert.ok(plan.calibration.idealTokS >= 158.90 && plan.calibration.idealTokS <= 159.00,
+    `extreme ideal was ${plan.calibration.idealTokS} tok/s`);
+  assert.equal(plan.calibration.confidence, 'measured inputs');
+  assert.equal(firstMetric.byteProfileSource, 'measured');
+  assert.equal(firstMetric.realisticBandwidthGBps, 527);
+  assert.equal(firstMetric.effectiveBandwidthGBps, 608);
+  assert.equal(firstMetric.modelSizeGB, 90);
+  assert.equal(firstMetric.residentWeightSizeGB, 22.5);
+  assert.ok(firstMetric.decodeTimeBreakdown.totalMs >= 22.85 && firstMetric.decodeTimeBreakdown.totalMs <= 22.87);
+  assert.equal(firstMetric.decodeTimeBreakdown.overheadSource, 'measured');
+});
+
+test('official peak controls the ideal while sustained bandwidth controls projected real', () => {
+  const app = loadApp();
+  app.hooks.loadScenarioPreset('b70_x4_dsv4_reap_record');
+  const baseline = app.hooks.getActivePlanOutcome();
+
+  const slowerDevices = app.hooks.getDevices().map(device => ({ ...device, sustainedBandwidthGBps: 400 }));
+  app.hooks.setDevices(slowerDevices);
+  const slower = app.hooks.getActivePlanOutcome();
+
+  assert.ok(Math.abs(slower.calibration.idealTokS - baseline.calibration.idealTokS) < 0.0001,
+    'measured sustained bandwidth must not lower the official-spec extreme ideal');
+  assert.ok(slower.calibration.expectedTokS >= 39.70 && slower.calibration.expectedTokS <= 39.80,
+    `400 GB/s sustained projection was ${slower.calibration.expectedTokS} tok/s`);
+  assert.ok(slower.calibration.expectedTokS < baseline.calibration.expectedTokS);
+});
+
+test('extreme ideal uses the lower of official memory and compute rooflines', () => {
+  const app = loadApp();
+  app.hooks.setDevices([buildCustomDevice({
+    name: 'Compute-starved lab GPU',
+    memoryGB: 64,
+    localBandwidthGBps: 10000,
+    computeTFlops: { float32: 0.5, float16: 1, bfloat16: 1, int8: 2, fp8: 2, q4: 2 }
+  })]);
+  setLlmDefaults(app, {
+    preset: 'llama3_8b',
+    quant: 'q4',
+    framework: 'llama_cpp',
+    strategy: 'pipeline',
+    batchSize: 1,
+    seqLength: 2048
+  });
+
+  const metric = app.hooks.calculateMetrics()[0];
+  const calibration = app.hooks.calculateCurrentCalibration(
+    app.hooks.buildEffectiveModelConfig(), [metric], metric.decodeTokensPerSecond, 'pipeline');
+
+  assert.ok(metric.theoreticalMemoryMaxTokensPerSecond > 2000);
+  assert.ok(calibration.idealTokS >= 80.20 && calibration.idealTokS <= 80.30,
+    `compute-bound ideal was ${calibration.idealTokS} tok/s`);
+});
+
+test('AI handoff and Plan JSON preserve every assumption needed to reproduce the run', () => {
+  const app = loadApp();
+  app.hooks.loadScenarioPreset('b70_x4_dsv4_reap_record');
+  const payload = app.hooks.buildPlanExport();
+  const handoff = app.hooks.buildAiHandoff(payload);
+
+  assert.equal(payload.schemaVersion, 'mlbottleneck.plan.v1');
+  assert.equal(payload.execution.profile.aggregateBytesPerDecodePassGB, 15.3);
+  assert.equal(payload.execution.profile.aggregateResidentWeightsGB, 90);
+  assert.equal(payload.execution.profile.exposedNonMemoryOverheadMsPerPass, 15.6);
+  assert.equal(payload.hardware.devices[0].officialPeakMemoryBandwidthGBps, 608);
+  assert.equal(payload.hardware.devices[0].sustainedMemoryBandwidthGBps, 527);
+  assert.ok(payload.prediction.primary.decodeTokensPerSecond >= 43.70 && payload.prediction.primary.decodeTokensPerSecond <= 43.80);
+  assert.ok(payload.prediction.extremeIdeal.decodeTokensPerSecond >= 158.90 && payload.prediction.extremeIdeal.decodeTokensPerSecond <= 159.00);
+  assert.match(handoff, /43\.748 tok\/s projected real/);
+  assert.match(handoff, /158\.954 tok\/s extreme ideal/);
+  assert.match(handoff, /15\.3 GB per pass/);
+  assert.match(handoff, /exact launch command/);
+
+  const imported = app.hooks.parseMeasuredResultPayload(payload);
+  assert.equal(imported.isPlanExport, true);
+  assert.equal(imported.modelPreset, 'deepseek_v4_flash_reap_180b');
+  assert.equal(imported.hardware[0].template, 'Intel Arc Pro B70');
+  assert.equal(imported.hardware[0].count, 4);
+  assert.equal(imported.runtimeFramework, 'vllm');
+  assert.equal(imported.parallelismStrategy, 'tensor');
+  assert.equal(imported.decodeBytesPerPassGB, 15.3);
+  assert.equal(imported.residentWeightsGB, 90);
+  assert.equal(imported.decodeOverheadMs, 15.6);
 });
