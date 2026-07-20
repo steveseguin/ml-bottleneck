@@ -9,6 +9,12 @@ import { loadApp, loadSnapshot } from './load-index-app.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
 
+test('benchmark snapshot URL is cache-keyed to its generated timestamp', () => {
+  const snapshot = loadSnapshot();
+  const expectedVersion = snapshot.generatedAt.replace(/\D/g, '').slice(0, 14);
+  assert.match(html, new RegExp(`data/localmaxxing-snapshot\\.js\\?v=${expectedVersion}["']`));
+});
+
 function stripStringsAndComments(line) {
   return line
     .replace(/'[^']*'/g, "''")

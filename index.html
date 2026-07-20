@@ -43,7 +43,7 @@
 
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
-	<script src="data/localmaxxing-snapshot.js"></script>
+	<script src="data/localmaxxing-snapshot.js?v=20260720035039"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -10960,7 +10960,7 @@ const DEVICE_TEMPLATES = {
                     ];
                     const scale = Math.max(...rungValues.filter(Number.isFinite), 1e-9);
                     const rung = (cls, label, value, note) => `
-                        <div class="ladder-row">
+                        <div class="ladder-row" data-tier="${cls}">
                             <span class="ladder-label">${label}</span>
                             <span class="ladder-bar"><span class="ladder-fill ${cls}" style="width:${Math.min(100, (value / scale) * 100).toFixed(1)}%"></span></span>
                             <span class="ladder-value"><strong>${formatCompactRate(value)}</strong> tok/s${note ? ` <span class="ladder-note">${note}</span>` : ''}</span>
@@ -11057,7 +11057,7 @@ const DEVICE_TEMPLATES = {
             const headerMeta = document.getElementById('headerResultMeta');
             const renderedRate = analysisContainer.querySelector('.rate-value')?.textContent?.replace(/\s+/g, ' ').trim();
             if (headerRate && renderedRate) {
-                const idealRate = analysisContainer.querySelector('.ceiling-ladder .ladder-row .ladder-value strong')?.textContent?.trim();
+                const idealRate = analysisContainer.querySelector('.ceiling-ladder .ladder-row[data-tier="is-engine"] .ladder-value strong')?.textContent?.trim();
                 headerRate.textContent = idealRate ? `${renderedRate} / ${idealRate} optimized` : renderedRate;
             }
             if (headerMeta) {

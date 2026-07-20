@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -311,4 +311,15 @@ const snapshot = {
 await mkdir(path.join(repoRoot, 'data'), { recursive: true });
 const output = `window.LOCALMAXXING_SNAPSHOT = Object.freeze(${JSON.stringify(snapshot, null, 2)});\n`;
 await writeFile(path.join(repoRoot, 'data', 'localmaxxing-snapshot.js'), output, 'utf8');
+const indexPath = path.join(repoRoot, 'index.html');
+const indexSource = await readFile(indexPath, 'utf8');
+const snapshotVersion = snapshot.generatedAt.replace(/\D/g, '').slice(0, 14);
+const versionedIndex = indexSource.replace(
+  /data\/localmaxxing-snapshot\.js(?:\?v=[^"']*)?/,
+  `data/localmaxxing-snapshot.js?v=${snapshotVersion}`
+);
+if (versionedIndex === indexSource && !indexSource.includes(`data/localmaxxing-snapshot.js?v=${snapshotVersion}`)) {
+  throw new Error('Could not update the snapshot cache key in index.html');
+}
+await writeFile(indexPath, versionedIndex, 'utf8');
 console.log(`Localmaxxing snapshot: ${models.length} models, ${rawRuns.length} runs scanned, ${goldCases.length} gold cases.`);

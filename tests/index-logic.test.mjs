@@ -1232,6 +1232,8 @@ test('four-B70 DeepSeek plan uses benchmark peers without hidden case-specific m
     'workflow timing must use the projected primary result');
   assert.match(analysisHtml, /median 26% of the generic engine model/,
     'the primary result explains its benchmark correction');
+  assert.match(app.elements.get('headerResultRate').textContent, /44\.3 tok\/s \/ 183 optimized/,
+    'the compact result strip must label the optimized target, not the physical roofline');
 });
 
 test('supplied execution assumptions reproduce their arithmetic without becoming benchmark facts', () => {

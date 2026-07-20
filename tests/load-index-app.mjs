@@ -116,7 +116,15 @@ class FakeElement {
     return { width: 1200, height: 300 };
   }
 
-  querySelector() {
+  querySelector(selector) {
+    if (this.id === 'systemAnalysis' && selector === '.rate-value') {
+      const match = this.innerHTML.match(/<div class="rate-value">([\s\S]*?)<\/div>/);
+      if (match) return { textContent: match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() };
+    }
+    if (this.id === 'systemAnalysis' && selector === '.ceiling-ladder .ladder-row[data-tier="is-engine"] .ladder-value strong') {
+      const match = this.innerHTML.match(/<div class="ladder-row" data-tier="is-engine">[\s\S]*?<span class="ladder-value"><strong>([^<]+)<\/strong>/);
+      if (match) return { textContent: match[1] };
+    }
     return null;
   }
 
