@@ -3293,7 +3293,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             <div class="quickstart-grid" id="quickstartGrid" role="list"></div>
             <div class="qs-legend" aria-hidden="true">
                 <span class="map-legend-item"><span class="qs-key is-expected"></span>expected</span>
-                <span class="map-legend-item"><span class="qs-key is-ideal"></span>physics ideal</span>
+                <span class="map-legend-item"><span class="qs-key is-ideal"></span>optimized target</span>
                 <span class="map-legend-item"><span class="qs-key is-measured"></span>measured median</span>
             </div>
         </section>
@@ -3312,7 +3312,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         <div class="plan-header-actions">
             <button class="plan-reset-button" id="resetPlanButton" type="button" title="Restore the factory model, hardware, and run-mode defaults">Reset plan</button>
             <div class="header-result" id="headerResult" aria-live="polite" hidden>
-                <span class="header-result-label">Current plan · expected / ideal</span>
+                <span class="header-result-label">Current plan · projected / optimized</span>
                 <strong id="headerResultRate">Calculating…</strong>
                 <span id="headerResultMeta">Choose a model and hardware</span>
             </div>
@@ -3554,9 +3554,9 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                                 <option value="exo">EXO / MLX Distributed</option>
                             </select>
                             <details class="nested-details" id="decodeProfileDisclosure">
-                                <summary>Measured or mixed execution profile</summary>
+                                <summary>Advanced execution assumptions</summary>
                                 <div class="nested-details-content">
-                                    <p class="field-help" style="margin-top: 0;">Optional measurements replace only the matching estimate. The ideal still uses official peak hardware bandwidth; the projected result uses sustained bandwidth and exposed overhead.</p>
+                                    <p class="field-help" style="margin-top: 0;">Optional supplied values replace only the matching estimate. They are treated as unverified assumptions unless you independently measured and documented them; the planner never promotes them to benchmark evidence.</p>
                                     <div class="decode-profile-fields">
                                         <div>
                                             <label for="decodeBytesPerPassGB">Aggregate bytes / decode pass (GB)</label>
@@ -3567,7 +3567,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                                             <input id="residentWeightsGB" class="input" type="number" min="0" step="0.01" placeholder="Estimated from model + quant">
                                         </div>
                                         <div>
-                                            <label for="decodeOverheadMs">Exposed non-memory overhead (ms/pass)</label>
+                                            <label for="decodeOverheadMs">Supplied non-memory time (ms/pass)</label>
                                             <input id="decodeOverheadMs" class="input" type="number" min="0" step="0.01" placeholder="Estimated from runtime">
                                         </div>
                                         <div>
@@ -3575,7 +3575,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                                             <input id="executionProfileName" class="input" type="text" placeholder="e.g. native mixed XPU">
                                         </div>
                                     </div>
-                                    <p class="decode-profile-note">Bytes/pass can describe mixed precision across attention, experts, heads, compressors, and routers. Resident weights controls capacity separately; sustained bandwidth is set on each device.</p>
+                                    <p class="decode-profile-note">Bytes/pass can describe mixed precision across attention, experts, heads, compressors, and routers. Resident weights controls capacity separately; sustained bandwidth is set on each device. Values inferred from an observed tok/s result are circular and should not be presented as validation.</p>
                                 </div>
                             </details>
                         </div>
@@ -3608,7 +3608,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                                 </optgroup>
                             <optgroup label="Workstation AI">
                                 <option value="b70_x4_minimax_m27">4x Intel Arc Pro B70 + MiniMax M2.7 (Q4 plan)</option>
-                                <option value="b70_x4_dsv4_reap_record">4x Intel Arc Pro B70 + DeepSeek V4 REAP (measured mixed profile)</option>
+                                <option value="b70_x4_dsv4_reap_record">4x Intel Arc Pro B70 + DeepSeek V4 REAP (unverified plan)</option>
                             </optgroup>
                             </select>
                         </div>
@@ -3916,21 +3916,21 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 <div id="calibrationPlot"></div>
             </section>
             <aside class="calibration-method">
-                <span class="eyebrow">What the handicap means</span>
-                <h2>Ceiling × reality factor</h2>
-                <p>The ideal ceiling comes from memory traffic, compute, capacity, and communication. A peer-derived factor accounts for runtime efficiency, fused kernels, scheduler behavior, and hardware-specific friction.</p>
+                <span class="eyebrow">How the targets are built</span>
+                <h2>Model + comparable real runs</h2>
+                <p>The physical roofline is only a sanity bound. Projected real uses the median correction from similar runs; the optimized target applies strong-run benchmark efficiency to a roofline that still retains modeled communication latency.</p>
                 <dl id="calibrationMethodStats"></dl>
             </aside>
         </div>
         <div class="gold-set-head"><div><span class="eyebrow">Gold set</span><h2>Reproducible reference runs</h2></div><input class="input" id="goldSearch" type="search" placeholder="Filter model, hardware, runtime…"></div>
-        <div class="gold-table-wrap"><table class="gold-table"><thead><tr><th>Model / setup</th><th>Observed</th><th>Ideal</th><th>Calibrated</th><th>Error</th></tr></thead><tbody id="goldTableBody"></tbody></table></div>
+        <div class="gold-table-wrap"><table class="gold-table"><thead><tr><th>Model / setup</th><th>Observed</th><th>Optimized</th><th>Projected</th><th>Error</th></tr></thead><tbody id="goldTableBody"></tbody></table></div>
     </section>
 
     <section id="workspace-explain" class="workspace-view" data-workspace-view="explain" hidden>
         <header class="workspace-heading">
             <span class="eyebrow">Result interpreter</span>
             <h1>Compare a measured run with the plan.</h1>
-            <p>Paste a result or enter its speed to see implied efficiency, the ideal ceiling, and the changes most likely to help.</p>
+            <p>Paste a result or enter its speed to compare it with the projected result, an attainable optimized target, and the changes most likely to help.</p>
         </header>
         <div class="interpreter-layout">
             <form class="interpreter-form" id="resultInterpreterForm">
@@ -3948,7 +3948,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             <section class="interpreter-output" id="interpreterOutput" aria-live="polite">
                 <span class="empty-kicker">Waiting for a measurement</span>
                 <h2>Your active plan supplies the model and hardware.</h2>
-                <p>We will compare the entered result with the primary projected outcome and the extreme, zero-overhead ideal.</p>
+                <p>We will compare the entered result with the primary projection and an evidence-capped optimized target.</p>
             </section>
         </div>
         <details class="api-contract-disclosure">
@@ -3958,7 +3958,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 <pre id="apiContractPreview"><code>{
   "observedTokS": 32.2,
   "configuration": "active-plan",
-  "return": ["idealTokS", "expectedTokS", "headroom", "recommendations"]
+  "return": ["optimizedTokS", "physicalRooflineTokS", "expectedTokS", "headroom", "recommendations"]
 }</code></pre>
             </section>
         </details>
@@ -4492,6 +4492,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    intermediateSize: 21504,
 	    contextLength: 128000,
 	    slidingWindow: 1024,
+	    fullAttentionLayers: 10,
+	    attentionMechanism: 'sliding_window',
 	    hasVision: true,
 	    visionHiddenSize: 1152,
 	    visionNumLayers: 27,
@@ -4512,7 +4514,13 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    routingType: 'dense',
 	    attentionMechanism: 'sliding_window',
 	    slidingWindow: 1024,
-	    contextLength: 262144
+	    contextLength: 262144,
+	    hasVision: true,
+	    useMTP: true,
+	    mtpModules: 1,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/google/gemma-4-31B-it/blob/main/config.json',
+	    specNote: 'Google config: 60 layers, 32 attention heads, 16 KV heads, 10 full-attention layers, and 262K context.'
 	  },
 	  'gemma4_12b': {
 	    label: 'Gemma 4 12B',
@@ -4527,7 +4535,13 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    routingType: 'dense',
 	    attentionMechanism: 'sliding_window',
 	    slidingWindow: 1024,
-	    contextLength: 262144
+	    contextLength: 262144,
+	    hasVision: true,
+	    useMTP: true,
+	    mtpModules: 1,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/google/gemma-4-12B-it/blob/main/config.json',
+	    specNote: 'Google unified config: 48 layers, 16 attention heads, 8 KV heads, 8 full-attention layers, and 262K context.'
 	  },
 	  'gemma4_26b_a4b': {
 	    label: 'Gemma 4 26B A4B',
@@ -4545,11 +4559,17 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    routingType: 'moe',
 	    attentionMechanism: 'sliding_window',
 	    slidingWindow: 1024,
+	    fullAttentionLayers: 5,
 	    contextLength: 262144,
 	    hasVision: true,
+	    useMTP: true,
+	    mtpModules: 1,
 	    visionHiddenSize: 1152,
 	    visionNumLayers: 27,
-	    visionNumHeads: 16
+	    visionNumHeads: 16,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/google/gemma-4-26B-A4B/blob/main/config.json',
+	    specNote: 'Google config: 30 layers, 128 experts with top-8 routing, 5 full-attention layers, and 262K context.'
 	  },
 	  'gemma4_e4b': {
 	    label: 'Gemma 4 E4B (8B resident)',
@@ -4564,8 +4584,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    routingType: 'dense',
 	    attentionMechanism: 'sliding_window',
 	    slidingWindow: 512,
+	    fullAttentionLayers: 7,
 	    contextLength: 131072,
-	    hasVision: true
+	    hasVision: true,
+	    useMTP: true,
+	    mtpModules: 1,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/google/gemma-4-E4B/blob/main/config.json',
+	    specNote: 'Google config: 42 layers, 8 attention heads, 2 KV heads, 7 full-attention layers, and 128K context.'
 	  },
 	  'gemma4_e2b': {
 	    label: 'Gemma 4 E2B (5.1B resident)',
@@ -4580,8 +4606,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    routingType: 'dense',
 	    attentionMechanism: 'sliding_window',
 	    slidingWindow: 512,
+	    fullAttentionLayers: 7,
 	    contextLength: 131072,
-	    hasVision: true
+	    hasVision: true,
+	    useMTP: true,
+	    mtpModules: 1,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/google/gemma-4-E2B/blob/main/config.json',
+	    specNote: 'Google config: 35 layers, 8 attention heads, 1 KV head, 7 full-attention layers, and 128K context.'
 	  },
 	  'ornith_1_9b': {
 	    label: 'Ornith 1.0 9B',
@@ -4759,6 +4791,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numExperts: 160,
 	    activeExperts: 6,
 	    activeParamsB: 13,
+	    nativeBytesPerParam: 0.5722,
 	    routingType: 'moe',
 	    attentionMechanism: 'hybrid_linear',
 	    slidingWindow: 128,
@@ -4767,7 +4800,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    contextLength: 200000,
 	    specStatus: 'derived',
 	    specSourceUrl: 'https://huggingface.co/0xSero/DeepSeek-V4-Flash-180B',
-	    specNote: 'Community REAP-pruned derivative of DeepSeek V4 Flash. It keeps 160 routed experts, activates 6 per token, and has a validated 200K serving profile; it is not the official 284B checkpoint.'
+	    specNote: 'Community REAP-pruned derivative of DeepSeek V4 Flash. Its model card reports 180B parameters, 160 routed experts, mixed FP4/FP8 weights, about 103 GB on disk, and a validated 200K serving profile; it is not the official checkpoint.'
 	  },
 	  'deepseek_v4_pro': {
 	    label: 'DeepSeek V4 Pro 1.6T A49B',
@@ -5205,28 +5238,40 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	  'gemma3_12b': {
 	    totalParamsB: 12,
 	    hiddenSize: 3840,
-	    numLayers: 34,
+	    numLayers: 48,
 	    numHeads: 16,
 	    numKVHeads: 8,
+	    intermediateSize: 15360,
 	    contextLength: 128000,
+	    slidingWindow: 1024,
+	    fullAttentionLayers: 8,
+	    attentionMechanism: 'sliding_window',
 	    hasVision: true
 	  },
 	  'gemma3_4b': {
 	    totalParamsB: 4,
 	    hiddenSize: 2560,
-	    numLayers: 26,
+	    numLayers: 34,
 	    numHeads: 8,
 	    numKVHeads: 4,
+	    intermediateSize: 10240,
 	    contextLength: 128000,
+	    slidingWindow: 1024,
+	    fullAttentionLayers: 5,
+	    attentionMechanism: 'sliding_window',
 	    hasVision: true
 	  },
 	  'gemma3_1b': {
 	    totalParamsB: 1,
-	    hiddenSize: 1536,
-	    numLayers: 18,
-	    numHeads: 8,
-	    numKVHeads: 4,
-	    contextLength: 32000
+	    hiddenSize: 1152,
+	    numLayers: 26,
+	    numHeads: 4,
+	    numKVHeads: 1,
+	    intermediateSize: 6912,
+	    contextLength: 32768,
+	    slidingWindow: 512,
+	    fullAttentionLayers: 4,
+	    attentionMechanism: 'sliding_window'
 	  },
 	  // Gemma 2 Family
 	  'gemma2_27b': {
@@ -7595,8 +7640,8 @@ const DEVICE_TEMPLATES = {
                 return {
                     aggregateWeightBytes: customAggregateGB * 1e9,
                     includesKv: true,
-                    source: 'measured',
-                    label: modelConfig.executionProfileName || 'Measured / mixed execution profile'
+                    source: 'supplied',
+                    label: modelConfig.executionProfileName || 'Supplied / mixed execution assumptions'
                 };
             }
             const bytesPerParam = getWeightBytesPerParam(modelConfig, dtypeSize);
@@ -7906,7 +7951,7 @@ const DEVICE_TEMPLATES = {
             return minRate * (applyAggregationPenalty ? 0.92 : 1);
         }
 
-        // Extreme-ideal aggregation deliberately removes every modeled
+        // Physical-roofline aggregation deliberately removes every modeled
         // software, collective, scheduling, and pipeline-warmup loss. Device
         // rates passed here are already based on official peak hardware specs.
         function calculateIdealSystemRateFromDeviceRates(deviceRates, strategy, batchSize) {
@@ -7921,6 +7966,36 @@ const DEVICE_TEMPLATES = {
             return minRate;
         }
 
+        // Two different upper bounds are useful and must not be conflated:
+        // - physicalTokS is the zero-overhead roofline from official peak
+        //   hardware specifications. It is a sanity check, not a forecast.
+        // - latencyBoundTokS retains the modeled communication latency that a
+        //   faster kernel cannot remove. Evidence caps the user-facing
+        //   optimized target below this bound later in calibration.
+        function calculateProjectionBounds(modelConfig, metrics, strategy, devicesArray) {
+            const physicalRates = [];
+            const latencyBoundRates = [];
+            const modeledCoordinationSeconds = calculateDecodeCoordinationTimeSeconds(modelConfig, devicesArray);
+
+            metrics.forEach((metric, index) => {
+                const passRate = Math.max(metric.theoreticalMaxTokensPerSecond || 0, 0);
+                if (!Number.isFinite(passRate) || passRate <= 0) return;
+                const emittedTokensPerPass = Math.max(metric.speculationMultiplier || 1, 1);
+                const coordinationScale = strategy === 'pipeline'
+                    ? getParallelismScales(modelConfig, devicesArray, index).accessedScale
+                    : 1;
+                const unavoidableCoordination = modeledCoordinationSeconds * coordinationScale;
+                physicalRates.push(passRate * emittedTokensPerPass);
+                latencyBoundRates.push(emittedTokensPerPass / ((1 / passRate) + unavoidableCoordination));
+            });
+
+            return {
+                physicalTokS: calculateIdealSystemRateFromDeviceRates(physicalRates, strategy, modelConfig.batchSize || 1),
+                latencyBoundTokS: calculateIdealSystemRateFromDeviceRates(latencyBoundRates, strategy, modelConfig.batchSize || 1),
+                modeledCoordinationSeconds
+            };
+        }
+
         function getSystemRateOptions(modelConfig) {
             // A supplied end-to-end overhead already contains the runtime and
             // collective loss. Applying the generic topology haircut as well
@@ -7928,20 +8003,41 @@ const DEVICE_TEMPLATES = {
             const hasProfiledOverhead = Number.isFinite(modelConfig?.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
             return { applyAggregationPenalty: !hasProfiledOverhead };
         }
+
+        function calculateKVCacheBytes(modelConfig, kvScale = 1) {
+            const architectureProfile = getArchitectureProfile(modelConfig);
+            const kvCacheDtypeSize = 2;
+            const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, kvCacheDtypeSize);
+            const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
+            const seqLength = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
+            const numLayers = Math.max(parseFloat(modelConfig.numLayers) || 1, 1);
+            const slidingScale = getSlidingWindowKvScale(modelConfig);
+
+            // MLA stores one compressed latent vector plus the RoPE key
+            // component per token/layer; applying a generic GQA head count on
+            // top of kv_lora_rank overstates long-context cache by multiples.
+            if (modelConfig.attentionMechanism === 'mla' && Number(modelConfig.kvLoraRank) > 0) {
+                const latentChannels = Number(modelConfig.kvLoraRank) + Math.max(1, Number(modelConfig.qkRopeHeadDim) || 64);
+                return batchSize * seqLength * latentChannels * kvCacheDtypeSize * numLayers *
+                    kvCompressionProfile.kvByteMultiplier * slidingScale * kvScale;
+            }
+
+            const hiddenSize = Math.max(parseFloat(modelConfig.hiddenSize) || 1, 1);
+            const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
+            const headDim = hiddenSize / numHeads;
+            const kvHeads = getKVHeads(modelConfig);
+            return 2 * batchSize * seqLength * headDim * kvHeads * kvCacheDtypeSize * numLayers *
+                architectureProfile.kvCacheMultiplier * kvCompressionProfile.kvByteMultiplier * slidingScale * kvScale;
+        }
+
 	function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex ) {
 		const architectureProfile = getArchitectureProfile(modelConfig);
 		const parallelScales = getParallelismScales(modelConfig, devices, deviceIndex);
 		// KV cache entries are stored at fp16 by every mainstream runtime
 		// regardless of weight quantization; only explicit KV compression
 		// (the TurboQuant modes) shrinks them.
-		const kvCacheDtypeSize = 2;
-		const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, kvCacheDtypeSize);
 		const paramsMemory = getResidentWeightBytes(modelConfig, dtypeSize);
-		const kvHeads = getKVHeads(modelConfig);
-		const kvCacheSizePerLayer = 2 * modelConfig.batchSize * modelConfig.seqLength *
-			(modelConfig.hiddenSize / modelConfig.numHeads) *
-			kvHeads * kvCacheDtypeSize;
-		const kvCacheMemory = kvCacheSizePerLayer * modelConfig.numLayers * architectureProfile.kvCacheMultiplier * kvCompressionProfile.kvByteMultiplier * getSlidingWindowKvScale(modelConfig);
+		const kvCacheMemory = calculateKVCacheBytes(modelConfig, 1);
 		const intermediateSize = modelConfig.intermediateSize || (4 * modelConfig.hiddenSize);
 		const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength *
 			(modelConfig.hiddenSize + intermediateSize * 0.35) * dtypeSize * architectureProfile.activationMultiplier;
@@ -8035,31 +8131,7 @@ const DEVICE_TEMPLATES = {
         }
 
         function calculateDecodeKVCacheBytes(modelConfig, dtypeSize, kvScale = 1) {
-            const architectureProfile = getArchitectureProfile(modelConfig);
-            // KV cache lives at fp16 regardless of weight quantization; see
-            // calculateMemoryBreakdown. Explicit KV compression still applies.
-            const kvCacheDtypeSize = 2;
-            const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, kvCacheDtypeSize);
-            const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
-            const seqLength = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
-            const hiddenSize = Math.max(parseFloat(modelConfig.hiddenSize) || 1, 1);
-            const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
-            const numLayers = Math.max(parseFloat(modelConfig.numLayers) || 1, 1);
-            const headDim = hiddenSize / numHeads;
-            const kvHeads = getKVHeads(modelConfig);
-
-            return 2 *
-                batchSize *
-                seqLength *
-                headDim *
-                kvHeads *
-                kvCacheDtypeSize *
-                numLayers *
-                architectureProfile.kvCacheMultiplier *
-                architectureProfile.decodeAttentionMultiplier *
-                kvCompressionProfile.kvByteMultiplier *
-                getSlidingWindowKvScale(modelConfig) *
-                kvScale;
+            return calculateKVCacheBytes(modelConfig, kvScale);
         }
 
         /**
@@ -8209,15 +8281,15 @@ const DEVICE_TEMPLATES = {
             const theoreticalTokensPerSec = (bandwidthInfo.effectiveBandwidthGBps * 1e9) /
                 bandwidthInfo.accessedModelSizeBytes;
 
-            const measuredSustainedBandwidth = Number(device.sustainedBandwidthGBps);
-            const usesMeasuredSustainedBandwidth = !bandwidthInfo.hasOverflow && Number.isFinite(measuredSustainedBandwidth) && measuredSustainedBandwidth > 0;
-            const realisticBandwidthGBps = usesMeasuredSustainedBandwidth
-                ? Math.min(device.localBandwidthGBps, measuredSustainedBandwidth)
+            const suppliedSustainedBandwidth = Number(device.sustainedBandwidthGBps);
+            const usesSuppliedSustainedBandwidth = !bandwidthInfo.hasOverflow && Number.isFinite(suppliedSustainedBandwidth) && suppliedSustainedBandwidth > 0;
+            const realisticBandwidthGBps = usesSuppliedSustainedBandwidth
+                ? Math.min(device.localBandwidthGBps, suppliedSustainedBandwidth)
                 : bandwidthInfo.effectiveBandwidthGBps * frameworkProfile.bandwidthEfficiency;
             const realisticMemorySeconds = bandwidthInfo.accessedModelSizeBytes /
                 (Math.max(realisticBandwidthGBps, 0.0001) * 1e9);
-            const hasMeasuredOverhead = Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
-            const runtimeOverheadSeconds = hasMeasuredOverhead
+            const hasSuppliedOverhead = Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
+            const runtimeOverheadSeconds = hasSuppliedOverhead
                 ? 0
                 : realisticMemorySeconds * ((1 / Math.max(frameworkProfile.decodeEfficiency, 0.05)) - 1);
 
@@ -8245,10 +8317,10 @@ const DEVICE_TEMPLATES = {
                 decodeKvCacheGB: bandwidthInfo.decodeKvCacheBytes / 1e9,
                 residentWeightSizeGB: bandwidthInfo.residentWeightBytes / 1e9,
                 realisticBandwidthGBps,
-                usesMeasuredSustainedBandwidth,
+                usesSuppliedSustainedBandwidth,
                 realisticMemorySeconds,
                 runtimeOverheadSeconds,
-                hasMeasuredOverhead,
+                hasSuppliedOverhead,
                 frameworkLabel: frameworkProfile.label,
                 ...bandwidthInfo
             };
@@ -9015,8 +9087,8 @@ const DEVICE_TEMPLATES = {
 	function loadScenarioPreset(scenario) {
 	    if (!scenario) return;
 	    let scenarioUpdatesModel = false;
-	    // A scenario owns its execution measurements. Clear any previous
-	    // measured profile before loading a different one.
+	    // Advanced execution assumptions are configuration-specific. Clear a
+	    // previous profile before loading a different scenario.
 	    setStoredControlValue('decodeBytesPerPassGB', '');
 	    setStoredControlValue('residentWeightsGB', '');
 	    setStoredControlValue('decodeOverheadMs', '');
@@ -9252,7 +9324,6 @@ const DEVICE_TEMPLATES = {
 	                    template: 'Intel Arc Pro B70',
 	                    ...DEVICE_TEMPLATES['Intel Arc Pro B70'],
 	                    name: `Intel Arc Pro B70 #${i}`,
-	                    sustainedBandwidthGBps: 527,
 	                    networkBandwidthGBps: 64,
 	                    interconnectType: 'pcie5_x16'
 	                });
@@ -9262,10 +9333,6 @@ const DEVICE_TEMPLATES = {
 	            document.getElementById('parallelismStrategy').value = 'tensor';
 	            document.getElementById('runtimeFramework').value = 'vllm';
 	            document.getElementById('optimizationMode').value = 'none';
-	            setStoredControlValue('decodeBytesPerPassGB', 15.3);
-	            setStoredControlValue('residentWeightsGB', 90);
-	            setStoredControlValue('decodeOverheadMs', 15.6);
-	            setStoredControlValue('executionProfileName', 'Measured mixed-precision XPU record');
 	            scenarioUpdatesModel = true;
 	            break;
 
@@ -9426,12 +9493,12 @@ const DEVICE_TEMPLATES = {
 				const theoreticalMemoryTime = 1 / Math.max(tokenRateInfo.theoreticalMax, 0.0001);
 				const theoreticalIdealPassRate = 1 / Math.max(theoreticalMemoryTime, theoreticalDecodeTime);
 				const modeledCoordinationTime = calculateDecodeCoordinationTimeSeconds(modelConfig, devices);
-				const hasMeasuredDecodeOverhead = Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
-				const measuredOverheadScale = modelConfig.parallelismStrategy === 'pipeline'
+				const hasSuppliedDecodeOverhead = Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
+				const suppliedOverheadScale = modelConfig.parallelismStrategy === 'pipeline'
 					? getParallelismScales(modelConfig, devices, deviceIndex).accessedScale
 					: 1;
-				const exposedDecodeOverheadTime = hasMeasuredDecodeOverhead
-					? (modelConfig.decodeOverheadMs * measuredOverheadScale) / 1000
+				const exposedDecodeOverheadTime = hasSuppliedDecodeOverhead
+					? (modelConfig.decodeOverheadMs * suppliedOverheadScale) / 1000
 					: modeledCoordinationTime;
 
 				// One verified forward pass reads the weights once and pays
@@ -9493,7 +9560,7 @@ const DEVICE_TEMPLATES = {
 					hasOverflow: tokenRateInfo.hasOverflow,
 					coreBinding,
 					dominant: dominantDecodeComponent,
-					overheadSource: hasMeasuredDecodeOverhead ? 'measured' : 'modeled'
+					overheadSource: hasSuppliedDecodeOverhead ? 'supplied' : 'modeled'
 				};
 				const prefillTimeBreakdown = {
 					computeSeconds: effectivePrefillComputeTime,
@@ -9552,7 +9619,7 @@ const DEVICE_TEMPLATES = {
 					overflowBandwidthGBps: tokenRateInfo.overflowBandwidthGBps || 0,
 					effectiveBandwidthGBps: tokenRateInfo.effectiveBandwidthGBps,
 					realisticBandwidthGBps: tokenRateInfo.realisticBandwidthGBps,
-					usesMeasuredSustainedBandwidth: tokenRateInfo.usesMeasuredSustainedBandwidth,
+					usesSuppliedSustainedBandwidth: tokenRateInfo.usesSuppliedSustainedBandwidth,
 					overflowBottleneckReason: tokenRateInfo.bottleneckReason || 'none',
 					modelSizeGB: tokenRateInfo.modelSizeGB,
 					residentWeightSizeGB: tokenRateInfo.residentWeightSizeGB,
@@ -9719,14 +9786,14 @@ const DEVICE_TEMPLATES = {
         function buildRecommendedSetupHtml(modelConfig, devicesArray, metrics, systemRate, parallelism, benchmarkAlignment, systemRateLabel, workflowSummary = null) {
             if (!metrics.length) return '';
 
-            const hasMeasuredExecutionProfile = Number(modelConfig.decodeBytesPerPassGB) > 0 &&
+            const hasExplicitExecutionProfile = Number(modelConfig.decodeBytesPerPassGB) > 0 &&
                 Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0 &&
                 devicesArray.every(device => Number(device.sustainedBandwidthGBps) > 0);
-            const confidence = hasMeasuredExecutionProfile
+            const confidence = hasExplicitExecutionProfile
                 ? {
-                    label: 'Profiled',
+                    label: 'Input-derived',
                     className: 'confidence-medium',
-                    reason: 'Projected from supplied bytes/pass, sustained bandwidth, and exposed overhead. The inputs are measured; the planner has not independently reproduced the run.'
+                    reason: 'Projected from supplied bytes/pass, sustained bandwidth, and non-memory time. These inputs are not benchmark evidence and the planner has not independently reproduced them.'
                 }
                 : getConfidenceSummary(benchmarkAlignment);
             const frameworkProfile = getFrameworkProfile(modelConfig, devicesArray);
@@ -10103,7 +10170,7 @@ const DEVICE_TEMPLATES = {
                             ${seg('is-kv', b.kvReadMs, 'KV-cache reads')}
                             ${seg('is-compute', b.computeMs, 'Exposed compute')}
                             ${seg('is-runtime', b.runtimeMs, 'Runtime / kernel loss')}
-                            ${seg('is-sync', b.coordinationMs, b.overheadSource === 'measured' ? 'Measured non-memory overhead' : 'Modeled coordination')}
+                            ${seg('is-sync', b.coordinationMs, b.overheadSource === 'supplied' ? 'Supplied non-memory time' : 'Modeled coordination')}
                         </span>
                         <span class="wf-meta">${formatMsCompact(b.totalMs)} → <strong>${formatTokenRate(rate)}</strong>${b.hasOverflow ? ' · <em>overflowing</em>' : ''}</span>
                     </div>`;
@@ -10116,7 +10183,7 @@ const DEVICE_TEMPLATES = {
                 data: 'Replicas serve separate requests: rates add for throughput, not per-request speed.'
             }[strategy] || '';
             const systemLine = Number.isFinite(plan.systemDecodeRate)
-                ? `<div class="wf-system">${aggregation} System decode: <strong>${formatTokenRate(plan.systemDecodeRate)}</strong></div>`
+                ? `<div class="wf-system">${aggregation} Engine-model system decode: <strong>${formatTokenRate(plan.systemDecodeRate)}</strong></div>`
                 : (aggregation ? `<div class="wf-system">${aggregation}</div>` : '');
 
             const specLane = lanes.find(shard => (shard.metric.speculationMultiplier || 1) > 1);
@@ -10551,14 +10618,14 @@ const DEVICE_TEMPLATES = {
                 } else {
                     systemAnalysisHtml += `
                             <div><strong>Prefill Rate:</strong> ${m.prefillTokensPerSecond.toFixed(1)} tok/s</div>
-                            <div><strong>Decode Rate:</strong> ${m.decodeTokensPerSecond.toFixed(1)} tok/s</div>
+                            <div><strong>Engine-model decode:</strong> ${m.decodeTokensPerSecond.toFixed(1)} tok/s</div>
                             <div>Decode memory share: ${m.decodeLocalBandwidthUtilization.toFixed(1)}%</div>
                             <div>Decode compute busy: ${m.decodeComputeUtilization.toFixed(1)}%</div>
                     `;
                     if (m.decodeCoordinationTimeMs > 0) {
                         systemAnalysisHtml += `
                             <div style="grid-column: span 2; color: var(--text-secondary);">
-                                ${m.decodeTimeBreakdown?.overheadSource === 'measured' ? 'Profiled non-memory overhead' : 'Modeled coordination'}: ${m.decodeCoordinationTimeMs.toFixed(1)} ms/pass
+                                ${m.decodeTimeBreakdown?.overheadSource === 'supplied' ? 'Supplied non-memory time' : 'Modeled coordination'}: ${m.decodeCoordinationTimeMs.toFixed(1)} ms/pass
                             </div>
                         `;
                     }
@@ -10644,11 +10711,12 @@ const DEVICE_TEMPLATES = {
                 const totalMemory = devices.reduce((sum, d) => sum + d.memoryGB, 0);
                 const isImageGen = metrics[0].isImageGen;
 
-                let systemRate, systemRateLabel, rateExplanation, workflowSummary;
+                let systemRate, planningRate, systemRateLabel, rateExplanation, workflowSummary, currentCalibration = null;
 
                 if (isImageGen) {
                     // Image gen: sum for throughput
                     systemRate = metrics.reduce((sum, m) => sum + (m.imagesPerSecond || 0), 0);
+                    planningRate = systemRate;
                     systemRateLabel = `${systemRate.toFixed(2)} img/s`;
                     rateExplanation = 'Combined throughput';
                 } else {
@@ -10670,8 +10738,11 @@ const DEVICE_TEMPLATES = {
                     else if (parallelism === 'expert') rateExplanation = 'Expert parallelism with routing overhead';
                     else rateExplanation = 'Activation-sharded inference with coordination overhead';
 
-                    systemRateLabel = `${systemRate.toFixed(1)} tok/s`;
-                    workflowSummary = calculateWorkflowSummary(modelConfig, metrics, systemRate, parallelism, devices);
+                    currentCalibration = calculateCurrentCalibration(modelConfig, metrics, systemRate, parallelism);
+                    planningRate = currentCalibration?.expectedTokS || systemRate;
+                    systemRateLabel = `${planningRate.toFixed(1)} tok/s`;
+                    rateExplanation += ` Engine model before benchmark adjustment: ${systemRate.toFixed(1)} tok/s.`;
+                    workflowSummary = calculateWorkflowSummary(modelConfig, metrics, planningRate, parallelism, devices);
                 }
 
                 // Find system bottleneck
@@ -10745,9 +10816,9 @@ const DEVICE_TEMPLATES = {
                 }
 
                 // Calculate power and cost estimates
-                const powerCost = calculatePowerAndCost(devices, workflowSummary?.averageTokensPerSecond || systemRate, metrics);
+                const powerCost = calculatePowerAndCost(devices, workflowSummary?.averageTokensPerSecond || planningRate, metrics);
                 let powerCostHtml = '';
-                if (!isImageGen && systemRate > 0) {
+                if (!isImageGen && planningRate > 0) {
                     powerCostHtml = `
                         <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(251, 191, 36, 0.07); border: 1px solid var(--border); border-radius: 6px;">
                             <div style="color: #fbbf24; font-weight: 600; margin-bottom: 0.5rem;">
@@ -10773,8 +10844,8 @@ const DEVICE_TEMPLATES = {
                 }
 
                 const benchmarkMatches = findBenchmarkMatches(modelConfig, devices);
-                const benchmarkAlignment = getBenchmarkAlignmentSummary(modelConfig, devices, metrics, systemRate);
-                const recommendationHtml = buildRecommendedSetupHtml(modelConfig, devices, metrics, systemRate, parallelism, benchmarkAlignment, systemRateLabel, workflowSummary);
+                const benchmarkAlignment = getBenchmarkAlignmentSummary(modelConfig, devices, metrics, planningRate);
+                const recommendationHtml = buildRecommendedSetupHtml(modelConfig, devices, metrics, planningRate, parallelism, benchmarkAlignment, systemRateLabel, workflowSummary);
                 updateExecutionMap(modelConfig, metrics, parallelism);
                 let benchmarkHtml = '';
                 if (benchmarkMatches.length > 0) {
@@ -10806,7 +10877,7 @@ const DEVICE_TEMPLATES = {
                             ${benchmarkAlignment.map(match => `
                                 <div style="font-size: 0.8rem; margin-bottom: 0.65rem;">
                                     <strong>${match.model}</strong> on <strong>${match.hardware}</strong><br>
-                                    Predicted: <strong>${systemRate.toFixed(1)} tok/s</strong> vs reference <strong>${match.referenceRate.toFixed(1)} tok/s</strong>
+                                    Projected: <strong>${planningRate.toFixed(1)} tok/s</strong> vs reference <strong>${match.referenceRate.toFixed(1)} tok/s</strong>
                                     <span style="color: ${Math.abs(match.deltaPct) <= 15 ? '#4ade80' : (Math.abs(match.deltaPct) <= 35 ? '#fbbf24' : '#f87171')};">
                                         (${match.deltaPct >= 0 ? '+' : ''}${match.deltaPct.toFixed(1)}%)
                                     </span><br>
@@ -10857,14 +10928,21 @@ const DEVICE_TEMPLATES = {
                     } else if (dominant === 'runtime') {
                         bottleneckReason = `Framework and kernel efficiency losses occupy about ${share.toFixed(0)}% of projected decode time, beyond the raw memory-read floor.`;
                     } else {
-                        const source = breakdown.overheadSource === 'measured' ? 'The supplied execution profile' : 'The runtime/interconnect model';
+                        const source = breakdown.overheadSource === 'supplied' ? 'The supplied execution assumptions' : 'The runtime/interconnect model';
                         bottleneckReason = `${source} assigns about ${share.toFixed(0)}% of projected decode time to submissions, synchronization, and other exposed non-memory work.`;
                     }
                 }
 
+                if (systemBottleneck === 'None' && currentCalibration &&
+                    !currentCalibration.hasExplicitExecutionProfile && currentCalibration.peers > 0 &&
+                    currentCalibration.correctionFactor < 0.80) {
+                    bottleneckLineClass = 'is-warning';
+                    bottleneckText = 'Projected limit: observed stack efficiency';
+                    bottleneckReason = `Comparable benchmark runs reach a median ${(currentCalibration.correctionFactor * 100).toFixed(0)}% of the generic engine model for this neighborhood, so the primary result is adjusted to what similar stacks actually deliver.`;
+                }
+
                 const parallelismPretty = parallelism.replace('_', ' ').toUpperCase();
                 const rateParts = systemRateLabel.split(' ');
-                const currentCalibration = !isImageGen ? calculateCurrentCalibration(modelConfig, metrics, systemRate, parallelism) : null;
                 const rateNum = currentCalibration ? formatCompactRate(currentCalibration.expectedTokS) : rateParts[0];
                 const rateUnits = currentCalibration ? 'tok/s' : (rateParts.slice(1).join(' ') || (isImageGen ? 'img/s' : 'tok/s'));
                 const nearestMeasured = benchmarkAlignment.length > 0 ? benchmarkAlignment[0] : null;
@@ -10875,8 +10953,8 @@ const DEVICE_TEMPLATES = {
                         ? currentCalibration.expectedTokS / specMultiplier
                         : currentCalibration.expectedTokS;
                     const rungValues = [
-                        currentCalibration.idealTokS,
-                        currentCalibration.genericTokS,
+                        currentCalibration.physicalTokS,
+                        currentCalibration.optimizedTokS,
                         currentCalibration.expectedTokS,
                         nearestMeasured?.referenceRate || 0
                     ];
@@ -10888,17 +10966,19 @@ const DEVICE_TEMPLATES = {
                             <span class="ladder-value"><strong>${formatCompactRate(value)}</strong> tok/s${note ? ` <span class="ladder-note">${note}</span>` : ''}</span>
                         </div>`;
                     const title = speculationOn
-                        ? `Projected is primary. Speculation can emit several accepted tokens per weight pass; the ideal below is the one-pass hardware floor.`
-                        : `Projected is primary. Extreme ideal assumes official peak hardware and perfect drivers, kernels, sharding, and scheduling.`;
+                        ? `Projected is primary. The optimized target includes modeled latency and evidence from strong real runs; rates include accepted speculative tokens.`
+                        : `Projected is primary. The optimized target keeps unavoidable communication latency and uses efficiency already demonstrated by strong benchmark runs.`;
                     return `
-                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: extreme ideal ${formatCompactRate(currentCalibration.idealTokS)}, runtime projection ${formatCompactRate(currentCalibration.genericTokS)}, projected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second${speculationOn ? ' with speculative decoding' : ', no speculative decoding'}">
+                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: physical roofline ${formatCompactRate(currentCalibration.physicalTokS)}, optimized target ${formatCompactRate(currentCalibration.optimizedTokS)}, projected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second${speculationOn ? ' with speculative decoding' : ', no speculative decoding'}">
                         <div class="ladder-title">${title}</div>
-                        ${rung('is-ceiling', 'Extreme ideal', currentCalibration.idealTokS, 'official peak memory/compute roofline · zero software overhead')}
-                        ${rung('is-engine', 'Runtime projection', currentCalibration.genericTokS, 'sustained bandwidth + framework + coordination')}
+                        ${rung('is-ceiling', 'Physical roofline', currentCalibration.physicalTokS, 'official peak + current bytes/pass · sanity reference')}
+                        ${rung('is-engine', 'Optimized target', currentCalibration.optimizedTokS, currentCalibration.envelopePeers
+                            ? `irreducible latency · strong-run evidence · ${currentCalibration.envelopePeers} comparable peers`
+                            : 'irreducible latency · broad benchmark envelope')}
                         ${rung('is-expected', 'Projected real', currentCalibration.expectedTokS, speculationOn
                             ? `speculation ×${specMultiplier.toFixed(2)} modeled · ${currentCalibration.peers} peers`
-                            : (currentCalibration.hasMeasuredExecutionProfile
-                                ? 'measured bytes/pass + sustained BW + measured overhead'
+                            : (currentCalibration.hasExplicitExecutionProfile
+                                ? 'user-supplied execution assumptions · not independently verified'
                                 : `no speculation · ${currentCalibration.peers} peers · ${currentCalibration.confidence} confidence`))}
                         ${speculationOn
                             ? rung('is-measured', 'Without speculation', expectedWithoutSpec, '≈ same setup, speculation off')
@@ -10930,7 +11010,7 @@ const DEVICE_TEMPLATES = {
                 const responsiveCalibrationSummaryHtml = calibrationSummaryHtml ? `
                     <div class="desktop-calibration-summary">${calibrationSummaryHtml}</div>
                     <details class="mobile-calibration-summary">
-                        <summary>Speed ceiling &amp; nearest measurement</summary>
+                        <summary>Prediction range &amp; nearest measurement</summary>
                         ${calibrationSummaryHtml}
                     </details>
                 ` : '';
@@ -10978,7 +11058,7 @@ const DEVICE_TEMPLATES = {
             const renderedRate = analysisContainer.querySelector('.rate-value')?.textContent?.replace(/\s+/g, ' ').trim();
             if (headerRate && renderedRate) {
                 const idealRate = analysisContainer.querySelector('.ceiling-ladder .ladder-row .ladder-value strong')?.textContent?.trim();
-                headerRate.textContent = idealRate ? `${renderedRate} / ${idealRate} ideal` : renderedRate;
+                headerRate.textContent = idealRate ? `${renderedRate} / ${idealRate} optimized` : renderedRate;
             }
             if (headerMeta) {
                 const config = buildEffectiveModelConfig();
@@ -11014,6 +11094,17 @@ const DEVICE_TEMPLATES = {
             return sorted.length % 2 ? sorted[midpoint] : (sorted[midpoint - 1] + sorted[midpoint]) / 2;
         }
 
+        function percentile(values, fraction) {
+            const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+            if (!sorted.length) return null;
+            const position = Math.max(0, Math.min(sorted.length - 1, (sorted.length - 1) * fraction));
+            const lower = Math.floor(position);
+            const upper = Math.ceil(position);
+            if (lower === upper) return sorted[lower];
+            const weight = position - lower;
+            return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+        }
+
         function formatCompactRate(value) {
             if (!Number.isFinite(value)) return '—';
             if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
@@ -11030,8 +11121,7 @@ const DEVICE_TEMPLATES = {
                 id: index + 1,
                 template: reference.hardwareTemplate,
                 name: `${template.name || reference.hardwareTemplate}${reference.deviceCount > 1 ? ` #${index + 1}` : ''}`,
-                ...JSON.parse(JSON.stringify(template)),
-                ...(Number.isFinite(reference.memoryGB) && reference.memoryGB > 0 ? { memoryGB: reference.memoryGB } : {})
+                ...JSON.parse(JSON.stringify(template))
             }));
             // Only vLLM/SGLang/TensorRT-LLM aggregate bandwidth via tensor
             // parallelism; llama.cpp, Ollama, and MLX split by layers, so a
@@ -11055,28 +11145,39 @@ const DEVICE_TEMPLATES = {
             });
             const coordinationSeconds = calculateDecodeCoordinationTimeSeconds(modelConfig, caseDevices);
             const genericRates = [];
-            const idealRates = [];
+            const physicalRates = [];
+            const latencyBoundRates = [];
 
             caseDevices.forEach((device, index) => {
                 const rate = calculateDecodeTokenRate(device, modelConfig, DTYPE_SIZES[reference.quantKey], caseDevices, index);
                 const deviceTflops = getComputationPrecisionTflops(device, modelConfig, reference.runtimeKey);
                 const decodeFlops = calculateDecodeFlops(modelConfig) * getParallelismComputeScale(modelConfig, caseDevices, index);
                 const computeRoofline = (deviceTflops * 1e12) / Math.max(decodeFlops, 1);
+                const physicalPassRate = Math.min(rate.theoreticalMax, computeRoofline);
                 genericRates.push(1 / ((1 / Math.max(rate.tokensPerSecond, 0.0001)) + coordinationSeconds));
-                idealRates.push(Math.min(rate.theoreticalMax, computeRoofline));
+                physicalRates.push(physicalPassRate);
+                latencyBoundRates.push(1 / ((1 / Math.max(physicalPassRate, 0.0001)) + coordinationSeconds));
             });
 
             const genericTokS = calculateSystemRateFromDeviceRates(genericRates, strategy, 1, caseDevices);
-            const idealTokS = calculateIdealSystemRateFromDeviceRates(idealRates, strategy, 1);
-            if (!Number.isFinite(genericTokS) || !Number.isFinite(idealTokS) || genericTokS <= 0 || idealTokS <= 0) return null;
+            const physicalTokS = calculateIdealSystemRateFromDeviceRates(physicalRates, strategy, 1);
+            const latencyBoundTokS = calculateIdealSystemRateFromDeviceRates(latencyBoundRates, strategy, 1);
+            if (!Number.isFinite(genericTokS) || !Number.isFinite(physicalTokS) || !Number.isFinite(latencyBoundTokS) ||
+                genericTokS <= 0 || physicalTokS <= 0 || latencyBoundTokS <= 0) return null;
 
             return {
                 ...reference,
                 strategy,
                 genericTokS,
-                idealTokS,
+                physicalTokS,
+                latencyBoundTokS,
+                // Backward-compatible alias for callers that have not yet
+                // distinguished an attainable target from a raw roofline.
+                idealTokS: physicalTokS,
                 observedToGeneric: reference.observedTokS / genericTokS,
-                observedToIdeal: reference.observedTokS / idealTokS
+                observedToLatencyBound: reference.observedTokS / latencyBoundTokS,
+                observedToPhysical: reference.observedTokS / physicalTokS,
+                observedToIdeal: reference.observedTokS / physicalTokS
             };
         }
 
@@ -11103,16 +11204,40 @@ const DEVICE_TEMPLATES = {
 
         function getPeerCorrection(target, rows, excludeId = null) {
             const candidates = rows
-                .filter(row => row.id !== excludeId && Number.isFinite(row.observedToGeneric) && row.observedToGeneric >= 0.02 && row.observedToGeneric <= 30)
+                .filter(row => row.id !== excludeId &&
+                    Number.isFinite(row.observedToGeneric) && row.observedToGeneric >= 0.02 && row.observedToGeneric <= 30 &&
+                    (!Number.isFinite(row.observedToPhysical) || row.observedToPhysical <= 1.05))
                 .map(row => ({ row, score: getGoldSimilarity(target, row) }))
                 .sort((a, b) => b.score - a.score || b.row.reproducibility - a.row.reproducibility);
             const bestScore = candidates[0]?.score || 0;
             const nearest = candidates.filter(candidate => candidate.score >= Math.max(6, bestScore - 1)).slice(0, 12);
             const chosen = nearest.length ? nearest : candidates.slice(0, 12);
+            // The central estimate stays tightly local. The optimized target
+            // also considers the broader valid corpus so an immature stack or
+            // a few duplicate submissions cannot define the ideal by itself.
+            const envelope = candidates.filter(candidate => candidate.score >= 6).slice(0, 40);
             const correction = median(chosen.map(candidate => candidate.row.observedToGeneric));
+            const upperCorrection = percentile((envelope.length ? envelope : chosen).map(candidate => candidate.row.observedToGeneric), 0.90);
+            const globalOptimizedEfficiency = percentile(
+                candidates.map(candidate => candidate.row.observedToLatencyBound), 0.90
+            );
+            const localOptimizedEfficiency = percentile(
+                (envelope.length ? envelope : chosen).map(candidate => candidate.row.observedToLatencyBound), 0.90
+            );
+            const factor = Math.max(0.05, Math.min(8, correction || 1));
             return {
-                factor: Math.max(0.05, Math.min(8, correction || 1)),
+                factor,
+                upperFactor: Math.max(factor, Math.max(0.05, Math.min(8, upperCorrection || factor))),
+                // A globally demonstrated 90th-percentile fraction of the
+                // latency-aware roofline keeps the optimized result ambitious
+                // without making an immature vendor/runtime stack the ideal.
+                // Stronger local evidence may raise it, but never to 100%.
+                optimizedEfficiency: Math.max(0.35, Math.min(0.985,
+                    Math.max(globalOptimizedEfficiency || 0.85, localOptimizedEfficiency || 0)
+                )),
                 peers: chosen.length,
+                envelopePeers: envelope.length,
+                verifiedPeers: chosen.filter(candidate => candidate.row.verified).length,
                 bestScore
             };
         }
@@ -11122,17 +11247,30 @@ const DEVICE_TEMPLATES = {
             const projected = (LOCALMAXXING_DATA.goldCases || []).map(calculateGoldCaseProjection).filter(Boolean);
             goldValidationCache = projected.map(row => {
                 const calibration = getPeerCorrection(row, projected, row.id);
-                const calibratedTokS = Math.min(row.idealTokS * 0.99, row.genericTokS * calibration.factor);
+                const calibratedTokS = Math.min(row.latencyBoundTokS * 0.985, row.genericTokS * calibration.factor);
+                const optimizedTokS = Math.min(
+                    row.latencyBoundTokS * 0.995,
+                    Math.max(calibratedTokS, row.latencyBoundTokS * calibration.optimizedEfficiency)
+                );
                 const absoluteErrorPct = Math.abs(calibratedTokS - row.observedTokS) / row.observedTokS * 100;
-                return { ...row, calibratedTokS, absoluteErrorPct, calibrationPeers: calibration.peers, calibrationFactor: calibration.factor };
+                return {
+                    ...row,
+                    idealTokS: optimizedTokS,
+                    optimizedTokS,
+                    calibratedTokS,
+                    absoluteErrorPct,
+                    calibrationPeers: calibration.peers,
+                    calibrationFactor: calibration.factor,
+                    upperCalibrationFactor: calibration.upperFactor,
+                    optimizedEfficiency: calibration.optimizedEfficiency
+                };
             });
             return goldValidationCache;
         }
 
         function calculateCurrentCalibration(modelConfig, metrics, genericSystemRate, strategy) {
             if (!metrics?.length || !Number.isFinite(genericSystemRate)) return null;
-            const idealRates = metrics.map(metric => metric.theoreticalMaxTokensPerSecond || 0);
-            const idealTokS = calculateIdealSystemRateFromDeviceRates(idealRates, strategy, modelConfig.batchSize || 1);
+            const bounds = calculateProjectionBounds(modelConfig, metrics, strategy, devices);
             const target = {
                 hfId: modelConfig.hfId,
                 presetKey: modelConfig.modelPreset,
@@ -11144,34 +11282,44 @@ const DEVICE_TEMPLATES = {
                 batchSize: modelConfig.batchSize || 1
             };
             const validationRows = getGoldValidationRows();
-            const hasComparablePeers = validationRows.some(row =>
-                row.presetKey === target.presetKey &&
-                row.hardwareTemplate === target.hardwareTemplate &&
-                row.runtimeKey === target.runtimeKey &&
-                row.quantKey === target.quantKey &&
-                (row.deviceCount || 1) === target.deviceCount &&
-                (row.batchSize || 1) === target.batchSize
-            );
-            const hasMeasuredExecutionProfile = Number(modelConfig.decodeBytesPerPassGB) > 0 &&
+            const peerCalibration = getPeerCorrection(target, validationRows);
+            const hasComparablePeers = peerCalibration.bestScore >= 6 && peerCalibration.peers > 0;
+            const hasExplicitExecutionProfile = Number(modelConfig.decodeBytesPerPassGB) > 0 &&
                 Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0 &&
                 devices.every(device => Number(device.sustainedBandwidthGBps) > 0);
-            const calibration = hasMeasuredExecutionProfile
-                ? { factor: 1, peers: 0, bestScore: 99 }
-                : hasComparablePeers
-                ? getPeerCorrection(target, validationRows)
-                : { factor: 1, peers: 0, bestScore: 0 };
-            const expectedTokS = Math.min(idealTokS * 0.99, genericSystemRate * calibration.factor);
+            const correctionFactor = hasExplicitExecutionProfile
+                ? 1
+                : (hasComparablePeers ? peerCalibration.factor : 1);
+            const expectedTokS = Math.min(bounds.latencyBoundTokS * 0.985, genericSystemRate * correctionFactor);
+            const optimizedTokS = Math.min(
+                bounds.latencyBoundTokS * 0.995,
+                Math.max(expectedTokS, bounds.latencyBoundTokS * peerCalibration.optimizedEfficiency)
+            );
+            const confidence = hasExplicitExecutionProfile
+                ? 'input-derived'
+                : (hasComparablePeers && peerCalibration.bestScore >= 10 && peerCalibration.peers >= 3 && peerCalibration.verifiedPeers > 0
+                    ? 'strong'
+                    : (hasComparablePeers ? 'directional' : 'uncalibrated'));
             return {
-                idealTokS,
+                // idealTokS remains as a compatibility alias, but now means
+                // the evidence-capped optimized target rather than a
+                // zero-overhead physical fantasy.
+                idealTokS: optimizedTokS,
+                optimizedTokS,
+                physicalTokS: bounds.physicalTokS,
+                latencyBoundTokS: bounds.latencyBoundTokS,
                 genericTokS: genericSystemRate,
                 expectedTokS,
-                realityFactor: idealTokS > 0 ? expectedTokS / idealTokS : 0,
-                correctionFactor: calibration.factor,
-                peers: calibration.peers,
-                confidence: hasMeasuredExecutionProfile
-                    ? 'measured inputs'
-                    : (calibration.bestScore >= 10 && calibration.peers >= 3 ? 'strong' : (calibration.peers >= 2 ? 'directional' : 'uncalibrated')),
-                hasMeasuredExecutionProfile
+                realityFactor: optimizedTokS > 0 ? expectedTokS / optimizedTokS : 0,
+                correctionFactor,
+                upperCorrectionFactor: peerCalibration.upperFactor,
+                optimizedEfficiency: peerCalibration.optimizedEfficiency,
+                peers: hasComparablePeers ? peerCalibration.peers : 0,
+                envelopePeers: hasComparablePeers ? peerCalibration.envelopePeers : 0,
+                verifiedPeers: hasComparablePeers ? peerCalibration.verifiedPeers : 0,
+                confidence,
+                hasExplicitExecutionProfile,
+                profileProvenance: hasExplicitExecutionProfile ? 'user-supplied-unverified' : 'estimated'
             };
         }
 
@@ -11258,6 +11406,7 @@ const DEVICE_TEMPLATES = {
 
         function buildQuickStartCombos() {
             const goldCases = LOCALMAXXING_DATA.goldCases || [];
+            const validatedById = new Map(getGoldValidationRows().map(row => [row.id, row]));
             const groups = new Map();
             for (const goldCase of goldCases) {
                 if (!MODEL_PRESETS[goldCase.presetKey] || !DEVICE_TEMPLATES[goldCase.hardwareTemplate]) continue;
@@ -11271,13 +11420,15 @@ const DEVICE_TEMPLATES = {
                 const reference = [...rows].sort((a, b) => (b.reproducibility || 0) - (a.reproducibility || 0))[0];
                 const projection = calculateGoldCaseProjection(reference);
                 if (!projection) continue;
+                const validated = validatedById.get(reference.id);
                 const observed = rows.map(row => row.observedTokS).filter(Number.isFinite).sort((a, b) => a - b);
                 combos.push({
                     reference,
                     runs: rows.length,
                     measuredMedianTokS: observed.length ? observed[Math.floor(observed.length / 2)] : null,
-                    expectedTokS: projection.genericTokS,
-                    idealTokS: projection.idealTokS
+                    expectedTokS: validated?.calibratedTokS || projection.genericTokS,
+                    optimizedTokS: validated?.optimizedTokS || projection.latencyBoundTokS,
+                    idealTokS: validated?.optimizedTokS || projection.latencyBoundTokS
                 });
             }
             combos.sort((a, b) => b.runs - a.runs);
@@ -11297,13 +11448,24 @@ const DEVICE_TEMPLATES = {
                 if (seenPairs.has(`${showcase.presetKey}|${showcase.hardwareTemplate}`)) continue;
                 const projection = calculateGoldCaseProjection(showcase);
                 if (!projection) continue;
+                const peerCalibration = getPeerCorrection(projection, getGoldValidationRows());
+                const usePeers = peerCalibration.bestScore >= 6 && peerCalibration.peers > 0;
+                const expectedTokS = Math.min(
+                    projection.latencyBoundTokS * 0.985,
+                    projection.genericTokS * (usePeers ? peerCalibration.factor : 1)
+                );
+                const optimizedTokS = Math.min(
+                    projection.latencyBoundTokS * 0.995,
+                    Math.max(expectedTokS, projection.latencyBoundTokS * peerCalibration.optimizedEfficiency)
+                );
                 seenPairs.add(`${showcase.presetKey}|${showcase.hardwareTemplate}`);
                 varied.push({
                     reference: showcase,
                     runs: 0,
                     measuredMedianTokS: null,
-                    expectedTokS: projection.genericTokS,
-                    idealTokS: projection.idealTokS
+                    expectedTokS,
+                    optimizedTokS,
+                    idealTokS: optimizedTokS
                 });
             }
 
@@ -11322,7 +11484,7 @@ const DEVICE_TEMPLATES = {
             section.hidden = false;
             // One shared linear scale so bar lengths compare honestly.
             const sorted = [...quickStartCombos].sort((a, b) => b.expectedTokS - a.expectedTokS);
-            const scaleMax = Math.max(...sorted.map(combo => combo.idealTokS), 1e-9);
+            const scaleMax = Math.max(...sorted.map(combo => combo.optimizedTokS), 1e-9);
             grid.innerHTML = sorted.map(combo => {
                 const index = quickStartCombos.indexOf(combo);
                 const reference = combo.reference;
@@ -11335,10 +11497,10 @@ const DEVICE_TEMPLATES = {
                 const measured = Number.isFinite(combo.measuredMedianTokS) ? combo.measuredMedianTokS : null;
                 return `
                     <button type="button" role="listitem" class="qs-row" data-quickstart-index="${index}"
-                        aria-label="Load ${escapeHtml(modelLabel)} on ${escapeHtml(hardwareLabel)}: expected ${formatCompactRate(combo.expectedTokS)}, ideal ${formatCompactRate(combo.idealTokS)}${measured ? `, measured ${formatCompactRate(measured)}` : ''} tokens per second">
+                        aria-label="Load ${escapeHtml(modelLabel)} on ${escapeHtml(hardwareLabel)}: projected ${formatCompactRate(combo.expectedTokS)}, optimized ${formatCompactRate(combo.optimizedTokS)}${measured ? `, measured ${formatCompactRate(measured)}` : ''} tokens per second">
                         <span class="qs-label"><strong>${escapeHtml(modelLabel)}</strong><span>${escapeHtml(hardwareLabel)} · ${escapeHtml((reference.quantKey || '').toUpperCase())}</span></span>
                         <span class="qs-bar">
-                            <span class="qs-track" style="width:${pct(combo.idealTokS)}%" title="physics ideal ${formatCompactRate(combo.idealTokS)} tok/s"></span>
+                            <span class="qs-track" style="width:${pct(combo.optimizedTokS)}%" title="optimized target ${formatCompactRate(combo.optimizedTokS)} tok/s"></span>
                             <span class="qs-fill" style="width:${pct(combo.expectedTokS)}%" title="expected ${formatCompactRate(combo.expectedTokS)} tok/s"></span>
                             ${measured ? `<span class="qs-tick" style="left:${pct(measured)}%" title="measured median ${formatCompactRate(measured)} tok/s · ${combo.runs} runs"></span>` : ''}
                         </span>
@@ -11476,15 +11638,15 @@ const DEVICE_TEMPLATES = {
             if (!plot) return;
             const rows = getGoldValidationRows();
             const medianError = median(rows.map(row => row.absoluteErrorPct)) || 0;
-            const idealAbove = rows.length ? rows.filter(row => row.idealTokS >= row.observedTokS).length / rows.length * 100 : 0;
-            const medianReality = median(rows.map(row => Math.min(1, row.observedToIdeal))) || 0;
+            const physicalAbove = rows.length ? rows.filter(row => row.physicalTokS >= row.observedTokS).length / rows.length * 100 : 0;
+            const optimizedCoverage = rows.length ? rows.filter(row => row.optimizedTokS >= row.observedTokS).length / rows.length * 100 : 0;
             document.getElementById('evidenceStats').innerHTML = `
                 <div class="evidence-stat"><strong>${rows.length}</strong><span>reproducible community gold runs</span></div>
                 <div class="evidence-stat"><strong>${medianError.toFixed(1)}%</strong><span>median leave-one-out prediction error</span></div>
-                <div class="evidence-stat"><strong>${idealAbove.toFixed(0)}%</strong><span>of observed runs remain below the physics ceiling</span></div>`;
+                <div class="evidence-stat"><strong>${optimizedCoverage.toFixed(0)}%</strong><span>of held-out runs at or below optimized target</span></div>`;
             plot.innerHTML = buildCalibrationPlot(rows);
             document.getElementById('calibrationMethodStats').innerHTML = `
-                <div><dt>Median real / ideal</dt><dd>${(medianReality * 100).toFixed(0)}%</dd></div>
+                <div><dt>Below physical roofline</dt><dd>${physicalAbove.toFixed(0)}%</dd></div>
                 <div><dt>Runs scanned</dt><dd>${(LOCALMAXXING_DATA.stats?.benchmarkRunsScanned || 0).toLocaleString()}</dd></div>
                 <div><dt>Catalog models</dt><dd>${getCatalogModels().length.toLocaleString()}</dd></div>
                 <div><dt>Validation</dt><dd>leave one out</dd></div>`;
@@ -11498,7 +11660,7 @@ const DEVICE_TEMPLATES = {
             const rows = getGoldValidationRows().filter(row => `${row.model} ${row.hardware} ${row.engine} ${row.quantization}`.toLowerCase().includes(query)).slice(0, 80);
             tbody.innerHTML = rows.map(row => {
                 const errorClass = row.absoluteErrorPct <= 20 ? 'error-good' : (row.absoluteErrorPct <= 40 ? 'error-near' : 'error-far');
-                return `<tr><td><a class="gold-run-title" href="${escapeHtml(row.source)}" target="_blank" rel="noopener">${escapeHtml(row.model)}</a><span class="gold-run-meta">${escapeHtml(row.hardware)} · ${escapeHtml(row.engine)} ${escapeHtml(row.quantization)} · ${row.contextLength.toLocaleString()} ctx</span></td><td>${row.observedTokS.toFixed(1)}</td><td>${row.idealTokS.toFixed(1)}</td><td>${row.calibratedTokS.toFixed(1)}</td><td class="${errorClass}">${row.absoluteErrorPct.toFixed(1)}%</td></tr>`;
+                return `<tr><td><a class="gold-run-title" href="${escapeHtml(row.source)}" target="_blank" rel="noopener">${escapeHtml(row.model)}</a><span class="gold-run-meta">${escapeHtml(row.hardware)} · ${escapeHtml(row.engine)} ${escapeHtml(row.quantization)} · ${row.contextLength.toLocaleString()} ctx</span></td><td>${row.observedTokS.toFixed(1)}</td><td>${row.optimizedTokS.toFixed(1)}</td><td>${row.calibratedTokS.toFixed(1)}</td><td class="${errorClass}">${row.absoluteErrorPct.toFixed(1)}%</td></tr>`;
             }).join('') || '<tr><td colspan="5">No gold cases match this filter.</td></tr>';
         }
 
@@ -11621,7 +11783,16 @@ const DEVICE_TEMPLATES = {
 
         function parseMeasuredResultPayload(payload) {
             if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('The result JSON must be an object.');
-            const isPlanExport = payload.schemaVersion === 'mlbottleneck.plan.v1';
+            const isPlanExport = /^mlbottleneck\.plan\.v[12]$/.test(payload.schemaVersion || '');
+            const exportedProfile = isPlanExport ? payload.execution?.profile : null;
+            // Estimated fields document the plan that produced this export.
+            // Importing them as measurements would silently turn an estimate
+            // into ground truth and change the next prediction. Only explicit,
+            // user-supplied assumptions are round-tripped into override fields.
+            const hasExplicitExportedProfile = Boolean(exportedProfile && (
+                exportedProfile.provenance === 'user-supplied-unverified' ||
+                exportedProfile.source === 'supplied'
+            ));
             let observedTokS = Number(findResultField(payload, ['tokSOut', 'observedTokS', 'tokensPerSecond', 'decodeTokS', 'generationTokensPerSecond', 'evalRate']));
             if (!Number.isFinite(observedTokS) || observedTokS <= 0) {
                 const evalCount = Number(findResultField(payload, ['eval_count', 'evalCount']));
@@ -11654,12 +11825,13 @@ const DEVICE_TEMPLATES = {
                 quantizationType,
                 contextLength: recognizedContext,
                 parallelismStrategy: isPlanExport ? payload.execution?.parallelism : null,
-                decodeBytesPerPassGB: isPlanExport ? Number(payload.execution?.profile?.aggregateBytesPerDecodePassGB) || null : null,
-                residentWeightsGB: isPlanExport ? Number(payload.execution?.profile?.aggregateResidentWeightsGB) || null : null,
-                decodeOverheadMs: isPlanExport && payload.execution?.profile?.exposedNonMemoryOverheadMsPerPass !== null && payload.execution?.profile?.exposedNonMemoryOverheadMsPerPass !== undefined && Number.isFinite(Number(payload.execution.profile.exposedNonMemoryOverheadMsPerPass))
-                    ? Number(payload.execution.profile.exposedNonMemoryOverheadMsPerPass)
+                decodeBytesPerPassGB: hasExplicitExportedProfile ? Number(exportedProfile.aggregateBytesPerDecodePassGB) || null : null,
+                residentWeightsGB: hasExplicitExportedProfile ? Number(exportedProfile.aggregateResidentWeightsGB) || null : null,
+                decodeOverheadMs: hasExplicitExportedProfile && exportedProfile.exposedNonMemoryOverheadMsPerPass !== null && exportedProfile.exposedNonMemoryOverheadMsPerPass !== undefined && Number.isFinite(Number(exportedProfile.exposedNonMemoryOverheadMsPerPass))
+                    ? Number(exportedProfile.exposedNonMemoryOverheadMsPerPass)
                     : null,
-                executionProfileName: isPlanExport ? payload.execution?.profile?.name || '' : '',
+                executionProfileName: hasExplicitExportedProfile ? exportedProfile.name || '' : '',
+                executionProfileProvenance: exportedProfile?.provenance || null,
                 hardwareDetails: isPlanExport && Array.isArray(payload.hardware?.devices) ? payload.hardware.devices : [],
                 engineFlags,
                 unmatched,
@@ -11831,7 +12003,7 @@ const DEVICE_TEMPLATES = {
                 items.push(`Verify the loaded weight shards total about ${Number(plan.modelConfig.residentWeightsGB).toFixed(2)} GB before KV cache and runtime workspaces.`);
             }
             if (devices.some(device => Number(device.sustainedBandwidthGBps) > 0)) {
-                items.push('Measure sustained device-memory bandwidth on this machine and keep it separate from the official peak specification used for the ideal.');
+                items.push('Measure sustained device-memory bandwidth on this machine and keep it separate from the official peak specification used only for the physical roofline.');
             }
             return items;
         }
@@ -11849,7 +12021,7 @@ const DEVICE_TEMPLATES = {
             const totalMemoryGB = planDevices.reduce((sum, device) => sum + (Number(device.memoryGB) || 0), 0);
             const hasExplicitProfile = Number(config.decodeBytesPerPassGB) > 0;
             const payload = {
-                schemaVersion: 'mlbottleneck.plan.v1',
+                schemaVersion: 'mlbottleneck.plan.v2',
                 generatedAt: new Date().toISOString(),
                 source: { name: 'ML System Bottleneck Analyzer', url: 'https://mlbottleneck.com' },
                 model: {
@@ -11885,6 +12057,7 @@ const DEVICE_TEMPLATES = {
                     profile: {
                         name: config.executionProfileName || representative?.byteProfileLabel || null,
                         source: representative?.byteProfileSource || 'estimated',
+                        provenance: hasExplicitProfile ? 'user-supplied-unverified' : 'planner-estimate',
                         aggregateResidentWeightsGB: Number(config.residentWeightsGB) > 0
                             ? roundPlanNumber(Number(config.residentWeightsGB))
                             : roundPlanNumber(plan.metrics.reduce((sum, metric) => sum + (metric.residentWeightSizeGB || 0), 0)),
@@ -11919,16 +12092,26 @@ const DEVICE_TEMPLATES = {
                     primary: {
                         label: 'projected-real',
                         decodeTokensPerSecond: roundPlanNumber(plan.calibration.expectedTokS),
+                        millisecondsPerToken: roundPlanNumber(1000 / plan.calibration.expectedTokS),
                         confidence: plan.calibration.confidence,
-                        benchmarkPeers: plan.calibration.peers
+                        benchmarkCorrectionFactor: roundPlanNumber(plan.calibration.correctionFactor),
+                        benchmarkPeers: plan.calibration.peers,
+                        verifiedBenchmarkPeers: plan.calibration.verifiedPeers
                     },
                     runtimeProjectionTokensPerSecond: roundPlanNumber(plan.calibration.genericTokS),
-                    extremeIdeal: {
-                        decodeTokensPerSecond: roundPlanNumber(plan.calibration.idealTokS),
-                        basis: 'Official peak memory-bandwidth/compute roofline and profiled/estimated bytes per pass; zero driver, kernel, scheduling, or coordination overhead.'
+                    optimizedTarget: {
+                        decodeTokensPerSecond: roundPlanNumber(plan.calibration.optimizedTokS),
+                        latencyAwareRooflineTokensPerSecond: roundPlanNumber(plan.calibration.latencyBoundTokS),
+                        demonstratedEfficiencyOfLatencyAwareRoofline: roundPlanNumber(plan.calibration.optimizedEfficiency),
+                        basis: 'Official hardware specifications plus modeled unavoidable communication latency, scaled by efficiency already demonstrated in strong valid benchmark runs.',
+                        benchmarkEnvelopePeers: plan.calibration.envelopePeers
+                    },
+                    physicalRoofline: {
+                        decodeTokensPerSecond: roundPlanNumber(plan.calibration.physicalTokS),
+                        basis: 'Official peak memory/compute roofline with zero overhead. This is a dimensional sanity bound, not an achievable forecast.'
                     },
                     limitingComponent: representative?.decodeDominantComponent || breakdown.dominant || null,
-                    representativeDecodeTimeBudgetMs: {
+                    engineModelDecodeTimeBudgetMs: {
                         weightReads: roundPlanNumber(breakdown.weightReadMs),
                         kvReads: roundPlanNumber(breakdown.kvReadMs),
                         exposedCompute: roundPlanNumber(breakdown.computeMs),
@@ -11940,7 +12123,11 @@ const DEVICE_TEMPLATES = {
                 },
                 assumptions: {
                     primaryResult: 'Projected real is the headline and includes sustained-bandwidth, runtime, and coordination assumptions when available.',
-                    extremeIdeal: 'Uses each device official peak specification. A measured sustained value never lowers this ideal.',
+                    optimizedTarget: 'Uses official hardware specifications, preserves modeled unavoidable communication latency, and applies efficiency already demonstrated by strong valid benchmark runs.',
+                    physicalRoofline: 'Uses each device official peak specification with zero overhead. A supplied sustained value never lowers this reference bound.',
+                    suppliedProfile: hasExplicitProfile
+                        ? 'Execution-profile values were supplied by the user or imported plan and have not been independently verified by this planner.'
+                        : 'No explicit execution profile was supplied.',
                     uniformQuantizationWarning: hasExplicitProfile
                         ? 'The explicit bytes-per-pass profile overrides a uniform quantization estimate.'
                         : 'Bytes per pass are estimated from active parameters and the selected uniform storage format; mixed-precision tensors can materially change this.',
@@ -11963,7 +12150,7 @@ const DEVICE_TEMPLATES = {
             return [
                 '# ML inference plan handoff',
                 '',
-                `Reproduce and tune this setup. Treat **${p.primary.decodeTokensPerSecond} tok/s projected real** as the planning target. Treat **${p.extremeIdeal.decodeTokensPerSecond} tok/s extreme ideal** only as a zero-overhead roofline using official peak hardware specs.`,
+                `Reproduce and tune this setup. Treat **${p.primary.decodeTokensPerSecond} tok/s projected real** as the planning target and **${p.optimizedTarget.decodeTokensPerSecond} tok/s optimized** as a strong-run target that still includes unavoidable latency. The **${p.physicalRoofline.decodeTokensPerSecond} tok/s physical roofline** is only a zero-overhead sanity bound.`,
                 '',
                 '## Configuration',
                 `- Model: ${payload.model.label}${payload.model.id ? ` (${payload.model.id})` : ''}`,
@@ -11973,12 +12160,15 @@ const DEVICE_TEMPLATES = {
                 `- Runtime: ${payload.execution.runtime} · ${payload.execution.parallelism} · ${payload.execution.optimization}`,
                 `- Workload: batch ${payload.workload.batchSize}, ${payload.workload.promptTokens} prompt + ${payload.workload.outputTokens} output tokens`,
                 ...hardware.map(line => `- Hardware: ${line}`),
-                `- Exposed non-memory overhead: ${profile.exposedNonMemoryOverheadMsPerPass ?? 'modeled by planner'} ms/pass`,
+                `- Supplied non-memory time: ${profile.exposedNonMemoryOverheadMsPerPass ?? 'modeled by planner'} ms/pass`,
+                `- Profile provenance: ${profile.provenance}`,
                 '',
                 '## Expected result',
                 `- Primary projected decode: ${p.primary.decodeTokensPerSecond} tok/s (${p.primary.confidence})`,
                 `- Runtime projection before evidence adjustment: ${p.runtimeProjectionTokensPerSecond} tok/s`,
-                `- Extreme ideal: ${p.extremeIdeal.decodeTokensPerSecond} tok/s`,
+                `- Benchmark correction applied to primary: ×${p.primary.benchmarkCorrectionFactor}`,
+                `- Optimized target: ${p.optimizedTarget.decodeTokensPerSecond} tok/s (${(p.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline * 100).toFixed(1)}% of the ${p.optimizedTarget.latencyAwareRooflineTokensPerSecond} tok/s latency-aware roofline)`,
+                `- Physical roofline (not a target): ${p.physicalRoofline.decodeTokensPerSecond} tok/s`,
                 `- Limiting component: ${p.limitingComponent || 'unknown'}`,
                 '',
                 '## Implementation checklist',
@@ -12034,8 +12224,8 @@ const DEVICE_TEMPLATES = {
             const plan = getActivePlanOutcome();
             const calibration = plan.calibration;
             if (!output || !calibration || !Number.isFinite(measuredTokS) || measuredTokS <= 0) return;
-            const efficiency = measuredTokS / calibration.idealTokS;
-            const headroom = Math.max(0, calibration.idealTokS - measuredTokS);
+            const efficiency = measuredTokS / calibration.optimizedTokS;
+            const headroom = Math.max(0, calibration.optimizedTokS - measuredTokS);
             const recommendations = [];
             if (plan.metrics.some(metric => metric.hasOverflow)) recommendations.push('Eliminate weight or KV overflow first; a smaller quant or another memory device has the largest upside.');
             if (efficiency < calibration.realityFactor * 0.72) recommendations.push('This run is below comparable peers. Verify warmup, greedy sampling, GPU offload, flash attention, and the exact kernel/backend build.');
@@ -12043,12 +12233,13 @@ const DEVICE_TEMPLATES = {
             if ((plan.modelConfig.optimizationMode || 'none') === 'none' && (plan.modelConfig.batchSize || 1) === 1) recommendations.push('Test MTP, EAGLE, or a draft model; interactive decode is the strongest speculative-decoding use case.');
             if (!recommendations.length) recommendations.push('The run is already near the expected envelope; gains now depend on fused kernels, custom quantization, or a faster memory subsystem.');
             const modelLabel = getSelectedModelLabel(plan.modelConfig);
-            output.innerHTML = `<span class="empty-kicker">${escapeHtml(modelLabel)} · ${escapeHtml(devices[0]?.name || 'current hardware')}</span><h2>${(efficiency * 100).toFixed(0)}% of the extreme ideal.</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>projected real</span></div><div class="interpret-metric"><strong>${calibration.idealTokS.toFixed(1)}</strong><span>extreme ideal</span></div></div><p>${headroom.toFixed(1)} tok/s remains to the official-peak, zero-overhead roofline. The evidence envelope uses ${calibration.peers} neighboring gold cases and is ${calibration.confidence}.</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+            output.innerHTML = `<span class="empty-kicker">${escapeHtml(modelLabel)} · ${escapeHtml(devices[0]?.name || 'current hardware')}</span><h2>${efficiency > 1 ? 'Above the optimized target.' : `${(efficiency * 100).toFixed(0)}% of the optimized target.`}</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>projected real</span></div><div class="interpret-metric"><strong>${calibration.optimizedTokS.toFixed(1)}</strong><span>optimized target</span></div></div><p>${headroom.toFixed(1)} tok/s remains to the evidence-capped optimized target. The zero-overhead physical roofline is ${calibration.physicalTokS.toFixed(1)} tok/s and is not presented as achievable.</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
             document.getElementById('apiContractPreview').innerHTML = `<code>${escapeHtml(JSON.stringify({
                 observedTokS: measuredTokS,
                 model: plan.modelConfig.hfId || modelLabel,
                 hardware: devices.map(device => device.name),
-                idealTokS: Number(calibration.idealTokS.toFixed(2)),
+                optimizedTokS: Number(calibration.optimizedTokS.toFixed(2)),
+                physicalRooflineTokS: Number(calibration.physicalTokS.toFixed(2)),
                 expectedTokS: Number(calibration.expectedTokS.toFixed(2)),
                 efficiency: Number(efficiency.toFixed(3)),
                 headroomTokS: Number(headroom.toFixed(2)),
@@ -12080,13 +12271,14 @@ const DEVICE_TEMPLATES = {
             }
             const calibration = plan.calibration;
             if (!output || !calibration || !Number.isFinite(measuredTokS) || measuredTokS <= 0) return;
-            const efficiency = measuredTokS / calibration.idealTokS;
-            const headroom = Math.max(0, calibration.idealTokS - measuredTokS);
+            const efficiency = measuredTokS / calibration.optimizedTokS;
+            const headroom = Math.max(0, calibration.optimizedTokS - measuredTokS);
             const expectedDeltaPct = calibration.expectedTokS > 0 ? ((measuredTokS / calibration.expectedTokS) - 1) * 100 : 0;
             const recommendations = [];
             const selectedPreset = MODEL_PRESETS[plan.modelConfig.modelPreset] || MODEL_PRESETS[imported?.modelPreset];
             if (selectedPreset?.specStatus === 'preview') recommendations.push('This comparison uses the published Kimi K3 limits plus a temporary routing proxy; treat its ceiling as provisional until Moonshot publishes the full configuration.');
-            if (efficiency > 1.05) recommendations.push('The measurement exceeds the modeled extreme ideal. Check tok/s units, device count, batch/concurrency, speculation, bytes/pass, and whether this is aggregate rather than single-stream output.');
+            if (measuredTokS > calibration.physicalTokS * 1.05) recommendations.push('The measurement exceeds the dimensional physical roofline. Check tok/s units, device count, batch/concurrency, speculation, bytes/pass, and whether this is aggregate rather than single-stream output.');
+            else if (efficiency > 1.05) recommendations.push('This run beats the current optimized envelope without violating the physical roofline. Preserve the exact configuration and add it as benchmark evidence so future projections can learn from it.');
             if (plan.metrics.some(metric => metric.hasOverflow)) recommendations.push('Eliminate weight or KV overflow first; a smaller quant or another memory device has the largest upside.');
             if (efficiency < calibration.realityFactor * 0.72) recommendations.push('This run is below comparable peers. Verify warmup, greedy sampling, GPU offload, flash attention, and the exact kernel/backend build.');
             if (planDevices.length > 1 && plan.metrics.some(metric => (metric.decodeCoordinationTimeMs || 0) > 1)) recommendations.push('Inter-device coordination is material. Prefer a faster fabric, reduce tensor-parallel degree, or place more work on each device.');
@@ -12096,13 +12288,13 @@ const DEVICE_TEMPLATES = {
             const modelLabel = getSelectedModelLabel(plan.modelConfig);
             const sameHardware = planDevices.every(device => device.template === planDevices[0]?.template);
             const hardwareLabel = sameHardware && planDevices.length > 1 ? `${planDevices.length}x ${planDevices[0].name.replace(/ #\d+$/, '')}` : planDevices.map(device => device.name).join(' + ');
-            const headline = efficiency > 1.05 ? 'Above the modeled extreme ideal.' : `${(efficiency * 100).toFixed(0)}% of the extreme ideal.`;
-            const peerSentence = calibration.hasMeasuredExecutionProfile
-                ? 'The projected result uses the supplied bytes/pass, sustained bandwidth, and exposed overhead rather than a uniform-quant assumption.'
+            const headline = efficiency > 1.05 ? 'Above the optimized target.' : `${(efficiency * 100).toFixed(0)}% of the optimized target.`;
+            const peerSentence = calibration.hasExplicitExecutionProfile
+                ? 'The projected result uses user-supplied bytes/pass, sustained bandwidth, and non-memory time. Those values are assumptions, not independent validation.'
                 : calibration.peers > 0
                 ? `This is ${Math.abs(expectedDeltaPct).toFixed(0)}% ${expectedDeltaPct >= 0 ? 'above' : 'below'} the peer-calibrated expectation, based on ${calibration.peers} neighboring gold case${calibration.peers === 1 ? '' : 's'}.`
                 : 'No close gold-case peer was available, so the expected rate is uncalibrated.';
-            output.innerHTML = `<span class="empty-kicker">${useImported ? 'Imported setup' : 'Active plan'} / ${escapeHtml(modelLabel)} / ${escapeHtml(hardwareLabel || 'current hardware')}</span><h2>${headline}</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>projected real</span></div><div class="interpret-metric"><strong>${calibration.idealTokS.toFixed(1)}</strong><span>extreme ideal</span></div></div><p>${headroom.toFixed(1)} tok/s remains to the official-peak, zero-overhead roofline. ${peerSentence}</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+            output.innerHTML = `<span class="empty-kicker">${useImported ? 'Imported setup' : 'Active plan'} / ${escapeHtml(modelLabel)} / ${escapeHtml(hardwareLabel || 'current hardware')}</span><h2>${headline}</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>projected real</span></div><div class="interpret-metric"><strong>${calibration.optimizedTokS.toFixed(1)}</strong><span>optimized target</span></div></div><p>${headroom.toFixed(1)} tok/s remains to the attainable target; the ${calibration.physicalTokS.toFixed(1)} tok/s zero-overhead roofline is only a sanity reference. ${peerSentence}</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
             document.getElementById('apiContractPreview').innerHTML = `<code>${escapeHtml(JSON.stringify({
                 observedTokS: measuredTokS,
                 model: plan.modelConfig.hfId || modelLabel,
@@ -12111,7 +12303,8 @@ const DEVICE_TEMPLATES = {
                 runtime: getFrameworkProfile(plan.modelConfig, planDevices).key,
                 quantization: plan.modelConfig.quantizationType,
                 contextLength: plan.modelConfig.seqLength,
-                idealTokS: Number(calibration.idealTokS.toFixed(2)),
+                optimizedTokS: Number(calibration.optimizedTokS.toFixed(2)),
+                physicalRooflineTokS: Number(calibration.physicalTokS.toFixed(2)),
                 expectedTokS: Number(calibration.expectedTokS.toFixed(2)),
                 efficiency: Number(efficiency.toFixed(3)),
                 headroomTokS: Number(headroom.toFixed(2)),
@@ -12672,12 +12865,12 @@ const DEVICE_TEMPLATES = {
                                            onchange="updateDevice(${selectedDevice.id}, 'memoryGB', parseFloat(this.value) || 0)">
                                 </div>
                                 <div>
-                                    <label title="Vendor-specified peak memory bandwidth, used for the extreme ideal">Peak memory BW (GB/s)</label>
+                                    <label title="Vendor-specified peak memory bandwidth, used for the physical roofline and as an input to the optimized target">Peak memory BW (GB/s)</label>
                                     <input type="number" class="input" value="${selectedDevice.localBandwidthGBps}"
                                            onchange="updateDevice(${selectedDevice.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)">
                                 </div>
                                 <div>
-                                    <label title="Optional measured sustained bandwidth, used for the projected result while leaving the ideal unchanged">Sustained memory BW (GB/s, optional)</label>
+                                    <label title="Optional measured sustained bandwidth, used for the projected result while leaving the official-peak physical roofline unchanged">Sustained memory BW (GB/s, optional)</label>
                                     <input type="number" class="input" value="${Number.isFinite(selectedDevice.sustainedBandwidthGBps) ? selectedDevice.sustainedBandwidthGBps : ''}" placeholder="Runtime estimate"
                                            onchange="updateDevice(${selectedDevice.id}, 'sustainedBandwidthGBps', this.value === '' ? null : (parseFloat(this.value) || 0))">
                                 </div>
@@ -14232,6 +14425,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             buildHardwareTemplateOptions,
             calculateGoldCaseProjection,
             getGoldValidationRows,
+            calculateProjectionBounds,
             calculateCurrentCalibration,
             getCatalogModels,
             buildQuickStartCombos,

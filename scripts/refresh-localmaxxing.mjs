@@ -163,7 +163,11 @@ function normalizeModel(model) {
 function normalizeGoldCase(run) {
   const sourceHfId = run.model?.baseModel?.hfId || run.model?.hfId || '';
   const runHfId = run.model?.hfId || sourceHfId;
-  const presetKey = pickRule(sourceHfId, MODEL_PRESET_RULES);
+  // Prefer an explicitly modeled derivative over its base model. Falling
+  // straight through to the base preset silently assigns the wrong resident
+  // size and active-weight traffic to pruned/REAP/distilled checkpoints.
+  const runPresetKey = pickRule(runHfId, MODEL_PRESET_RULES);
+  const presetKey = runPresetKey || pickRule(sourceHfId, MODEL_PRESET_RULES);
   const hardwareTemplate = pickRule(run.hardwareGroupLabel || run.hardware?.gpuName || run.hardware?.chipVariant || '', HARDWARE_RULES);
   const runtimeKey = RUNTIME_KEYS.get((run.engine?.engineName || '').toLowerCase()) || null;
   const quantKey = normalizeQuantization(run.engine?.quantization);
@@ -174,7 +178,8 @@ function normalizeGoldCase(run) {
   // Pruned/modified variants (REAP, abliterated, distill-merges) have different
   // weights than the preset they would map to; using them as gold evidence
   // makes real runs "beat the physics ceiling".
-  const isModifiedVariant = /reap|prun|abliterat/i.test(`${runHfId} ${run.model?.displayName || ''}`);
+  const variantText = `${runHfId} ${run.model?.displayName || ''} ${command}`;
+  const isModifiedVariant = /reap|prun|abliterat|experts?[-_ ]?(?:drop|remove)|depth[-_ ]?up/i.test(variantText) && !runPresetKey;
   // "# Remote endpoint" rows record a served API, not a reproducible command,
   // and rows without a recognizable engine invocation cannot be re-run.
   const isRecordedEndpoint = command.trim().startsWith('#');

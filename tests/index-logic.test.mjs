@@ -155,6 +155,26 @@ test('current Localmaxxing leaders have first-class architecture presets', () =>
   assert.equal(model.activeParamsB, 3.8);
   assert.equal(model.numExperts, 128);
   assert.equal(model.activeExperts, 8);
+  assert.equal(model.fullAttentionLayers, 5);
+  assert.equal(model.useMTP, true);
+  assert.equal(model.specStatus, 'verified');
+
+  app.applyPreset('gemma4_12b');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.numLayers, 48);
+  assert.equal(model.fullAttentionLayers, 8);
+  assert.equal(model.numKVHeads, 8);
+  assert.equal(model.hasVision, true);
+
+  app.applyPreset('gemma4_e4b');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.numLayers, 42);
+  assert.equal(model.fullAttentionLayers, 7);
+
+  app.applyPreset('gemma4_e2b');
+  model = app.hooks.buildEffectiveModelConfig();
+  assert.equal(model.numLayers, 35);
+  assert.equal(model.fullAttentionLayers, 7);
 
   app.applyPreset('deepseek_v4_flash');
   model = app.hooks.buildEffectiveModelConfig();
@@ -219,7 +239,7 @@ test('versioned Localmaxxing snapshot contains a broad catalog and strict gold c
   }
 });
 
-test('gold-case projection separates the extreme ideal from generic real-world efficiency', () => {
+test('gold-case projection separates the physical roofline from runtime efficiency', () => {
   const app = loadApp();
   const projection = app.hooks.calculateGoldCaseProjection({
     id: 'fixture',
@@ -239,9 +259,10 @@ test('gold-case projection separates the extreme ideal from generic real-world e
     reproducibility: 7
   });
 
-  assert.ok(projection.idealTokS > projection.genericTokS);
+  assert.ok(projection.physicalTokS >= projection.latencyBoundTokS);
+  assert.ok(projection.latencyBoundTokS > projection.genericTokS);
   assert.ok(projection.genericTokS > 0);
-  assert.ok(Number.isFinite(projection.observedToIdeal));
+  assert.ok(Number.isFinite(projection.observedToPhysical));
 });
 
 test('DeepSeek R1 still separates resident and active weights under overflow', () => {
@@ -431,30 +452,30 @@ test('validation matrix stays inside broad benchmark-justified ranges', () => {
       maxMemoryUtilization: 30
     },
     {
-      name: 'Qwen 3.5 35B A3B Q8 on RTX 3090 long context reflects overflow drag',
+      name: 'Qwen 3.5 35B A3B Q8 on RTX 3090 long context reflects heavy overflow drag',
       devices: [cloneTemplate(app.hooks, 'RTX 3090')],
       preset: 'qwen3.5_35b_a3b',
       quant: 'int8',
       framework: 'llama_cpp',
       strategy: 'pipeline',
       seqLength: 240000,
-      minRate: 35,
-      maxRate: 90,
+      minRate: 20,
+      maxRate: 60,
       minMemoryUtilization: 100,
       expectOverflow: true
     },
     {
-      name: 'Qwen 3.5 27B Q4 on RTX 3090 long context accounts for KV-cache pressure',
+      name: 'Qwen 3.5 27B Q4 on RTX 3090 at 262K reflects KV-cache spill over PCIe',
       devices: [cloneTemplate(app.hooks, 'RTX 3090')],
       preset: 'qwen3.5_27b',
       quant: 'q4',
       framework: 'llama_cpp',
       strategy: 'pipeline',
       seqLength: 262144,
-      minRate: 25,
-      maxRate: 65,
+      minRate: 4,
+      maxRate: 15,
       minMemoryUtilization: 100,
-      minDecodeKvCacheGB: 1
+      minDecodeKvCacheGB: 10
     },
     {
       name: 'MiniMax M2.5 FP8 on 4x H200 remains a high-throughput datacenter setup',
@@ -1174,44 +1195,87 @@ test('four B70 scenario loads a complete MiniMax planning configuration', () => 
   assert.match(app.elements.get('executionMap').innerHTML, /Matching run|Related evidence/);
 });
 
-test('profiled four-B70 DeepSeek run stays inside narrow measured and ideal ranges', () => {
+test('four-B70 DeepSeek plan uses benchmark peers without hidden case-specific measurements', () => {
   const app = loadApp({ snapshot: loadSnapshot() });
   app.hooks.loadScenarioPreset('b70_x4_dsv4_reap_record');
 
   const plan = app.hooks.getActivePlanOutcome();
   const firstMetric = plan.metrics[0];
 
-  assert.ok(plan.calibration.expectedTokS >= 43.70 && plan.calibration.expectedTokS <= 43.80,
+  assert.equal(app.elements.get('decodeBytesPerPassGB').value, '');
+  assert.equal(app.elements.get('residentWeightsGB').value, '');
+  assert.equal(app.elements.get('decodeOverheadMs').value, '');
+  assert.ok(app.hooks.getDevices().every(device => !Number(device.sustainedBandwidthGBps)),
+    'the scenario must not smuggle in a measured-bandwidth assumption');
+  assert.ok(plan.calibration.expectedTokS >= 44.20 && plan.calibration.expectedTokS <= 44.40,
     `projected real was ${plan.calibration.expectedTokS} tok/s`);
-  assert.ok(plan.calibration.idealTokS >= 158.90 && plan.calibration.idealTokS <= 159.00,
-    `extreme ideal was ${plan.calibration.idealTokS} tok/s`);
-  assert.equal(plan.calibration.confidence, 'measured inputs');
-  assert.equal(firstMetric.byteProfileSource, 'measured');
-  assert.equal(firstMetric.realisticBandwidthGBps, 527);
+  assert.ok(plan.calibration.optimizedTokS >= 182.5 && plan.calibration.optimizedTokS <= 182.9,
+    `optimized target was ${plan.calibration.optimizedTokS} tok/s`);
+  assert.ok(plan.calibration.physicalTokS >= 421.4 && plan.calibration.physicalTokS <= 421.7,
+    `physical roofline was ${plan.calibration.physicalTokS} tok/s`);
+  assert.ok(plan.calibration.expectedTokS <= plan.calibration.optimizedTokS);
+  assert.ok(plan.calibration.optimizedTokS < plan.calibration.physicalTokS);
+  assert.equal(plan.calibration.confidence, 'directional');
+  assert.equal(plan.calibration.verifiedPeers, 0);
+  assert.equal(firstMetric.byteProfileSource, 'estimated');
+  assert.notEqual(firstMetric.realisticBandwidthGBps, 527);
   assert.equal(firstMetric.effectiveBandwidthGBps, 608);
-  assert.equal(firstMetric.modelSizeGB, 90);
-  assert.equal(firstMetric.residentWeightSizeGB, 22.5);
-  assert.ok(firstMetric.decodeTimeBreakdown.totalMs >= 22.85 && firstMetric.decodeTimeBreakdown.totalMs <= 22.87);
-  assert.equal(firstMetric.decodeTimeBreakdown.overheadSource, 'measured');
+  assert.ok(firstMetric.modelSizeGB >= 97.1 && firstMetric.modelSizeGB <= 97.3);
+  assert.ok(firstMetric.residentWeightSizeGB >= 24.2 && firstMetric.residentWeightSizeGB <= 24.4);
+  assert.equal(firstMetric.decodeTimeBreakdown.overheadSource, 'modeled');
+
+  app.hooks.updateSystemAnalysis();
+  const analysisHtml = app.elements.get('systemAnalysis').innerHTML;
+  assert.match(analysisHtml, /recommendation-label">Decode Rate<\/div>\s*<div class="recommendation-value">44\.3 tok\/s/,
+    'recommended setup must use the projected primary result');
+  assert.match(analysisHtml, /phase-summary-label">Decode<\/div>\s*<div class="phase-summary-value">44\.3 tok\/s/,
+    'workflow timing must use the projected primary result');
+  assert.match(analysisHtml, /median 26% of the generic engine model/,
+    'the primary result explains its benchmark correction');
 });
 
-test('official peak controls the ideal while sustained bandwidth controls projected real', () => {
-  const app = loadApp();
+test('supplied execution assumptions reproduce their arithmetic without becoming benchmark facts', () => {
+  const app = loadApp({ snapshot: loadSnapshot() });
   app.hooks.loadScenarioPreset('b70_x4_dsv4_reap_record');
+  app.hooks.setDevices(app.hooks.getDevices().map(device => ({ ...device, sustainedBandwidthGBps: 527 })));
+  app.setValue('decodeBytesPerPassGB', 15.3);
+  app.setValue('residentWeightsGB', 90);
+  app.setValue('decodeOverheadMs', 15.6);
+  app.setValue('executionProfileName', 'Unverified mixed-precision hypothesis');
   const baseline = app.hooks.getActivePlanOutcome();
+
+  assert.ok(baseline.calibration.expectedTokS >= 43.70 && baseline.calibration.expectedTokS <= 43.80,
+    `supplied-input projection was ${baseline.calibration.expectedTokS} tok/s`);
+  assert.ok(baseline.calibration.physicalTokS >= 158.90 && baseline.calibration.physicalTokS <= 159.00,
+    `official-peak physical roofline was ${baseline.calibration.physicalTokS} tok/s`);
+  assert.ok(baseline.calibration.optimizedTokS >= 93.3 && baseline.calibration.optimizedTokS <= 93.7,
+    `latency-aware optimized target was ${baseline.calibration.optimizedTokS} tok/s`);
+  assert.equal(baseline.calibration.confidence, 'input-derived');
+  assert.equal(baseline.calibration.profileProvenance, 'user-supplied-unverified');
+  assert.equal(baseline.metrics[0].byteProfileSource, 'supplied');
+  assert.equal(baseline.metrics[0].decodeTimeBreakdown.overheadSource, 'supplied');
 
   const slowerDevices = app.hooks.getDevices().map(device => ({ ...device, sustainedBandwidthGBps: 400 }));
   app.hooks.setDevices(slowerDevices);
   const slower = app.hooks.getActivePlanOutcome();
 
-  assert.ok(Math.abs(slower.calibration.idealTokS - baseline.calibration.idealTokS) < 0.0001,
-    'measured sustained bandwidth must not lower the official-spec extreme ideal');
+  assert.ok(Math.abs(slower.calibration.physicalTokS - baseline.calibration.physicalTokS) < 0.0001,
+    'supplied sustained bandwidth must not lower the official-spec physical roofline');
   assert.ok(slower.calibration.expectedTokS >= 39.70 && slower.calibration.expectedTokS <= 39.80,
     `400 GB/s sustained projection was ${slower.calibration.expectedTokS} tok/s`);
   assert.ok(slower.calibration.expectedTokS < baseline.calibration.expectedTokS);
+
+  const payload = app.hooks.buildPlanExport(baseline);
+  const imported = app.hooks.parseMeasuredResultPayload(payload);
+  assert.equal(payload.execution.profile.provenance, 'user-supplied-unverified');
+  assert.ok(payload.prediction.optimizedTarget.decodeTokensPerSecond >= 93.3 && payload.prediction.optimizedTarget.decodeTokensPerSecond <= 93.7);
+  assert.ok(payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond >= 124.4 && payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond <= 124.8);
+  assert.equal(imported.decodeBytesPerPassGB, 15.3);
+  assert.equal(imported.residentWeightsGB, 90);
+  assert.equal(imported.decodeOverheadMs, 15.6);
 });
 
-test('extreme ideal uses the lower of official memory and compute rooflines', () => {
+test('physical roofline uses the lower of official memory and compute limits', () => {
   const app = loadApp();
   app.hooks.setDevices([buildCustomDevice({
     name: 'Compute-starved lab GPU',
@@ -1233,27 +1297,37 @@ test('extreme ideal uses the lower of official memory and compute rooflines', ()
     app.hooks.buildEffectiveModelConfig(), [metric], metric.decodeTokensPerSecond, 'pipeline');
 
   assert.ok(metric.theoreticalMemoryMaxTokensPerSecond > 2000);
-  assert.ok(calibration.idealTokS >= 80.20 && calibration.idealTokS <= 80.30,
-    `compute-bound ideal was ${calibration.idealTokS} tok/s`);
+  assert.ok(calibration.physicalTokS >= 80.20 && calibration.physicalTokS <= 80.30,
+    `compute-bound physical roofline was ${calibration.physicalTokS} tok/s`);
+  assert.ok(calibration.expectedTokS <= calibration.optimizedTokS);
+  assert.ok(calibration.optimizedTokS < calibration.physicalTokS);
 });
 
-test('AI handoff and Plan JSON preserve every assumption needed to reproduce the run', () => {
-  const app = loadApp();
+test('AI handoff and Plan JSON distinguish estimates, targets, and physical bounds', () => {
+  const app = loadApp({ snapshot: loadSnapshot() });
   app.hooks.loadScenarioPreset('b70_x4_dsv4_reap_record');
   const payload = app.hooks.buildPlanExport();
   const handoff = app.hooks.buildAiHandoff(payload);
 
-  assert.equal(payload.schemaVersion, 'mlbottleneck.plan.v1');
-  assert.equal(payload.execution.profile.aggregateBytesPerDecodePassGB, 15.3);
-  assert.equal(payload.execution.profile.aggregateResidentWeightsGB, 90);
-  assert.equal(payload.execution.profile.exposedNonMemoryOverheadMsPerPass, 15.6);
+  assert.equal(payload.schemaVersion, 'mlbottleneck.plan.v2');
+  assert.ok(payload.execution.profile.aggregateBytesPerDecodePassGB >= 5.7 && payload.execution.profile.aggregateBytesPerDecodePassGB <= 5.9);
+  assert.ok(payload.execution.profile.aggregateResidentWeightsGB >= 97.1 && payload.execution.profile.aggregateResidentWeightsGB <= 97.3);
+  assert.equal(payload.execution.profile.exposedNonMemoryOverheadMsPerPass, null);
+  assert.equal(payload.execution.profile.provenance, 'planner-estimate');
   assert.equal(payload.hardware.devices[0].officialPeakMemoryBandwidthGBps, 608);
-  assert.equal(payload.hardware.devices[0].sustainedMemoryBandwidthGBps, 527);
-  assert.ok(payload.prediction.primary.decodeTokensPerSecond >= 43.70 && payload.prediction.primary.decodeTokensPerSecond <= 43.80);
-  assert.ok(payload.prediction.extremeIdeal.decodeTokensPerSecond >= 158.90 && payload.prediction.extremeIdeal.decodeTokensPerSecond <= 159.00);
-  assert.match(handoff, /43\.748 tok\/s projected real/);
-  assert.match(handoff, /158\.954 tok\/s extreme ideal/);
-  assert.match(handoff, /15\.3 GB per pass/);
+  assert.equal(payload.hardware.devices[0].sustainedMemoryBandwidthGBps, null);
+  assert.ok(payload.prediction.primary.decodeTokensPerSecond >= 44.20 && payload.prediction.primary.decodeTokensPerSecond <= 44.40);
+  assert.ok(payload.prediction.primary.millisecondsPerToken >= 22.5 && payload.prediction.primary.millisecondsPerToken <= 22.7);
+  assert.ok(payload.prediction.primary.benchmarkCorrectionFactor >= 0.25 && payload.prediction.primary.benchmarkCorrectionFactor <= 0.27);
+  assert.ok(payload.prediction.optimizedTarget.decodeTokensPerSecond >= 182.5 && payload.prediction.optimizedTarget.decodeTokensPerSecond <= 182.9);
+  assert.ok(payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond >= 243.2 && payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond <= 243.6);
+  assert.ok(payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline >= 0.75 && payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline <= 0.76);
+  assert.ok(payload.prediction.physicalRoofline.decodeTokensPerSecond >= 421.4 && payload.prediction.physicalRoofline.decodeTokensPerSecond <= 421.7);
+  assert.match(handoff, /44\.278 tok\/s projected real/);
+  assert.match(handoff, /182\.703 tok\/s optimized/);
+  assert.match(handoff, /421\.54 tok\/s physical roofline/);
+  assert.match(handoff, /Profile provenance: planner-estimate/);
+  assert.match(handoff, /75\.1% of the 243\.382 tok\/s latency-aware roofline/);
   assert.match(handoff, /exact launch command/);
 
   const imported = app.hooks.parseMeasuredResultPayload(payload);
@@ -1263,7 +1337,43 @@ test('AI handoff and Plan JSON preserve every assumption needed to reproduce the
   assert.equal(imported.hardware[0].count, 4);
   assert.equal(imported.runtimeFramework, 'vllm');
   assert.equal(imported.parallelismStrategy, 'tensor');
-  assert.equal(imported.decodeBytesPerPassGB, 15.3);
-  assert.equal(imported.residentWeightsGB, 90);
-  assert.equal(imported.decodeOverheadMs, 15.6);
+  assert.equal(imported.executionProfileProvenance, 'planner-estimate');
+  assert.equal(imported.decodeBytesPerPassGB, null);
+  assert.equal(imported.residentWeightsGB, null);
+  assert.equal(imported.decodeOverheadMs, null);
+});
+
+test('projected, optimized, and physical rates stay aligned across hardware families', () => {
+  const snapshot = loadSnapshot();
+  const fixtures = [
+    { preset: 'qwen3_8b', hardware: 'RTX 5090', count: 1, quant: 'q4', framework: 'llama_cpp', strategy: 'pipeline', context: 8192, projected: [227.0, 227.2], optimized: [279.3, 279.7], physical: [324.0, 324.3] },
+    { preset: 'qwen3.6_35b_a3b', hardware: 'AMD Radeon AI PRO R9700', count: 3, quant: 'int8', framework: 'llama_cpp', strategy: 'pipeline', context: 787, projected: [67.0, 67.2], optimized: [188.1, 188.4], physical: [251.5, 251.8] },
+    { preset: 'minimax_m2.7', hardware: 'Intel Arc Pro B70', count: 4, quant: 'q4', framework: 'vllm', strategy: 'tensor', context: 2048, projected: [66.4, 66.7], optimized: [155.4, 155.8], physical: [429.5, 429.9] }
+  ];
+
+  for (const fixture of fixtures) {
+    const app = loadApp({ snapshot });
+    const template = app.hooks.DEVICE_TEMPLATES[fixture.hardware];
+    app.hooks.setDevices(Array.from({ length: fixture.count }, (_, index) => ({
+      id: index + 1,
+      template: fixture.hardware,
+      ...JSON.parse(JSON.stringify(template)),
+      name: `${template.name} #${index + 1}`
+    })));
+    setLlmDefaults(app, {
+      preset: fixture.preset,
+      quant: fixture.quant,
+      framework: fixture.framework,
+      strategy: fixture.strategy,
+      batchSize: 1,
+      seqLength: fixture.context
+    });
+    const calibration = app.hooks.getActivePlanOutcome().calibration;
+    assert.ok(calibration.expectedTokS >= fixture.projected[0] && calibration.expectedTokS <= fixture.projected[1],
+      `${fixture.hardware} + ${fixture.preset} projected ${calibration.expectedTokS} tok/s`);
+    assert.ok(calibration.optimizedTokS >= fixture.optimized[0] && calibration.optimizedTokS <= fixture.optimized[1],
+      `${fixture.hardware} + ${fixture.preset} optimized ${calibration.optimizedTokS} tok/s`);
+    assert.ok(calibration.physicalTokS >= fixture.physical[0] && calibration.physicalTokS <= fixture.physical[1],
+      `${fixture.hardware} + ${fixture.preset} physical ${calibration.physicalTokS} tok/s`);
+  }
 });

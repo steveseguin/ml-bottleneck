@@ -165,13 +165,13 @@ test('model map waterfall stays consistent with the decode engine', () => {
   assert.match(html, /L41–80/, 'second device layer range');
   assert.match(html, /map-cross-label/, 'pipeline boundary crossing chip renders');
   assert.match(html, /One decode step, millisecond by millisecond/, 'waterfall section renders');
-  assert.match(html, /System decode: <strong>/, 'system aggregation line renders');
+  assert.match(html, /Engine-model system decode: <strong>/, 'system aggregation line renders');
   assert.match(html, /Prompt phase is <strong>/, 'prefill limiter line renders');
   assert.match(html, /map-table-view/, 'accessible table view renders');
   assert.ok(Number.isFinite(plan.systemDecodeRate) && plan.systemDecodeRate > 0);
 });
 
-test('ideal ladder keeps non-speculative predictions below the extreme ideal', () => {
+test('prediction ladder keeps projected and optimized rates below the physical roofline', () => {
   const app = loadApp();
   const t4090 = app.hooks.DEVICE_TEMPLATES['RTX 4090'];
   app.hooks.setDevices([{ id: 1, template: 'RTX 4090', ...JSON.parse(JSON.stringify(t4090)), name: 'RTX 4090' }]);
@@ -190,15 +190,18 @@ test('ideal ladder keeps non-speculative predictions below the extreme ideal', (
     metrics.map(metric => metric.decodeTokensPerSecond), 'pipeline', 1, app.hooks.getDevices());
   const calibration = app.hooks.calculateCurrentCalibration(config, metrics, systemRate, 'pipeline');
 
-  assert.ok(calibration.idealTokS >= calibration.genericTokS,
-    `engine model (${calibration.genericTokS}) must sit at or below the ceiling (${calibration.idealTokS})`);
-  assert.ok(calibration.expectedTokS <= calibration.idealTokS * 1.05,
-    `projected real (${calibration.expectedTokS}) must not exceed the extreme ideal (${calibration.idealTokS})`);
+  assert.ok(calibration.expectedTokS <= calibration.optimizedTokS,
+    `projected real (${calibration.expectedTokS}) exceeded optimized (${calibration.optimizedTokS})`);
+  assert.ok(calibration.optimizedTokS <= calibration.latencyBoundTokS,
+    `optimized (${calibration.optimizedTokS}) exceeded latency bound (${calibration.latencyBoundTokS})`);
+  assert.ok(calibration.latencyBoundTokS <= calibration.physicalTokS,
+    `latency bound (${calibration.latencyBoundTokS}) exceeded physical (${calibration.physicalTokS})`);
 
   app.hooks.updateSystemAnalysis();
   const html = app.elements.get('systemAnalysis').innerHTML;
   assert.match(html, /ceiling-ladder/, 'ceiling ladder renders in system analysis');
-  assert.match(html, /Extreme ideal/);
+  assert.match(html, /Physical roofline/);
+  assert.match(html, /Optimized target/);
   assert.match(html, /Projected real/);
 });
 
@@ -207,28 +210,26 @@ test('engine predictions stay statistically anchored to the gold-case corpus', (
   const cases = snapshot?.goldCases || [];
   assert.ok(cases.length >= 50, `expected a meaningful gold-case corpus, got ${cases.length}`);
 
-  const app = loadApp();
-  const ratios = [];
-  for (const goldCase of cases) {
-    const projection = app.hooks.calculateGoldCaseProjection(goldCase);
-    if (projection && Number.isFinite(projection.observedToGeneric)) {
-      ratios.push(projection.observedToGeneric);
-    }
-  }
-  assert.ok(ratios.length >= cases.length * 0.8, `only ${ratios.length}/${cases.length} gold cases were projectable`);
-
-  ratios.sort((a, b) => a - b);
+  const app = loadApp({ snapshot });
+  const rows = app.hooks.getGoldValidationRows();
+  assert.ok(rows.length >= cases.length * 0.8, `only ${rows.length}/${cases.length} gold cases were projectable`);
+  const ratios = rows.map(row => row.observedTokS / row.calibratedTokS).sort((a, b) => a - b);
   const median = ratios[Math.floor(ratios.length / 2)];
+  const withinOnePointFiveX = ratios.filter(r => r >= (1 / 1.5) && r <= 1.5).length / ratios.length;
   const withinTwoX = ratios.filter(r => r >= 0.5 && r <= 2).length / ratios.length;
+  const optimizedCoverage = rows.filter(row => row.observedTokS <= row.optimizedTokS).length / rows.length;
+  const physicalCoverage = rows.filter(row => row.observedTokS <= row.physicalTokS * 1.05).length / rows.length;
 
-  // The generic engine model should be centered near reality across the whole
-  // measured corpus, without a large systematic bias in either direction.
-  // (Residual per-vendor kernel gaps are absorbed by the peer-evidence
-  // calibration layer, not by these bounds.)
-  assert.ok(median >= 0.4 && median <= 1.6,
-    `median observed/predicted drifted to ${median.toFixed(2)} — systematic bias`);
-  assert.ok(withinTwoX >= 0.5,
-    `only ${(withinTwoX * 100).toFixed(0)}% of gold cases within 2x (need >= 50%)`);
+  assert.ok(median >= 0.9 && median <= 1.1,
+    `leave-one-out median observed/projected drifted to ${median.toFixed(2)}`);
+  assert.ok(withinOnePointFiveX >= 0.75,
+    `only ${(withinOnePointFiveX * 100).toFixed(1)}% of gold cases within 1.5x`);
+  assert.ok(withinTwoX >= 0.85,
+    `only ${(withinTwoX * 100).toFixed(1)}% of gold cases within 2x`);
+  assert.ok(optimizedCoverage >= 0.85,
+    `optimized target covered only ${(optimizedCoverage * 100).toFixed(1)}% of gold runs`);
+  assert.ok(physicalCoverage >= 0.90,
+    `physical roofline covered only ${(physicalCoverage * 100).toFixed(1)}% of gold runs within tolerance`);
 });
 
 test('speculation is labeled, split from efficiency, and can pass the per-pass ceiling', () => {
@@ -292,8 +293,8 @@ test('quick-start gallery derives clickable community setups with honest rates',
 
   for (const combo of combos) {
     assert.ok(Number.isFinite(combo.expectedTokS) && combo.expectedTokS > 0);
-    assert.ok(combo.idealTokS >= combo.expectedTokS,
-      `ideal (${combo.idealTokS}) must sit at or above expected (${combo.expectedTokS})`);
+    assert.ok(combo.optimizedTokS >= combo.expectedTokS,
+      `optimized (${combo.optimizedTokS}) must sit at or above expected (${combo.expectedTokS})`);
     if (combo.runs > 0) {
       assert.ok(Number.isFinite(combo.measuredMedianTokS) && combo.measuredMedianTokS > 0);
     }
@@ -308,7 +309,7 @@ test('quick-start gallery derives clickable community setups with honest rates',
   const grid = app.elements.get('quickstartGrid');
   assert.match(grid.innerHTML, /qs-row/, 'bar-chart rows render');
   assert.match(grid.innerHTML, /qs-fill/, 'expected bars render');
-  assert.match(grid.innerHTML, /qs-track/, 'ideal tracks render');
+  assert.match(grid.innerHTML, /qs-track/, 'optimized-target tracks render');
   assert.match(grid.innerHTML, /qs-tick/, 'measured ticks render');
   assert.match(grid.innerHTML, /data-quickstart-index/, 'rows stay clickable');
 

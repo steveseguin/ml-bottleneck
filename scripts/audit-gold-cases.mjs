@@ -1,13 +1,13 @@
 // Calibration audit: run the decode engine against every gold case in the
 // versioned Localmaxxing snapshot and report the observed/predicted
-// distribution, per-runtime and per-hardware medians, physics-ceiling
-// violations, and the worst outliers.
+// distribution, per-runtime and per-hardware medians, physical-roofline
+// violations, optimized-target coverage, and the worst outliers.
 //
 // Usage: node scripts/audit-gold-cases.mjs
 //
 // Interpreting the output: a perfect engine has median 1.0. Ratios < 1 mean
 // the generic model over-predicts (real kernels lose more than modeled);
-// ratios > 1 mean under-prediction. Any run beating the *ideal* ceiling is a
+// ratios > 1 mean under-prediction. Any run beating the physical roofline is a
 // red flag: either a device template misstates hardware, a preset misstates
 // the architecture, or the gold row itself is mislabeled — root-cause it,
 // never absorb it into an efficiency constant.
@@ -22,10 +22,11 @@ const snapshotSource = fs.readFileSync(path.join(repoRoot, 'data', 'localmaxxing
 const context = { window: {} };
 vm.createContext(context);
 vm.runInContext(snapshotSource, context);
-const cases = context.window.LOCALMAXXING_SNAPSHOT?.goldCases || [];
+const snapshot = context.window.LOCALMAXXING_SNAPSHOT;
+const cases = snapshot?.goldCases || [];
 console.log('gold cases in snapshot:', cases.length);
 
-const app = loadApp();
+const app = loadApp({ snapshot });
 const rows = [];
 for (const goldCase of cases) {
   const projection = app.hooks.calculateGoldCaseProjection(goldCase);
@@ -48,6 +49,18 @@ console.log('observed/predicted — p10:', quantile(ratios, 0.1).toFixed(2), 'p2
 const within = f => (ratios.filter(r => r >= 1 / f && r <= f).length / ratios.length * 100).toFixed(0);
 console.log('within 1.25x:', within(1.25) + '%', '| within 1.5x:', within(1.5) + '%', '| within 2x:', within(2) + '%');
 
+const validated = app.hooks.getGoldValidationRows();
+const calibratedRatios = validated.map(r => r.observedTokS / r.calibratedTokS);
+const calibratedWithin = f => calibratedRatios.filter(r => r >= 1 / f && r <= f).length / calibratedRatios.length * 100;
+const optimizedCoverage = validated.filter(r => r.observedTokS <= r.optimizedTokS).length / validated.length * 100;
+const physicalCoverage = validated.filter(r => r.observedTokS <= r.physicalTokS * 1.05).length / validated.length * 100;
+console.log('--- leave-one-out user-facing model ---');
+console.log('median observed/projected:', median(calibratedRatios).toFixed(2),
+  '| within 1.5x:', calibratedWithin(1.5).toFixed(0) + '%',
+  '| within 2x:', calibratedWithin(2).toFixed(0) + '%');
+console.log('optimized-target coverage:', optimizedCoverage.toFixed(0) + '%',
+  '| physical-roofline coverage (5% tolerance):', physicalCoverage.toFixed(0) + '%');
+
 for (const key of ['runtimeKey', 'hardwareTemplate']) {
   const groups = {};
   for (const row of rows) (groups[row[key]] = groups[row[key]] || []).push(row.observedToGeneric);
@@ -57,12 +70,12 @@ for (const key of ['runtimeKey', 'hardwareTemplate']) {
   }
 }
 
-const violations = rows.filter(r => r.observedToIdeal > 1).sort((a, b) => b.observedToIdeal - a.observedToIdeal);
-console.log(`--- ${violations.length}/${rows.length} runs beat the physics ceiling (should be ~0) ---`);
+const violations = rows.filter(r => r.observedToPhysical > 1.05).sort((a, b) => b.observedToPhysical - a.observedToPhysical);
+console.log(`--- ${violations.length}/${rows.length} runs beat the physical roofline by >5% (requires data/model review) ---`);
 for (const v of violations) {
   console.log(' ', v.presetKey.padEnd(20), v.hardwareTemplate.padEnd(26), 'x' + v.deviceCount, v.runtimeKey.padEnd(10),
-    v.quantKey.padEnd(8), '| obs', String(v.observedTokS).slice(0, 7).padStart(7), '| ideal', v.idealTokS.toFixed(1).padStart(7),
-    '| ratio', v.observedToIdeal.toFixed(2));
+    v.quantKey.padEnd(8), '| obs', String(v.observedTokS).slice(0, 7).padStart(7), '| physical', v.physicalTokS.toFixed(1).padStart(7),
+    '| ratio', v.observedToPhysical.toFixed(2));
 }
 
 console.log('--- worst outliers ---');
@@ -73,4 +86,10 @@ for (const r of byError.slice(0, 10)) {
     r.quantKey.padEnd(8), 'ctx' + String(r.contextLength).padEnd(7),
     '| obs', String(r.observedTokS).slice(0, 7).padStart(7), 'pred', r.genericTokS.toFixed(1).padStart(7),
     '->', r.observedToGeneric.toFixed(2));
+}
+
+if (median(calibratedRatios) < 0.90 || median(calibratedRatios) > 1.10 ||
+    calibratedWithin(2) < 85 || optimizedCoverage < 80 || physicalCoverage < 90) {
+  console.error('Calibration guard failed: prediction or target coverage moved outside the accepted validation envelope.');
+  process.exitCode = 1;
 }

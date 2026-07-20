@@ -155,7 +155,7 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
   await page.getByRole('button', { name: 'Explain', exact: true }).click();
   await page.locator('#measuredTokS').fill('45');
   await page.getByRole('button', { name: 'Explain this run', exact: true }).click();
-  await expect(page.locator('#interpreterOutput')).toContainText('extreme ideal');
+  await expect(page.locator('#interpreterOutput')).toContainText('optimized target');
   await expect(page.locator('#apiContractPreview')).toContainText('expectedTokS');
 
   const activePreset = await page.locator('#modelPreset').inputValue();
@@ -514,7 +514,7 @@ test('execution map visualizes MiniMax across four Arc Pro B70 GPUs and compares
   await expect(page.locator('#executionMap')).not.toContainText('bhk_');
 });
 
-test('profiled B70 prediction leads with reality and exports a reproducible plan', async ({ page }) => {
+test('B70 prediction leads with peer-calibrated reality and exports honest assumptions', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -527,19 +527,22 @@ test('profiled B70 prediction leads with reality and exports a reproducible plan
   await advancePlanTo(page, 4);
 
   await expect(page.locator('#systemAnalysis .rate-label')).toHaveText('Projected real decode');
-  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText('43.7');
-  await expect(page.locator('#systemAnalysis')).toContainText('Projected limit: runtime / coordination');
-  const idealRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Extreme ideal' }).first();
-  await expect(idealRow).toContainText('159 tok/s');
-  await expect(idealRow).toContainText('official peak memory/compute roofline');
+  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText('44.3');
+  await expect(page.locator('#systemAnalysis')).toContainText('directional confidence');
+  const optimizedRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Optimized target' }).first();
+  await expect(optimizedRow).toContainText('179 tok/s');
+  const physicalRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Physical roofline' }).first();
+  await expect(physicalRow).toContainText('422 tok/s');
+  await expect(physicalRow).toContainText('sanity reference');
 
   await page.locator('.plan-export > summary').click();
   await page.locator('#copyAiHandoffButton').click();
   await expect(page.locator('#planExportStatus')).toHaveText('AI handoff copied.');
   const copied = await page.evaluate(() => window.__copiedPlanText);
-  expect(copied).toContain('43.748 tok/s projected real');
-  expect(copied).toContain('158.954 tok/s extreme ideal');
-  expect(copied).toContain('15.3 GB per pass');
+  expect(copied).toContain('44.278 tok/s projected real');
+  expect(copied).toContain('178.724 tok/s optimized');
+  expect(copied).toContain('421.54 tok/s physical roofline');
+  expect(copied).toContain('Profile provenance: planner-estimate');
 
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#downloadPlanJsonButton').click();
@@ -547,13 +550,16 @@ test('profiled B70 prediction leads with reality and exports a reproducible plan
   expect(download.suggestedFilename()).toBe('ml-bottleneck-plan.json');
   const downloadPath = await download.path();
   const payload = JSON.parse(await fs.readFile(downloadPath, 'utf8'));
-  expect(payload.schemaVersion).toBe('mlbottleneck.plan.v1');
+  expect(payload.schemaVersion).toBe('mlbottleneck.plan.v2');
   expect(payload.hardware.devices[0].officialPeakMemoryBandwidthGBps).toBe(608);
-  expect(payload.hardware.devices[0].sustainedMemoryBandwidthGBps).toBe(527);
-  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(43.70);
-  expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(43.80);
-  expect(payload.prediction.extremeIdeal.decodeTokensPerSecond).toBeGreaterThanOrEqual(158.90);
-  expect(payload.prediction.extremeIdeal.decodeTokensPerSecond).toBeLessThanOrEqual(159.00);
+  expect(payload.hardware.devices[0].sustainedMemoryBandwidthGBps).toBeNull();
+  expect(payload.execution.profile.provenance).toBe('planner-estimate');
+  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(44.20);
+  expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(44.40);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(178.5);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(178.9);
+  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeGreaterThanOrEqual(421.4);
+  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeLessThanOrEqual(421.7);
 });
 
 test('speculative decoding exposes proposer verification flow and modeled inputs', async ({ page }) => {
