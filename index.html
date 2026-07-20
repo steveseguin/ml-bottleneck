@@ -3167,7 +3167,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     .app-subtitle,
     .header-result { display: none; }
     .plan-header-actions { justify-content: flex-start; margin: 0.35rem 0 0; }
-    .plan-progress { gap: 0.25rem; margin-bottom: 0.55rem; scroll-margin-top: 7.25rem; }
+    .plan-progress { gap: 0.25rem; margin-bottom: 0.55rem; scroll-margin-top: 4rem; }
     .plan-step-button { justify-content: center; gap: 0.35rem; min-height: 3.2rem; padding: 0.35rem 0.25rem; border-radius: 0.65rem; text-align: center; }
     .plan-step-number { width: 1.55rem; height: 1.55rem; font-size: 0.62rem; }
     .plan-step-copy strong { font-size: 0.6rem; }
@@ -10541,6 +10541,7 @@ const DEVICE_TEMPLATES = {
                     if (utilizationChart) utilizationChart.resize();
                 }, 20);
             }
+            if (next === 2) setTimeout(() => revealSelectedDeviceInRoster(), 20);
             if (scroll) document.querySelector('.plan-progress')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
         }
 
@@ -12777,6 +12778,17 @@ const DEVICE_TEMPLATES = {
                         </span>
                     </button>`;
             }).join('');
+            revealSelectedDeviceInRoster('auto');
+        }
+
+        function revealSelectedDeviceInRoster(behavior = 'smooth') {
+            const roster = document.getElementById('deviceRoster');
+            const selectedCard = roster?.querySelector?.('.device-roster-card.is-selected');
+            if (!roster || !selectedCard || roster.scrollWidth <= roster.clientWidth) return;
+            const targetLeft = Math.max(0,
+                selectedCard.offsetLeft - Math.max(0, (roster.clientWidth - selectedCard.offsetWidth) / 2));
+            if (typeof roster.scrollTo === 'function') roster.scrollTo({ left: targetLeft, behavior });
+            else roster.scrollLeft = targetLeft;
         }
 
         // Space-managed hardware editor: one selected device is open while the topology shows the full system.
