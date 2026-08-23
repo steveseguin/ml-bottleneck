@@ -1,0 +1,60 @@
+name: Publish SDK to npm
+
+# Publishes dist/ (the ML Bottleneck engine SDK) to npm when the version in
+# package.json changes on main. Needs two things from the maintainer, once:
+#   1. a LICENSE file in the repo root and a "license" field in package.json
+#      (the workflow refuses to publish an unlicensed package);
+#   2. an npm granular access token with publish rights for the package
+#      (or the @mlbottleneck scope), stored as the NPM_TOKEN repository secret.
+# Provenance attestations are attached automatically (public repo + OIDC).
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Build and verify the SDK
+        run: npm test
+      - name: Check the package is publishable
+        id: check
+        run: |
+          NAME=$(node -p "require('./dist/package.json').name")
+          VERSION=$(node -p "require('./dist/package.json').version")
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ -z "$(node -p "require('./package.json').license || ''")" ] || [ ! -f dist/LICENSE ]; then
+            echo "::error::Add a LICENSE file to the repo root and a \"license\" field to package.json before publishing to npm."
+            exit 1
+          fi
+          if [ -z "${NPM_TOKEN}" ]; then
+            echo "::error::The NPM_TOKEN repository secret is not set (npmjs.com -> Access Tokens -> Granular, publish scope)."
+            exit 1
+          fi
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$VERSION is already on npm; bump package.json to publish again."
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish
+        if: steps.check.outputs.already == 'false'
+        working-directory: dist
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

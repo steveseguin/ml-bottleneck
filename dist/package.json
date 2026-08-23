@@ -1,25 +1,48 @@
 {
   "name": "@mlbottleneck/engine",
   "version": "0.4.0",
-  "description": "Physics-based LLM inference planner: decode/prefill token rates, memory fit, and bottlenecks for any model on any hardware.",
-  "license": "MIT",
+  "description": "Physics-based LLM inference planner: decode/prefill tokens per second, memory fit, multi-GPU strategy, and speculative-decoding gains for any model on any hardware, calibrated on community benchmarks.",
+  "keywords": [
+    "llm",
+    "inference",
+    "tokens-per-second",
+    "gpu",
+    "vram",
+    "llama.cpp",
+    "vllm",
+    "quantization",
+    "speculative-decoding",
+    "planner",
+    "benchmark"
+  ],
+  "author": "Steve Seguin (https://github.com/steveseguin)",
   "homepage": "https://mlbottleneck.com",
-  "repository": "github:steveseguin/ml-bottleneck",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/steveseguin/ml-bottleneck.git"
+  },
+  "bugs": "https://github.com/steveseguin/ml-bottleneck/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./mlbottleneck-engine.umd.js",
   "module": "./mlbottleneck-engine.mjs",
   "types": "./mlbottleneck-engine.d.ts",
   "exports": {
     ".": {
+      "types": "./mlbottleneck-engine.d.ts",
       "import": "./mlbottleneck-engine.mjs",
-      "require": "./mlbottleneck-engine.umd.js",
-      "types": "./mlbottleneck-engine.d.ts"
+      "require": "./mlbottleneck-engine.umd.js"
     },
     "./snapshot": "./localmaxxing-snapshot.json"
   },
+  "sideEffects": false,
   "files": [
     "mlbottleneck-engine.mjs",
     "mlbottleneck-engine.umd.js",
     "mlbottleneck-engine.d.ts",
-    "localmaxxing-snapshot.json"
+    "localmaxxing-snapshot.json",
+    "README.md",
+    "LICENSE"
   ]
 }
