@@ -80,8 +80,8 @@ const { ceiling } = engine.predict({ model: 'qwen3.6_35b_a3b', hardware: 'AMD St
   memory:  { modelSizeGB, residentWeightsGB, kvCacheGB, availableGB },
   measured: { nearest,                     // closest stock measurement on this model + hardware template (community gold run or lab stock row), or null
               labTuned },                  // closest tuned neural.download lab run on the same machine (same template and device count), or null
-           // each: { tokensPerSecond, origin: 'community'|'lab', stack, model, hardware, deviceCount, runtime, quantization,
-           //         depthTokens, speculation, sameSetup, url, note }
+           // each: { tokensPerSecond (per request), aggregateTokensPerSecond, concurrency, origin: 'community'|'lab', stack,
+           //         model, hardware, deviceCount, runtime, quantization, depthTokens, speculation, sameSetup, url, note }
   bottleneck: 'memory' | 'compute' | 'runtime' | 'coordination' | ...,   // devices[].coreBinding adds 'attention' for deep contexts
   power:   { watts, tdpWatts, costPerDay, costPer1KTokens },
   devices: [{ name, template, residentWeightGB, kvCacheGB, hasOverflow, overflowMode,

@@ -52,7 +52,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
 	<script src="data/localmaxxing-snapshot.js?v=20260823154549"></script>
 	<script src="data/lab-evidence.js?v=df020a0b67f5"></script>
-	<script src="engine.js?v=515dafbf6931"></script>
+	<script src="engine.js?v=1cf3cdec7b26"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -4539,7 +4539,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 
         function describeMeasuredRunSetup(row) {
             const spec = row.speculation ? ` · ${describeSpeculationShort(row.speculation)}` : '';
-            return `${row.model} · ${row.hardware}${(row.deviceCount || 1) > 1 ? ` ×${row.deviceCount}` : ''} · ${FRAMEWORK_PROFILES[row.runtimeKey]?.label || row.engine} ${String(row.quantization || row.quantKey).toUpperCase()}${spec} · ${formatTokensAxis(Math.round(row.decodeContextTokens || row.contextLength || 0))}-token depth`;
+            const users = (row.batchSize || 1) > 1 ? ` · ${row.batchSize} concurrent users (per user)` : '';
+            return `${row.model} · ${row.hardware}${(row.deviceCount || 1) > 1 ? ` ×${row.deviceCount}` : ''} · ${FRAMEWORK_PROFILES[row.runtimeKey]?.label || row.engine} ${String(row.quantization || row.quantKey).toUpperCase()}${spec} · ${formatTokensAxis(Math.round(row.decodeContextTokens || row.contextLength || 0))}-token depth${users}`;
         }
 
         function getSelectedModelLabel(modelConfig) {

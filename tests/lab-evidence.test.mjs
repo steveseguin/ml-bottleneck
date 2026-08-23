@@ -200,3 +200,35 @@ test('lab rows project through the engine for the evidence tab (stock near 1x, t
   }
   app.hooks.renderEvidenceWorkspace?.();
 });
+
+// ---- Concurrency (multi-user) evidence ------------------------------------
+// Rows with `concurrencySweep: [{ users, perUserTokS, aggregateTokS }]` check
+// the "Throughput vs concurrent users" curve, the one projection with no
+// community evidence behind it (every Localmaxxing gold row is batch 1). See
+// docs/concurrency-evidence.md for how to measure one. Skipped until a row exists.
+const concurrencyRows = evidence.rows.filter(row => Array.isArray(row.concurrencySweep) && row.concurrencySweep.length >= 2);
+
+test('measured concurrency sweeps: the engine reproduces how aggregate throughput grows with users', { skip: concurrencyRows.length === 0 && 'no concurrencySweep rows yet' }, () => {
+  for (const row of concurrencyRows) {
+    const { devices, strategy, config } = configFor(row);
+    const levels = row.concurrencySweep.map(point => point.users);
+    const sweep = H.calculateConcurrencySweep(config, devices, { levels, strategy });
+    const measured1 = row.concurrencySweep[0];
+    const engine1 = sweep.points[0];
+    // Single-user rate near the engine (stock/baseline rows only; tuned rows can beat it).
+    if (row.stack !== 'tuned') {
+      const ratio = measured1.perUserTokS / engine1.perUserTokS;
+      assert.ok(ratio >= 0.6 && ratio <= 1.6, `${row.id}: 1-user ${measured1.perUserTokS} vs engine ${engine1.perUserTokS.toFixed(1)} (x${ratio.toFixed(2)})`);
+    }
+    for (let index = 1; index < row.concurrencySweep.length; index++) {
+      const measured = row.concurrencySweep[index];
+      const point = sweep.points[index];
+      assert.ok(point && point.concurrency === measured.users, `${row.id}: engine sweep has no ${measured.users}-user point`);
+      const measuredGain = (measured.aggregateTokS || measured.perUserTokS * measured.users) / (measured1.aggregateTokS || measured1.perUserTokS);
+      const engineGain = point.aggregateTokS / engine1.aggregateTokS;
+      // Aggregate scaling must agree in direction and within ~35% in magnitude.
+      assert.ok(engineGain >= measuredGain * 0.65 && engineGain <= measuredGain * 1.35,
+        `${row.id} at ${measured.users} users: aggregate gain engine x${engineGain.toFixed(2)} vs measured x${measuredGain.toFixed(2)}`);
+    }
+  }
+});

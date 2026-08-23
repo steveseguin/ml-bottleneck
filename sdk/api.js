@@ -279,6 +279,8 @@ function sdkSummarizeMeasuredRun(row) {
         runtime: row.runtimeKey,
         quantization: row.quantization || row.quantKey,
         depthTokens: Math.round(row.decodeContextTokens || row.contextLength || 0),
+        concurrency: row.batchSize || 1,
+        aggregateTokensPerSecond: sdkRound(row.aggregateTokS || row.observedTokS * (row.batchSize || 1), 2),
         speculation: row.speculation ? { method: row.speculation.method, tokens: row.speculation.tokens ?? null } : null,
         sameSetup: Boolean(row.sameSetup),
         url: row.source || row.url || null,

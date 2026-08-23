@@ -105,6 +105,10 @@ export interface MeasuredRun {
   runtime: string;
   quantization: string;
   depthTokens: number;
+  /** Concurrent requests in the measured run (always equals the request's batch size). */
+  concurrency: number;
+  /** tokensPerSecond is per request; this is the combined rate across the batch. */
+  aggregateTokensPerSecond: number;
   speculation: { method: string; tokens: number | null } | null;
   /** Same runtime, quantization family, and device count as the request. */
   sameSetup: boolean;

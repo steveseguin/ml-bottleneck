@@ -7380,6 +7380,7 @@ function normalizeLabEvidenceRow(row, overrides = {}) {
     const speculation = overrides.speculation !== undefined ? overrides.speculation : (row.speculation || null);
     const observedTokS = Number.isFinite(overrides.observedTokS) ? overrides.observedTokS : row.observedTokS;
     if (!Number.isFinite(observedTokS) || observedTokS <= 0) return null;
+    const batchSize = Math.max(1, Number(overrides.batchSize) || 1);
     const deviceCount = Math.max(1, Number(row.deviceCount) || 1);
     const runtime = FRAMEWORK_PROFILES[row.runtimeKey];
     const strategy = row.strategy || (deviceCount > 1 ? (TENSOR_CAPABLE_RUNTIMES.includes(row.runtimeKey) ? 'tensor' : 'pipeline') : 'pipeline');
@@ -7407,7 +7408,11 @@ function normalizeLabEvidenceRow(row, overrides = {}) {
         outputTokens,
         contextLength: promptTokens + outputTokens,
         decodeContextTokens: promptTokens + outputTokens / 2,
+        // Per-request decode rate (one sequence's tokens per second); the
+        // aggregate across a batched run is kept separately.
         observedTokS,
+        batchSize,
+        aggregateTokS: Number.isFinite(overrides.aggregateTokS) ? overrides.aggregateTokS : observedTokS * batchSize,
         prefillTokS: Number.isFinite(overrides.prefillTokS) ? overrides.prefillTokS : (Number.isFinite(row.prefillTokS) ? row.prefillTokS : null),
         reproducibility: 1
     };
@@ -7437,6 +7442,19 @@ function getLabEvidenceRows() {
             });
             if (stepped) rows.push(stepped);
         }
+        // Concurrency sweeps: { users, perUserTokS, aggregateTokS } per level
+        // (llama-batched-bench -npl / vllm bench serve --max-concurrency).
+        for (const level of Array.isArray(row.concurrencySweep) ? row.concurrencySweep : []) {
+            const users = Math.max(1, Number(level.users) || 1);
+            const perUser = Number.isFinite(level.perUserTokS) ? level.perUserTokS : (Number.isFinite(level.aggregateTokS) ? level.aggregateTokS / users : NaN);
+            const batched = normalizeLabEvidenceRow(row, {
+                id: `${row.id}@u${users}`,
+                batchSize: users,
+                observedTokS: perUser,
+                aggregateTokS: Number.isFinite(level.aggregateTokS) ? level.aggregateTokS : perUser * users
+            });
+            if (batched) rows.push(batched);
+        }
     }
     labEvidenceCache = rows;
     return rows;
@@ -7454,6 +7472,12 @@ function describeSameSetup(target, row) {
         (row.deviceCount || 1) === (target.deviceCount || 1);
 }
 
+// A reference run must serve the same number of concurrent requests as
+// the plan: per-request decode at 16 users says nothing about one user.
+function sameBatch(target, row) {
+    return (row.batchSize || 1) === (target.batchSize || 1);
+}
+
 function depthDistance(target, row) {
     const targetDepth = Math.max(64, Number.isFinite(target.decodeContextTokens) ? target.decodeContextTokens : (target.contextLength || 64));
     const rowDepth = Math.max(64, Number.isFinite(row.decodeContextTokens) ? row.decodeContextTokens : (row.contextLength || 64));
@@ -7466,7 +7490,7 @@ function depthDistance(target, row) {
 function findNearestMeasuredRun(target) {
     if (!target?.presetKey || !target.hardwareTemplate) return null;
     const candidates = getMeasuredReferenceRows()
-        .filter(row => row.presetKey === target.presetKey && row.hardwareTemplate === target.hardwareTemplate)
+        .filter(row => row.presetKey === target.presetKey && row.hardwareTemplate === target.hardwareTemplate && sameBatch(target, row))
         .map(row => ({ row, score: getGoldSimilarity(target, row) }))
         .sort((a, b) => b.score - a.score ||
             depthDistance(target, a.row) - depthDistance(target, b.row) ||
@@ -7485,7 +7509,7 @@ function findLabTunedRun(target) {
     if (!target?.presetKey || !target.hardwareTemplate) return null;
     const candidates = getLabEvidenceRows()
         .filter(row => row.stack === 'tuned' && row.presetKey === target.presetKey &&
-            row.hardwareTemplate === target.hardwareTemplate && (row.deviceCount || 1) === (target.deviceCount || 1))
+            row.hardwareTemplate === target.hardwareTemplate && (row.deviceCount || 1) === (target.deviceCount || 1) && sameBatch(target, row))
         .map(row => ({ row, score: getGoldSimilarity(target, row) }))
         .sort((a, b) => b.score - a.score ||
             depthDistance(target, a.row) - depthDistance(target, b.row) ||
@@ -7541,13 +7565,13 @@ function calculateLabCaseProjection(row) {
         specAcceptance: null,
         specDraftRatio: spec && Number.isFinite(spec.draftRatio) ? spec.draftRatio : null,
         kvCacheCompression: 'none',
-        batchSize: 1,
+        batchSize: row.batchSize || 1,
         promptTokens: row.promptTokens,
         outputTokens: row.outputTokens,
         seqLength: row.promptTokens + row.outputTokens
     });
     const metrics = calculateMetricsForConfig(modelConfig, devices);
-    const genericTokS = calculateSystemRateFromDeviceRates(metrics.map(metric => metric.decodeTokensPerSecond), strategy, 1, devices, getSystemRateOptions(modelConfig));
+    const genericTokS = calculateSystemRateFromDeviceRates(metrics.map(metric => metric.decodeTokensPerSecond), strategy, row.batchSize || 1, devices, getSystemRateOptions(modelConfig));
     const prefillProjectedTokS = getSystemPrefillRateForMetrics(modelConfig, metrics, devices, strategy);
     const calibration = calculateCurrentCalibration(modelConfig, metrics, genericTokS, strategy, devices);
     if (!calibration || !Number.isFinite(genericTokS) || genericTokS <= 0) return null;
