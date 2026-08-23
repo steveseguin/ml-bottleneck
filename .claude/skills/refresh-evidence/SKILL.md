@@ -6,16 +6,18 @@ description: Refresh the community benchmark snapshot (data/localmaxxing-snapsho
 # Refresh and triage the evidence snapshot
 
 `data/localmaxxing-snapshot.js` is generated — never hand-edit it. It carries the model catalog
-(`models`) and the calibration corpus (`goldCases`, ≤200 rows). The engine's peer correction, the
+(`models`) and the calibration corpus (`goldCases`, ≤240 rows). The engine's peer correction, the
 "nearest measured" ladder rung, the evidence workspace, and the landing-page quick start all read it.
 
 ## Commands
 
 - `npm run refresh:localmaxxing` — rebuilds the snapshot from `https://www.localmaxxing.com/api`
-  (`/models`, `/leaderboard`, paged) **and rewrites the `?v=` cache key in `index.html`**. Commit both
-  files together; committing only the data file leaves browsers on a cached snapshot and fails the
-  cache-key integrity test. CI runs this weekly (`.github/workflows/refresh-localmaxxing.yml`) and
-  runs `npm test` + `npm run audit:gold` before committing.
+  (`/models`, `/leaderboard`, paged) **and rewrites the `?v=` cache key in `index.html`**. It loads
+  `engine.js` through the test harness for the prefill plausibility check, so the engine must parse.
+  Commit the snapshot, `index.html`, and `dist/` (the SDK evidence bundle `npm test` rebuilds) together;
+  committing only the data file leaves browsers on a cached snapshot and fails the cache-key integrity
+  test. CI runs this weekly (`.github/workflows/refresh-localmaxxing.yml`) and runs `npm test` +
+  `npm run audit:gold` before committing.
 - `npm run audit:gold` — distribution, per-runtime/hardware medians, roofline violations, worst rows.
 - `node scripts/fit-decode-constants.mjs --rows` — every row with depth, observed, predicted, physical.
 
@@ -25,9 +27,12 @@ description: Refresh the community benchmark snapshot (data/localmaxxing-snapsho
 (`MODEL_PRESET_RULES`), a device template (`HARDWARE_RULES`), a runtime (`RUNTIME_KEYS`), and a
 quantization (`normalizeQuantization`); has a real engine invocation (not a "# Remote endpoint"); is
 batch 1 and non-speculative; is not a pruned/abliterated variant mapped onto a base preset; and is not
-a wall-clock capacity probe (prompt ≥ 32K, TTFT ≥ 10 s, no prefill rate). `chooseGoldCases` then keeps
-up to 3 runs per (preset, hardware, devices, runtime, quant) signature and 16 per preset, most
-reproducible first, capped at 200.
+a wall-clock capacity probe (prompt ≥ 32K, TTFT ≥ 10 s, no prefill rate). Its `prefillTokS` is dropped
+(decode kept) when the prompt-processing rate implies more than the device's dense tensor peak
+(`plausiblePrefillRate`: llama-server prompt-cache hits report 20–60k tok/s). `chooseGoldCases` then
+keeps up to 3 runs per (preset, hardware, devices, runtime, quant) signature and 16 per preset, most
+reproducible first; every hardware template keeps its best 4 rows before the rest fills by
+reproducibility, capped at 240 — so one new device with a few runs is calibratable immediately.
 
 Fields the engine depends on (keep them when editing the script): `contextLength` (configured window →
 KV *allocation*), `promptTokens`/`outputTokens` (decode *depth* = prompt + output/2, for llama-bench rows
@@ -64,7 +69,11 @@ command), `splitMode` (`-sm tensor|row` → tensor strategy), `deviceCount` (hon
 ## Data hygiene rules
 
 - Speculative/MTP rows are excluded from gold on purpose: the planner models speculation separately and
-  labels it; mixing them in would inflate every baseline.
+  labels it; mixing them in would inflate every baseline. `isSpeculative` checks the structured flags,
+  `--spec-type` other than `none`, draft-model/`--speculative-config`/DFlash/DSpark/EAGLE/ngram
+  spellings in the command, method phrases in `notes`, and "-mtp" checkpoints served by MLX-side
+  servers (oMLX, mtplx). A decode rate above the physical roofline on a Mac is the usual tell that a
+  speculative row slipped through.
 - Community "best" rates in the catalog (`bestTokS`) may be batched or speculative — display only, never
   calibration.
 - The snapshot must stay loadable without network and the app must degrade gracefully if it is missing

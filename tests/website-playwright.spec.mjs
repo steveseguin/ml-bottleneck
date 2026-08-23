@@ -361,8 +361,8 @@ test('browser validation matrix keeps displayed rates in broad expected ranges',
       // executes the spilled layers at roughly half the DDR5 peak.
       devices: [{ template: 'RTX 3090' }],
       config: { scenario: '', model: 'qwen3.5_35b_a3b', quant: 'int8', framework: 'llama_cpp', strategy: 'pipeline', seqLength: 240000 },
-      min: 8,
-      max: 40,
+      min: 10,
+      max: 55,
       expectOverflow: true
     },
     {
@@ -533,12 +533,12 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   await advancePlanTo(page, 4);
 
   await expect(page.locator('#systemAnalysis .rate-label')).toHaveText('Projected real decode');
-  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText('42.2');
+  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText('41.6');
   await expect(page.locator('#systemAnalysis')).toContainText('directional confidence');
   const optimizedRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Optimized target' }).first();
-  await expect(optimizedRow).toContainText('179 tok/s');
+  await expect(optimizedRow).toContainText('184 tok/s');
   const physicalRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Physical roofline' }).first();
-  await expect(physicalRow).toContainText('418 tok/s');
+  await expect(physicalRow).toContainText('390 tok/s');
   await expect(page.locator('#systemAnalysis .scaling-section')).toContainText('How it scales');
   expect(await page.locator('#systemAnalysis .scaling-chart').count()).toBe(3);
   await expect(physicalRow).toContainText('sanity reference');
@@ -547,9 +547,9 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   await page.locator('#copyAiHandoffButton').click();
   await expect(page.locator('#planExportStatus')).toHaveText('AI handoff copied.');
   const copied = await page.evaluate(() => window.__copiedPlanText);
-  expect(copied).toContain('42.22 tok/s projected real');
-  expect(copied).toContain('178.726 tok/s optimized');
-  expect(copied).toContain('418.066 tok/s physical roofline');
+  expect(copied).toContain('41.59 tok/s projected real');
+  expect(copied).toContain('183.76 tok/s optimized');
+  expect(copied).toContain('389.515 tok/s physical roofline');
   expect(copied).toContain('Profile provenance: planner-estimate');
 
   const downloadPromise = page.waitForEvent('download');
@@ -562,12 +562,12 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   expect(payload.hardware.devices[0].officialPeakMemoryBandwidthGBps).toBe(608);
   expect(payload.hardware.devices[0].sustainedMemoryBandwidthGBps).toBeNull();
   expect(payload.execution.profile.provenance).toBe('planner-estimate');
-  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(42.10);
-  expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(42.35);
-  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(178.5);
-  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(178.9);
-  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeGreaterThanOrEqual(417.9);
-  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeLessThanOrEqual(418.2);
+  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(41.45);
+  expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(41.75);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(183.5);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(184.0);
+  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeGreaterThanOrEqual(389.3);
+  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeLessThanOrEqual(389.7);
 });
 
 test('speculative decoding exposes proposer verification flow and modeled inputs', async ({ page }) => {
@@ -576,8 +576,12 @@ test('speculative decoding exposes proposer verification flow and modeled inputs
   await selectAndChange(page, '#optimizationMode', 'speculative');
 
   await expect(page.locator('#speculativeControls')).toBeVisible();
-  await expect(page.locator('#executionMap')).toContainText('Target verifies once');
-  await expect(page.locator('#executionMap')).toContainText('candidate tokens');
+  // EAGLE-3 trains a head for any target; MTP (the default) only applies to
+  // models that ship an MTP head, so acceptance would be a no-op there.
+  await selectAndChange(page, '#specMethod', 'eagle3');
+  await expect(page.locator('#executionMap')).toContainText('Target verifies');
+  await expect(page.locator('#executionMap')).toContainText('tokens per step');
+  await expect(page.locator('#executionMap')).toContainText('candidate block');
 
   await page.locator('#specAcceptance').fill('90');
   await page.locator('#specAcceptance').dispatchEvent('change');

@@ -1,0 +1,25 @@
+{
+  "name": "@mlbottleneck/engine",
+  "version": "0.1.0",
+  "description": "Physics-based LLM inference planner: decode/prefill token rates, memory fit, and bottlenecks for any model on any hardware.",
+  "license": "MIT",
+  "homepage": "https://mlbottleneck.com",
+  "repository": "github:steveseguin/ml-bottleneck",
+  "main": "./mlbottleneck-engine.umd.js",
+  "module": "./mlbottleneck-engine.mjs",
+  "types": "./mlbottleneck-engine.d.ts",
+  "exports": {
+    ".": {
+      "import": "./mlbottleneck-engine.mjs",
+      "require": "./mlbottleneck-engine.umd.js",
+      "types": "./mlbottleneck-engine.d.ts"
+    },
+    "./snapshot": "./localmaxxing-snapshot.json"
+  },
+  "files": [
+    "mlbottleneck-engine.mjs",
+    "mlbottleneck-engine.umd.js",
+    "mlbottleneck-engine.d.ts",
+    "localmaxxing-snapshot.json"
+  ]
+}

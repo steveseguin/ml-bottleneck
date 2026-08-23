@@ -1,10 +1,13 @@
 {
   "name": "ml-bottleneck",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "refresh:localmaxxing": "node scripts/refresh-localmaxxing.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node scripts/stamp-engine.mjs && node scripts/build-sdk.mjs && node --test tests/*.test.mjs",
+    "stamp:engine": "node scripts/stamp-engine.mjs",
+    "build:sdk": "node scripts/build-sdk.mjs",
     "test:playwright": "playwright test tests/website-playwright.spec.mjs",
     "audit:gold": "node scripts/audit-gold-cases.mjs",
     "fit:decode": "node scripts/fit-decode-constants.mjs",

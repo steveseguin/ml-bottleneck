@@ -26,9 +26,9 @@ jobs:
         run: |
           npm test
           npm run audit:gold
-      - name: Commit changed snapshot and its cache key
+      - name: Commit changed snapshot, its cache key, and the SDK evidence bundle
         run: |
-          if git diff --quiet -- data/localmaxxing-snapshot.js index.html; then
+          if git diff --quiet -- data/localmaxxing-snapshot.js index.html dist; then
             echo "Snapshot is already current."
             exit 0
           fi
@@ -36,7 +36,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # The refresh script also rewrites the ?v= cache key in index.html;
           # committing only the data file leaves browsers serving a stale
-          # cached snapshot and breaks the cache-key integrity test.
-          git add data/localmaxxing-snapshot.js index.html
+          # cached snapshot and breaks the cache-key integrity test. `npm test`
+          # rebuilt dist/ (the SDK ships the same evidence), so commit that too.
+          git add data/localmaxxing-snapshot.js index.html dist
           git commit -m "data: refresh Localmaxxing snapshot"
           git push

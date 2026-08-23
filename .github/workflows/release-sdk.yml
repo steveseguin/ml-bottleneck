@@ -1,0 +1,69 @@
+name: Release SDK
+
+# Publishes the standalone engine (dist/) as a GitHub release whenever the
+# version in package.json changes on main. Bump the version when engine.js,
+# sdk/api.js, or the catalogs change in a way third parties should pick up;
+# the tests rebuild dist/ on every run, so the committed bundle is always
+# the one that passed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - engine.js
+      - sdk/**
+      - dist/**
+      - scripts/build-sdk.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build and verify the SDK
+        run: npm test
+      - name: Determine release tag
+        id: meta
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=sdk-v$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "sdk-v$VERSION" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Package release assets
+        if: steps.meta.outputs.exists == 'false'
+        run: |
+          mkdir -p release
+          cp dist/mlbottleneck-engine.mjs dist/mlbottleneck-engine.umd.js dist/mlbottleneck-engine.d.ts dist/localmaxxing-snapshot.json dist/package.json release/
+          cp docs/sdk.md release/README.md
+          (cd release && tar -czf "../mlbottleneck-engine-${{ steps.meta.outputs.version }}.tgz" .)
+          (cd dist && sha256sum mlbottleneck-engine.mjs mlbottleneck-engine.umd.js localmaxxing-snapshot.json > ../release/SHA256SUMS)
+      - name: Create GitHub release
+        if: steps.meta.outputs.exists == 'false'
+        run: |
+          gh release create "${{ steps.meta.outputs.tag }}" \
+            --title "ML Bottleneck engine SDK v${{ steps.meta.outputs.version }}" \
+            --notes "Standalone build of the ML Bottleneck inference engine (the same physics and calibration as https://mlbottleneck.com). See README.md in the tarball or docs/sdk.md for usage. Evidence snapshot: $(node -p "require('./dist/localmaxxing-snapshot.json').generatedAt")." \
+            "mlbottleneck-engine-${{ steps.meta.outputs.version }}.tgz" \
+            release/mlbottleneck-engine.mjs \
+            release/mlbottleneck-engine.umd.js \
+            release/mlbottleneck-engine.d.ts \
+            release/localmaxxing-snapshot.json \
+            release/SHA256SUMS
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Already released
+        if: steps.meta.outputs.exists == 'true'
+        run: echo "Release ${{ steps.meta.outputs.tag }} already exists; bump package.json to publish a new SDK."

@@ -10,9 +10,11 @@ ML Bottleneck (mlbottleneck.com) is a browser-based planner for local/distribute
 
 ## Architecture
 
-A static web application centered on `index.html`:
-- Application HTML, CSS, and JavaScript live in one file (~12k lines); no build system or bundler
-- `data/localmaxxing-snapshot.js` is a generated, versioned model/benchmark snapshot loaded beside `index.html` (the app is NOT single-file at runtime — the snapshot must be served next to it; it degrades gracefully if missing)
+A static web application with no bundler, served from the repo root:
+- `engine.js` (~7k lines) is the physics engine and catalogs: `MODEL_PRESETS`, `DEVICE_TEMPLATES`, `FRAMEWORK_PROFILES`, `QUANT_FORMATS`, `SPECULATION_METHODS`, and every pure calculation (`calculateMetricsForConfig`, `findOptimalStrategy`, sweeps, gold calibration). It must never touch the DOM (integrity test); its only bridges to the page are `defaultDevices()` (the page's `devices` roster) and `setEngineEvidence(snapshot)`.
+- `index.html` (~10k lines) holds the UI, CSS, and the application script. It loads `engine.js?v=<content hash>` before its inline script; both share one global scope (top-level `const`/`function` declarations), so names must be unique across the two files. `npm test` re-stamps the hash (`scripts/stamp-engine.mjs`) — a stale tag fails the suite.
+- `sdk/api.js` + `scripts/build-sdk.mjs` wrap `engine.js` into `dist/` (ESM + UMD + types + evidence JSON) — the public SDK (`docs/sdk.md`). `npm test` rebuilds `dist/`; commit it. `package.json` `version` is the SDK version; bumping it on `main` triggers `.github/workflows/release-sdk.yml` to publish a `sdk-v<version>` GitHub release.
+- `data/localmaxxing-snapshot.js` is a generated, versioned model/benchmark snapshot loaded beside `index.html` (the snapshot must be served next to it; the app degrades gracefully if missing)
 - `scripts/refresh-localmaxxing.mjs` rebuilds the snapshot from the public Localmaxxing API; CI refreshes it weekly (`.github/workflows/refresh-localmaxxing.yml`)
 - Chart.js is loaded from cdnjs with an SRI hash pinned in the `<script>` tag
 - Device configurations persist to localStorage
@@ -38,10 +40,13 @@ and prefill as a max-of-bottlenecks roofline (compute / bandwidth / network) plu
 - **Activations are a working set** (~2 layers), not all-layers (that's training accounting). Traffic still counts all layers once.
 - **GQA/MQA shrinkage lives in `numKVHeads`** in the KV formulas — the attention-mechanism profiles must not double-count it (MLA uses `kvLoraRank` latents).
 - **Batch semantics:** `decodeTokensPerSecond` is per request; `aggregateDecodeTokensPerSecond` = per request × batch. Response time is `outputTokens / perRequestRate` regardless of batch.
-- **Overflow to system RAM runs on the CPU** at `CPU_OFFLOAD_BANDWIDTH_EFFICIENCY` (0.5) of the DRAM peak — the spec figure is never reached by the CPU GEMV path.
-- `FRAMEWORK_PROFILES` constants and backend scales are fit against the gold corpus (see `npm run audit:gold`; the generic engine must stay median ≈1.0, ≥70% within 1.5×, with zero physical-roofline violations) and pinned by anchors in `tests/integrity.test.mjs` (llama.cpp 4090/3090/5090, TRT-LLM H100, MLX M4 Max, small-active MoE, 2×3090 70B). If you change the physics, re-fit and re-anchor against real measurements, never just make tests pass. Root-cause any run that beats the ideal ceiling — so far every one was a data-semantics issue (wall-time rates, `-sm tensor`, KV dtype in the command line, peak VRAM proving a fit), never a physics bug.
+- **Overflow to system RAM runs on the CPU** at `CPU_OFFLOAD_BANDWIDTH_EFFICIENCY` (0.5) of the DRAM peak — the spec figure is never reached by the CPU GEMV path. On llama.cpp/Ollama, MoE models that do not fit spill *experts* first (`--n-cpu-moe`; `describeExpertOffload`, `overflowMode: 'experts'`): attention/shared weights and KV stay on the GPU, only the routed-expert bytes per token stream from DRAM, plus a 150 µs GPU↔CPU round trip per offloaded layer; prefill for offloaded experts runs on CPU compute (`CPU_PREFILL_TFLOPS`).
+- **Storage bytes follow the quant format, not the family.** `QUANT_FORMATS` carries real bits-per-weight (Q4_K_M 4.9, UD-IQ4_XS 4.0, NVFP4 4.5, MXFP4 4.25, AWQ/GPTQ 4.3, Q8_0 8.5, FP8 8.2) and `getWeightStorageOverhead` adds k-quant scale/metadata (q4 1.16, int8 1.06); an explicit `quantFormat` wins over the family default.
+- **Speculation is a separate, labeled model**, never folded into baselines. `getSpeculationPlan` resolves method defaults (MTP, DFlash/DFlash2, DSpark, EAGLE-3, draft model, n-gram, suffix) — draft weights and KV count toward memory, the target verifies K+1 tokens per step (MoE touches more experts, KV is re-read per drafted token on engines without multi-query decode kernels, batched verification runs at `SPEC_VERIFY_COMPUTE_EFFICIENCY`), and the draft pays per-runtime fixed costs, so gains shrink with batch and long context exactly as measured (llama.cpp MTP ×1.8, vLLM MTP ×2.6, EAGLE-3 ×2.4 → ×1.4 at 64 users). Gold rows exclude speculative runs.
+- **Backends differ from runtimes.** A framework profile may carry `backends[device.backend]` overrides (llama.cpp on Metal: 0.66× bandwidth, 6× MoE layer overhead) and per-runtime attention/MoE overhead overrides; templates carry `kernelOverheadScale` (ROCm/Vulkan 1.5, SYCL 2, Apple M5 0.6) and `prefillEfficiencyScale` (RDNA4 0.45, 780M 0.2, V100 0.15, M5 0.6). Prefill efficiency ramps with prompt length from `prefillRampFloor` and MoE prefill scales with tokens-per-expert per micro-batch.
+- `FRAMEWORK_PROFILES` constants and backend scales are fit against the gold corpus (see `npm run audit:gold`; the generic engine must stay median ≈1.0, ≥70% within 1.5×, with zero physical-roofline violations) and pinned by anchors in `tests/integrity.test.mjs` (llama.cpp 4090/3090/5090, TRT-LLM H100, MLX M4 Max, small-active MoE, 2×3090 70B) plus the wide physical bands of `tests/sanity-matrix.test.mjs` (~500 model × hardware × runtime combinations: roofline ceilings, monotonicity in context/quant/batch/hardware, multi-device and speculation sanity, `KNOWN` measured ranges). If you change the physics, re-fit and re-anchor against real measurements, never just make tests pass. Root-cause any run that beats the ideal ceiling — so far every one was a data-semantics issue (wall-time rates, `-sm tensor`, KV dtype in the command line, peak VRAM proving a fit), never a physics bug.
 
-Core functions: `calculateMetrics` (DOM wrapper: resolves AUTO/EXO, then `calculateMetricsForConfig` — pure, per-device, emits `decodeTimeBreakdown`/`prefillTimeBreakdown`), `calculateEffectiveBandwidth` (overflow-aware harmonic bandwidth), `calculateDecodeTokenRate` (weight/KV/compute/fixed-overhead split), `calculateDecodeRuntimeOverheadSeconds`, `calculateMemoryBreakdown`, `calculateKVCacheBytes(config, kvScale, contextTokens)`, `calculateTransformerFlops`/`calculateDecodeFlops`, `calculateContextSweep`/`calculateConcurrencySweep` (the "How it scales" charts and the plan export's `scaling` block), `findOptimalStrategy` (AUTO parallelism), `calculateEXOPhaseSplit`, `findNearestGoldRun` (ladder's nearest measured run: same preset + hardware required).
+Core functions (all in `engine.js` except `calculateMetrics`): `calculateMetrics` (DOM wrapper: resolves AUTO/EXO, then `calculateMetricsForConfig` — pure, per-device, emits `decodeTimeBreakdown`/`prefillTimeBreakdown`), `calculateEffectiveBandwidth` (overflow-aware harmonic bandwidth), `calculateDecodeTokenRate` (weight/KV/compute/fixed-overhead split), `calculateDecodeRuntimeOverheadSeconds`, `calculateMemoryBreakdown`, `calculateKVCacheBytes(config, kvScale, contextTokens)`, `calculateTransformerFlops`/`calculateDecodeFlops`, `calculateContextSweep`/`calculateConcurrencySweep` (the "How it scales" charts and the plan export's `scaling` block), `findOptimalStrategy` (AUTO parallelism), `calculateEXOPhaseSplit`, `findNearestGoldRun` (ladder's nearest measured run: same preset + hardware required).
 
 ## UI structure
 
@@ -51,8 +56,8 @@ The plan results lead with an answer card + **ceiling ladder** (hardware ceiling
 
 ## Development
 
-1. Serve the repo root with any static server (the snapshot must load beside `index.html`)
-2. `npm test` before committing — Node unit tests drive the real inline script through a fake DOM (`tests/load-index-app.mjs`); `tests/integrity.test.mjs` guards duplicate keys/functions, XSS escaping, physics anchors, and waterfall consistency
+1. Serve the repo root with any static server (`engine.js` and the snapshot must load beside `index.html`)
+2. `npm test` before committing — it stamps the `engine.js` cache key, rebuilds `dist/`, then runs the Node unit tests, which drive `engine.js` + the real inline script through a fake DOM (`tests/load-index-app.mjs`); `tests/integrity.test.mjs` guards duplicate keys/functions across both files, XSS escaping, physics anchors, waterfall consistency, and that the engine stays DOM-free; `tests/sanity-matrix.test.mjs` is the broad realism net; `tests/sdk.test.mjs` exercises the built SDK
 3. `npm run test:playwright` for browser tests (requires Playwright browsers)
 4. `npm run refresh:localmaxxing` to refresh benchmark evidence and the model catalog
 5. `npm run fit:decode` (residuals per runtime/hardware/model type; `--grid` to search constants) and `npm run pins` (values behind the exact-value regression tests) when calibrating — see the `calibrate-engine` skill
@@ -66,14 +71,15 @@ invoke them (`/add-model`, `/add-hardware`, `/calibrate-engine`, `/refresh-evide
 `SKILL.md` before doing the work by hand:
 
 - `add-model` — preset fields from config.json (head_dim, layer mix, MoE/MLA/MTP), picker groups, evidence regex, sanity math, anchors.
-- `add-hardware` — official-peak template fields, backend `kernelOverheadScale`, default runtime, picker group, `HARDWARE_RULES`.
+- `add-hardware` — official-peak template fields, backend `kernelOverheadScale`/`prefillEfficiencyScale`/`backend`, default runtime, picker group, `HARDWARE_RULES`.
 - `calibrate-engine` — the fitted constants and their meaning, outlier triage, `npm run fit:decode --grid`, re-pinning regression tests with `npm run pins`.
 - `refresh-evidence` — snapshot refresh, gold-case semantics, CI failure triage, data hygiene.
 
 ## Rules of the road
 
-- Never add duplicate keys to `MODEL_PRESETS`/`DEVICE_TEMPLATES` (later keys silently override; the integrity test fails on any duplicate)
+- Never add duplicate keys to `MODEL_PRESETS`/`DEVICE_TEMPLATES` (later keys silently override; the integrity test fails on any duplicate), and never declare a top-level name in `index.html` that `engine.js` already declares (shared global scope → SyntaxError in the browser)
+- Engine code goes in `engine.js`, UI code in `index.html`. Anything the SDK should expose goes through `sdk/api.js`; keep `engine.js` free of `document`/`window`/`localStorage`
 - Escape user-controlled strings (device names) with `escapeHtml()` in every `innerHTML` template
 - Model preset architecture fields must match the official model configs (hidden size, layers, KV heads, head_dim, intermediate size, full-attention layer count/interval, sliding window) — presets are ground truth for the physics; record `specStatus`/`specSourceUrl`/`specNote` for anything verified against a config.json
-- New models: add the preset, a `MODEL_PRESET_RULES` regex in `scripts/refresh-localmaxxing.mjs` (so community runs become gold evidence), and a `modelCategories` entry in the DOMContentLoaded picker builder
+- New models: add the preset, a `MODEL_PRESET_RULES` regex in `scripts/refresh-localmaxxing.mjs` (so community runs become gold evidence), a `modelCategories` entry in the DOMContentLoaded picker builder, and a `PRESET_SUPERSEDED_BY` entry when it replaces an older release
 - Do not "fix" a calibration test by widening its range; find the physical cause

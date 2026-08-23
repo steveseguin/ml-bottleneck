@@ -8,11 +8,26 @@ import { loadApp, loadSnapshot } from './load-index-app.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
+const engineSource = fs.readFileSync(path.join(repoRoot, 'engine.js'), 'utf8');
+// The page script and the engine share one global scope, so duplicate
+// declarations are checked across both files.
+const combinedSource = `${engineSource}\n${html}`;
 
 test('benchmark snapshot URL is cache-keyed to its generated timestamp', () => {
   const snapshot = loadSnapshot();
   const expectedVersion = snapshot.generatedAt.replace(/\D/g, '').slice(0, 14);
   assert.match(html, new RegExp(`data/localmaxxing-snapshot\\.js\\?v=${expectedVersion}["']`));
+});
+
+test('engine.js is loaded before the page script with a content-hash cache key', async () => {
+  const { engineVersionHash } = await import('../scripts/stamp-engine.mjs');
+  const engineTag = html.indexOf('<script src="engine.js?v=');
+  const appScript = html.lastIndexOf('<script>');
+  assert.ok(engineTag > 0 && engineTag < appScript, 'engine.js must load before the inline application script');
+  assert.match(html, new RegExp(`<script src="engine\\.js\\?v=${engineVersionHash(engineSource)}"></script>`),
+    'engine.js cache key is stale: run "npm run stamp:engine"');
+  // The engine must stay free of page globals so the SDK build can wrap it.
+  assert.doesNotMatch(engineSource, /\bdocument\.\w|\bwindow\.\w|\blocalStorage\b/, 'engine.js must not touch the DOM');
 });
 
 function stripStringsAndComments(line) {
@@ -24,7 +39,7 @@ function stripStringsAndComments(line) {
 
 function extractTopLevelObjectKeys(source, constName) {
   const startMatch = source.match(new RegExp(`const ${constName} = \\{`));
-  assert.ok(startMatch, `Could not locate "const ${constName} = {" in index.html`);
+  assert.ok(startMatch, `Could not locate "const ${constName} = {" in engine.js/index.html`);
   const lines = source.slice(startMatch.index).split('\n');
   const keys = [];
   let depth = 0;
@@ -58,14 +73,18 @@ function findDuplicates(values) {
 
 test('catalog object literals contain no duplicate keys (later keys silently override earlier ones)', () => {
   for (const constName of ['MODEL_PRESETS', 'DEVICE_TEMPLATES', 'FRAMEWORK_PROFILES', 'ARCHITECTURE_PROFILES', 'INTERCONNECT_BANDWIDTH', 'DTYPE_SIZES']) {
-    const keys = extractTopLevelObjectKeys(html, constName);
+    const keys = extractTopLevelObjectKeys(combinedSource, constName);
     const duplicates = findDuplicates(keys);
     assert.deepEqual(duplicates, [], `${constName} has duplicate keys: ${duplicates.join(', ')}`);
   }
 });
 
 test('no duplicate top-level function declarations (hoisting makes the earlier one dead code)', () => {
-  const names = [...html.matchAll(/^(?:\t| {8})(?:async )?function ([A-Za-z0-9_]+)\(/gm)].map(match => match[1]);
+  // engine.js declares at column 0; the page script at one tab / 8 spaces.
+  const names = [
+    ...[...engineSource.matchAll(/^(?:async )?function ([A-Za-z0-9_]+)\(/gm)].map(match => match[1]),
+    ...[...html.matchAll(/^(?:\t| {8})(?:async )?function ([A-Za-z0-9_]+)\(/gm)].map(match => match[1])
+  ];
   assert.ok(names.length > 50, `Function scanner found only ${names.length} declarations; heuristic is broken`);
   const duplicates = findDuplicates(names);
   assert.deepEqual(duplicates, [], `Duplicate top-level function declarations: ${duplicates.join(', ')}`);
@@ -158,7 +177,7 @@ test('model map waterfall stays consistent with the decode engine', () => {
   const metrics = app.hooks.calculateMetrics();
   for (const metric of metrics) {
     const b = metric.decodeTimeBreakdown;
-    const segmentSum = b.weightReadMs + b.kvReadMs + b.computeMs + b.runtimeMs + b.coordinationMs;
+    const segmentSum = b.weightReadMs + b.kvReadMs + b.computeMs + b.runtimeMs + (b.draftMs || 0) + b.coordinationMs;
     assert.ok(Math.abs(segmentSum - b.totalMs) < 0.01,
       `waterfall segments (${segmentSum}) must sum to the engine total (${b.totalMs})`);
     assert.ok(['compute', 'bandwidth', 'network'].includes(metric.prefillTimeBreakdown.binding));
@@ -429,8 +448,21 @@ test('speculation is labeled, split from efficiency, and can pass the per-pass c
   assert.match(app.elements.get('systemAnalysis').innerHTML, /no speculation/,
     'ladder labels the estimate as speculation-free when speculation is off');
 
-  // High-acceptance EAGLE-3: several tokens accepted per verified pass.
+  // Native MTP on llama.cpp: measured 1.8x on this class of setup (Qwen 3.8
+  // 27B on a 5090, K=3); the per-draft-token host overhead keeps it there.
   app.setValue('optimizationMode', 'speculative');
+  app.setValue('specMethod', 'mtp');
+  app.setValue('specTokens', 3);
+  app.setValue('specAcceptance', 86);
+  app.applyPreset('qwen3.8_27b');
+  app.setValue('runtimeFramework', 'llama_cpp');
+  const mtp = app.hooks.calculateMetrics()[0];
+  assert.ok(mtp.speculationMultiplier > 1.5 && mtp.speculationMultiplier < 2.6, `llama.cpp MTP multiplier was ${mtp.speculationMultiplier}`);
+  app.applyPreset('llama3_8b');
+
+  // High-acceptance EAGLE-3 on a graph-captured engine: several tokens
+  // accepted per verified pass (SGLang measures ~2.4x on an 8B).
+  app.setValue('runtimeFramework', 'vllm');
   app.setValue('specMethod', 'eagle3');
   app.setValue('specTokens', 5);
   app.setValue('specAcceptance', 90); // the input is a percentage field
@@ -447,7 +479,7 @@ test('speculation is labeled, split from efficiency, and can pass the per-pass c
     `high-acceptance speculation ${on.decodeTokensPerSecond} should exceed the per-pass ceiling ${on.theoreticalMaxTokensPerSecond}`);
   // The waterfall bands must still sum to the amortized per-token total.
   const b = on.decodeTimeBreakdown;
-  const segmentSum = b.weightReadMs + b.kvReadMs + b.computeMs + b.runtimeMs + b.coordinationMs;
+  const segmentSum = b.weightReadMs + b.kvReadMs + b.computeMs + b.runtimeMs + (b.draftMs || 0) + b.coordinationMs;
   assert.ok(Math.abs(segmentSum - b.totalMs) < 0.01,
     `waterfall segments (${segmentSum}) must sum to the total (${b.totalMs}) under speculation`);
 

@@ -20,13 +20,29 @@ overhead = layers × perLayerOverheadUs × attentionScale × (1 + moeExtra × de
 pass     = max(memory, compute) + overhead + coordination(strategy, interconnect)
 ```
 
+All of it lives in `engine.js` (shared by the site and the SDK; `index.html` only holds the UI).
+
 - `FRAMEWORK_PROFILES[runtime]`: `bandwidthEfficiency`, `kvReadEfficiency`, `perLayerOverheadUs`,
-  `perTokenOverheadUs`, `prefillEfficiency`, `prefillRampTokens`, `batchedComputeEfficiency`,
-  `batchRampSequences`.
+  `perTokenOverheadUs`, `prefillEfficiency`, `prefillRampTokens`, `prefillRampFloor`,
+  `batchedComputeEfficiency`, `batchRampSequences`, speculation costs (`specDraftStepOverheadUs`,
+  `specBatchedDrafting`, `specVerifyReadsKvPerToken`), optional `attentionOverheadScales` /
+  `moeOverheadExtra` overrides, and per-backend overrides under `backends` (llama.cpp/Ollama on
+  `metal`: `bandwidthEfficiency 0.66`, `moeOverheadScale 6`).
 - `LAYER_OVERHEAD_SCALES.attention[mechanism]` (GDN/KDA hybrids ≈ 2×, MLA 1.25, SSM 1.35) and
   `LAYER_OVERHEAD_SCALES.moeExtra` (routing cost, scaled by the backend).
-- `DEVICE_TEMPLATES[*].kernelOverheadScale` (AMD ROCm/Vulkan 1.5, Intel SYCL 2; CUDA/Metal 1).
-- `CPU_OFFLOAD_BANDWIDTH_EFFICIENCY` (0.5 of DRAM peak for layers spilled to system RAM).
+- `DEVICE_TEMPLATES[*].kernelOverheadScale` (AMD ROCm/Vulkan 1.5, Intel SYCL 2, Apple M5 0.6;
+  CUDA/M1–M4 1), `prefillEfficiencyScale` (RDNA4 0.45, 780M 0.2, V100 0.15, M5 0.6), `backend`.
+- `QUANT_FORMATS` bits-per-weight (Q4_K_M 4.9, UD-IQ4_XS 4.0, NVFP4 4.5, AWQ 4.3, Q8_0 8.5 …) and
+  `getWeightStorageOverhead` (k-quant scales/metadata 1.16) — the *bytes* side of decode.
+- Prefill: `prefillEfficiency × ramp(prompt tokens; floor, rampTokens) × moePrefillFactor
+  (sqrt(tokens-per-expert / MOE_PREFILL_TOKENS_PER_EXPERT_REF)) × prefillEfficiencyScale`, with
+  `PREFILL_MICRO_BATCH_TOKENS` (512) and `CPU_PREFILL_TFLOPS` (1.2) for offloaded experts.
+- Expert offload (llama.cpp/Ollama `--n-cpu-moe`): `describeExpertOffload`, `overflowMode: 'experts'`,
+  `EXPERT_OFFLOAD_ROUND_TRIP_US` (150 µs per offloaded layer), `CPU_OFFLOAD_BANDWIDTH_EFFICIENCY`
+  (0.5 of DRAM peak for whatever spills to system RAM).
+- Speculation: `SPECULATION_METHODS` (acceptance, decay, draft size, KV window, memory), and
+  `SPEC_VERIFY_COMPUTE_EFFICIENCY` (0.6). Anchors: llama.cpp MTP ×1.81 (Qwen 3.8 27B, 5090), vLLM
+  MTP ×2.56, H100 EAGLE-3 ×2.36 at bs1 / ×1.38 at bs64, draft-model on a 3090 ×0.87.
 
 Each constant has one physical meaning. If you find yourself wanting a constant "for Gemma" or
 "for vLLM on 3090s", stop: that is a preset, data, or missing-physics problem.
@@ -47,9 +63,20 @@ Each constant has one physical meaning. If you find yourself wanting a constant 
    - `-ctk q8_0` / `--kv-cache-dtype fp8` halve KV bytes; recorded `peakVramGb` below the device pool
      proves a fit even when the uniform byte estimate says overflow (mixed-precision UD quants).
    - FP8 on Ampere, expert-parallel over PCIe, early XPU stacks: genuinely slow, not physics.
+   - Speculative runs are excluded from gold on purpose (`isSpeculative` in the refresh script
+     reads structured flags, every CLI spelling, notes, and MLX "-mtp" checkpoints); a row that
+     beats physics on MLX/oMLX usually is one that slipped through — extend the detector.
+   - Prompt-processing rates above the device's dense tensor peak are prompt-cache hits; the refresh
+     script nulls them (`plausiblePrefillRate`) so they never calibrate prefill.
    A run that beats the **physical roofline** (>1.05×) is always one of these or a preset error.
    Fix the data/preset; never widen a tolerance or lower a ceiling.
 3. **Fit**: `node scripts/fit-decode-constants.mjs --grid "FRAMEWORK_PROFILES.llama_cpp.perLayerOverheadUs=35,45,55" "LAYER_OVERHEAD_SCALES.moeExtra=0.4,0.6" …`
+   For prefill, fit on the gold rows that carry `prefillTokS` (obs/pred of the system prefill rate;
+   group by dense/MoE, prompt-length bucket, and hardware) — the Aug 2026 pass landed llama.cpp at
+   `prefillEfficiency 0.7 / prefillRampFloor 0.4 / prefillRampTokens 1536`, median 0.98, 76% within
+   1.5×. For a backend/runtime pair that is off on both dense and MoE rows, fit the runtime's
+   `backends[backend]` overrides rather than bending the global constants (that is how Metal got
+   `0.66 / 6`).
    Rank by rmsLog but choose with judgment: median ≈ 1.0 overall **and** per group (runtime,
    hardware, dense/MoE, depth bucket), no group sacrificed for another, constants that stay
    physically plausible (a per-layer launch floor of 500 µs is not). Prefer changing the constant whose
@@ -70,13 +97,16 @@ Each constant has one physical meaning. If you find yourself wanting a constant 
 
 Generic engine (no peer correction): median 0.85–1.15, ≥70% within 1.5×, ≥85% within 2×, ≤2% roofline
 violations. Leave-one-out calibrated model: median 0.9–1.1, ≥85% within 1.5×, ≥92% within 2×,
-optimized-target coverage ≥90%, physical coverage ≥97%. Current state (Aug 2026, 200 rows across 18
-device templates): 0.95 / 83% / 91% / 1 and 1.00 / 89% / 94% / 95% / 100%. Do not regress these to make a
-single row fit.
+optimized-target coverage ≥90%, physical coverage ≥97%. Current state (Aug 2026, 240 rows across 31
+device templates): 1.00 / 84% / 91% / 0 and 1.00 / 88% / 94% / 95% / 100%; prefill (llama.cpp, 129
+rows) 0.98 / 76% / 92%. Do not regress these to make a single row fit. `tests/sanity-matrix.test.mjs`
+adds wide physical bands across ~500 model × hardware × runtime combinations — if it fails after a
+fit, a constant left the plausible range somewhere the gold corpus does not look.
 
 ## Things the engine does not model yet (do not fake them with constants)
 
-Speculative decoding in gold rows (excluded on purpose), DeepSeek V4's sparse indexer, MoE expert
-offload to CPU (`--n-cpu-moe`), prefix caching, chunked-prefill interleaving at high concurrency,
-multi-node EXO beyond the coordination term. If a class of runs is systematically off because of one
-of these, add the physics, then re-fit.
+DeepSeek V4's sparse indexer, prefix caching, chunked-prefill interleaving at high concurrency,
+multi-node EXO beyond the coordination term, Apple M5 Neural Accelerator throughput beyond the
+derived 120/60 TFLOPS (no vendor figure). Expert offload and speculation *are* modeled now — calibrate
+them against paired rows (same rig with/without) rather than absolute rates. If a class of runs is
+systematically off because of one of these, add the physics, then re-fit.

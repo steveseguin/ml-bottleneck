@@ -1,10 +1,15 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadApp } from '../tests/load-index-app.mjs';
 
 const API_ROOT = 'https://www.localmaxxing.com/api';
 const PAGE_SIZE = 200;
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// The planner's device templates and presets give the physical compute
+// ceiling a measured prefill rate must respect (loaded from the current
+// index.html; the snapshot it carries is irrelevant here).
+const plannerHooks = loadApp().hooks;
 
 const MODEL_PRESET_RULES = [
   [/^qwen\/qwen3\.8-27b/i, 'qwen3.8_27b'],
@@ -133,6 +138,7 @@ const HARDWARE_RULES = [
   [/mi300x/i, 'AMD MI300X'],
   [/dgx\s*spark|\bgb10\b/i, 'NVIDIA DGX Spark (GB10)'],
   [/m5\s*max/i, 'Mac M5 Max (128)'],
+  [/m5\s*pro/i, 'Mac M5 Pro (64)'],
   [/m4\s*max/i, 'Mac M4 Max (128)'],
   [/m4\s*pro/i, 'Mac M4 Pro (48)'],
   [/m3\s*ultra/i, 'Mac M3 Ultra (512)'],
@@ -156,10 +162,12 @@ function pickRule(value, rules) {
 
 function normalizeQuantization(value) {
   const quant = (value || '').toLowerCase();
-  if (/mxfp4|nvfp4|int4|4bit|4-bit|q4|iq4|awq/.test(quant)) return 'q4';
+  if (/q6|iq6|6bit|6-bit/.test(quant)) return 'q6';
+  if (/q5|iq5|5bit|5-bit/.test(quant)) return 'q5';
+  if (/mxfp4|nvfp4|int4|4bit|4-bit|q4|iq4|awq|gptq|w4a16/.test(quant)) return 'q4';
   if (/q3|iq3|3bit|3-bit|3\.5bpw|3bpw/.test(quant)) return 'q3';
-  if (/q2|iq2|2bit|2-bit|2\.\dbpw/.test(quant)) return 'q2';
-  if (/q8|int8/.test(quant)) return 'int8';
+  if (/q2|iq2|iq1|2bit|2-bit|2\.\dbpw/.test(quant)) return 'q2';
+  if (/q8|int8|w8a8|w8a16/.test(quant)) return 'int8';
   if (/fp8/.test(quant)) return 'fp8';
   if (/bf16|bfloat16/.test(quant)) return 'bfloat16';
   if (/fp16|float16|f16/.test(quant)) return 'float16';
@@ -250,7 +258,20 @@ function normalizeGoldCase(run) {
   // take part, which can be fewer than the host's GPU count.
   const tensorSplitMatch = command.match(/(?:-ts|--tensor-split)[=\s]+([0-9.]+(?:[\/,][0-9.]+)+)/);
   const tensorSplitDevices = tensorSplitMatch ? tensorSplitMatch[1].split(/[\/,]/).filter(v => parseFloat(v) > 0).length : null;
-  const isSpeculative = Boolean(run.engineFlags?.specDecoding || run.engineFlags?.mtpEnabled || /speculative|draft-model|mtp/i.test(command));
+  // Speculative runs are not decode evidence: the planner models speculation
+  // separately. Detect the structured flags, every 2026 CLI spelling
+  // (--spec-type other than none, draft files, vLLM/SGLang/TRT configs), and
+  // method names in the command or notes.
+  const specTypeMatch = command.match(/--spec-type[=\s]+([a-z0-9,_-]+)/i);
+  const notes = run.notes || '';
+  const isSpeculative = Boolean(run.engineFlags?.specDecoding || run.engineFlags?.mtpEnabled) ||
+    (specTypeMatch && !/^none$/i.test(specTypeMatch[1])) ||
+    /--speculative-config|--speculative-algorithm|speculative_config|(^|\s)-md\s|--model-draft|--draft-model|(^|\s)-hfd\s|--spec-draft|draft-mtp|dflash|dspark|eagle|ngram|--mtp\b|\smtp\s|speculative/i.test(command) ||
+    /\b(dflash|dspark|eagle-?3?|mtp)\b[^.]{0,40}\b(on|enabled|active|draft|n-?max|accept)/i.test(notes) ||
+    /speculative decod\w*\s+(on|enabled|active)|with (mtp|dflash|dspark|eagle)/i.test(notes) ||
+    // MLX-side servers (oMLX, mtplx) exist to run the MTP head; an "-mtp"
+    // checkpoint on them is a speculative run even when the command is terse.
+    (/\bmtp\b|-mtp\b|mtp-/i.test(runHfId) && /omlx|mtplx|mlx/i.test(`${run.engine?.engineName || ''} ${command}`));
   // Pruned/modified variants (REAP, abliterated, distill-merges) have different
   // weights than the preset they would map to; using them as gold evidence
   // makes real runs "beat the physics ceiling".
@@ -284,7 +305,7 @@ function normalizeGoldCase(run) {
   // heavy-offload dense runs decode slowly and are kept. (MoE models can
   // legitimately overflow, so they are handled by the cross-quant check in
   // chooseGoldCases instead.)
-  const bytesPerParam = { q4: 0.6, q3: 0.5, q2: 0.42, int8: 1.06, fp8: 1.06, float16: 2.1, bfloat16: 2.1, float32: 4.2 }[quantKey] || 2.1;
+  const bytesPerParam = { q6: 0.83, q5: 0.72, q4: 0.6, q3: 0.5, q2: 0.42, int8: 1.06, fp8: 1.06, float16: 2.1, bfloat16: 2.1, float32: 4.2 }[quantKey] || 2.1;
   const claimedWeightGB = (run.model?.params || 0) * bytesPerParam;
   const recordedMemoryGB = run.hardware?.vramGb || run.hardware?.unifiedMemoryGb || 0;
   if (!run.model?.isMoE && recordedMemoryGB > 0 && claimedWeightGB > recordedMemoryGB * 1.5 && run.tokSOut > 5) return null;
@@ -318,7 +339,7 @@ function normalizeGoldCase(run) {
     splitMode,
     batchSize,
     observedTokS: run.tokSOut,
-    prefillTokS: run.tokSPrefill || null,
+    prefillTokS: plausiblePrefillRate(run, presetKey, hardwareTemplate, deviceCount, quantKey),
     ttftMs: run.ttftMs || null,
     peakVramGb: run.peakVramGb || null,
     reproducibility,
@@ -327,6 +348,28 @@ function normalizeGoldCase(run) {
     command,
     source: `https://www.localmaxxing.com/en/leaderboard?hfId=${encodeURIComponent(run.model?.hfId || sourceHfId)}`
   };
+}
+
+// A prompt-processing rate above the device's dense tensor peak cannot be a
+// measurement of prefill: llama-server reports prompt-cache hits and some
+// clients fold cached prefixes into "prompt eval" rates. Keep the decode
+// number, drop the prefill number.
+function plausiblePrefillRate(run, presetKey, hardwareTemplate, deviceCount, quantKey) {
+  const prefill = Number(run.tokSPrefill);
+  if (!(prefill > 0)) return null;
+  const preset = plannerHooks.MODEL_PRESETS?.[presetKey];
+  const template = plannerHooks.DEVICE_TEMPLATES?.[hardwareTemplate];
+  if (!preset || !template) return prefill;
+  const activeParamsB = run.model?.activeParams || preset.activeParamsB || run.model?.params || preset.totalParamsB;
+  if (!(activeParamsB > 0)) return prefill;
+  const compute = template.computeTFlops || {};
+  // Weight-only quants compute in fp16; int8/fp8 runs may use the faster paths.
+  const peakTflops = (['int8', 'fp8'].includes(quantKey)
+    ? Math.max(compute.int8 || 0, compute.fp8 || 0, compute.float16 || 0, compute.bfloat16 || 0)
+    : Math.max(compute.float16 || 0, compute.bfloat16 || 0)) * Math.max(1, deviceCount);
+  if (!(peakTflops > 0)) return prefill;
+  const impliedTflops = prefill * 2 * activeParamsB * 1e9 / 1e12;
+  return impliedTflops <= peakTflops ? prefill : null;
 }
 
 function chooseGoldCases(runs) {
@@ -362,14 +405,29 @@ function chooseGoldCases(runs) {
       .sort((a, b) => b.reproducibility - a.reproducibility || Number(b.verified) - Number(a.verified) || b.createdAt.localeCompare(a.createdAt))
       .slice(0, 3))
     .sort((a, b) => b.reproducibility - a.reproducibility || b.createdAt.localeCompare(a.createdAt));
+  // Hardware diversity first: every template with evidence keeps its best
+  // rows (a single M5 Pro or B70 row is worth more to calibration than the
+  // twentieth 4090 row), then the remaining slots fill by reproducibility.
   const selected = [];
+  const selectedIds = new Set();
   const perModel = new Map();
-  for (const candidate of candidates) {
-    const count = perModel.get(candidate.presetKey) || 0;
-    if (count >= 16) continue;
+  const perHardware = new Map();
+  const take = candidate => {
     selected.push(candidate);
-    perModel.set(candidate.presetKey, count + 1);
-    if (selected.length >= 200) break;
+    selectedIds.add(candidate.id);
+    perModel.set(candidate.presetKey, (perModel.get(candidate.presetKey) || 0) + 1);
+    perHardware.set(candidate.hardwareTemplate, (perHardware.get(candidate.hardwareTemplate) || 0) + 1);
+  };
+  for (const candidate of candidates) {
+    if ((perHardware.get(candidate.hardwareTemplate) || 0) >= 4) continue;
+    if ((perModel.get(candidate.presetKey) || 0) >= 16) continue;
+    take(candidate);
+  }
+  for (const candidate of candidates) {
+    if (selected.length >= 240) break;
+    if (selectedIds.has(candidate.id)) continue;
+    if ((perModel.get(candidate.presetKey) || 0) >= 16) continue;
+    take(candidate);
   }
   return selected;
 }

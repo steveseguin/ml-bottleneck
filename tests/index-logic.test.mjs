@@ -282,11 +282,12 @@ test('DeepSeek R1 still separates resident and active weights under overflow', (
   const [metric] = app.hooks.calculateMetrics();
 
   assert.equal(metric.hasOverflow, true);
-  assert.ok(metric.modelSizeGB > 690 && metric.modelSizeGB < 692, `resident size was ${metric.modelSizeGB}`);
+  // Q8_0 is 8.5 bits per weight on disk (block scales): 671B -> ~713 GB, matching the published GGUF size.
+  assert.ok(metric.modelSizeGB > 705 && metric.modelSizeGB < 720, `resident size was ${metric.modelSizeGB}`);
   assert.ok(metric.activeModelSizeGB > 30 && metric.activeModelSizeGB < 45, `active size was ${metric.activeModelSizeGB}`);
 });
 
-test('AUTO strategy still prefers tensor parallelism for dual 4090 interactive inference', () => {
+test('AUTO strategy prefers tensor parallelism for dual 4090 interactive inference on a NCCL engine', () => {
   const app = loadApp();
   app.hooks.setDevices([
     cloneTemplate(app.hooks, 'RTX 4090', 1, 'RTX 4090 #1'),
@@ -295,14 +296,21 @@ test('AUTO strategy still prefers tensor parallelism for dual 4090 interactive i
   setLlmDefaults(app, {
     preset: 'llama3_8b',
     quant: 'q4',
-    framework: 'auto',
+    framework: 'tensorrt_llm',
     strategy: 'auto',
     batchSize: 1,
     seqLength: 2048
   });
+  assert.equal(app.hooks.findOptimalStrategy().strategy, 'tensor');
 
-  const autoResult = app.hooks.findOptimalStrategy();
-  assert.equal(autoResult.strategy, 'tensor');
+  // AUTO runtime on consumer cards is llama.cpp, whose `-sm row` reduces
+  // over PCIe copies; for an 8B that fits on one card the collective cost
+  // matches the halved weight read, so one request per device wins.
+  app.setValue('runtimeFramework', 'auto');
+  const llamaResult = app.hooks.findOptimalStrategy();
+  assert.ok(['data', 'pipeline'].includes(llamaResult.strategy), `llama.cpp AUTO chose ${llamaResult.strategy}`);
+  const tensorRow = llamaResult.results.find(row => row.strategy === 'tensor');
+  assert.ok(tensorRow.valid, 'llama.cpp row split is offered as a valid tensor strategy');
 });
 
 test('decode-rate calibration stays in realistic benchmark-backed ranges', () => {
@@ -457,18 +465,20 @@ test('validation matrix stays inside broad benchmark-justified ranges', () => {
       maxMemoryUtilization: 30
     },
     {
-      // 36 GB of Q8 weights plus a 240K KV window spill ~15 GB to system
-      // RAM; offloaded layers execute on the CPU at ~half the DDR5 peak, so
-      // measured expert-offload setups land in the low teens.
-      name: 'Qwen 3.5 35B A3B Q8 on RTX 3090 long context reflects heavy overflow drag',
+      // 37 GB of Q8 weights plus a 240K KV window do not fit 24 GB, so
+      // llama.cpp parks routed experts of roughly half the layers in system
+      // RAM (--n-cpu-moe). Each token then streams only its active experts
+      // (~0.5 GB) from RAM, which keeps this in the tens of tok/s rather
+      // than the single digits a whole-layer spill would give.
+      name: 'Qwen 3.5 35B A3B Q8 on RTX 3090 long context reflects expert-offload drag',
       devices: [cloneTemplate(app.hooks, 'RTX 3090')],
       preset: 'qwen3.5_35b_a3b',
       quant: 'int8',
       framework: 'llama_cpp',
       strategy: 'pipeline',
       seqLength: 240000,
-      minRate: 8,
-      maxRate: 40,
+      minRate: 10,
+      maxRate: 55,
       minMemoryUtilization: 100,
       expectOverflow: true
     },
@@ -1127,6 +1137,9 @@ test('execution map explains MiniMax MoE routing and four-way tensor sharding', 
     batchSize: 1,
     seqLength: 20480
   });
+  // The community runs this as AutoRound INT4 (~4.3 bits/weight); a generic
+  // "4-bit" family average (4.65 bpw) would not fit four 32 GB cards.
+  app.setValue('quantFormat', 'AutoRound INT4');
 
   const config = app.hooks.buildEffectiveModelConfig();
   const metrics = app.hooks.calculateMetrics();
@@ -1225,11 +1238,11 @@ test('four-B70 DeepSeek plan uses benchmark peers without hidden case-specific m
   // Measured: 40-44 tok/s on this exact rig. The generic engine now lands
   // within ~12% of that on its own (fixed per-layer overhead on a 43-layer
   // MoE over SYCL), so the peer correction is mild rather than the old 4x.
-  assert.ok(plan.calibration.expectedTokS >= 42.10 && plan.calibration.expectedTokS <= 42.35,
+  assert.ok(plan.calibration.expectedTokS >= 41.45 && plan.calibration.expectedTokS <= 41.75,
     `projected real was ${plan.calibration.expectedTokS} tok/s`);
-  assert.ok(plan.calibration.optimizedTokS >= 178.5 && plan.calibration.optimizedTokS <= 178.9,
+  assert.ok(plan.calibration.optimizedTokS >= 183.5 && plan.calibration.optimizedTokS <= 184.0,
     `optimized target was ${plan.calibration.optimizedTokS} tok/s`);
-  assert.ok(plan.calibration.physicalTokS >= 417.9 && plan.calibration.physicalTokS <= 418.2,
+  assert.ok(plan.calibration.physicalTokS >= 389.3 && plan.calibration.physicalTokS <= 389.7,
     `physical roofline was ${plan.calibration.physicalTokS} tok/s`);
   assert.ok(plan.calibration.correctionFactor >= 0.80 && plan.calibration.correctionFactor <= 0.95,
     `benchmark correction was ${plan.calibration.correctionFactor}`);
@@ -1240,19 +1253,20 @@ test('four-B70 DeepSeek plan uses benchmark peers without hidden case-specific m
   assert.equal(firstMetric.byteProfileSource, 'estimated');
   assert.notEqual(firstMetric.realisticBandwidthGBps, 527);
   assert.equal(firstMetric.effectiveBandwidthGBps, 608);
-  assert.ok(firstMetric.modelSizeGB >= 97.1 && firstMetric.modelSizeGB <= 97.3);
-  assert.ok(firstMetric.residentWeightSizeGB >= 24.2 && firstMetric.residentWeightSizeGB <= 24.4);
+  // 180B x 4.65 bits (generic q4 family) x 1.16 storage overhead = 104 GB checkpoint, 26 GB per card.
+  assert.ok(firstMetric.modelSizeGB >= 104.3 && firstMetric.modelSizeGB <= 104.5);
+  assert.ok(firstMetric.residentWeightSizeGB >= 26.0 && firstMetric.residentWeightSizeGB <= 26.2);
   assert.equal(firstMetric.decodeTimeBreakdown.overheadSource, 'modeled');
 
   app.hooks.updateSystemAnalysis();
   const analysisHtml = app.elements.get('systemAnalysis').innerHTML;
-  assert.match(analysisHtml, /recommendation-label">Decode Rate<\/div>\s*<div class="recommendation-value">42\.2 tok\/s/,
+  assert.match(analysisHtml, /recommendation-label">Decode Rate<\/div>\s*<div class="recommendation-value">41\.6 tok\/s/,
     'recommended setup must use the projected primary result');
-  assert.match(analysisHtml, /phase-summary-label">Decode<\/div>\s*<div class="phase-summary-value">42\.2 tok\/s/,
+  assert.match(analysisHtml, /phase-summary-label">Decode<\/div>\s*<div class="phase-summary-value">41\.6 tok\/s/,
     'workflow timing must use the projected primary result');
   assert.doesNotMatch(analysisHtml, /observed stack efficiency/,
     'a mild correction must not be presented as a stack-efficiency problem');
-  assert.match(app.elements.get('headerResultRate').textContent, /42\.2 tok\/s \/ 179 optimized/,
+  assert.match(app.elements.get('headerResultRate').textContent, /41\.6 tok\/s \/ 184 optimized/,
     'the compact result strip must label the optimized target, not the physical roofline');
 });
 
@@ -1270,7 +1284,7 @@ test('supplied execution assumptions reproduce their arithmetic without becoming
     `supplied-input projection was ${baseline.calibration.expectedTokS} tok/s`);
   assert.ok(baseline.calibration.physicalTokS >= 158.90 && baseline.calibration.physicalTokS <= 159.00,
     `official-peak physical roofline was ${baseline.calibration.physicalTokS} tok/s`);
-  assert.ok(baseline.calibration.optimizedTokS >= 91.7 && baseline.calibration.optimizedTokS <= 92.1,
+  assert.ok(baseline.calibration.optimizedTokS >= 98.3 && baseline.calibration.optimizedTokS <= 98.7,
     `latency-aware optimized target was ${baseline.calibration.optimizedTokS} tok/s`);
   assert.equal(baseline.calibration.confidence, 'input-derived');
   assert.equal(baseline.calibration.profileProvenance, 'user-supplied-unverified');
@@ -1290,7 +1304,7 @@ test('supplied execution assumptions reproduce their arithmetic without becoming
   const payload = app.hooks.buildPlanExport(baseline);
   const imported = app.hooks.parseMeasuredResultPayload(payload);
   assert.equal(payload.execution.profile.provenance, 'user-supplied-unverified');
-  assert.ok(payload.prediction.optimizedTarget.decodeTokensPerSecond >= 91.7 && payload.prediction.optimizedTarget.decodeTokensPerSecond <= 92.1);
+  assert.ok(payload.prediction.optimizedTarget.decodeTokensPerSecond >= 98.3 && payload.prediction.optimizedTarget.decodeTokensPerSecond <= 98.7);
   assert.ok(payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond >= 124.4 && payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond <= 124.8);
   assert.equal(imported.decodeBytesPerPassGB, 15.3);
   assert.equal(imported.residentWeightsGB, 90);
@@ -1334,24 +1348,24 @@ test('AI handoff and Plan JSON distinguish estimates, targets, and physical boun
   const handoff = app.hooks.buildAiHandoff(payload);
 
   assert.equal(payload.schemaVersion, 'mlbottleneck.plan.v2');
-  assert.ok(payload.execution.profile.aggregateBytesPerDecodePassGB >= 5.7 && payload.execution.profile.aggregateBytesPerDecodePassGB <= 5.9);
-  assert.ok(payload.execution.profile.aggregateResidentWeightsGB >= 97.1 && payload.execution.profile.aggregateResidentWeightsGB <= 97.3);
+  assert.ok(payload.execution.profile.aggregateBytesPerDecodePassGB >= 6.1 && payload.execution.profile.aggregateBytesPerDecodePassGB <= 6.35);
+  assert.ok(payload.execution.profile.aggregateResidentWeightsGB >= 104.3 && payload.execution.profile.aggregateResidentWeightsGB <= 104.5);
   assert.equal(payload.execution.profile.exposedNonMemoryOverheadMsPerPass, null);
   assert.equal(payload.execution.profile.provenance, 'planner-estimate');
   assert.equal(payload.hardware.devices[0].officialPeakMemoryBandwidthGBps, 608);
   assert.equal(payload.hardware.devices[0].sustainedMemoryBandwidthGBps, null);
-  assert.ok(payload.prediction.primary.decodeTokensPerSecond >= 42.10 && payload.prediction.primary.decodeTokensPerSecond <= 42.35);
-  assert.ok(payload.prediction.primary.millisecondsPerToken >= 23.6 && payload.prediction.primary.millisecondsPerToken <= 23.8);
+  assert.ok(payload.prediction.primary.decodeTokensPerSecond >= 41.45 && payload.prediction.primary.decodeTokensPerSecond <= 41.75);
+  assert.ok(payload.prediction.primary.millisecondsPerToken >= 23.9 && payload.prediction.primary.millisecondsPerToken <= 24.2);
   assert.ok(payload.prediction.primary.benchmarkCorrectionFactor >= 0.86 && payload.prediction.primary.benchmarkCorrectionFactor <= 0.89);
-  assert.ok(payload.prediction.optimizedTarget.decodeTokensPerSecond >= 178.5 && payload.prediction.optimizedTarget.decodeTokensPerSecond <= 178.9);
-  assert.ok(payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond >= 242.1 && payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond <= 242.4);
-  assert.ok(payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline >= 0.73 && payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline <= 0.75);
-  assert.ok(payload.prediction.physicalRoofline.decodeTokensPerSecond >= 417.9 && payload.prediction.physicalRoofline.decodeTokensPerSecond <= 418.2);
-  assert.match(handoff, /42\.2\d tok\/s projected real/);
-  assert.match(handoff, /178\.7\d+ tok\/s optimized/);
-  assert.match(handoff, /418\.0\d+ tok\/s physical roofline/);
+  assert.ok(payload.prediction.optimizedTarget.decodeTokensPerSecond >= 183.5 && payload.prediction.optimizedTarget.decodeTokensPerSecond <= 184.0);
+  assert.ok(payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond >= 232.2 && payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond <= 232.5);
+  assert.ok(payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline >= 0.78 && payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline <= 0.80);
+  assert.ok(payload.prediction.physicalRoofline.decodeTokensPerSecond >= 389.3 && payload.prediction.physicalRoofline.decodeTokensPerSecond <= 389.7);
+  assert.match(handoff, /41\.5\d tok\/s projected real/);
+  assert.match(handoff, /183\.7\d+ tok\/s optimized/);
+  assert.match(handoff, /389\.5\d+ tok\/s physical roofline/);
   assert.match(handoff, /Profile provenance: planner-estimate/);
-  assert.match(handoff, /73\.8% of the 242\.2\d tok\/s latency-aware roofline/);
+  assert.match(handoff, /79\.1% of the 232\.35\d tok\/s latency-aware roofline/);
   assert.match(handoff, /exact launch command/);
 
   const imported = app.hooks.parseMeasuredResultPayload(payload);
@@ -1370,10 +1384,10 @@ test('AI handoff and Plan JSON distinguish estimates, targets, and physical boun
 test('projected, optimized, and physical rates stay aligned across hardware families', () => {
   const snapshot = loadSnapshot();
   const fixtures = [
-    // Pinned against the 2026-08-23 snapshot (200 gold rows); measured: 227 tok/s, 60-73 tok/s, 66 tok/s.
-    { preset: 'qwen3_8b', hardware: 'RTX 5090', count: 1, quant: 'q4', framework: 'llama_cpp', strategy: 'pipeline', context: 8192, projected: [196.2, 196.6], optimized: [239.0, 239.4], physical: [324.0, 324.3] },
-    { preset: 'qwen3.6_35b_a3b', hardware: 'AMD Radeon AI PRO R9700', count: 3, quant: 'int8', framework: 'llama_cpp', strategy: 'pipeline', context: 787, projected: [75.2, 75.5], optimized: [190.0, 190.3], physical: [250.9, 251.1] },
-    { preset: 'minimax_m2.7', hardware: 'Intel Arc Pro B70', count: 4, quant: 'q4', framework: 'vllm', strategy: 'tensor', context: 2048, projected: [64.5, 64.8], optimized: [149.4, 149.8], physical: [410.7, 411.0] }
+    // Pinned against the 2026-08-23 snapshot (240 gold rows); measured: 227 tok/s, 60-73 tok/s, 66 tok/s.
+    { preset: 'qwen3_8b', hardware: 'RTX 5090', count: 1, quant: 'q4', framework: 'llama_cpp', strategy: 'pipeline', context: 8192, projected: [204.5, 205.0], optimized: [242.1, 242.6], physical: [306.2, 306.7] },
+    { preset: 'qwen3.6_35b_a3b', hardware: 'AMD Radeon AI PRO R9700', count: 3, quant: 'int8', framework: 'llama_cpp', strategy: 'pipeline', context: 787, projected: [77.5, 77.9], optimized: [193.2, 193.6], physical: [243.7, 244.1] },
+    { preset: 'minimax_m2.7', hardware: 'Intel Arc Pro B70', count: 4, quant: 'q4', framework: 'vllm', strategy: 'tensor', context: 2048, projected: [52.6, 53.0], optimized: [129.6, 130.0], physical: [278.0, 278.4] }
   ];
 
   for (const fixture of fixtures) {

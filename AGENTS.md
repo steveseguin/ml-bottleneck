@@ -10,11 +10,12 @@ ML System Bottleneck Analyzer is a browser-based tool for analyzing hardware bot
 
 ## Architecture
 
-This is a **static web application** centered on `index.html`:
-- Application HTML, CSS, and JavaScript remain in one file
+This is a **static web application** with no bundler:
+- `engine.js` — the physics engine and catalogs (`MODEL_PRESETS`, `DEVICE_TEMPLATES`, `FRAMEWORK_PROFILES`, all calculations); DOM-free so it doubles as the SDK source
+- `index.html` — UI, CSS, and the application script; loads `engine.js?v=<hash>` first (shared global scope)
+- `sdk/api.js` + `scripts/build-sdk.mjs` → `dist/` (ESM/UMD/types/evidence): the public SDK, see `docs/sdk.md`; `npm test` rebuilds it, a `package.json` version bump releases it (`.github/workflows/release-sdk.yml`)
 - `data/localmaxxing-snapshot.js` is a generated, versioned benchmark/model snapshot
 - `scripts/refresh-localmaxxing.mjs` rebuilds that snapshot from the public Localmaxxing API
-- No build system or bundler
 - Chart.js loaded from CDN for visualizations
 - Device configurations persisted to localStorage
 
@@ -62,10 +63,10 @@ field mapping, the physics constants and what may and may not be tuned, and the 
 ## Development
 
 To develop locally:
-1. Run a small static server from the repository root (the external data snapshot must be served beside `index.html`)
+1. Run a small static server from the repository root (`engine.js` and the data snapshot must be served beside `index.html`)
 2. Open the local server URL in a browser
-3. Run `npm run refresh:localmaxxing` when refreshing the benchmark evidence and model catalog (commit the snapshot and `index.html` together — the cache key lives there)
-4. Run `npm test` before committing; `npm run audit:gold` after physics or preset changes; `npm run fit:decode` / `npm run pins` when calibrating
+3. Run `npm run refresh:localmaxxing` when refreshing the benchmark evidence and model catalog (commit the snapshot, `index.html`, and `dist/` together — the cache key and the SDK evidence bundle live there)
+4. Run `npm test` before committing (it also stamps the `engine.js` cache key and rebuilds `dist/`); `npm run audit:gold` after physics or preset changes; `npm run fit:decode` / `npm run pins` when calibrating
 
 To deploy:
-- Upload `index.html` to any static hosting (GitHub Pages via CNAME file)
+- Upload the repo root (`index.html`, `engine.js`, `data/`, `dist/`, assets) to any static hosting (GitHub Pages via CNAME file)

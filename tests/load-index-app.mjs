@@ -216,6 +216,9 @@ export function loadApp(options = {}) {
   if (!script) {
     throw new Error('Unable to locate inline application script in index.html');
   }
+  // The physics engine is a separate classic script loaded before the
+  // application script; both share one global lexical scope, as in the browser.
+  const engineSource = fs.readFileSync(path.join(repoRoot, 'engine.js'), 'utf8');
 
   const defaultValues = {
     modelPreset: 'llama3_8b',
@@ -312,6 +315,7 @@ export function loadApp(options = {}) {
   }
 
   vm.createContext(sandbox);
+  vm.runInContext(engineSource, sandbox, { filename: 'engine.js' });
   vm.runInContext(script, sandbox, { filename: 'index.html.inline.js' });
   domReadyHandlers.forEach(handler => handler());
 

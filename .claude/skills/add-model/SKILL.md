@@ -1,6 +1,6 @@
 ---
 name: add-model
-description: Add or update an LLM preset in MODEL_PRESETS (index.html) from its official config.json so the planner's physics (KV cache, FLOPs, fixed per-layer overhead) are right for it; wires the picker, the evidence rules, and the tests. Use whenever a user asks to add/support/update a model (Qwen, Gemma, DeepSeek, Llama, Mistral, Kimi, GLM, MiniMax, Nemotron, Muse, Granite, LFM…) or to refresh a preset's specs.
+description: Add or update an LLM preset in MODEL_PRESETS (engine.js) from its official config.json so the planner's physics (KV cache, FLOPs, fixed per-layer overhead) are right for it; wires the picker, the evidence rules, and the tests. Use whenever a user asks to add/support/update a model (Qwen, Gemma, DeepSeek, Llama, Mistral, Kimi, GLM, MiniMax, Nemotron, Muse, Granite, LFM…) or to refresh a preset's specs.
 ---
 
 # Add or update a model preset
@@ -38,7 +38,8 @@ than the assistant's training data: **fetch the config**.
 | `fullAttentionInterval` | `full_attention_interval` | Alternative to the count for "1 in N" hybrids (Qwen 3.5+: 4 → 1 full per 4). |
 | `slidingWindow` | `sliding_window` (only if `use_sliding_window` is not false) | Window for the non-full layers. |
 | `kvLoraRank`, `qLoraRank`, `qkRopeHeadDim` | same names | MLA (DeepSeek V3/R1, GLM-5, Kimi, Ling). |
-| `useMTP`, `mtpModules` | `num_nextn_predict_layers`, `mtp_num_hidden_layers` | Lets the speculation UI know native MTP exists. |
+| `useMTP`, `mtpModules` | `num_nextn_predict_layers`, `mtp_num_hidden_layers` | Enables the `mtp` speculation method (the engine models the MTP head as one target-width layer re-reading the LM head per draft token); without it MTP is "not shipped" and modeled off. |
+| `vocabSize` | `vocab_size` | Sizes the LM-head read that MTP/EAGLE drafts pay per token (Qwen 3.5+: 248320, Gemma 4: 262144, Llama 4 / Muse: 202048, DeepSeek: 129280). |
 | `contextLength` | `max_position_embeddings` (after rope scaling) | Drives the context sweep range and memory warnings. |
 | `hasVision` | `vision_config` present | |
 | `nativeBytesPerParam` | only for natively low-bit checkpoints | gpt-oss MXFP4 ≈ 0.56–0.66, Kimi K3 MXFP4 ≈ 0.56, FP8-native Mistral = 1. Caps "fp16" sizing at what actually ships. |
@@ -61,9 +62,15 @@ Why this matters: the engine computes KV bytes as
 
 ## 3. Where to add it (all five, in order)
 
-1. **`MODEL_PRESETS`** in `index.html`, next to its family. Key convention: `family[version]_size[_aNb]` →
-   `qwen3.8_27b`, `gemma4_26b_a4b`, `ornith_1.5_397b_a17b`, `muse_glimmer_30b`. Keys must be unique
-   (the integrity test fails on duplicates — later keys would silently override).
+1. **`MODEL_PRESETS`** in `engine.js` (the physics engine that `index.html` loads before its page
+   script), next to its family. Key convention: `family[version]_size[_aNb]` → `qwen3.8_27b`,
+   `gemma4_26b_a4b`, `ornith_1.5_397b_a17b`, `muse_glimmer_30b`. Keys must be unique (the integrity
+   test fails on duplicates — later keys would silently override). `npm test` re-stamps the
+   `engine.js?v=<hash>` cache key in `index.html` and rebuilds `dist/` (the SDK ships the same
+   catalog) — commit those too.
+   When the model replaces an older release, add `old_key: 'new_key'` to `PRESET_SUPERSEDED_BY`
+   (engine.js): the landing page then prefers the new model, the picker shows an upgrade link on the
+   old one, and the SDK reports `supersededBy`. Keep the old preset — its gold rows still calibrate.
 2. **Picker groups**: the `modelCategories` map and `featuredModelKeys` inside the `DOMContentLoaded`
    handler (search `const modelCategories = {`). Uncategorized presets fall into "Other" — don't leave
    them there. Put the newest release first in its family and in "New & popular".
@@ -91,7 +98,9 @@ app.setValue('batchSize',1);app.setValue('promptTokens',2048);app.setValue('outp
 const m=H.calculateMetrics()[0];console.log({decode:m.decodeTokensPerSecond,prefill:m.prefillTokensPerSecond,weightsGB:m.activeWeightSizeGB,kvGB:m.decodeKvCacheGB,b:m.decodeTimeBreakdown});})"
 ```
 
-Expectations: decode ≈ `1 / (activeBytes/(BW×0.78) + layers×~45µs×(2 for GDN)×(1.4 MoE) + 0.2 ms)`;
+Expectations: decode ≈ `1 / (activeBytes/(BW×0.78) + layers×~45µs×(2 for GDN)×(1.4 MoE) + 0.2 ms)`
+(active bytes use the quant *format* when one is set — Q4_K_M is 4.9 bits/weight, UD-IQ4_XS 4.0,
+NVFP4 4.5, AWQ/GPTQ 4.3, Q8_0 8.5 — times a 1.16 storage overhead for k-quants; see `QUANT_FORMATS`);
 KV per token ≈ `fullLayers × 2 × kvHeads × headDim × 2 bytes` (e.g. Qwen 3.8 27B: 16 × 2 × 4 × 256 × 2 = 64 KB).
 If a community number exists (Localmaxxing, r/LocalLLaMA, the model card), the engine should be within
 ~1.5× of it at the same depth; if not, the preset is wrong before the physics is.
@@ -103,7 +112,9 @@ If a community number exists (Localmaxxing, r/LocalLLaMA, the model card), the e
   and look for the new preset in the worst-outlier list. A row that beats the physical roofline means
   the preset (bytes, layer mix, KV) or the row's semantics is wrong — never an efficiency constant.
 - If the model is important, add an anchor to `tests/integrity.test.mjs` ("decode anchors hold…")
-  with the measured number and a ±35% band, citing where the measurement came from.
+  with the measured number and a ±35% band, citing where the measurement came from, and a `KNOWN`
+  band in `tests/sanity-matrix.test.mjs` (wide tolerance: these catch unrealistic outliers, not drift).
+  Add the preset to the matrix's `MODELS` list so every physics invariant is exercised on it.
 - Browser check: load the preset in the planner; the execution map shows the head dim and
   "n Q / m KV heads"; the "How it scales" decode curve should bend where the KV cache becomes
   comparable to the weight bytes.
