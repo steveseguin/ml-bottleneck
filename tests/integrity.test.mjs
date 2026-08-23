@@ -228,14 +228,178 @@ test('engine predictions stay statistically anchored to the gold-case corpus', (
 
   assert.ok(median >= 0.9 && median <= 1.1,
     `leave-one-out median observed/projected drifted to ${median.toFixed(2)}`);
-  assert.ok(withinOnePointFiveX >= 0.75,
+  assert.ok(withinOnePointFiveX >= 0.85,
     `only ${(withinOnePointFiveX * 100).toFixed(1)}% of gold cases within 1.5x`);
-  assert.ok(withinTwoX >= 0.85,
+  assert.ok(withinTwoX >= 0.92,
     `only ${(withinTwoX * 100).toFixed(1)}% of gold cases within 2x`);
-  assert.ok(optimizedCoverage >= 0.85,
+  assert.ok(optimizedCoverage >= 0.90,
     `optimized target covered only ${(optimizedCoverage * 100).toFixed(1)}% of gold runs`);
-  assert.ok(physicalCoverage >= 0.90,
+  assert.ok(physicalCoverage >= 0.97,
     `physical roofline covered only ${(physicalCoverage * 100).toFixed(1)}% of gold runs within tolerance`);
+
+  // The generic engine (no peer correction at all) must stand on its own:
+  // the fixed-overhead decode model, explicit head_dim, layer mix, and
+  // recorded decode depth are what keep it centered and tight.
+  const genericRatios = rows.map(row => row.observedToGeneric).sort((a, b) => a - b);
+  const genericMedian = genericRatios[Math.floor(genericRatios.length / 2)];
+  const genericWithinTwoX = genericRatios.filter(r => r >= 0.5 && r <= 2).length / genericRatios.length;
+  const genericWithinOnePointFive = genericRatios.filter(r => r >= (1 / 1.5) && r <= 1.5).length / genericRatios.length;
+  assert.ok(genericMedian >= 0.85 && genericMedian <= 1.15,
+    `generic engine median observed/predicted drifted to ${genericMedian.toFixed(2)}`);
+  assert.ok(genericWithinOnePointFive >= 0.70,
+    `generic engine: only ${(genericWithinOnePointFive * 100).toFixed(1)}% of gold cases within 1.5x`);
+  assert.ok(genericWithinTwoX >= 0.85,
+    `generic engine: only ${(genericWithinTwoX * 100).toFixed(1)}% of gold cases within 2x`);
+  const violations = rows.filter(row => row.observedToPhysical > 1.05);
+  assert.ok(violations.length <= Math.ceil(rows.length * 0.02),
+    `${violations.length} gold runs beat the physical roofline: ${violations.map(v => `${v.presetKey}/${v.hardwareTemplate}`).join(', ')}`);
+});
+
+test('explicit head_dim and the attention layer mix size the KV cache', () => {
+  const app = loadApp();
+  const P = app.hooks.MODEL_PRESETS;
+  const H = app.hooks;
+
+  // Qwen 3.8 27B: 16 of 64 layers carry KV; 4 KV heads x head_dim 256 x fp16.
+  const qwen = H.normalizeModelConfig({ ...P['qwen3.8_27b'], quantizationType: 'q4', batchSize: 1, promptTokens: 131071, outputTokens: 1, seqLength: 131072 });
+  const qwenGB = H.calculateKVCacheBytes(qwen, 1) / 1e9;
+  const qwenExpected = 16 * 131072 * 2 * 4 * 256 * 2 / 1e9;
+  assert.ok(Math.abs(qwenGB - qwenExpected) / qwenExpected < 0.01, `Qwen 3.8 27B KV at 131K was ${qwenGB.toFixed(2)} GB, expected ${qwenExpected.toFixed(2)}`);
+
+  // Muse Glimmer 30B: 13 full layers plus 39 layers capped at a 2048 window; 2 KV heads x 128.
+  const muse = H.normalizeModelConfig({ ...P.muse_glimmer_30b, quantizationType: 'q4', batchSize: 1, promptTokens: 131071, outputTokens: 1, seqLength: 131072 });
+  const museGB = H.calculateKVCacheBytes(muse, 1) / 1e9;
+  const museExpected = ((13 * 131072) + (39 * 2048)) * 2 * 2 * 128 * 2 / 1e9;
+  assert.ok(Math.abs(museGB - museExpected) / museExpected < 0.01, `Muse Glimmer KV at 131K was ${museGB.toFixed(2)} GB, expected ${museExpected.toFixed(2)}`);
+
+  // Gemma 3 27B uses head_dim 128, not hidden/heads = 168.
+  assert.equal(H.getHeadDim(P.gemma3_27b), 128);
+  // Llama 3 8B derives 128 from hidden/heads when no explicit value exists.
+  assert.equal(H.getHeadDim(P.llama3_8b), 128);
+  // Bytes read per decode step use the decode depth, residency uses the window.
+  const depth = H.normalizeModelConfig({ ...P.llama3_8b, quantizationType: 'q4', batchSize: 1, promptTokens: 16384, outputTokens: 4096, seqLength: 20480 });
+  const resident = H.calculateKVCacheBytes(depth, 1);
+  const read = H.calculateKVCacheBytes(depth, 1, 18432);
+  assert.ok(Math.abs(resident / read - 20480 / 18432) < 1e-6, 'KV read depth should be prompt + half the response');
+
+  // The Hugging Face importer carries head_dim and the layer mix.
+  const layerTypes = Array.from({ length: 64 }, (_, i) => ((i + 1) % 4 === 0 ? 'full_attention' : 'linear_attention'));
+  const imported = H.parseHuggingFaceModelMetadata({ safetensors: { total: 27.78e9 } }, {
+    hidden_size: 5120, num_hidden_layers: 64, num_attention_heads: 24, num_key_value_heads: 4, head_dim: 256,
+    intermediate_size: 17408, full_attention_interval: 4, layer_types: layerTypes, max_position_embeddings: 262144, mtp_num_hidden_layers: 1
+  }, 'Qwen/Qwen3.8-27B');
+  assert.equal(imported.headDim, 256);
+  assert.equal(imported.attentionMechanism, 'hybrid_linear');
+  assert.equal(imported.fullAttentionLayers, 16);
+  assert.equal(imported.contextLength, 262144);
+  assert.equal(imported.useMTP, true);
+  const importedKV = H.calculateKVCacheBytes({ ...imported, quantizationType: 'q4', batchSize: 1, seqLength: 131072 }, 1) / 1e9;
+  assert.ok(Math.abs(importedKV - qwenExpected) / qwenExpected < 0.01, `imported Qwen 3.8 KV was ${importedKV.toFixed(2)} GB`);
+});
+
+test('decode anchors hold for small-active MoE, hybrid, and multi-GPU dense setups', () => {
+  const app = loadApp();
+  const clone = (name, n = 1) => Array.from({ length: n }, (_, i) => ({ id: i + 1, template: name, ...JSON.parse(JSON.stringify(app.hooks.DEVICE_TEMPLATES[name])), name: `${name}${n > 1 ? ` #${i + 1}` : ''}` }));
+  const run = (dev, n, preset, quant, framework, prompt, out, strategy = 'pipeline') => {
+    app.hooks.setDevices(clone(dev, n));
+    app.applyPreset(preset);
+    app.setValue('quantizationType', quant);
+    app.setValue('runtimeFramework', framework);
+    app.setValue('parallelismStrategy', strategy);
+    app.setValue('batchSize', 1);
+    app.setValue('promptTokens', prompt);
+    app.setValue('outputTokens', out);
+    app.setValue('seqLength', prompt + out);
+    const metrics = app.hooks.calculateMetrics();
+    return app.hooks.calculateSystemRateFromDeviceRates(metrics.map(m => m.decodeTokensPerSecond), strategy, 1, app.hooks.getDevices());
+  };
+
+  // Qwen 3.6 35B A3B Q4 on RTX 5090, llama.cpp: measured 231 tok/s at ~700-token
+  // depth. The byte count alone says ~1,100 tok/s; fixed per-layer costs are
+  // what bring it down to earth.
+  const moe = run('RTX 5090', 1, 'qwen3.6_35b_a3b', 'q4', 'llama_cpp', 512, 512);
+  assert.ok(moe > 130 && moe < 320, `Qwen 3.6 35B A3B on 5090 was ${moe}`);
+
+  // Nemotron 3 Nano 30B A3B Q4 on RTX 5090, llama.cpp: measured 313 tok/s.
+  const nano = run('RTX 5090', 1, 'nemotron3_nano_30b_a3b', 'q4', 'llama_cpp', 83, 512);
+  assert.ok(nano > 150 && nano < 420, `Nemotron 3 Nano on 5090 was ${nano}`);
+
+  // Qwen 3.8 27B Q4 on RTX 5090, llama.cpp: measured 66-79 tok/s at 8K windows.
+  const qwen = run('RTX 5090', 1, 'qwen3.8_27b', 'q4', 'llama_cpp', 74, 512);
+  assert.ok(qwen > 55 && qwen < 100, `Qwen 3.8 27B on 5090 was ${qwen}`);
+
+  // Llama 3.3 70B Q4 layer-split over two RTX 3090s, llama.cpp: ~16-19 tok/s measured.
+  const dual = run('RTX 3090', 2, 'llama3.3_70b', 'q4', 'llama_cpp', 2048, 256);
+  assert.ok(dual > 13 && dual < 23, `2x 3090 70B Q4 was ${dual}`);
+
+  // Llama 3 8B Q4 on an M4 Max with MLX: community ~75-85 tok/s.
+  const mac = run('Mac M4 Max (128)', 1, 'llama3_8b', 'q4', 'mlx', 2048, 256);
+  assert.ok(mac > 60 && mac < 95, `M4 Max 8B Q4 MLX was ${mac}`);
+});
+
+test('context and concurrency sweeps mirror the plan and respect memory', () => {
+  const app = loadApp();
+  const t4090 = app.hooks.DEVICE_TEMPLATES['RTX 4090'];
+  app.hooks.setDevices([{ id: 1, template: 'RTX 4090', ...JSON.parse(JSON.stringify(t4090)), name: 'RTX 4090' }]);
+  app.applyPreset('llama3_8b');
+  app.setValue('quantizationType', 'q4');
+  app.setValue('runtimeFramework', 'llama_cpp');
+  app.setValue('parallelismStrategy', 'pipeline');
+  app.setValue('batchSize', 1);
+  app.setValue('promptTokens', 16384);
+  app.setValue('outputTokens', 4096);
+  app.setValue('seqLength', 20480);
+
+  const config = app.hooks.buildEffectiveModelConfig();
+  const metrics = app.hooks.calculateMetrics();
+  const systemRate = app.hooks.calculateSystemRateFromDeviceRates(metrics.map(m => m.decodeTokensPerSecond), 'pipeline', 1, app.hooks.getDevices());
+
+  const sweep = app.hooks.calculateContextSweep(config, app.hooks.getDevices());
+  assert.ok(sweep.points.length >= 6, 'context sweep covers several input lengths');
+  const current = sweep.points.find(point => point.isCurrent);
+  assert.ok(current, 'the plan input length is one of the sweep points');
+  assert.ok(Math.abs(current.decodeTokS - systemRate) / systemRate < 0.01, `sweep point (${current.decodeTokS}) must equal the plan rate (${systemRate})`);
+  for (let i = 1; i < sweep.points.length; i += 1) {
+    assert.ok(sweep.points[i].decodeTokS <= sweep.points[i - 1].decodeTokS + 1e-9, 'decode never speeds up with more context');
+    assert.ok(sweep.points[i].ttftSeconds >= sweep.points[i - 1].ttftSeconds, 'time to first token grows with the prompt');
+  }
+
+  const concurrency = app.hooks.calculateConcurrencySweep(config, app.hooks.getDevices());
+  assert.ok(Math.abs(concurrency.points[0].perUserTokS - systemRate) / systemRate < 0.01, 'one user equals the plan rate');
+  const fitting = concurrency.points.filter(point => point.fits);
+  assert.ok(fitting.length >= 2 && concurrency.points.some(point => !point.fits),
+    '20K-token contexts fit a few users on 24 GB, then the KV cache overflows');
+  for (let i = 1; i < fitting.length; i += 1) {
+    assert.ok(fitting[i].aggregateTokS >= fitting[i - 1].aggregateTokS, 'combined throughput grows with concurrency while it fits');
+    assert.ok(fitting[i].perUserTokS <= fitting[i - 1].perUserTokS, 'per-user speed never improves with more users');
+  }
+  assert.equal(concurrency.bestAggregate.concurrency, concurrency.maxFittingConcurrency);
+
+  app.hooks.updateSystemAnalysis();
+  const html = app.elements.get('systemAnalysis').innerHTML;
+  assert.match(html, /How it scales/);
+  assert.equal((html.match(/class="scaling-chart"/g) || []).length, 3, 'three scaling charts render');
+  assert.match(html, /Decode speed vs\. input length/);
+  assert.match(html, /Throughput vs\. concurrent users/);
+  assert.match(html, /exceeds memory/, 'memory cliff is labeled');
+});
+
+test('gold projections decode at the recorded prompt depth, not the configured window', () => {
+  const snapshot = loadSnapshot();
+  const app = loadApp({ snapshot });
+  const served = snapshot.goldCases.find(row => row.contextLength >= 65536 && Number.isFinite(row.promptTokens) && row.promptTokens > 0 && row.promptTokens < 2000 && !/llama-bench/i.test(row.command));
+  assert.ok(served, 'corpus has a long-window server run with a short recorded prompt');
+  const projection = app.hooks.calculateGoldCaseProjection(served);
+  assert.ok(projection.decodeContextTokens >= served.promptTokens && projection.decodeContextTokens < 8192,
+    `decode depth ${projection.decodeContextTokens} should follow the ${served.promptTokens}-token prompt, not the ${served.contextLength} window`);
+  assert.ok(projection.physicalTokS >= served.observedTokS, 'a correctly sized depth keeps the measured run under its roofline');
+
+  const bench = snapshot.goldCases.find(row => /llama-bench/i.test(row.command) && !/(^|\s)-(d|pg)\s/.test(row.command) && row.promptTokens >= 1024);
+  if (bench) {
+    const benchProjection = app.hooks.calculateGoldCaseProjection(bench);
+    assert.ok(benchProjection.decodeContextTokens <= Math.max(1, (bench.outputTokens || 128) / 2) + 1,
+      'llama-bench tg tests start from an empty cache');
+  }
 });
 
 test('speculation is labeled, split from efficiency, and can pass the per-pass ceiling', () => {

@@ -123,15 +123,16 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
     ])
   ));
   expect(organizedPresetGroups['New & popular']).toEqual(expect.arrayContaining([
-    'minimax_m3', 'deepseek_v4_pro', 'deepseek_v4_flash',
-    'deepseek_v4_flash_reap_180b', 'nemotron3_super_120b_a12b'
+    'qwen3.8_27b', 'muse_glimmer_30b', 'deepseek_v4_pro', 'deepseek_v4_flash', 'kimi_k3'
   ]));
+  expect(organizedPresetGroups.Qwen).toEqual(expect.arrayContaining(['qwen3.8_27b', 'qwen3.8_2.4t_a95b', 'qwen3.6_27b']));
+  expect(organizedPresetGroups['Meta Muse']).toEqual(['muse_glimmer_30b', 'muse_glimmer_assistant_2.6b']);
   expect(organizedPresetGroups.DeepSeek).toEqual(expect.arrayContaining([
     'deepseek_v4_pro', 'deepseek_v4_flash', 'deepseek_v4_flash_reap_180b', 'deepseek_v3.2'
   ]));
   expect(organizedPresetGroups.MiniMax).toEqual(expect.arrayContaining(['minimax_m3', 'minimax_m2.7']));
-  expect(organizedPresetGroups['NVIDIA Nemotron 3']).toEqual([
-    'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b',
+  expect(organizedPresetGroups['NVIDIA Nemotron']).toEqual([
+    'nemotron3.5_lightning_30b_a3b', 'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b',
     'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b'
   ]);
 
@@ -356,10 +357,12 @@ test('browser validation matrix keeps displayed rates in broad expected ranges',
       max: 45
     },
     {
+      // 36 GB of Q8 weights plus a 240K window spill to system RAM; the CPU
+      // executes the spilled layers at roughly half the DDR5 peak.
       devices: [{ template: 'RTX 3090' }],
       config: { scenario: '', model: 'qwen3.5_35b_a3b', quant: 'int8', framework: 'llama_cpp', strategy: 'pipeline', seqLength: 240000 },
-      min: 35,
-      max: 90,
+      min: 8,
+      max: 40,
       expectOverflow: true
     },
     {
@@ -378,8 +381,11 @@ test('browser validation matrix keeps displayed rates in broad expected ranges',
     const pageText = await page.locator('#systemAnalysis').innerText();
     const overflow = await page.evaluate(() => window.__mlBottleneckTestHooks.calculateMetrics().some(metric => metric.hasOverflow));
 
-    expect(shown).toBeGreaterThan(testCase.min);
-    expect(shown).toBeLessThan(testCase.max);
+    // The hero shows the per-request rate; batched cases are judged on the
+    // combined throughput of the batch.
+    const throughput = shown * (testCase.config.batchSize || 1);
+    expect(throughput).toBeGreaterThan(testCase.min);
+    expect(throughput).toBeLessThan(testCase.max);
     expect(Math.abs(shown - expected)).toBeLessThan(Math.max(0.5, expected * 0.051));
     expect(pageText).not.toContain('NaN');
     if (testCase.expectOverflow !== undefined) {
@@ -527,21 +533,23 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   await advancePlanTo(page, 4);
 
   await expect(page.locator('#systemAnalysis .rate-label')).toHaveText('Projected real decode');
-  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText('44.3');
+  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText('42.2');
   await expect(page.locator('#systemAnalysis')).toContainText('directional confidence');
   const optimizedRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Optimized target' }).first();
-  await expect(optimizedRow).toContainText('179 tok/s');
+  await expect(optimizedRow).toContainText('184 tok/s');
   const physicalRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Physical roofline' }).first();
-  await expect(physicalRow).toContainText('422 tok/s');
+  await expect(physicalRow).toContainText('418 tok/s');
+  await expect(page.locator('#systemAnalysis .scaling-section')).toContainText('How it scales');
+  expect(await page.locator('#systemAnalysis .scaling-chart').count()).toBe(3);
   await expect(physicalRow).toContainText('sanity reference');
 
   await page.locator('.plan-export > summary').click();
   await page.locator('#copyAiHandoffButton').click();
   await expect(page.locator('#planExportStatus')).toHaveText('AI handoff copied.');
   const copied = await page.evaluate(() => window.__copiedPlanText);
-  expect(copied).toContain('44.278 tok/s projected real');
-  expect(copied).toContain('178.724 tok/s optimized');
-  expect(copied).toContain('421.54 tok/s physical roofline');
+  expect(copied).toContain('42.22 tok/s projected real');
+  expect(copied).toContain('184.13 tok/s optimized');
+  expect(copied).toContain('418.066 tok/s physical roofline');
   expect(copied).toContain('Profile provenance: planner-estimate');
 
   const downloadPromise = page.waitForEvent('download');
@@ -554,12 +562,12 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   expect(payload.hardware.devices[0].officialPeakMemoryBandwidthGBps).toBe(608);
   expect(payload.hardware.devices[0].sustainedMemoryBandwidthGBps).toBeNull();
   expect(payload.execution.profile.provenance).toBe('planner-estimate');
-  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(44.20);
-  expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(44.40);
-  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(178.5);
-  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(178.9);
-  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeGreaterThanOrEqual(421.4);
-  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeLessThanOrEqual(421.7);
+  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(42.10);
+  expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(42.35);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(184.0);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(184.3);
+  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeGreaterThanOrEqual(417.9);
+  expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeLessThanOrEqual(418.2);
 });
 
 test('speculative decoding exposes proposer verification flow and modeled inputs', async ({ page }) => {

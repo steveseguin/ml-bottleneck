@@ -7,6 +7,19 @@ const PAGE_SIZE = 200;
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const MODEL_PRESET_RULES = [
+  [/^qwen\/qwen3\.8-27b/i, 'qwen3.8_27b'],
+  [/^qwen\/qwen3\.8-2\.4t/i, 'qwen3.8_2.4t_a95b'],
+  [/^meta-models\/muse-glimmer-30b-assistant/i, 'muse_glimmer_assistant_2.6b'],
+  [/^meta-models\/muse-glimmer-30b/i, 'muse_glimmer_30b'],
+  [/ornith-1\.5-35b/i, 'ornith_1.5_35b_a3b'],
+  [/ornith-1\.5-9b/i, 'ornith_1.5_9b'],
+  [/ornith-1\.5-397b/i, 'ornith_1.5_397b_a17b'],
+  [/nemotron-3\.5-lightning-30b/i, 'nemotron3.5_lightning_30b_a3b'],
+  [/^liquidai\/lfm2\.5-2\.6b/i, 'lfm2.5_2.6b'],
+  [/^mistralai\/mistral-medium-3\.5/i, 'mistral_medium_3.5_128b'],
+  [/^mistralai\/mistral-small-4-119b/i, 'mistral_small_4_119b_a6b'],
+  [/^ibm-granite\/granite-4\.1-8b/i, 'granite4.1_8b'],
+  [/^moonshotai\/kimi-k3/i, 'kimi_k3'],
   [/gemma-4-26b-a4b/i, 'gemma4_26b_a4b'],
   [/gemma-4-31b/i, 'gemma4_31b'],
   [/gemma-4-12b/i, 'gemma4_12b'],
@@ -174,6 +187,25 @@ function normalizeGoldCase(run) {
   const command = run.engineFlags?.commandSnippet || '';
   const batchSize = run.batchSize || 1;
   const contextLength = run.contextLength || 2048;
+  // contextLength is the configured window (n_ctx / max-model-len), not the
+  // depth the run actually decoded at. promptTokens/outputTokens carry the
+  // real workload so the engine can separate KV *allocation* (memory fit)
+  // from KV *reads per token* (bandwidth).
+  const promptTokens = Number.isFinite(run.promptTokens) ? run.promptTokens : null;
+  const outputTokens = Number.isFinite(run.outputTokens) ? run.outputTokens : null;
+  // The structured kvCacheDtype flag is often missing while the command
+  // line carries it (llama.cpp -ctk/-ctv, vLLM --kv-cache-dtype).
+  const kvFlagMatch = command.match(/(?:-ctk|--cache-type-k|--kv-cache-dtype)[=\s]+([A-Za-z0-9_]+)/);
+  const kvCacheDtype = run.engineFlags?.kvCacheDtype || (kvFlagMatch ? kvFlagMatch[1] : null);
+  const backend = run.engine?.backend || null;
+  // llama.cpp row split (-sm row) shards each matrix across GPUs, which
+  // aggregates bandwidth like tensor parallelism instead of layer-splitting.
+  const splitMatch = command.match(/(?:-sm|--split-mode)[=\s]+(row|tensor|layer|none)/i);
+  const splitMode = splitMatch ? splitMatch[1].toLowerCase() : null;
+  // An explicit tensor-split list (-ts 1/1) names how many GPUs actually
+  // take part, which can be fewer than the host's GPU count.
+  const tensorSplitMatch = command.match(/(?:-ts|--tensor-split)[=\s]+([0-9.]+(?:[\/,][0-9.]+)+)/);
+  const tensorSplitDevices = tensorSplitMatch ? tensorSplitMatch[1].split(/[\/,]/).filter(v => parseFloat(v) > 0).length : null;
   const isSpeculative = Boolean(run.engineFlags?.specDecoding || run.engineFlags?.mtpEnabled || /speculative|draft-model|mtp/i.test(command));
   // Pruned/modified variants (REAP, abliterated, distill-merges) have different
   // weights than the preset they would map to; using them as gold evidence
@@ -189,12 +221,19 @@ function normalizeGoldCase(run) {
   if (batchSize !== 1 || isSpeculative || !command || !Number.isFinite(run.tokSOut)) return null;
   if (isModifiedVariant || isRecordedEndpoint || !hasEngineInvocation) return null;
   if (run.tokSOut <= 0 || run.tokSOut > 1000 || contextLength > 131072) return null;
+  // Long-prompt capacity probes that report wall-clock output throughput
+  // (prefill time folded into "tok/s") cannot be separated into phases
+  // without a measured prefill rate; they are not decode evidence.
+  const ttftMs = Number(run.ttftMs) || 0;
+  if (promptTokens !== null && promptTokens >= 32768 && ttftMs >= 10000 && !run.tokSPrefill) return null;
 
   // Trust an explicit tensor-parallel degree in the command over the recorded
   // per-node GPU count (multi-node runs report gpuCount per node).
   const tpMatch = command.match(/(?:-tp|--tensor-parallel-size)[=\s]+(\d+)/);
   const tpDegree = tpMatch ? parseInt(tpMatch[1], 10) : 1;
-  const deviceCount = Math.max(1, run.hardware?.gpuCount || 1, tpDegree);
+  const deviceCount = tensorSplitDevices
+    ? Math.max(1, tensorSplitDevices)
+    : Math.max(1, run.hardware?.gpuCount || 1, tpDegree);
 
   // A fast dense-model run whose claimed quantization could not physically
   // fit the recorded memory means the quant label is wrong; genuine
@@ -228,6 +267,11 @@ function normalizeGoldCase(run) {
     quantKey,
     quantization: run.engine?.quantization || '',
     contextLength,
+    promptTokens,
+    outputTokens,
+    kvCacheDtype,
+    backend,
+    splitMode,
     batchSize,
     observedTokS: run.tokSOut,
     prefillTokS: run.tokSPrefill || null,

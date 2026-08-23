@@ -27,12 +27,17 @@ This is a **static web application** centered on `index.html`:
 - `devices` - Active device array stored in localStorage
 
 **Core Functions:**
-- `calculateTransformerFlops()` - Computes prefill FLOPs for transformer models
-- `calculateDecodeFlops()` - Computes decode phase FLOPs
+- `calculateTransformerFlops()` - Prefill FLOPs (2 per active parameter plus attention over the attended layer mix)
+- `calculateDecodeFlops()` - Decode phase FLOPs
+- `calculateKVCacheBytes()` - KV bytes from explicit head_dim and the full/sliding/linear layer mix
+- `calculateDecodeTokenRate()` - Weight reads + KV reads + fixed per-layer/per-token runtime overhead + compute roofline
 - `calculateMemoryBreakdown()` - Memory requirements (params, KV cache, activations)
 - `calculateNetworkTraffic()` - Inter-device communication overhead
-- `calculateMetrics()` - Main analysis producing utilization percentages and bottleneck identification
+- `calculateMetrics()` / `calculateMetricsForConfig()` - Main analysis producing utilization percentages and bottleneck identification
+- `calculateContextSweep()` / `calculateConcurrencySweep()` - Scaling curves across input length and concurrent requests
 - `updateSystemAnalysis()` - Renders analysis results and triggers chart/alert updates
+
+See `CLAUDE.md` for the physics invariants the tests enforce.
 
 **Device Management:**
 - `addDevice()`, `removeDevice()`, `cloneDevice()` - Device CRUD operations

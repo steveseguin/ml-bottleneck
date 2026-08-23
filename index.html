@@ -43,7 +43,7 @@
 
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
-	<script src="data/localmaxxing-snapshot.js?v=20260720035039"></script>
+	<script src="data/localmaxxing-snapshot.js?v=20260823010950"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -753,7 +753,6 @@ input, select {
     padding: 1rem;
     margin-bottom: 1rem;
     border: 1px solid var(--border);
-    border-left: 3px solid #22c55e;
     border-radius: var(--radius);
     background: var(--background);
 }
@@ -1568,7 +1567,7 @@ option {
 .hardware-spec-meta a { margin-left: auto; white-space: nowrap; }
 .spec-pill { display: inline-flex; align-items: center; min-height: 1.3rem; padding: 0.1rem 0.38rem; border: 1px solid color-mix(in srgb, var(--primary) 38%, var(--border)); border-radius: 999px; color: var(--primary); font-size: 0.57rem; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; }
 .spec-pill.is-derived, .spec-pill.is-preview { border-color: color-mix(in srgb, #f59e0b 48%, var(--border)); color: #d97706; }
-.hardware-spec-detail { margin: 0 0 0.8rem; padding: 0.65rem 0.7rem; border-left: 2px solid var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); color: var(--text-secondary); font-size: 0.68rem; line-height: 1.5; }
+.hardware-spec-detail { margin: 0 0 0.8rem; padding: 0.65rem 0.7rem; border: 1px solid var(--border); border-radius: 5px; background: color-mix(in srgb, var(--primary) 6%, transparent); color: var(--text-secondary); font-size: 0.68rem; line-height: 1.5; }
 .device-roster-wrap { margin: 0 0 1rem; }
 .device-roster-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
 .device-roster-head strong { font-size: 0.76rem; }
@@ -2048,7 +2047,7 @@ td {
 }
 
 .anatomy-part {
-    border-left: 3px solid var(--primary);
+    border: 1px solid var(--border);
     border-radius: 5px;
     background: rgba(45, 212, 191, 0.06);
     padding: 0.52rem 0.58rem;
@@ -3080,6 +3079,53 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .calibration-plot-svg .parity { stroke: var(--text-secondary); stroke-width: 1; stroke-dasharray: 5 5; }
 .calibration-plot-svg .point { fill: #2dd4bf; fill-opacity: 0.72; stroke: var(--background); stroke-width: 1.5; }
 .calibration-plot-svg .point.is-outlier { fill: #f59e0b; }
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* Scaling charts (context length / concurrency) */
+.scaling-section { margin-top: 1.25rem; }
+.scaling-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem 1rem; margin-bottom: 0.5rem; }
+.scaling-head h3 { margin: 0; font-size: 1rem; }
+.scaling-head p { margin: 0; font-size: 0.8rem; color: var(--text-secondary); }
+.scaling-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 0.85rem; }
+.scaling-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--background); padding: 0.75rem 0.8rem 0.6rem; min-width: 0; }
+.scaling-card-title { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem; }
+.scaling-card-title strong { font-size: 0.85rem; }
+.scaling-card-title span { font-size: 0.72rem; color: var(--text-secondary); }
+.scaling-chart { display: block; width: 100%; height: auto; overflow: visible; }
+.scaling-chart text { fill: var(--text-secondary); font-family: inherit; font-size: 11px; }
+.scaling-chart .gridline { stroke: var(--border); stroke-width: 1; }
+.scaling-chart .axis-label { font-size: 10.5px; }
+.scaling-chart .series { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.scaling-chart .series.is-expected { stroke: var(--primary); }
+.scaling-chart .series.is-engine { stroke: var(--text-secondary); stroke-dasharray: 4 4; stroke-width: 1.5; }
+.scaling-chart .series.is-aggregate { stroke: var(--primary); }
+.scaling-chart .series.is-peruser { stroke: #f59e0b; }
+.scaling-chart .series.is-prefill { stroke: var(--primary); }
+.scaling-chart .series.is-ttft { stroke: #f59e0b; stroke-dasharray: 4 4; stroke-width: 1.5; }
+.scaling-chart .point { stroke: var(--background); stroke-width: 1.5; }
+.scaling-chart .point.is-expected, .scaling-chart .point.is-aggregate, .scaling-chart .point.is-prefill { fill: var(--primary); }
+.scaling-chart .point.is-peruser, .scaling-chart .point.is-ttft { fill: #f59e0b; }
+.scaling-chart .point.is-engine { fill: var(--text-secondary); }
+.scaling-chart .point.is-unfit { fill: var(--background); stroke: var(--destructive); stroke-width: 2; }
+.scaling-chart .marker { stroke: var(--text); stroke-width: 1; stroke-dasharray: 2 3; }
+.scaling-chart .marker-label { fill: var(--text); font-size: 10.5px; font-weight: 600; }
+.scaling-chart .unfit-zone { fill: var(--destructive); fill-opacity: 0.08; }
+.scaling-chart .unfit-label { fill: var(--destructive); font-size: 10px; }
+.scaling-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.35rem; }
+.scaling-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.scaling-legend i { display: inline-block; width: 1.1rem; height: 0; border-top: 2px solid var(--primary); }
+.scaling-legend i.is-engine { border-top: 2px dashed var(--text-secondary); }
+.scaling-legend i.is-peruser, .scaling-legend i.is-ttft { border-top-color: #f59e0b; }
+.scaling-legend i.is-ttft { border-top-style: dashed; }
+.scaling-legend i.is-unfit { width: 0.6rem; height: 0.6rem; border: 2px solid var(--destructive); border-radius: 50%; }
+.scaling-summary { margin: 0.5rem 0 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45; }
+.scaling-summary strong { color: var(--text); }
+.scaling-card details { margin-top: 0.45rem; font-size: 0.75rem; }
+.scaling-card summary { cursor: pointer; color: var(--text-secondary); }
+.scaling-card table { width: 100%; border-collapse: collapse; margin-top: 0.4rem; font-size: 0.72rem; }
+.scaling-card th, .scaling-card td { text-align: right; padding: 0.2rem 0.3rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.scaling-card th:first-child, .scaling-card td:first-child { text-align: left; }
+.scaling-card .table-scroll { overflow-x: auto; }
+@media (max-width: 720px) { .scaling-grid { grid-template-columns: 1fr; } }
 .calibration-method { padding-left: 1.4rem; border-left: 1px solid var(--border); }
 .calibration-method p { color: var(--text-secondary); font-size: 0.75rem; }
 .calibration-method dl { margin: 1.2rem 0 0; }
@@ -3355,7 +3401,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             </div>
             <div id="modelConfigContent">
                 <label for="modelSearch">Find a built-in model</label>
-                <input id="modelSearch" class="input" type="search" list="modelSearchOptions" placeholder="Search Gemma 4, Llama, Qwen, MiniMax…" autocomplete="off">
+                <input id="modelSearch" class="input" type="search" list="modelSearchOptions" placeholder="Search Qwen 3.8, Muse Glimmer, Gemma 4, DeepSeek…" autocomplete="off">
                 <datalist id="modelSearchOptions"></datalist>
 
                 <label for="modelPreset">Model preset</label>
@@ -3462,15 +3508,18 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                             <input type="hidden" id="seqLength" value="20480">
                             <small class="field-help token-total-help">Memory uses the combined context window; timing is split into prompt processing and decode.</small>
 
-                            <label for="batchSize">Batch size</label>
+                            <label for="batchSize">Concurrent requests (batch size)</label>
                             <select id="batchSize" class="input">
-                                <option value="1">1 &mdash; interactive (single user)</option>
-                                <option value="4">4 &mdash; small batch</option>
-                                <option value="8">8 &mdash; medium batch</option>
-                                <option value="16">16 &mdash; large batch</option>
-                                <option value="32">32 &mdash; high throughput</option>
-                                <option value="64">64 &mdash; max throughput</option>
+                                <option value="1">1 &mdash; single user, lowest latency</option>
+                                <option value="2">2 concurrent requests</option>
+                                <option value="4">4 concurrent requests</option>
+                                <option value="8">8 concurrent requests</option>
+                                <option value="16">16 concurrent requests</option>
+                                <option value="32">32 concurrent requests</option>
+                                <option value="64">64 concurrent requests</option>
+                                <option value="128">128 concurrent requests</option>
                             </select>
+                            <small class="field-help">Requests decoded in the same pass. Each user sees the per-request rate; the combined rate and the memory cost of every extra KV cache appear in the prediction.</small>
                         </div>
 
                         <div class="tuning-section" id="distributionTuningSection">
@@ -3533,11 +3582,13 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 
                             <label for="kvCacheCompression">KV cache compression</label>
                             <select id="kvCacheCompression" class="input">
-                                <option value="none" selected>None</option>
+                                <option value="none" selected>None (fp16 KV)</option>
+                                <option value="q8_kv">8-bit KV (llama.cpp q8_0, vLLM fp8)</option>
+                                <option value="q4_kv">4-bit KV (llama.cpp q4_0)</option>
                                 <option value="turboquant_3_5">TurboQuant 3.5-bit</option>
                                 <option value="turboquant_2_5">TurboQuant 2.5-bit</option>
                             </select>
-                            <small class="field-help">Applies to KV cache only; most useful for long contexts or memory overflow.</small>
+                            <small class="field-help">Applies to the KV cache only. Halving KV bytes helps most at long context and when many users share the device.</small>
                         </div>
 
                         <div class="tuning-section" id="runtimeTuningSection">
@@ -3629,19 +3680,19 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                         <details class="nested-details">
                             <summary>Model internals (override preset)</summary>
                             <div class="nested-details-content">
-                                <label>Total Parameters (B)</label>
+                                <label for="totalParamsB">Total parameters (B)</label>
                                 <input type="number" id="totalParamsB" class="input" value="400">
 
-                                <label>Hidden Size</label>
+                                <label for="hiddenSize">Hidden size</label>
                                 <input type="number" id="hiddenSize" class="input" value="16384">
 
-                                <label>Number of Layers</label>
+                                <label for="numLayers">Number of layers</label>
                                 <input type="number" id="numLayers" class="input" value="120">
 
-                                <label>Number of Heads</label>
+                                <label for="numHeads">Number of heads</label>
                                 <input type="number" id="numHeads" class="input" value="128">
 
-                                <label>Architecture Family</label>
+                                <label for="architectureType">Architecture family</label>
                                 <select id="architectureType" class="input">
                                     <option value="transformer">Transformer</option>
                                     <option value="dense_transformer">Dense Transformer</option>
@@ -3656,27 +3707,31 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 
                                 <div class="device-grid">
                                     <div>
-                                        <label>KV Heads</label>
+                                        <label for="numKVHeads">KV heads</label>
                                         <input type="number" id="numKVHeads" class="input" value="8" min="1">
                                     </div>
                                     <div>
-                                        <label>Intermediate Size</label>
+                                        <label for="headDim">Head dim</label>
+                                        <input type="number" id="headDim" class="input" value="" min="1" placeholder="hidden ÷ heads">
+                                    </div>
+                                    <div>
+                                        <label for="intermediateSize">Intermediate size</label>
                                         <input type="number" id="intermediateSize" class="input" value="32768" min="1">
                                     </div>
                                     <div>
-                                        <label>Active Params (B)</label>
+                                        <label for="activeParamsB">Active params (B)</label>
                                         <input type="number" id="activeParamsB" class="input" value="400" min="0" step="0.1">
                                     </div>
                                     <div>
-                                        <label>Experts</label>
+                                        <label for="numExperts">Experts</label>
                                         <input type="number" id="numExperts" class="input" value="1" min="1">
                                     </div>
                                     <div>
-                                        <label>Active Experts</label>
+                                        <label for="activeExperts">Active experts</label>
                                         <input type="number" id="activeExperts" class="input" value="1" min="1">
                                     </div>
                                     <div>
-                                        <label>Routing</label>
+                                        <label for="routingType">Routing</label>
                                         <select id="routingType" class="input">
                                             <option value="auto">Auto</option>
                                             <option value="dense">Dense</option>
@@ -3684,7 +3739,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                                         </select>
                                     </div>
                                     <div>
-                                        <label>Attention</label>
+                                        <label for="attentionMechanism">Attention</label>
                                         <select id="attentionMechanism" class="input">
                                             <option value="auto">Auto</option>
                                             <option value="standard">Standard</option>
@@ -3922,7 +3977,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 <dl id="calibrationMethodStats"></dl>
             </aside>
         </div>
-        <div class="gold-set-head"><div><span class="eyebrow">Gold set</span><h2>Reproducible reference runs</h2></div><input class="input" id="goldSearch" type="search" placeholder="Filter model, hardware, runtime…"></div>
+        <div class="gold-set-head"><div><span class="eyebrow">Gold set</span><h2>Reproducible reference runs</h2></div><label class="visually-hidden" for="goldSearch">Filter reference runs</label><input class="input" id="goldSearch" type="search" placeholder="Filter model, hardware, runtime…"></div>
         <div class="gold-table-wrap"><table class="gold-table"><thead><tr><th>Model / setup</th><th>Observed</th><th>Optimized</th><th>Projected</th><th>Error</th></tr></thead><tbody id="goldTableBody"></tbody></table></div>
     </section>
 
@@ -4038,6 +4093,11 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         };
 
         // Common overflow bandwidth scenarios in GB/s
+        // Layers that spill to system RAM run on the CPU. Measured llama.cpp
+        // CPU decode reaches ~45-55% of DRAM peak for Q4/Q8 GEMVs, so the
+        // effective overflow rate is the DRAM figure times this factor.
+        const CPU_OFFLOAD_BANDWIDTH_EFFICIENCY = 0.5;
+
         const OVERFLOW_BANDWIDTH = {
             'ddr5_7200': 115,      // Dual-channel DDR5-7200
             'ddr5_6400': 102,      // Dual-channel DDR5-6400
@@ -4048,12 +4108,28 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             'oculink': 8           // Oculink (PCIe 4.0 x4)
         };
 
+        // Runtime profiles. Decode time per verified pass is modeled as
+        //   weight bytes / (peak bandwidth x bandwidthEfficiency)
+        // + KV bytes     / (peak bandwidth x kvReadEfficiency)
+        // + layers x perLayerOverheadUs + perTokenOverheadUs   (fixed, not proportional)
+        // + modeled collective/coordination latency.
+        // The fixed term is what makes a 3B-active MoE decode far slower than
+        // its byte count suggests and a 70B dense model closer to its roofline:
+        // kernel launches, routing, norms, sampling, and scheduler work cost
+        // the same microseconds whether the GEMV behind them is 1 MB or 1 GB.
+        // Efficiencies are calibrated against the gold-case corpus
+        // (npm run audit:gold) and the anchors in tests/integrity.test.mjs.
         const FRAMEWORK_PROFILES = {
             auto: {
                 label: 'AUTO',
-                decodeEfficiency: 0.74,
-                prefillEfficiency: 0.36,
-                bandwidthEfficiency: 0.80,
+                bandwidthEfficiency: 0.82,
+                kvReadEfficiency: 0.88,
+                perLayerOverheadUs: 42,
+                perTokenOverheadUs: 250,
+                prefillEfficiency: 0.50,
+                prefillRampTokens: 384,
+                batchedComputeEfficiency: 0.48,
+                batchRampSequences: 24,
                 speculativeMultiplier: 1.45,
                 batchingMultiplier: 1.18,
                 pagedAttentionMultiplier: 1.07,
@@ -4061,9 +4137,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             },
             llama_cpp: {
                 label: 'llama.cpp',
-                decodeEfficiency: 0.70,
-                prefillEfficiency: 0.38,
                 bandwidthEfficiency: 0.78,
+                kvReadEfficiency: 0.86,
+                perLayerOverheadUs: 45,
+                perTokenOverheadUs: 180,
+                prefillEfficiency: 0.52,
+                prefillRampTokens: 384,
+                batchedComputeEfficiency: 0.40,
+                batchRampSequences: 32,
                 speculativeMultiplier: 1.32,
                 batchingMultiplier: 1.10,
                 pagedAttentionMultiplier: 1.03,
@@ -4071,9 +4152,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             },
             mlx: {
                 label: 'MLX / MLX-LM',
-                decodeEfficiency: 0.66,
-                prefillEfficiency: 0.22,
                 bandwidthEfficiency: 0.86,
+                kvReadEfficiency: 0.82,
+                perLayerOverheadUs: 110,
+                perTokenOverheadUs: 500,
+                prefillEfficiency: 0.34,
+                prefillRampTokens: 512,
+                batchedComputeEfficiency: 0.34,
+                batchRampSequences: 32,
                 speculativeMultiplier: 1.22,
                 batchingMultiplier: 1.08,
                 pagedAttentionMultiplier: 1.00,
@@ -4081,9 +4167,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             },
             ollama: {
                 label: 'Ollama',
-                decodeEfficiency: 0.62,
-                prefillEfficiency: 0.34,
-                bandwidthEfficiency: 0.76,
+                bandwidthEfficiency: 0.78,
+                kvReadEfficiency: 0.86,
+                perLayerOverheadUs: 52,
+                perTokenOverheadUs: 450,
+                prefillEfficiency: 0.46,
+                prefillRampTokens: 384,
+                batchedComputeEfficiency: 0.36,
+                batchRampSequences: 32,
                 speculativeMultiplier: 1.18,
                 batchingMultiplier: 1.05,
                 pagedAttentionMultiplier: 1.00,
@@ -4091,9 +4182,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             },
             vllm: {
                 label: 'vLLM',
-                decodeEfficiency: 0.76,
-                prefillEfficiency: 0.35,
-                bandwidthEfficiency: 0.83,
+                bandwidthEfficiency: 0.84,
+                kvReadEfficiency: 0.90,
+                perLayerOverheadUs: 45,
+                perTokenOverheadUs: 600,
+                prefillEfficiency: 0.50,
+                prefillRampTokens: 256,
+                batchedComputeEfficiency: 0.55,
+                batchRampSequences: 16,
                 speculativeMultiplier: 1.60,
                 batchingMultiplier: 1.26,
                 pagedAttentionMultiplier: 1.12,
@@ -4101,9 +4197,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             },
             sglang: {
                 label: 'SGLang',
-                decodeEfficiency: 0.80,
-                prefillEfficiency: 0.36,
                 bandwidthEfficiency: 0.85,
+                kvReadEfficiency: 0.90,
+                perLayerOverheadUs: 24,
+                perTokenOverheadUs: 450,
+                prefillEfficiency: 0.52,
+                prefillRampTokens: 256,
+                batchedComputeEfficiency: 0.58,
+                batchRampSequences: 16,
                 speculativeMultiplier: 1.70,
                 batchingMultiplier: 1.28,
                 pagedAttentionMultiplier: 1.12,
@@ -4111,9 +4212,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             },
             tensorrt_llm: {
                 label: 'TensorRT-LLM',
-                decodeEfficiency: 0.72,
-                prefillEfficiency: 0.38,
-                bandwidthEfficiency: 0.82,
+                bandwidthEfficiency: 0.84,
+                kvReadEfficiency: 0.90,
+                perLayerOverheadUs: 18,
+                perTokenOverheadUs: 350,
+                prefillEfficiency: 0.54,
+                prefillRampTokens: 256,
+                batchedComputeEfficiency: 0.62,
+                batchRampSequences: 16,
                 speculativeMultiplier: 1.85,
                 batchingMultiplier: 1.30,
                 pagedAttentionMultiplier: 1.10,
@@ -4121,14 +4227,37 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             },
             exo: {
                 label: 'EXO',
-                decodeEfficiency: 0.77,
-                prefillEfficiency: 0.36,
-                bandwidthEfficiency: 0.78,
+                bandwidthEfficiency: 0.80,
+                kvReadEfficiency: 0.82,
+                perLayerOverheadUs: 90,
+                perTokenOverheadUs: 900,
+                prefillEfficiency: 0.34,
+                prefillRampTokens: 512,
+                batchedComputeEfficiency: 0.30,
+                batchRampSequences: 32,
                 speculativeMultiplier: 1.05,
                 batchingMultiplier: 1.06,
                 pagedAttentionMultiplier: 1.00,
                 flashAttentionMultiplier: 1.02
             }
+        };
+
+        // Per-layer launch/scheduling cost depends on how many small kernels a
+        // layer dispatches. Gated DeltaNet / KDA layers (conv + gate + recurrent
+        // scan + norms) and MoE routing (top-k, gather/scatter, grouped GEMMs)
+        // dispatch several times more kernels than a dense GQA block.
+        const LAYER_OVERHEAD_SCALES = {
+            attention: {
+                standard: 1.0,
+                grouped_query: 1.0,
+                multi_query: 1.0,
+                mla: 1.25,
+                sliding_window: 1.05,
+                hybrid_linear: 2.0,
+                hybrid_ssm: 1.35
+            },
+            moeExtra: 0.4,
+            visionExtra: 0
         };
 
         const PROFILE_MULTIPLIER_KEYS = [
@@ -4312,7 +4441,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             sliding_window: {
                 label: 'Sliding Window Attention',
                 // KV shrinkage is computed dynamically from the window size
-                // and layer mix (getSlidingWindowKvScale); a static multiplier
+                // and layer mix (getAttentionLayerMix); a static multiplier
                 // cannot represent a saving that grows with context length.
                 kvCacheMultiplier: 1,
                 attentionMemoryMultiplier: 0.58,
@@ -4392,6 +4521,43 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    activeParamsB: 17,
 	    contextLength: 1000000,
 	    hasVision: true
+	  },
+	  'muse_glimmer_30b': {
+	    label: 'Muse Glimmer 30B (Meta)',
+	    hfId: 'meta-models/Muse-Glimmer-30B',
+	    totalParamsB: 29.8,
+	    hiddenSize: 6656,
+	    numLayers: 52,
+	    numHeads: 32,
+	    numKVHeads: 2,
+	    headDim: 128,
+	    intermediateSize: 19968,
+	    routingType: 'dense',
+	    attentionMechanism: 'sliding_window',
+	    slidingWindow: 2048,
+	    fullAttentionLayers: 13,
+	    contextLength: 131072,
+	    hasVision: true,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/meta-models/Muse-Glimmer-30B/blob/main/config.json',
+	    specNote: 'Meta config (Aug 2026): 52 dense layers, 32 query / 2 KV heads at head_dim 128, three 2048-token sliding-window layers per full-attention layer (13 full, NoPE), 19968 FFN, vision encoder, 202K vocabulary. Apache-2.0; a 2.56B Muse Glimmer assistant draft model ships alongside for speculative decoding.'
+	  },
+	  'muse_glimmer_assistant_2.6b': {
+	    label: 'Muse Glimmer Assistant 2.6B (draft)',
+	    hfId: 'meta-models/Muse-Glimmer-30B-assistant',
+	    totalParamsB: 2.56,
+	    hiddenSize: 2048,
+	    numLayers: 28,
+	    numHeads: 16,
+	    numKVHeads: 2,
+	    headDim: 128,
+	    intermediateSize: 8192,
+	    routingType: 'dense',
+	    attentionMechanism: 'grouped_query',
+	    contextLength: 131072,
+	    specStatus: 'preview',
+	    specSourceUrl: 'https://huggingface.co/meta-models/Muse-Glimmer-30B-assistant',
+	    specNote: 'Meta ships this 2.56B model as the speculative-decoding assistant for Muse Glimmer 30B. The parameter count is from the model card; layer dimensions are planning proxies until the config is verified.'
 	  },
 	  'mistral_7b': {
 	    totalParamsB: 7,
@@ -4489,6 +4655,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 62,
 	    numHeads: 32,
 	    numKVHeads: 16,
+	    headDim: 128,
 	    intermediateSize: 21504,
 	    contextLength: 128000,
 	    slidingWindow: 1024,
@@ -4510,6 +4677,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    fullAttentionLayers: 10,
 	    numHeads: 32,
 	    numKVHeads: 16,
+	    headDim: 256,
 	    intermediateSize: 21504,
 	    routingType: 'dense',
 	    attentionMechanism: 'sliding_window',
@@ -4531,6 +4699,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    fullAttentionLayers: 8,
 	    numHeads: 16,
 	    numKVHeads: 8,
+	    headDim: 256,
 	    intermediateSize: 15360,
 	    routingType: 'dense',
 	    attentionMechanism: 'sliding_window',
@@ -4551,6 +4720,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 30,
 	    numHeads: 16,
 	    numKVHeads: 8,
+	    headDim: 256,
 	    intermediateSize: 2112,
 	    isMoE: true,
 	    numExperts: 128,
@@ -4579,6 +4749,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 42,
 	    numHeads: 8,
 	    numKVHeads: 2,
+	    headDim: 256,
 	    intermediateSize: 10240,
 	    activeParamsB: 4.5,
 	    routingType: 'dense',
@@ -4601,6 +4772,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 35,
 	    numHeads: 8,
 	    numKVHeads: 1,
+	    headDim: 256,
 	    intermediateSize: 6144,
 	    activeParamsB: 2.3,
 	    routingType: 'dense',
@@ -4623,6 +4795,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 32,
 	    numHeads: 16,
 	    numKVHeads: 4,
+	    headDim: 256,
 	    intermediateSize: 12288,
 	    routingType: 'dense',
 	    attentionMechanism: 'hybrid_linear',
@@ -4636,6 +4809,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 40,
 	    numHeads: 16,
 	    numKVHeads: 2,
+	    headDim: 256,
 	    isMoE: true,
 	    numExperts: 256,
 	    activeExperts: 8,
@@ -4643,6 +4817,77 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    routingType: 'moe',
 	    attentionMechanism: 'hybrid_linear',
 	    contextLength: 262144
+	  },
+	  'ornith_1.5_35b_a3b': {
+	    label: 'Ornith 1.5 35B A3B',
+	    hfId: 'ornith-ai/Ornith-1.5-35B-A3B',
+	    totalParamsB: 35,
+	    hiddenSize: 2048,
+	    numLayers: 40,
+	    numHeads: 16,
+	    numKVHeads: 2,
+	    headDim: 256,
+	    isMoE: true,
+	    numExperts: 256,
+	    activeExperts: 8,
+	    activeParamsB: 3,
+	    moeIntermediateSize: 512,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 262144,
+	    hasVision: true,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B/blob/main/config.json',
+	    specNote: 'Ornith config (Aug 2026, MIT): Qwen 3.5 MoE architecture. 40 layers (30 Gated DeltaNet + 10 full attention), 16 query / 2 KV heads at head_dim 256, 256 experts with top-8 routing plus a shared expert at 512 FFN, one MTP layer, vision encoder.'
+	  },
+	  'ornith_1.5_9b': {
+	    label: 'Ornith 1.5 9B',
+	    hfId: 'ornith-ai/Ornith-1.5-9B',
+	    totalParamsB: 9,
+	    hiddenSize: 4096,
+	    numLayers: 32,
+	    numHeads: 16,
+	    numKVHeads: 4,
+	    headDim: 256,
+	    intermediateSize: 12288,
+	    routingType: 'dense',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 262144,
+	    hasVision: true,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/ornith-ai/Ornith-1.5-9B/blob/main/config.json',
+	    specNote: 'Ornith config (Aug 2026, MIT): Qwen 3.5 dense architecture. 32 layers (24 Gated DeltaNet + 8 full attention), 16 query / 4 KV heads at head_dim 256, 12288 FFN, one MTP layer, vision encoder.'
+	  },
+	  'ornith_1.5_397b_a17b': {
+	    label: 'Ornith 1.5 397B A17B',
+	    hfId: 'ornith-ai/Ornith-1.5-397B',
+	    totalParamsB: 397,
+	    hiddenSize: 4096,
+	    numLayers: 60,
+	    numHeads: 32,
+	    numKVHeads: 2,
+	    headDim: 256,
+	    isMoE: true,
+	    numExperts: 512,
+	    activeExperts: 10,
+	    activeParamsB: 17,
+	    moeIntermediateSize: 1024,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 262144,
+	    hasVision: true,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/ornith-ai/Ornith-1.5-397B/blob/main/config.json',
+	    specNote: 'Ornith config (Aug 2026, MIT): Qwen 3.5 397B MoE architecture. 60 layers (45 Gated DeltaNet + 15 full attention), 32 query / 2 KV heads at head_dim 256, 512 experts with top-10 routing plus a shared expert at 1024 FFN, one MTP layer, vision encoder. Active parameters follow the Qwen 3.5 397B-A17B base.'
 	  },
 	  'minicpm5_1b': {
 	    label: 'MiniCPM5 1B',
@@ -4909,6 +5154,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 36,
 	    numHeads: 32,
 	    numKVHeads: 8,
+	    intermediateSize: 12288,
+	    headDim: 128,
 	    routingType: 'dense',
 	    attentionMechanism: 'grouped_query',
 	    contextLength: 128000
@@ -4917,10 +5164,13 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    label: 'Qwen 3 30B A3B',
 	    hfId: 'Qwen/Qwen3-30B-A3B-Instruct-2507',
 	    totalParamsB: 30,
-	    hiddenSize: 4096,
+	    hiddenSize: 2048,
 	    numLayers: 48,
 	    numHeads: 32,
 	    numKVHeads: 4,
+	    intermediateSize: 6144,
+	    moeIntermediateSize: 768,
+	    headDim: 128,
 	    isMoE: true,
 	    numExperts: 128,
 	    activeExperts: 8,
@@ -4936,6 +5186,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 32,
 	    numHeads: 16,
 	    numKVHeads: 4,
+	    headDim: 256,
 	    intermediateSize: 12288,
 	    routingType: 'dense',
 	    attentionMechanism: 'hybrid_linear',
@@ -4950,6 +5201,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 64,
 	    numHeads: 24,
 	    numKVHeads: 4,
+	    headDim: 256,
 	    intermediateSize: 17408,
 	    routingType: 'dense',
 	    attentionMechanism: 'hybrid_linear',
@@ -4964,6 +5216,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 40,
 	    numHeads: 16,
 	    numKVHeads: 2,
+	    headDim: 256,
 	    isMoE: true,
 	    numExperts: 256,
 	    activeExperts: 8,
@@ -4981,6 +5234,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 48,
 	    numHeads: 32,
 	    numKVHeads: 2,
+	    headDim: 256,
 	    isMoE: true,
 	    numExperts: 256,
 	    activeExperts: 8,
@@ -4997,6 +5251,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 60,
 	    numHeads: 32,
 	    numKVHeads: 2,
+	    headDim: 256,
 	    isMoE: true,
 	    numExperts: 512,
 	    activeExperts: 10,
@@ -5014,6 +5269,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 40,
 	    numHeads: 16,
 	    numKVHeads: 2,
+	    headDim: 256,
 	    isMoE: true,
 	    numExperts: 256,
 	    activeExperts: 8,
@@ -5031,6 +5287,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 64,
 	    numHeads: 24,
 	    numKVHeads: 4,
+	    headDim: 256,
 	    intermediateSize: 17408,
 	    routingType: 'dense',
 	    attentionMechanism: 'hybrid_linear',
@@ -5040,6 +5297,51 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    contextLength: 262144,
 	    hasVision: true
 	  },
+	  'qwen3.8_27b': {
+	    label: 'Qwen 3.8 27B',
+	    hfId: 'Qwen/Qwen3.8-27B',
+	    totalParamsB: 27.8,
+	    hiddenSize: 5120,
+	    numLayers: 64,
+	    numHeads: 24,
+	    numKVHeads: 4,
+	    headDim: 256,
+	    intermediateSize: 17408,
+	    routingType: 'dense',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 262144,
+	    hasVision: true,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/config.json',
+	    specNote: 'Qwen config (Aug 2026): 64 layers (48 Gated DeltaNet + 16 full attention), 24 query / 4 KV heads at head_dim 256, 17408 FFN, one MTP layer, vision encoder. Same text architecture as Qwen 3.6 27B; 27.8B parameters including vision and MTP.'
+	  },
+	  'qwen3.8_2.4t_a95b': {
+	    label: 'Qwen 3.8 Max 2.4T A95B',
+	    hfId: 'Qwen/Qwen3.8-2.4T-A95B',
+	    totalParamsB: 2446,
+	    hiddenSize: 8192,
+	    numLayers: 92,
+	    numHeads: 64,
+	    numKVHeads: 4,
+	    headDim: 256,
+	    isMoE: true,
+	    numExperts: 512,
+	    activeExperts: 10,
+	    activeParamsB: 95,
+	    moeIntermediateSize: 2048,
+	    routingType: 'moe',
+	    attentionMechanism: 'hybrid_linear',
+	    fullAttentionInterval: 4,
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 262144,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/blob/main/config.json',
+	    specNote: 'Qwen config (Aug 2026): 92 layers (69 Gated DeltaNet + 23 full attention), 64 query / 4 KV heads at head_dim 256, 512 experts with top-10 routing plus a shared expert, one MTP layer. 2.45T parameters, about 95B active; text only; restrictive Qwen3.8-Max license.'
+	  },
 	  'qwen3_coder_next': {
 	    label: 'Qwen 3 Coder Next 80B A3B',
 	    hfId: 'Qwen/Qwen3-Coder-Next',
@@ -5048,6 +5350,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 48,
 	    numHeads: 16,
 	    numKVHeads: 2,
+	    headDim: 256,
 	    intermediateSize: 5120,
 	    isMoE: true,
 	    numExperts: 512,
@@ -5110,6 +5413,66 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 40,
 	    numHeads: 32,
 	    numKVHeads: 8
+	  },
+	  'mistral_medium_3.5_128b': {
+	    label: 'Mistral Medium 3.5 128B',
+	    hfId: 'mistralai/Mistral-Medium-3.5-128B',
+	    totalParamsB: 128,
+	    hiddenSize: 12288,
+	    numLayers: 88,
+	    numHeads: 96,
+	    numKVHeads: 8,
+	    headDim: 128,
+	    intermediateSize: 28672,
+	    routingType: 'dense',
+	    attentionMechanism: 'grouped_query',
+	    contextLength: 262144,
+	    hasVision: true,
+	    nativeBytesPerParam: 1,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/mistralai/Mistral-Medium-3.5-128B/blob/main/config.json',
+	    specNote: 'Mistral config (Mar 2026): 88 dense layers, 96 query / 8 KV heads at head_dim 128, 28672 FFN, 262K context, Pixtral vision encoder. Ships as FP8 weights, so FP16/BF16 cannot be larger than the native 1 byte per parameter.'
+	  },
+	  'mistral_small_4_119b_a6b': {
+	    label: 'Mistral Small 4 119B A6B',
+	    hfId: 'mistralai/Mistral-Small-4-119B-2603',
+	    totalParamsB: 119,
+	    hiddenSize: 4096,
+	    numLayers: 36,
+	    numHeads: 32,
+	    numKVHeads: 32,
+	    headDim: 128,
+	    intermediateSize: 12288,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 4,
+	    activeParamsB: 6.5,
+	    moeIntermediateSize: 2048,
+	    routingType: 'moe',
+	    attentionMechanism: 'standard',
+	    contextLength: 1048576,
+	    hasVision: true,
+	    nativeBytesPerParam: 1,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/mistralai/Mistral-Small-4-119B-2603/blob/main/config.json',
+	    specNote: 'Mistral config (Jan 2026): 36 layers, 32 attention heads with full (non-grouped) KV, 128 routed experts with top-4 routing plus one shared expert at 2048 FFN, 1M context, Pixtral vision encoder. Active parameters (about 6.5B) are derived from the config; FP8 native weights.'
+	  },
+	  'granite4.1_8b': {
+	    label: 'Granite 4.1 8B',
+	    hfId: 'ibm-granite/granite-4.1-8b',
+	    totalParamsB: 8.4,
+	    hiddenSize: 4096,
+	    numLayers: 40,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    headDim: 128,
+	    intermediateSize: 12800,
+	    routingType: 'dense',
+	    attentionMechanism: 'grouped_query',
+	    contextLength: 131072,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/ibm-granite/granite-4.1-8b/blob/main/config.json',
+	    specNote: 'IBM config (Apr 2026): 40 dense layers, 32 query / 8 KV heads at head_dim 128, 12800 FFN, 128K context, tied 100K-token embeddings.'
 	  },
 	  // GLM-4
 	  'glm4_9b': {
@@ -5241,6 +5604,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 48,
 	    numHeads: 16,
 	    numKVHeads: 8,
+	    headDim: 256,
 	    intermediateSize: 15360,
 	    contextLength: 128000,
 	    slidingWindow: 1024,
@@ -5254,6 +5618,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 34,
 	    numHeads: 8,
 	    numKVHeads: 4,
+	    headDim: 256,
 	    intermediateSize: 10240,
 	    contextLength: 128000,
 	    slidingWindow: 1024,
@@ -5267,6 +5632,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 26,
 	    numHeads: 4,
 	    numKVHeads: 1,
+	    headDim: 256,
 	    intermediateSize: 6912,
 	    contextLength: 32768,
 	    slidingWindow: 512,
@@ -5404,6 +5770,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 24,
 	    numHeads: 32,
 	    numKVHeads: 8,
+	    headDim: 64,
 	    intermediateSize: 7168,
 	    isMoE: true,
 	    numExperts: 32,
@@ -5412,6 +5779,25 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    routingType: 'moe',
 	    attentionMechanism: 'hybrid_ssm',
 	    contextLength: 128000
+	  },
+	  'lfm2.5_2.6b': {
+	    label: 'LFM 2.5 2.6B',
+	    hfId: 'LiquidAI/LFM2.5-2.6B',
+	    totalParamsB: 2.6,
+	    hiddenSize: 2048,
+	    numLayers: 30,
+	    numHeads: 32,
+	    numKVHeads: 8,
+	    headDim: 64,
+	    intermediateSize: 10752,
+	    routingType: 'dense',
+	    architectureType: 'hybrid_ssm_transformer',
+	    attentionMechanism: 'hybrid_ssm',
+	    fullAttentionLayers: 6,
+	    contextLength: 131072,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/LiquidAI/LFM2.5-2.6B/blob/main/config.json',
+	    specNote: 'Liquid config (Jul 2026): 30 layers mixing gated short-convolution blocks with 6 grouped-query attention layers (32 query / 8 KV heads at head_dim 64), 10752 FFN, tied 128K-token embeddings, 128K context.'
 	  },
 	  // Arctic (Snowflake MoE)
 	  'arctic_480b': {
@@ -5628,6 +6014,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 52,
 	    numHeads: 32,
 	    numKVHeads: 2,
+	    headDim: 128,
 	    intermediateSize: 1856,
 	    isMoE: true,
 	    numExperts: 128,
@@ -5638,6 +6025,31 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    attentionMechanism: 'hybrid_ssm',
 	    contextLength: 262144
 	  },
+	  'nemotron3.5_lightning_30b_a3b': {
+	    label: 'Nemotron 3.5 Lightning 30B A3B',
+	    hfId: 'nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16',
+	    totalParamsB: 30,
+	    hiddenSize: 2688,
+	    numLayers: 52,
+	    numHeads: 32,
+	    numKVHeads: 2,
+	    headDim: 128,
+	    intermediateSize: 1856,
+	    isMoE: true,
+	    numExperts: 128,
+	    activeExperts: 6,
+	    activeParamsB: 3,
+	    moeIntermediateSize: 1856,
+	    routingType: 'moe',
+	    architectureType: 'hybrid_ssm_transformer',
+	    attentionMechanism: 'hybrid_ssm',
+	    useMTP: true,
+	    mtpModules: 1,
+	    contextLength: 262144,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/blob/main/config.json',
+	    specNote: 'NVIDIA config (Aug 2026): 52 hybrid Mamba-2 / MoE / attention layers, 32 query / 2 KV heads at head_dim 128, 128 routed experts with top-6 routing plus a 3712-wide shared expert, one MTP layer, 262K context. Also published as NVFP4.'
+	  },
 	  'nemotron3_super_120b_a12b': {
 	    label: 'Nemotron 3 Super 120B A12B',
 	    hfId: 'nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16',
@@ -5646,6 +6058,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    numLayers: 88,
 	    numHeads: 32,
 	    numKVHeads: 2,
+	    headDim: 128,
 	    intermediateSize: 2688,
 	    isMoE: true,
 	    numExperts: 512,
@@ -5712,31 +6125,35 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	  },
 	  // EXO-supported models
 	  'kimi_k3': {
-	    label: 'Kimi K3 2.8T (preview spec)',
+	    label: 'Kimi K3 2.8T A104B',
 	    organization: 'Moonshot AI',
+	    hfId: 'moonshotai/Kimi-K3',
 	    apiModelId: 'kimi-k3',
 	    totalParamsB: 2800,
-	    // Moonshot has not published the full config yet. These K2-family
-	    // dimensions keep the planner usable until the K3 weights/report land.
 	    hiddenSize: 7168,
-	    numLayers: 61,
-	    numHeads: 64,
-	    numKVHeads: 64,
-	    intermediateSize: 18432,
+	    numLayers: 93,
+	    numHeads: 96,
+	    numKVHeads: 96,
+	    headDim: 128,
+	    intermediateSize: 33792,
 	    isMoE: true,
 	    numExperts: 896,
 	    activeExperts: 16,
+	    activeParamsB: 104,
+	    moeIntermediateSize: 3072,
 	    routingType: 'moe',
 	    architectureType: 'multimodal_transformer',
 	    attentionMechanism: 'hybrid_linear',
 	    hasHybridLinearAttention: true,
+	    fullAttentionInterval: 4,
 	    hasVision: true,
 	    modelType: 'multimodal-moe',
-	    contextLength: 1000000,
+	    contextLength: 1048576,
 	    nativeWeightFormat: 'MXFP4',
-	    specStatus: 'preview',
-	    specSourceUrl: 'https://www.kimi.com/fr-fr/blog/kimi-k3',
-	    specNote: 'Moonshot confirms 2.8T parameters, 1M context, native vision, KDA/Attention Residuals, and 16 of 896 active experts. Layer dimensions and active parameter count are not public yet; this planner uses a clearly marked K2-shaped routing proxy until the technical report and weights arrive.'
+	    nativeBytesPerParam: 0.56,
+	    specStatus: 'verified',
+	    specSourceUrl: 'https://huggingface.co/moonshotai/Kimi-K3/blob/main/config.json',
+	    specNote: 'Moonshot config (weights public Jul 2026): 93 layers mixing Kimi Delta Attention with full MLA every fourth layer (kv_lora_rank 512), 96 heads, 896 experts with top-16 routing plus 2 shared experts at 3072 FFN, 1M context, 27-layer vision tower, MXFP4 native weights. 2.8T total / 104B active follow the Moonshot announcement; the config-derived total is ambiguous because of MXFP4 packing.'
 	  },
 	  'kimi_k2': {
 	    label: 'Kimi K2 1T A32B',
@@ -6401,6 +6818,9 @@ const DEVICE_TEMPLATES = {
     name: 'AMD Radeon AI PRO R9700 32GB',
     memoryGB: 32,
     localBandwidthGBps: 640,
+    // ROCm/Vulkan dispatch and MoE kernels cost ~1.5x the per-layer fixed
+    // time of the CUDA path (fit against 48 community runs, npm run audit:gold).
+    kernelOverheadScale: 1.5,
     networkBandwidthGBps: 64,
     pcieGeneration: 5,
     pcieLanes: 16,
@@ -6420,6 +6840,7 @@ const DEVICE_TEMPLATES = {
     name: 'AMD RX 7900 XTX',
     memoryGB: 24,
     localBandwidthGBps: 960,     // GDDR6: 20 Gbps x 384-bit
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
     networkBandwidthGBps: 32,
     pcieGeneration: 4,
     pcieLanes: 16,
@@ -6436,6 +6857,7 @@ const DEVICE_TEMPLATES = {
     name: 'AMD RX 7900 XT',
     memoryGB: 20,
     localBandwidthGBps: 800,     // GDDR6: 20 Gbps x 320-bit
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
     networkBandwidthGBps: 32,
     pcieGeneration: 4,
     pcieLanes: 16,
@@ -6452,6 +6874,7 @@ const DEVICE_TEMPLATES = {
     name: 'AMD RX 9070 XT',
     memoryGB: 16,
     localBandwidthGBps: 650,     // Estimated GDDR6
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
     networkBandwidthGBps: 64,
     pcieGeneration: 5,
     pcieLanes: 16,
@@ -6496,6 +6919,7 @@ const DEVICE_TEMPLATES = {
     name: 'AMD RX 7600 8GB',
     memoryGB: 8,
     localBandwidthGBps: 288,
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
     networkBandwidthGBps: 16,
     computeTFlops: {
       'float32': 11,
@@ -6510,6 +6934,7 @@ const DEVICE_TEMPLATES = {
     name: 'AMD RX 6600 8GB',
     memoryGB: 8,
     localBandwidthGBps: 224,
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
     networkBandwidthGBps: 16,
     computeTFlops: {
       'float32': 9.8,
@@ -6524,6 +6949,7 @@ const DEVICE_TEMPLATES = {
     name: 'AMD RX 580 8GB',
     memoryGB: 8,
     localBandwidthGBps: 256,
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
     networkBandwidthGBps: 16,
     computeTFlops: {
       'float32': 6.2,
@@ -6552,6 +6978,7 @@ const DEVICE_TEMPLATES = {
     name: 'AMD Strix Halo (Ryzen AI Max+ 395)',
     memoryGB: 128,
     localBandwidthGBps: 256,            // 256-bit LPDDR5X ~256 GB/s
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
     networkBandwidthGBps: 10 / 8,
     pcieGeneration: 5,
     pcieLanes: 16,
@@ -6569,6 +6996,7 @@ const DEVICE_TEMPLATES = {
     name: 'AMD Strix Halo (Ryzen AI Max+ 388)',
     memoryGB: 96,
     localBandwidthGBps: 256,
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
     networkBandwidthGBps: 10 / 8,
     pcieGeneration: 5,
     pcieLanes: 16,
@@ -6586,6 +7014,7 @@ const DEVICE_TEMPLATES = {
     name: 'AMD Strix Point (Ryzen AI 9 HX 370)',
     memoryGB: 64,
     localBandwidthGBps: 120,            // LPDDR5X-7500
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
     networkBandwidthGBps: 2.5 / 8,
     computeTFlops: {
       'float32': 5,                      // RDNA 3.5 16 CUs
@@ -6603,6 +7032,9 @@ const DEVICE_TEMPLATES = {
     name: 'Intel Arc Pro B70 32GB',
     memoryGB: 32,
     localBandwidthGBps: 608,
+    // SYCL/XPU stacks (llama.cpp SYCL, vLLM XPU) carry ~2x the per-layer
+    // fixed time of the CUDA path (fit against 25 community runs).
+    kernelOverheadScale: 2,
     networkBandwidthGBps: 64,
     pcieGeneration: 5,
     pcieLanes: 16,
@@ -6622,6 +7054,7 @@ const DEVICE_TEMPLATES = {
     name: 'Intel Arc Pro B65 32GB',
     memoryGB: 32,
     localBandwidthGBps: 608,
+    kernelOverheadScale: 2,   // SYCL/XPU dispatch overhead relative to CUDA (fit on Arc Pro B70 runs)
     networkBandwidthGBps: 64,
     pcieGeneration: 5,
     pcieLanes: 16,
@@ -6640,6 +7073,7 @@ const DEVICE_TEMPLATES = {
     name: 'Intel Arc Pro B60 24GB',
     memoryGB: 24,
     localBandwidthGBps: 456,
+    kernelOverheadScale: 2,   // SYCL/XPU dispatch overhead relative to CUDA (fit on Arc Pro B70 runs)
     networkBandwidthGBps: 32,
     pcieGeneration: 5,
     pcieLanes: 8,
@@ -6658,6 +7092,7 @@ const DEVICE_TEMPLATES = {
     name: 'Intel Arc Pro B50 16GB',
     memoryGB: 16,
     localBandwidthGBps: 224,
+    kernelOverheadScale: 2,   // SYCL/XPU dispatch overhead relative to CUDA (fit on Arc Pro B70 runs)
     networkBandwidthGBps: 32,
     pcieGeneration: 5,
     pcieLanes: 8,
@@ -6676,6 +7111,7 @@ const DEVICE_TEMPLATES = {
     name: 'Intel Arc B580 12GB',
     memoryGB: 12,
     localBandwidthGBps: 456,            // GDDR6 19 Gbps x 192-bit
+    kernelOverheadScale: 2,   // SYCL/XPU dispatch overhead relative to CUDA (fit on Arc Pro B70 runs)
     networkBandwidthGBps: 32,
     pcieGeneration: 4,
     pcieLanes: 8,
@@ -6692,6 +7128,7 @@ const DEVICE_TEMPLATES = {
     name: 'Intel Arc A770 16GB',
     memoryGB: 16,
     localBandwidthGBps: 560,            // GDDR6 17.5 Gbps x 256-bit
+    kernelOverheadScale: 2,   // SYCL/XPU dispatch overhead relative to CUDA (fit on Arc Pro B70 runs)
     networkBandwidthGBps: 32,
     pcieGeneration: 4,
     pcieLanes: 16,
@@ -6708,6 +7145,7 @@ const DEVICE_TEMPLATES = {
     name: 'Intel Arc A750 8GB',
     memoryGB: 8,
     localBandwidthGBps: 512,
+    kernelOverheadScale: 2,   // SYCL/XPU dispatch overhead relative to CUDA (fit on Arc Pro B70 runs)
     networkBandwidthGBps: 32,
     pcieGeneration: 4,
     pcieLanes: 16,
@@ -7017,6 +7455,7 @@ const DEVICE_TEMPLATES = {
     name: 'Intel Arc A770 16GB',
     memoryGB: 16,
     localBandwidthGBps: 560,
+    kernelOverheadScale: 2,   // SYCL/XPU dispatch overhead relative to CUDA (fit on Arc Pro B70 runs)
     networkBandwidthGBps: 16,
     computeTFlops: {
       'float32': 8.5,
@@ -7031,6 +7470,7 @@ const DEVICE_TEMPLATES = {
     name: 'Intel Arc A380 6GB',
     memoryGB: 6,
     localBandwidthGBps: 192,
+    kernelOverheadScale: 2,   // SYCL/XPU dispatch overhead relative to CUDA (fit on Arc Pro B70 runs)
     networkBandwidthGBps: 8,
     computeTFlops: {
       'float32': 3.2,
@@ -7442,6 +7882,7 @@ const DEVICE_TEMPLATES = {
                 numLayers: parseFloat(document.getElementById('numLayers').value),
                 numHeads: parseFloat(document.getElementById('numHeads').value),
                 numKVHeads: parseOptionalNumber('numKVHeads'),
+                headDim: parseOptionalNumber('headDim'),
                 intermediateSize: parseOptionalNumber('intermediateSize'),
                 architectureType: document.getElementById('architectureType')?.value || 'transformer',
                 activeParamsB: parseOptionalNumber('activeParamsB'),
@@ -7549,6 +7990,7 @@ const DEVICE_TEMPLATES = {
                 numExperts,
                 activeExperts,
                 numKVHeads: modelConfig.numKVHeads || numHeads,
+                headDim: getHeadDim(modelConfig),
                 intermediateSize: modelConfig.intermediateSize || (4 * modelConfig.hiddenSize),
                 // Honor an explicit activeParamsB for dense models too:
                 // per-layer-embedding designs (Gemma E-series) read fewer
@@ -7590,19 +8032,99 @@ const DEVICE_TEMPLATES = {
             return modelConfig.numKVHeads || modelConfig.numHeads || 1;
         }
 
-        // Sliding-window models keep full KV only on their global-attention
-        // layers (Gemma keeps ~1 in 6); local layers cap at the window size.
-        // The saving grows with context length, so it must be computed from
-        // the window and layer mix rather than a static multiplier.
-        function getSlidingWindowKvScale(modelConfig) {
+        // head_dim is decoupled from hidden/heads in most 2025+ designs
+        // (Qwen 3.5+: 256, Gemma 3/4: 256, Muse Glimmer: 128 on a 6656
+        // hidden). Deriving it from hidden/heads mis-sizes the KV cache by up
+        // to 2x, so an explicit value always wins.
+        function getHeadDim(modelConfig) {
+            const explicit = parseFloat(modelConfig?.headDim);
+            if (Number.isFinite(explicit) && explicit > 0) return explicit;
+            const hiddenSize = Math.max(parseFloat(modelConfig?.hiddenSize) || 1, 1);
+            const numHeads = Math.max(parseFloat(modelConfig?.numHeads) || 1, 1);
+            return hiddenSize / numHeads;
+        }
+
+        // Which layers keep a per-token KV cache, and over how many tokens.
+        // - full layers attend the whole context;
+        // - sliding-window layers attend at most `windowSize` tokens;
+        // - linear-attention / SSM layers keep a fixed-size state (no KV).
+        // Returns null when the preset carries no explicit layer mix, in which
+        // case the attention-profile multipliers are used as a fallback.
+        function getAttentionLayerMix(modelConfig) {
+            const numLayers = Math.max(1, Math.round(parseFloat(modelConfig.numLayers) || 1));
+            const mechanism = modelConfig.attentionMechanism;
+            const explicitFull = parseFloat(modelConfig.fullAttentionLayers);
+            const interval = parseFloat(modelConfig.fullAttentionInterval);
             const windowSize = parseFloat(modelConfig.slidingWindow);
-            const seqLength = Math.max(1, parseFloat(modelConfig.seqLength) || 1);
-            const numLayers = Math.max(1, parseFloat(modelConfig.numLayers) || 1);
-            if (!Number.isFinite(windowSize) || windowSize <= 0 || seqLength <= windowSize) return 1;
-            const fullLayers = Math.max(1, Math.min(numLayers,
-                Number.isFinite(modelConfig.fullAttentionLayers) ? modelConfig.fullAttentionLayers : Math.ceil(numLayers / 6)));
-            const localLayers = numLayers - fullLayers;
-            return ((fullLayers * seqLength) + (localLayers * windowSize)) / (numLayers * seqLength);
+            const hasWindow = Number.isFinite(windowSize) && windowSize > 0;
+            const clampLayers = value => Math.max(0, Math.min(numLayers, Math.round(value)));
+
+            if (mechanism === 'sliding_window') {
+                const fullLayers = clampLayers(Number.isFinite(explicitFull) ? explicitFull : Math.ceil(numLayers / 6));
+                return {
+                    fullLayers,
+                    windowLayers: numLayers - fullLayers,
+                    windowSize: hasWindow ? windowSize : Infinity,
+                    linearLayers: 0,
+                    source: Number.isFinite(explicitFull) && hasWindow ? 'explicit' : 'default-ratio'
+                };
+            }
+
+            if (['hybrid_linear', 'hybrid_ssm', 'state_space'].includes(mechanism)) {
+                let fullLayers = null;
+                if (Number.isFinite(explicitFull) && explicitFull >= 0) fullLayers = clampLayers(explicitFull);
+                else if (Number.isFinite(interval) && interval >= 1) fullLayers = clampLayers(numLayers / interval);
+                if (fullLayers === null) return null;
+                // Some hybrids additionally window their full layers (DeepSeek V4).
+                return {
+                    fullLayers: hasWindow ? 0 : fullLayers,
+                    windowLayers: hasWindow ? fullLayers : 0,
+                    windowSize: hasWindow ? windowSize : Infinity,
+                    linearLayers: numLayers - fullLayers,
+                    source: 'explicit'
+                };
+            }
+
+            if (mechanism === 'mla') {
+                // Hybrid KDA + MLA (Kimi K3): MLA only on every n-th layer.
+                if (Number.isFinite(interval) && interval > 1) {
+                    const fullLayers = clampLayers(numLayers / interval);
+                    return { fullLayers, windowLayers: 0, windowSize: Infinity, linearLayers: numLayers - fullLayers, source: 'explicit' };
+                }
+                return { fullLayers: numLayers, windowLayers: 0, windowSize: Infinity, linearLayers: 0, source: 'dense' };
+            }
+
+            if (hasWindow) {
+                const fullLayers = clampLayers(Number.isFinite(explicitFull) ? explicitFull : Math.ceil(numLayers / 2));
+                return { fullLayers, windowLayers: numLayers - fullLayers, windowSize, linearLayers: 0, source: 'explicit' };
+            }
+
+            return { fullLayers: numLayers, windowLayers: 0, windowSize: Infinity, linearLayers: 0, source: 'dense' };
+        }
+
+        // Layer-weighted number of cached tokens each query attends at a given
+        // context depth: sum over layers of min(depth, window). Divided by
+        // numLayers this is the fraction of a dense model's KV traffic.
+        function getAttendedLayerTokens(modelConfig, contextTokens) {
+            const depth = Math.max(0, parseFloat(contextTokens) || 0);
+            const numLayers = Math.max(1, Math.round(parseFloat(modelConfig.numLayers) || 1));
+            const mix = getAttentionLayerMix(modelConfig);
+            if (!mix) {
+                const attentionProfile = ATTENTION_MECHANISM_PROFILES[modelConfig.attentionMechanism] || ATTENTION_MECHANISM_PROFILES.standard;
+                const architectureProfile = ARCHITECTURE_PROFILES[modelConfig.architectureType] || ARCHITECTURE_PROFILES.transformer;
+                return numLayers * depth * (attentionProfile.kvCacheMultiplier || 1) * (architectureProfile.kvCacheMultiplier || 1);
+            }
+            const windowed = Number.isFinite(mix.windowSize) ? Math.min(depth, mix.windowSize) : depth;
+            return (mix.fullLayers * depth) + (mix.windowLayers * windowed);
+        }
+
+        // Context depth the decode phase reads per token (prompt plus the
+        // average position inside the response). Separate from seqLength,
+        // which sizes the KV *allocation* for memory fit.
+        function getDecodeContextTokens(modelConfig) {
+            const explicit = parseFloat(modelConfig?.decodeContextTokens);
+            if (Number.isFinite(explicit) && explicit >= 0) return explicit;
+            return getAverageDecodeContextLength(modelConfig);
         }
 
         function getActiveParamsB(modelConfig) {
@@ -7657,9 +8179,19 @@ const DEVICE_TEMPLATES = {
 
         const KV_CACHE_COMPRESSION_PROFILES = {
             none: {
-                label: 'No KV compression',
+                label: 'No KV compression (fp16)',
                 bitsPerChannel: null,
                 quality: 'baseline'
+            },
+            q8_kv: {
+                label: '8-bit KV (q8_0 / fp8)',
+                bitsPerChannel: 8.5,
+                quality: 'near-lossless'
+            },
+            q4_kv: {
+                label: '4-bit KV (q4_0 / q4_1)',
+                bitsPerChannel: 4.5,
+                quality: 'quality risk on long context'
             },
             turboquant_3_5: {
                 label: 'TurboQuant 3.5-bit KV',
@@ -8004,35 +8536,34 @@ const DEVICE_TEMPLATES = {
             return { applyAggregationPenalty: !hasProfiledOverhead };
         }
 
-        function calculateKVCacheBytes(modelConfig, kvScale = 1) {
-            const architectureProfile = getArchitectureProfile(modelConfig);
+        // KV bytes for `contextTokens` cached positions (defaults to the full
+        // configured window, i.e. the allocation). Pass the decode depth to get
+        // the bytes one decode step actually reads.
+        function calculateKVCacheBytes(modelConfig, kvScale = 1, contextTokens = null) {
             const kvCacheDtypeSize = 2;
             const kvCompressionProfile = getKVCacheCompressionProfile(modelConfig, kvCacheDtypeSize);
             const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
             const seqLength = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
-            const numLayers = Math.max(parseFloat(modelConfig.numLayers) || 1, 1);
-            const slidingScale = getSlidingWindowKvScale(modelConfig);
+            const depth = Math.max(0, Number.isFinite(parseFloat(contextTokens)) ? parseFloat(contextTokens) : seqLength);
+            const layerTokens = getAttendedLayerTokens(modelConfig, depth);
 
             // MLA stores one compressed latent vector plus the RoPE key
             // component per token/layer; applying a generic GQA head count on
             // top of kv_lora_rank overstates long-context cache by multiples.
             if (modelConfig.attentionMechanism === 'mla' && Number(modelConfig.kvLoraRank) > 0) {
                 const latentChannels = Number(modelConfig.kvLoraRank) + Math.max(1, Number(modelConfig.qkRopeHeadDim) || 64);
-                return batchSize * seqLength * latentChannels * kvCacheDtypeSize * numLayers *
-                    kvCompressionProfile.kvByteMultiplier * slidingScale * kvScale;
+                return batchSize * layerTokens * latentChannels * kvCacheDtypeSize *
+                    kvCompressionProfile.kvByteMultiplier * kvScale;
             }
 
-            const hiddenSize = Math.max(parseFloat(modelConfig.hiddenSize) || 1, 1);
-            const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
-            const headDim = hiddenSize / numHeads;
+            const headDim = getHeadDim(modelConfig);
             const kvHeads = getKVHeads(modelConfig);
-            return 2 * batchSize * seqLength * headDim * kvHeads * kvCacheDtypeSize * numLayers *
-                architectureProfile.kvCacheMultiplier * kvCompressionProfile.kvByteMultiplier * slidingScale * kvScale;
+            return 2 * batchSize * layerTokens * headDim * kvHeads * kvCacheDtypeSize *
+                kvCompressionProfile.kvByteMultiplier * kvScale;
         }
-
-	function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex ) {
+	function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex, devicesArray = devices) {
 		const architectureProfile = getArchitectureProfile(modelConfig);
-		const parallelScales = getParallelismScales(modelConfig, devices, deviceIndex);
+		const parallelScales = getParallelismScales(modelConfig, devicesArray, deviceIndex);
 		// KV cache entries are stored at fp16 by every mainstream runtime
 		// regardless of weight quantization; only explicit KV compression
 		// (the TurboQuant modes) shrinks them.
@@ -8092,48 +8623,40 @@ const DEVICE_TEMPLATES = {
 	}
 
         // Improved FLOPs calculation (more accurate for forward and backward pass)
+        // Prefill FLOPs. Linear layers cost 2 FLOPs per active parameter per
+        // token (the "2N" rule, which covers attention projections, FFN/expert
+        // matrices, and the LM head without re-deriving every architecture's
+        // matrix shapes). Attention scores add 4 x heads x head_dim per cached
+        // position; causal masking with tiled kernels halves that on average,
+        // and sliding-window / linear layers attend far fewer positions.
         function calculateTransformerFlops(modelConfig) {
-            const { batchSize, seqLength, hiddenSize, numLayers, numHeads } = modelConfig;
-            const architectureProfile = getArchitectureProfile(modelConfig);
-            const headDim = hiddenSize / numHeads;
-            const intermediateSize = modelConfig.intermediateSize || (4 * hiddenSize);
-            const activeRatio = Math.min(1, getActiveParamsB(modelConfig) / modelConfig.totalParamsB);
-
-            let forwardFlops = 0;
-
-            // Attention projections and attention math.
-            forwardFlops += architectureProfile.prefillAttentionMultiplier * 6 * batchSize * seqLength * hiddenSize * hiddenSize;
-            forwardFlops += architectureProfile.prefillAttentionMultiplier * 4 * batchSize * numHeads * seqLength * seqLength * headDim;
-            forwardFlops += architectureProfile.prefillAttentionMultiplier * 2 * batchSize * seqLength * hiddenSize * hiddenSize;
-
-            // Feed-forward compute scales down for MoE because only active experts execute per token.
-            forwardFlops += architectureProfile.feedForwardMultiplier * 4 * batchSize * seqLength * hiddenSize * intermediateSize * activeRatio;
-
-            // Inference only needs forward pass (not backward)
-            return forwardFlops * numLayers;
+            const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
+            const seqLength = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
+            const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
+            const headDim = getHeadDim(modelConfig);
+            const activeParams = Math.max(getActiveParamsB(modelConfig), 0.001) * 1e9;
+            const layerTokens = getAttendedLayerTokens(modelConfig, seqLength);
+            // Average causal span is half the prompt; per-layer attended tokens
+            // already encode windows and linear layers.
+            const scoreFlopsPerToken = 4 * numHeads * headDim * (layerTokens / 2);
+            return batchSize * seqLength * ((2 * activeParams) + scoreFlopsPerToken);
         }
-
+        // Decode FLOPs for one step over `batchSize` sequences at the
+        // configured context depth (seqLength is the depth here; callers pass
+        // the decode-context config).
         function calculateDecodeFlops(modelConfig) {
-            const { batchSize, seqLength, hiddenSize, numLayers, numHeads } = modelConfig;
-            const architectureProfile = getArchitectureProfile(modelConfig);
-            const headDim = hiddenSize / numHeads;
-            const kvHeads = getKVHeads(modelConfig);
-            const intermediateSize = modelConfig.intermediateSize || (4 * hiddenSize);
-            const activeRatio = Math.min(1, getActiveParamsB(modelConfig) / modelConfig.totalParamsB);
-
-            let decodeFlops = 0;
-
-            decodeFlops += architectureProfile.decodeAttentionMultiplier * 8 * batchSize * hiddenSize * hiddenSize;
-            decodeFlops += architectureProfile.decodeAttentionMultiplier * 4 * batchSize * kvHeads * seqLength * headDim;
-            decodeFlops += architectureProfile.feedForwardMultiplier * 4 * batchSize * hiddenSize * intermediateSize * activeRatio;
-
-            return decodeFlops * numLayers;
+            const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
+            const depth = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
+            const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
+            const headDim = getHeadDim(modelConfig);
+            const activeParams = Math.max(getActiveParamsB(modelConfig), 0.001) * 1e9;
+            const layerTokens = getAttendedLayerTokens(modelConfig, depth);
+            const scoreFlops = 4 * numHeads * headDim * layerTokens;
+            return batchSize * ((2 * activeParams) + scoreFlops);
         }
-
         function calculateDecodeKVCacheBytes(modelConfig, dtypeSize, kvScale = 1) {
-            return calculateKVCacheBytes(modelConfig, kvScale);
+            return calculateKVCacheBytes(modelConfig, kvScale, getDecodeContextTokens(modelConfig));
         }
-
         /**
          * Calculate effective memory bandwidth considering PCIe overflow
          *
@@ -8155,11 +8678,16 @@ const DEVICE_TEMPLATES = {
                     ? modelSizeBytes / (modelConfig.totalParamsB * 1e9 * getWeightStorageOverhead(modelConfig.quantizationType))
                     : 1))
                 : 1;
+            // KV read per decode step is sized by the decode depth; KV
+            // residency (memory fit) is sized by the full configured window.
             const decodeKvCacheBytes = modelConfig
                 ? calculateDecodeKVCacheBytes(modelConfig, dtypeSize, parallelScales.kvScale || 1)
                 : 0;
+            const residentKvCacheBytes = modelConfig
+                ? calculateKVCacheBytes(modelConfig, parallelScales.kvScale || 1)
+                : 0;
             const residentWeightBytes = modelSizeBytes * parallelScales.residentScale;
-            const residentModelSizeBytes = residentWeightBytes + decodeKvCacheBytes;
+            const residentModelSizeBytes = residentWeightBytes + residentKvCacheBytes;
             const weightProfile = modelConfig ? getDecodeWeightProfile(modelConfig, dtypeSize) : {
                 aggregateWeightBytes: modelSizeBytes,
                 includesKv: false,
@@ -8184,6 +8712,7 @@ const DEVICE_TEMPLATES = {
                     hasOverflow: false,
                     residentWeightBytes,
                     residentModelSizeBytes,
+                    residentKvCacheBytes,
                     accessedModelSizeBytes,
                     accessedWeightBytes,
                     decodeKvCacheBytes,
@@ -8203,9 +8732,11 @@ const DEVICE_TEMPLATES = {
 
             // Check if there's an overflow target specified
             if (device.overflowTarget === 'ddr5') {
-                // Overflow to system DDR5 RAM
-                overflowBandwidthGBps = device.ddr5BandwidthGBps || OVERFLOW_BANDWIDTH['ddr5_7200'];
-                bottleneckReason = 'DDR5 RAM overflow';
+                // Overflow to system DDR5 RAM. Offloaded layers execute on the
+                // CPU, whose quantized GEMV path sustains roughly half of the
+                // DRAM peak, so the effective rate is well below the spec.
+                overflowBandwidthGBps = (device.ddr5BandwidthGBps || OVERFLOW_BANDWIDTH['ddr5_7200']) * CPU_OFFLOAD_BANDWIDTH_EFFICIENCY;
+                bottleneckReason = 'DDR5 RAM overflow (CPU-executed layers)';
             } else if (device.overflowTarget && typeof device.overflowTarget === 'number') {
                 // Overflow to another device via network/interconnect
                 const targetDevice = allDevices.find(d => d.id === device.overflowTarget);
@@ -8225,10 +8756,10 @@ const DEVICE_TEMPLATES = {
                     bottleneckReason = 'Network overflow';
                 }
             } else {
-                // Default: assume overflow to system RAM
+                // Default: assume overflow to system RAM, executed by the CPU.
                 // This represents the typical case where model doesn't fit in VRAM
-                overflowBandwidthGBps = OVERFLOW_BANDWIDTH['ddr5_7200'];
-                bottleneckReason = 'System RAM overflow (auto)';
+                overflowBandwidthGBps = OVERFLOW_BANDWIDTH['ddr5_7200'] * CPU_OFFLOAD_BANDWIDTH_EFFICIENCY;
+                bottleneckReason = 'System RAM overflow (auto, CPU-executed layers)';
             }
 
             // Calculate weighted effective bandwidth
@@ -8252,6 +8783,7 @@ const DEVICE_TEMPLATES = {
                 overflowGB: overflowPortion / 1e9,
                 residentWeightBytes,
                 residentModelSizeBytes,
+                residentKvCacheBytes,
                 accessedModelSizeBytes,
                 accessedWeightBytes,
                 decodeKvCacheBytes,
@@ -8269,45 +8801,101 @@ const DEVICE_TEMPLATES = {
          * For autoregressive decoding, each token requires reading the model weights
          * bytes_per_token ≈ model_size_bytes (must read all weights per token)
          */
+        // Fixed per-step runtime overhead (seconds) for one device's share of
+        // the model: kernel launches, routing, norms, sampling, scheduling.
+        function calculateDecodeRuntimeOverheadSeconds(modelConfig, frameworkProfile, device, layerShare = 1) {
+            const layers = Math.max(1, parseFloat(modelConfig.numLayers) || 1) * Math.max(0, Math.min(1, layerShare));
+            const attentionScale = LAYER_OVERHEAD_SCALES.attention[modelConfig.attentionMechanism] || 1;
+            const deviceScale = Number.isFinite(device?.kernelOverheadScale) && device.kernelOverheadScale > 0
+                ? device.kernelOverheadScale
+                : 1;
+            // MoE routing kernels are the least optimized part of non-CUDA
+            // backends, so the expert penalty grows with the backend factor.
+            const moeScale = modelConfig.isMoE ? (1 + LAYER_OVERHEAD_SCALES.moeExtra * deviceScale) : 1;
+            const perLayerUs = (frameworkProfile.perLayerOverheadUs || 0) * attentionScale * moeScale * deviceScale;
+            const perTokenUs = (frameworkProfile.perTokenOverheadUs || 0) * deviceScale;
+            return ((layers * perLayerUs) + perTokenUs) / 1e6;
+        }
+
+        // Compute time for one decode step over the batch. GEMV/GEMM
+        // efficiency ramps with the number of sequences sharing a weight read:
+        // one row cannot feed the tensor cores, a few dozen rows can.
+        function calculateDecodeComputeSeconds(modelConfig, device, frameworkProfile, computeScale = 1) {
+            const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
+            const flops = calculateDecodeFlops(modelConfig) * computeScale;
+            const tflops = getComputationPrecisionTflops(device, modelConfig, frameworkProfile.key);
+            // A single row is memory-bound, so its arithmetic hides under the
+            // weight stream; efficiency climbs from about half the batched
+            // ceiling toward it as more sequences share each weight tile.
+            const ramp = Math.max(1, frameworkProfile.batchRampSequences || 24);
+            const maxEfficiency = frameworkProfile.batchedComputeEfficiency || 0.45;
+            const efficiency = Math.max(0.02, maxEfficiency * (0.5 + 0.5 * (batchSize / (batchSize + ramp))));
+            return flops / (Math.max(tflops, 0.001) * 1e12 * efficiency);
+        }
+
+        /**
+         * Decode token rate for LLM inference on one device.
+         *
+         * One decode pass reads the active weights once and the KV cache of
+         * every sequence in the batch once; tokens/pass = batch (x accepted
+         * speculative tokens). The pass time is the larger of the memory and
+         * compute times plus a fixed runtime overhead — not a proportional
+         * "efficiency" — because launch and scheduling costs do not shrink
+         * with the model.
+         */
         function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, deviceIndex = 0) {
             const modelSizeBytes = getResidentWeightBytes(modelConfig, dtypeSize);
             const frameworkProfile = getFrameworkProfile(modelConfig, allDevices);
             const optimization = getOptimizationAdjustments(modelConfig);
+            const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
 
             const bandwidthInfo = calculateEffectiveBandwidth(device, modelSizeBytes, allDevices, modelConfig, deviceIndex);
+            const parallelScales = getParallelismScales(modelConfig, allDevices, deviceIndex);
+            const computeScale = getParallelismComputeScale(modelConfig, allDevices, deviceIndex);
 
-            // For decode (batch=1): each token requires reading the active weight set.
-            // tokens/sec = bandwidth / model_size
+            // Zero-overhead per-pass roofline from official peak bandwidth.
             const theoreticalTokensPerSec = (bandwidthInfo.effectiveBandwidthGBps * 1e9) /
-                bandwidthInfo.accessedModelSizeBytes;
+                Math.max(bandwidthInfo.accessedModelSizeBytes, 1);
 
             const suppliedSustainedBandwidth = Number(device.sustainedBandwidthGBps);
             const usesSuppliedSustainedBandwidth = !bandwidthInfo.hasOverflow && Number.isFinite(suppliedSustainedBandwidth) && suppliedSustainedBandwidth > 0;
             const realisticBandwidthGBps = usesSuppliedSustainedBandwidth
                 ? Math.min(device.localBandwidthGBps, suppliedSustainedBandwidth)
                 : bandwidthInfo.effectiveBandwidthGBps * frameworkProfile.bandwidthEfficiency;
-            const realisticMemorySeconds = bandwidthInfo.accessedModelSizeBytes /
-                (Math.max(realisticBandwidthGBps, 0.0001) * 1e9);
+            const kvBandwidthGBps = usesSuppliedSustainedBandwidth
+                ? realisticBandwidthGBps
+                : bandwidthInfo.effectiveBandwidthGBps * (frameworkProfile.kvReadEfficiency || frameworkProfile.bandwidthEfficiency);
+            const weightSeconds = bandwidthInfo.accessedWeightBytes / (Math.max(realisticBandwidthGBps, 0.0001) * 1e9);
+            const kvSeconds = bandwidthInfo.decodeKvCacheBytes / (Math.max(kvBandwidthGBps, 0.0001) * 1e9);
+            const realisticMemorySeconds = weightSeconds + kvSeconds;
+
+            const decodeDepthConfig = { ...modelConfig, seqLength: getDecodeContextTokens(modelConfig) };
+            const computeSeconds = calculateDecodeComputeSeconds(decodeDepthConfig, device, frameworkProfile, computeScale);
+
             const hasSuppliedOverhead = Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
+            const layerShare = modelConfig.parallelismStrategy === 'pipeline' ? parallelScales.accessedScale : 1;
             const runtimeOverheadSeconds = hasSuppliedOverhead
                 ? 0
-                : realisticMemorySeconds * ((1 / Math.max(frameworkProfile.decodeEfficiency, 0.05)) - 1);
+                : calculateDecodeRuntimeOverheadSeconds(modelConfig, frameworkProfile, device, layerShare);
 
-            // Efficiency losses are capped below the per-pass roofline.
             // Speculative decoding is NOT an efficiency loss: it emits extra
             // accepted tokens per weight pass, so it multiplies on top and can
             // legitimately push token rates past the per-pass ceiling — which
             // is exactly why published MTP/EAGLE numbers exceed naive
-            // bandwidth math.
+            // bandwidth math. Other optimization modes are modeled as modest
+            // efficiency changes on the core pass.
             const speculationMultiplier = optimization.speculation ? optimization.decodeMultiplier : 1;
             const efficiencyMultiplier = optimization.speculation ? 1 : optimization.decodeMultiplier;
-            const baselinePassSeconds = (realisticMemorySeconds + runtimeOverheadSeconds) / Math.max(efficiencyMultiplier, 0.05);
+            const coreSeconds = Math.max(realisticMemorySeconds, computeSeconds);
+            const baselinePassSeconds = (coreSeconds + runtimeOverheadSeconds) / Math.max(efficiencyMultiplier, 0.05);
             const baselineTokensPerSec = baselinePassSeconds > 0 ? 1 / baselinePassSeconds : 0;
             const actualTokensPerSec = baselineTokensPerSec * speculationMultiplier;
 
             return {
                 tokensPerSecond: actualTokensPerSec,
                 tokensPerSecondWithoutSpeculation: baselineTokensPerSec,
+                aggregateTokensPerSecond: actualTokensPerSec * batchSize,
+                batchSize,
                 speculationMultiplier,
                 efficiencyMultiplier,
                 theoreticalMax: theoreticalTokensPerSec,
@@ -8315,17 +8903,22 @@ const DEVICE_TEMPLATES = {
                 activeModelSizeGB: bandwidthInfo.accessedModelSizeBytes / 1e9,
                 activeWeightSizeGB: bandwidthInfo.accessedWeightBytes / 1e9,
                 decodeKvCacheGB: bandwidthInfo.decodeKvCacheBytes / 1e9,
+                residentKvCacheGB: (bandwidthInfo.residentKvCacheBytes || 0) / 1e9,
                 residentWeightSizeGB: bandwidthInfo.residentWeightBytes / 1e9,
                 realisticBandwidthGBps,
+                kvBandwidthGBps,
                 usesSuppliedSustainedBandwidth,
                 realisticMemorySeconds,
+                weightSeconds,
+                kvSeconds,
+                computeSeconds,
+                coreBinding: computeSeconds > realisticMemorySeconds ? 'compute' : 'memory',
                 runtimeOverheadSeconds,
                 hasSuppliedOverhead,
                 frameworkLabel: frameworkProfile.label,
                 ...bandwidthInfo
             };
         }
-
         /**
          * Calculate image generation metrics (compute-bound, not memory-bound)
          */
@@ -8710,6 +9303,10 @@ const DEVICE_TEMPLATES = {
                     const deltaPct = ((systemRate - referenceRate) / referenceRate) * 100;
                     const reasons = [];
 
+                    if (!match.hardwareMatched) {
+                        reasons.push(`Reference ran on ${match.hardware}, not ${devicesArray.map(device => device.name || device.template).join(' + ')}; decode speed scales with memory bandwidth, so the delta is expected.`);
+                    }
+
                     if (hasOverflow) {
                         reasons.push('Current configuration overflows resident weights, so effective bandwidth drops below in-memory runs.');
                     }
@@ -8759,7 +9356,10 @@ const DEVICE_TEMPLATES = {
                         reasons.push('Reference reports aggregate throughput for a different device count.');
                     }
 
-                    const status = Math.abs(deltaPct) <= 15 ? 'aligned' : (Math.abs(deltaPct) <= 35 ? 'nearby' : 'mismatch');
+                    // A reference on different hardware can never count as
+                    // "aligned": the delta mostly measures the hardware gap.
+                    const closeness = Math.abs(deltaPct) <= 15 ? 'aligned' : (Math.abs(deltaPct) <= 35 ? 'nearby' : 'mismatch');
+                    const status = !match.hardwareMatched && closeness === 'aligned' ? 'nearby' : closeness;
 
                     return {
                         ...match,
@@ -8770,7 +9370,41 @@ const DEVICE_TEMPLATES = {
                     };
                 })
                 .filter(Boolean)
+                // Same-hardware references first: a delta against a different
+                // GPU says nothing about the prediction's accuracy.
+                .sort((a, b) => Number(b.hardwareMatched) - Number(a.hardwareMatched))
                 .slice(0, 3);
+        }
+
+        // Closest reproducible community run for the ladder: same preset and
+        // hardware template are required; runtime, quantization, device count,
+        // and decode depth refine the choice.
+        function findNearestGoldRun(modelConfig, devicesArray) {
+            if (!devicesArray.length || !modelConfig?.modelPreset) return null;
+            const target = {
+                hfId: modelConfig.hfId,
+                presetKey: modelConfig.modelPreset,
+                hardwareTemplate: devicesArray[0]?.template || '',
+                runtimeKey: getFrameworkProfile(modelConfig, devicesArray).key,
+                quantKey: modelConfig.quantizationType,
+                deviceCount: devicesArray.length,
+                contextLength: modelConfig.seqLength,
+                decodeContextTokens: getDecodeContextTokens(modelConfig),
+                batchSize: modelConfig.batchSize || 1
+            };
+            const candidates = getGoldValidationRows()
+                .filter(row => row.presetKey === target.presetKey && row.hardwareTemplate === target.hardwareTemplate)
+                .map(row => ({ row, score: getGoldSimilarity(target, row) }))
+                .sort((a, b) => b.score - a.score || b.row.reproducibility - a.row.reproducibility);
+            const best = candidates[0];
+            if (!best) return null;
+            const row = best.row;
+            const sameSetup = row.runtimeKey === target.runtimeKey && row.quantKey === target.quantKey && (row.deviceCount || 1) === target.deviceCount;
+            return {
+                ...row,
+                sameSetup,
+                label: `${row.model} · ${row.hardware}${(row.deviceCount || 1) > 1 ? ` ×${row.deviceCount}` : ''} · ${FRAMEWORK_PROFILES[row.runtimeKey]?.label || row.engine} ${String(row.quantization || row.quantKey).toUpperCase()} · ${formatTokensAxis(Math.round(row.decodeContextTokens || row.contextLength || 0))}-token depth`
+            };
         }
 
         function getSelectedModelLabel(modelConfig) {
@@ -8819,12 +9453,14 @@ const DEVICE_TEMPLATES = {
                     if (quant && quantText && (quant.includes(quantText) || quantText.includes(quant))) score += 2;
                     if (framework && frameworkText && (framework.includes(frameworkText) || frameworkText.includes(framework))) score += 2;
                     if (hardware && hardware.includes(deviceCountText)) score += 1;
-                    if (deviceTexts.some(deviceText => hardware.includes(deviceText) || deviceText.includes(hardware))) score += 4;
+                    const hardwareMatched = deviceTexts.some(deviceText => hardware.includes(deviceText) || deviceText.includes(hardware));
+                    if (hardwareMatched) score += 4;
 
                     return {
                         ...row,
                         modelScore,
                         score,
+                        hardwareMatched,
                         sourceTier: getBenchmarkSourceTier(row.source)
                     };
                 })
@@ -9011,17 +9647,19 @@ const DEVICE_TEMPLATES = {
             const prefillTimeSeconds = totalPrefillFlops / (prefillTflops * 1e12);
             const prefillRate = (effectiveConfig.batchSize * tokenLengths.promptTokens) / prefillTimeSeconds;
 
-            // Calculate decode rate (bandwidth-bound)
-            const modelSizeBytes = getActiveParamsB(effectiveConfig) * 1e9 * dtypeSize * architectureProfile.decodeWeightAccessMultiplier;
+            // Decode rate: the decode group runs the model as a layer-split
+            // pipeline over its own devices, using the same per-device engine
+            // model as the main projection.
+            const decodeGroup = decodeDevices.map(d => d.device);
+            const decodeConfig = { ...effectiveConfig, parallelismStrategy: 'pipeline' };
+            const decodeRates = decodeGroup.map((device, index) =>
+                calculateDecodeTokenRate(device, decodeConfig, dtypeSize, decodeGroup, index).tokensPerSecond);
             const decodeBandwidth = decodeDevices.reduce((sum, d) => sum + d.bandwidth, 0);
-            const theoreticalDecodeRate = (decodeBandwidth * 1e9) / modelSizeBytes;
-            const frameworkProfile = getFrameworkProfile(effectiveConfig, devicesArray);
-            const decodeRate = theoreticalDecodeRate * frameworkProfile.decodeEfficiency * frameworkProfile.bandwidthEfficiency;
+            const decodeRate = calculateSystemRateFromDeviceRates(decodeRates, 'pipeline', effectiveConfig.batchSize || 1, decodeGroup);
 
-            // Calculate KV cache transfer overhead
-            const kvCacheSize = 2 * effectiveConfig.batchSize * effectiveConfig.seqLength *
-                (effectiveConfig.hiddenSize / effectiveConfig.numHeads) * getKVHeads(effectiveConfig) *
-                dtypeSize * effectiveConfig.numLayers * architectureProfile.kvCacheMultiplier;
+            // Calculate KV cache transfer overhead (the prompt's cache moves
+            // from the prefill group to the decode group once).
+            const kvCacheSize = calculateKVCacheBytes(prefillConfig, 1);
 
             // Assume minimum network bandwidth between prefill and decode devices
             const minNetworkBw = Math.min(
@@ -9397,12 +10035,11 @@ const DEVICE_TEMPLATES = {
 	    alert(`Device "${device.name}" saved to library!`);
 	    updateDeviceDisplay(); // Refresh to show updated library
 	}
+        // The active plan's metrics: resolves AUTO strategy and the EXO phase
+        // split from the DOM state, then runs the pure engine.
         function calculateMetrics() {
 			let modelConfig = buildEffectiveModelConfig();
-			const architectureProfile = getArchitectureProfile(modelConfig);
 			const optimizationMode = modelConfig.optimizationMode || 'none';
-			const frameworkProfile = getFrameworkProfile(modelConfig, devices);
-			const optimization = getOptimizationAdjustments(modelConfig);
 
 			// Handle AUTO mode - find optimal strategy first
 			if (modelConfig.parallelismStrategy === 'auto') {
@@ -9420,21 +10057,37 @@ const DEVICE_TEMPLATES = {
 				lastPhaseSplitResults = null;
 			}
 
+			return calculateMetricsForConfig(modelConfig, devices);
+		}
+
+        // Resolve an 'auto' strategy without touching UI state (used by the
+        // context and concurrency sweeps, which must mirror the active plan).
+        function resolvePlanStrategy(modelConfig) {
+            if (modelConfig.parallelismStrategy !== 'auto') return modelConfig.parallelismStrategy || 'pipeline';
+            return lastAutoResults?.strategy || 'pipeline';
+        }
+
+        // Pure per-device engine: no DOM reads, no globals mutated. The
+        // parallelism strategy must already be concrete.
+        function calculateMetricsForConfig(modelConfig, devicesArray) {
+			const architectureProfile = getArchitectureProfile(modelConfig);
+			const frameworkProfile = getFrameworkProfile(modelConfig, devicesArray);
+			const optimization = getOptimizationAdjustments(modelConfig);
 			const dtypeSize = DTYPE_SIZES[modelConfig.quantizationType];
 			const isPipeline = modelConfig.parallelismStrategy === 'pipeline';
-			const deviceCount = devices.length;
+			const deviceCount = devicesArray.length;
             const tokenLengths = normalizeTokenLengths(modelConfig);
             const prefillConfig = { ...modelConfig, seqLength: tokenLengths.promptTokens };
-            const decodeComputeConfig = { ...modelConfig, seqLength: getAverageDecodeContextLength(modelConfig) };
+            const decodeComputeConfig = { ...modelConfig, seqLength: getDecodeContextTokens(modelConfig) };
 
-			return devices.map((device, deviceIndex) => {
+			return devicesArray.map((device, deviceIndex) => {
 				// Calculate per-device memory and network requirements
-				const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex);
-				const prefillMemoryBreakdown = calculateMemoryBreakdown(prefillConfig, dtypeSize, deviceCount, isPipeline, deviceIndex);
+				const memoryBreakdown = calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipeline, deviceIndex, devicesArray);
+				const prefillMemoryBreakdown = calculateMemoryBreakdown(prefillConfig, dtypeSize, deviceCount, isPipeline, deviceIndex, devicesArray);
 				const networkTraffic = calculateNetworkTraffic(prefillConfig, dtypeSize, deviceCount, isPipeline);
 				const deviceTflops = getComputationPrecisionTflops(device, modelConfig, frameworkProfile.key);
 
-				const computeScale = getParallelismComputeScale(modelConfig, devices, deviceIndex);
+				const computeScale = getParallelismComputeScale(modelConfig, devicesArray, deviceIndex);
 				const totalPrefillFlops = calculateTransformerFlops(prefillConfig) * computeScale;
 				const theoreticalPrefillComputeTime = totalPrefillFlops / (deviceTflops * 1e12);
 
@@ -9455,22 +10108,29 @@ const DEVICE_TEMPLATES = {
 
 				// Overflow-aware bandwidth: when weights spill past device memory,
 				// prefill streams them at the same harmonic-mean bandwidth decode does.
-				const tokenRateInfo = calculateDecodeTokenRate(device, modelConfig, dtypeSize, devices, deviceIndex);
+				const tokenRateInfo = calculateDecodeTokenRate(device, modelConfig, dtypeSize, devicesArray, deviceIndex);
 
 				const prefillBandwidthLimitedTime = totalPrefillMemoryTraffic /
 					(Math.max(tokenRateInfo.effectiveBandwidthGBps * frameworkProfile.bandwidthEfficiency, 1) * 1e9);
 
 				// prefillEfficiency is the sustained fraction of peak tensor
-				// throughput real prefill kernels achieve (measured 0.22-0.34);
-				// it applies to the compute term only. Bandwidth and network
-				// terms already carry their own efficiency factors.
+				// throughput real prefill kernels achieve on long prompts; it
+				// applies to the compute term only. Short prompts cannot fill
+				// the GEMM tiles, so efficiency ramps up with prompt length
+				// (measured: pp74 runs at roughly half the pp2048 rate).
+				// Bandwidth and network terms carry their own efficiency factors.
+				const prefillRamp = Math.max(1, frameworkProfile.prefillRampTokens || 384);
+				const promptBatchTokens = tokenLengths.promptTokens * Math.max(1, modelConfig.batchSize || 1);
+				const prefillLengthEfficiency = 0.35 + 0.65 * (promptBatchTokens / (promptBatchTokens + prefillRamp));
 				const effectivePrefillComputeTime = theoreticalPrefillComputeTime /
-					Math.max(frameworkProfile.prefillEfficiency * optimization.prefillMultiplier, 0.05);
+					Math.max(frameworkProfile.prefillEfficiency * prefillLengthEfficiency * optimization.prefillMultiplier, 0.05);
+				// Every prefill step still pays the per-layer launch floor once.
+				const prefillOverheadTime = calculateDecodeRuntimeOverheadSeconds(modelConfig, frameworkProfile, device, computeScale);
 				const actualPrefillTime = Math.max(
 					effectivePrefillComputeTime,
 					prefillBandwidthLimitedTime,
 					networkTime
-				);
+				) + prefillOverheadTime;
 
 				// Calculate utilizations
 				const prefillComputeUtilization = (effectivePrefillComputeTime / actualPrefillTime) * 100;
@@ -9487,15 +10147,18 @@ const DEVICE_TEMPLATES = {
 					networkBandwidthUtilization / 100
 				);
 
-				// Decode calculations
+				// Decode calculations. tokenRateInfo already holds the realistic
+				// weight / KV / compute / fixed-overhead split for this device's
+				// shard; here we add the exposed coordination latency and the
+				// zero-overhead physical ceiling.
 				const decodeFlops = calculateDecodeFlops(decodeComputeConfig) * computeScale;
 				const theoreticalDecodeTime = decodeFlops / (deviceTflops * 1e12);
 				const theoreticalMemoryTime = 1 / Math.max(tokenRateInfo.theoreticalMax, 0.0001);
 				const theoreticalIdealPassRate = 1 / Math.max(theoreticalMemoryTime, theoreticalDecodeTime);
-				const modeledCoordinationTime = calculateDecodeCoordinationTimeSeconds(modelConfig, devices);
+				const modeledCoordinationTime = calculateDecodeCoordinationTimeSeconds(modelConfig, devicesArray);
 				const hasSuppliedDecodeOverhead = Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
 				const suppliedOverheadScale = modelConfig.parallelismStrategy === 'pipeline'
-					? getParallelismScales(modelConfig, devices, deviceIndex).accessedScale
+					? getParallelismScales(modelConfig, devicesArray, deviceIndex).accessedScale
 					: 1;
 				const exposedDecodeOverheadTime = hasSuppliedDecodeOverhead
 					? (modelConfig.decodeOverheadMs * suppliedOverheadScale) / 1000
@@ -9505,16 +10168,21 @@ const DEVICE_TEMPLATES = {
 				// coordination once; speculation amortizes that whole pass
 				// across its accepted tokens.
 				const speculationMultiplier = tokenRateInfo.speculationMultiplier || 1;
+				const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
 				const memorySecondsPerPass = tokenRateInfo.realisticMemorySeconds;
-				const computeOrMemorySeconds = Math.max(memorySecondsPerPass, theoreticalDecodeTime);
+				const computeSecondsPerPass = tokenRateInfo.computeSeconds || 0;
+				const computeOrMemorySeconds = Math.max(memorySecondsPerPass, computeSecondsPerPass);
 				const engineCoreSeconds = (computeOrMemorySeconds + tokenRateInfo.runtimeOverheadSeconds) /
 					Math.max(tokenRateInfo.efficiencyMultiplier || 1, 0.05);
 				const perPassSeconds = engineCoreSeconds + exposedDecodeOverheadTime;
 				const actualDecodeTime = perPassSeconds / speculationMultiplier;
 				const rawPrefillTokensPerSecond = modelConfig.batchSize * tokenLengths.promptTokens / actualPrefillTime;
+				// Per-sequence rate (what one user sees). Aggregate multiplies
+				// by the number of sequences decoded in the same pass.
 				const decodeTokensPerSecond = Number.isFinite(actualDecodeTime) && actualDecodeTime > 0
 					? 1 / actualDecodeTime
 					: 0;
+				const aggregateDecodeTokensPerSecond = decodeTokensPerSecond * batchSize;
 				const decodeTokensPerSecondWithoutSpeculation = Number.isFinite(perPassSeconds) && perPassSeconds > 0
 					? 1 / perPassSeconds
 					: 0;
@@ -9523,39 +10191,36 @@ const DEVICE_TEMPLATES = {
 				const prefillTokensPerSecond = rawPrefillTokensPerSecond;
 
 				// Per-token decode time budget: where each millisecond goes.
-				// Memory reads split between weights and KV by their byte share;
-				// GEMV compute overlaps the reads and is reported as busy-%.
+				// Weight and KV reads are modeled separately; the GEMV/GEMM
+				// compute overlaps the reads unless it is the larger term.
 				// All bands are amortized per accepted token, so they still sum
 				// to the per-token total under speculation.
-				const memoryMsPerToken = Number.isFinite(memorySecondsPerPass)
-					? (memorySecondsPerPass / speculationMultiplier) * 1000
-					: 0;
-				const runtimeMsPerToken = Number.isFinite(tokenRateInfo.runtimeOverheadSeconds)
-					? (tokenRateInfo.runtimeOverheadSeconds / speculationMultiplier) * 1000
-					: 0;
-				const computeMsPerToken = (theoreticalDecodeTime / speculationMultiplier) * 1000;
+				const efficiencyScale = 1 / Math.max(tokenRateInfo.efficiencyMultiplier || 1, 0.05);
+				const perTokenScale = efficiencyScale / speculationMultiplier;
+				const coreBinding = tokenRateInfo.coreBinding || 'memory';
+				const weightReadMs = coreBinding === 'memory' ? (tokenRateInfo.weightSeconds || 0) * perTokenScale * 1000 : 0;
+				const kvReadMs = coreBinding === 'memory' ? (tokenRateInfo.kvSeconds || 0) * perTokenScale * 1000 : 0;
+				const computeMs = coreBinding === 'compute' ? computeSecondsPerPass * perTokenScale * 1000 : 0;
+				const memoryMsPerToken = memorySecondsPerPass * perTokenScale * 1000;
+				const runtimeMsPerToken = (tokenRateInfo.runtimeOverheadSeconds || 0) * perTokenScale * 1000;
 				const exposedOverheadMsPerToken = (exposedDecodeOverheadTime / speculationMultiplier) * 1000;
-				const accessedGB = Math.max(tokenRateInfo.activeModelSizeGB || 0, 1e-9);
-				const weightShareOfReads = Math.min(1, (tokenRateInfo.activeWeightSizeGB || 0) / accessedGB);
-				const coreBinding = theoreticalDecodeTime > memorySecondsPerPass ? 'compute' : 'memory';
-				const exposedCoreMsPerToken = (computeOrMemorySeconds / speculationMultiplier) * 1000;
 				const exposedComponents = {
-					memory: coreBinding === 'memory' ? exposedCoreMsPerToken : 0,
-					compute: coreBinding === 'compute' ? exposedCoreMsPerToken : 0,
+					memory: weightReadMs + kvReadMs,
+					compute: computeMs,
 					runtime: runtimeMsPerToken,
 					coordination: exposedOverheadMsPerToken
 				};
 				const dominantDecodeComponent = Object.entries(exposedComponents).sort((a, b) => b[1] - a[1])[0]?.[0] || 'memory';
 				const decodeTimeBreakdown = {
-					weightReadMs: coreBinding === 'memory' ? exposedCoreMsPerToken * weightShareOfReads : 0,
-					kvReadMs: coreBinding === 'memory' ? exposedCoreMsPerToken * (1 - weightShareOfReads) : 0,
-					computeMs: coreBinding === 'compute' ? exposedCoreMsPerToken : 0,
+					weightReadMs,
+					kvReadMs,
+					computeMs,
 					memoryReadMs: memoryMsPerToken,
 					runtimeMs: runtimeMsPerToken,
 					coordinationMs: exposedOverheadMsPerToken,
 					totalMs: Number.isFinite(actualDecodeTime) ? actualDecodeTime * 1000 : Infinity,
 					computeBusyPct: Number.isFinite(actualDecodeTime) && actualDecodeTime > 0
-						? Math.min(100, (theoreticalDecodeTime / actualDecodeTime) * 100)
+						? Math.min(100, (computeSecondsPerPass / (actualDecodeTime * speculationMultiplier)) * 100)
 						: 0,
 					hasOverflow: tokenRateInfo.hasOverflow,
 					coreBinding,
@@ -9599,14 +10264,21 @@ const DEVICE_TEMPLATES = {
 					rawPrefillTokensPerSecond,
 					prefillTokensPerSecond,
 					decodeTokensPerSecond,
+					aggregateDecodeTokensPerSecond,
+					batchSize,
 					decodeTokensPerSecondWithoutSpeculation,
 					speculationMultiplier,
 					decodeTimePerTokenSeconds: actualDecodeTime,
-					decodeResponseTimeSeconds: decodeTokensPerSecond > 0 ? (tokenLengths.outputTokens * modelConfig.batchSize) / decodeTokensPerSecond : Infinity,
+					// Each sequence receives one token per pass, so a response
+					// of N tokens takes N passes regardless of batch size.
+					decodeResponseTimeSeconds: decodeTokensPerSecond > 0 ? tokenLengths.outputTokens / decodeTokensPerSecond : Infinity,
 					theoreticalMaxTokensPerSecond: theoreticalIdealPassRate,
 					theoreticalMemoryMaxTokensPerSecond: tokenRateInfo.theoreticalMax,
-					decodeComputeUtilization: Math.min(100, (theoreticalDecodeTime / (actualDecodeTime * speculationMultiplier)) * 100),
+					decodeComputeUtilization: Math.min(100, (computeSecondsPerPass / (actualDecodeTime * speculationMultiplier)) * 100),
 					decodeLocalBandwidthUtilization: Math.min(100, (memorySecondsPerPass / (actualDecodeTime * speculationMultiplier)) * 100),
+					decodeWeightReadMs: weightReadMs,
+					decodeKvReadMs: kvReadMs,
+					decodeContextTokens: getDecodeContextTokens(modelConfig),
 					decodeCoordinationTimeMs: exposedDecodeOverheadTime * 1000,
 					decodeRuntimeOverheadTimeMs: tokenRateInfo.runtimeOverheadSeconds * 1000,
 					decodeDominantComponent: dominantDecodeComponent,
@@ -9626,6 +10298,7 @@ const DEVICE_TEMPLATES = {
 					activeModelSizeGB: tokenRateInfo.activeModelSizeGB,
 					activeWeightSizeGB: tokenRateInfo.activeWeightSizeGB,
 					decodeKvCacheGB: tokenRateInfo.decodeKvCacheGB,
+					residentKvCacheGB: tokenRateInfo.residentKvCacheGB,
 					byteProfileSource: tokenRateInfo.byteProfileSource,
 					byteProfileLabel: tokenRateInfo.byteProfileLabel,
 					// Image generation info
@@ -9635,6 +10308,142 @@ const DEVICE_TEMPLATES = {
 				};
 			});
 		}
+
+        // ---------------------------------------------------------------
+        // Scaling sweeps. Both mirror the active plan exactly (same devices,
+        // runtime, quantization, strategy) and vary one axis.
+        // ---------------------------------------------------------------
+
+        function getSystemDecodeRateForMetrics(modelConfig, metricsArray, devicesArray, strategy) {
+            return calculateSystemRateFromDeviceRates(
+                metricsArray.map(metric => metric.decodeTokensPerSecond || 0),
+                strategy,
+                parseFloat(modelConfig.batchSize) || 1,
+                devicesArray,
+                getSystemRateOptions(modelConfig)
+            );
+        }
+
+        function getSystemPrefillRateForMetrics(modelConfig, metricsArray, devicesArray, strategy) {
+            return calculateSystemRateFromDeviceRates(
+                metricsArray.map(metric => metric.prefillTokensPerSecond || 0),
+                strategy,
+                parseFloat(modelConfig.batchSize) || 1,
+                devicesArray
+            );
+        }
+
+        function buildContextSweepPoints(maxContext) {
+            const base = [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576];
+            const points = base.filter(value => value <= maxContext);
+            if (!points.length || points[points.length - 1] < maxContext) points.push(maxContext);
+            return points;
+        }
+
+        // Decode / prefill / memory fit across input lengths. Each point is
+        // "a prompt of N tokens followed by the plan's response length", so
+        // the decode rate is read at N + response/2 and memory is sized for
+        // N + response.
+        function calculateContextSweep(modelConfig, devicesArray = devices, options = {}) {
+            const strategy = resolvePlanStrategy(modelConfig);
+            const tokenLengths = normalizeTokenLengths(modelConfig);
+            const outputTokens = Math.max(1, tokenLengths.outputTokens);
+            const modelLimit = Math.max(parseFloat(modelConfig.contextLength) || 0, parseFloat(modelConfig.maxPositionEmbeddings) || 0);
+            const maxPrompt = Math.max(
+                options.maxContext || 0,
+                Math.min(modelLimit || 131072, 1048576) - outputTokens,
+                tokenLengths.promptTokens
+            );
+            const prompts = buildContextSweepPoints(Math.max(512, maxPrompt));
+            const correction = Number.isFinite(options.correctionFactor) && options.correctionFactor > 0 ? options.correctionFactor : 1;
+            const points = prompts.map(promptTokens => {
+                const contextTokens = promptTokens + outputTokens;
+                const config = normalizeModelConfig({
+                    ...modelConfig,
+                    parallelismStrategy: strategy,
+                    promptTokens,
+                    outputTokens,
+                    seqLength: promptTokens + outputTokens,
+                    decodeContextTokens: null
+                });
+                const metricsArray = calculateMetricsForConfig(config, devicesArray);
+                const decodeTokS = getSystemDecodeRateForMetrics(config, metricsArray, devicesArray, strategy);
+                const prefillTokS = getSystemPrefillRateForMetrics(config, metricsArray, devicesArray, strategy);
+                const worst = metricsArray.reduce((a, b) => (b.memoryUtilization || 0) > (a.memoryUtilization || 0) ? b : a, metricsArray[0]);
+                return {
+                    contextTokens,
+                    promptTokens,
+                    decodeTokS,
+                    expectedDecodeTokS: decodeTokS * correction,
+                    prefillTokS,
+                    ttftSeconds: prefillTokS > 0 ? promptTokens / prefillTokS : Infinity,
+                    kvReadGB: worst?.decodeKvCacheGB || 0,
+                    residentKvGB: metricsArray.reduce((sum, metric) => sum + (metric.residentKvCacheGB || 0), 0),
+                    memoryUtilization: worst?.memoryUtilization || 0,
+                    fits: !metricsArray.some(metric => metric.hasOverflow || (metric.memoryUtilization || 0) > 100),
+                    exceedsModelLimit: modelLimit > 0 && contextTokens > modelLimit,
+                    isCurrent: promptTokens === tokenLengths.promptTokens
+                };
+            });
+            return {
+                strategy,
+                outputTokens,
+                currentPromptTokens: tokenLengths.promptTokens,
+                currentContextTokens: tokenLengths.seqLength,
+                modelLimit: modelLimit || null,
+                correctionFactor: correction,
+                points
+            };
+        }
+
+        // Aggregate and per-user decode rates as more sequences share each
+        // weight pass (continuous batching). Stops one step past the first
+        // concurrency whose KV cache no longer fits.
+        function calculateConcurrencySweep(modelConfig, devicesArray = devices, options = {}) {
+            const strategy = resolvePlanStrategy(modelConfig);
+            const levels = options.levels || [1, 2, 4, 8, 16, 32, 64, 128, 256];
+            const correction = Number.isFinite(options.correctionFactor) && options.correctionFactor > 0 ? options.correctionFactor : 1;
+            const frameworkProfile = getFrameworkProfile(modelConfig, devicesArray);
+            const points = [];
+            let overflowed = false;
+            for (const concurrency of levels) {
+                const config = normalizeModelConfig({ ...modelConfig, parallelismStrategy: strategy, batchSize: concurrency, decodeContextTokens: null });
+                const metricsArray = calculateMetricsForConfig(config, devicesArray);
+                const perUserTokS = getSystemDecodeRateForMetrics(config, metricsArray, devicesArray, strategy);
+                const prefillTokS = getSystemPrefillRateForMetrics(config, metricsArray, devicesArray, strategy);
+                const worst = metricsArray.reduce((a, b) => (b.memoryUtilization || 0) > (a.memoryUtilization || 0) ? b : a, metricsArray[0]);
+                const fits = !metricsArray.some(metric => metric.hasOverflow || (metric.memoryUtilization || 0) > 100);
+                const binding = worst?.decodeTimeBreakdown?.dominant || 'memory';
+                points.push({
+                    concurrency,
+                    perUserTokS,
+                    expectedPerUserTokS: perUserTokS * correction,
+                    aggregateTokS: perUserTokS * concurrency,
+                    expectedAggregateTokS: perUserTokS * concurrency * correction,
+                    prefillTokS,
+                    kvGB: metricsArray.reduce((sum, metric) => sum + (metric.residentKvCacheGB || 0), 0),
+                    memoryUtilization: worst?.memoryUtilization || 0,
+                    computeBusyPct: worst?.decodeTimeBreakdown?.computeBusyPct || 0,
+                    binding,
+                    fits
+                });
+                if (!fits) {
+                    if (overflowed) break;
+                    overflowed = true;
+                }
+            }
+            const fitting = points.filter(point => point.fits);
+            const best = fitting.reduce((a, b) => (b.aggregateTokS > (a?.aggregateTokS || 0) ? b : a), fitting[0] || null);
+            return {
+                strategy,
+                frameworkLabel: frameworkProfile.label,
+                frameworkKey: frameworkProfile.key,
+                correctionFactor: correction,
+                maxFittingConcurrency: fitting.length ? fitting[fitting.length - 1].concurrency : 0,
+                bestAggregate: best,
+                points
+            };
+        }
 
         function formatStrategyLabel(strategy) {
             const labels = {
@@ -9711,10 +10520,10 @@ const DEVICE_TEMPLATES = {
                 reasons.push('Data parallelism improves aggregate throughput, but not single-user latency.');
             }
 
-            const bestAlignment = benchmarkAlignment?.[0];
+            const bestAlignment = benchmarkAlignment?.[0] || null;
             if (bestAlignment?.reasons?.length) {
                 reasons.push(...bestAlignment.reasons);
-            } else if (bestAlignment) {
+            } else if (bestAlignment?.hardwareMatched) {
                 reasons.push('Nearest benchmark is close enough that normal kernel/runtime variance likely explains the delta.');
             }
 
@@ -9758,8 +10567,12 @@ const DEVICE_TEMPLATES = {
             const prefillSystemRate = calculateSystemRateFromDeviceRates(prefillRates, parallelism, batchSize, devicesArray);
             const promptTokenWork = tokenLengths.promptTokens * batchSize;
             const outputTokenWork = tokenLengths.outputTokens * batchSize;
+            // decodeSystemRate is per sequence: every sequence in the batch
+            // receives one token per pass, so the response takes
+            // outputTokens passes however many requests share the batch.
             const promptSeconds = prefillSystemRate > 0 ? promptTokenWork / prefillSystemRate : Infinity;
-            const decodeSeconds = decodeSystemRate > 0 ? outputTokenWork / decodeSystemRate : Infinity;
+            const decodeSeconds = decodeSystemRate > 0 ? tokenLengths.outputTokens / decodeSystemRate : Infinity;
+            const aggregateDecodeRate = decodeSystemRate * batchSize;
             const totalSeconds = promptSeconds + decodeSeconds;
             const averageTokensPerSecond = Number.isFinite(totalSeconds) && totalSeconds > 0
                 ? (promptTokenWork + outputTokenWork) / totalSeconds
@@ -9775,6 +10588,7 @@ const DEVICE_TEMPLATES = {
                 batchSize,
                 prefillSystemRate,
                 decodeSystemRate,
+                aggregateDecodeRate,
                 promptSeconds,
                 decodeSeconds,
                 totalSeconds,
@@ -10586,6 +11400,184 @@ const DEVICE_TEMPLATES = {
             }));
         }
 
+        function formatTokensAxis(value) {
+            if (value >= 1048576) return `${(value / 1048576).toFixed(value % 1048576 ? 1 : 0)}M`;
+            if (value >= 1024) return `${Math.round(value / 1024)}k`;
+            return String(Math.round(value));
+        }
+
+        function formatSecondsCompact(seconds) {
+            if (!Number.isFinite(seconds)) return '—';
+            if (seconds < 0.001) return '<1 ms';
+            if (seconds < 1) return `${(seconds * 1000).toFixed(0)} ms`;
+            if (seconds < 60) return `${seconds.toFixed(seconds < 10 ? 1 : 0)} s`;
+            return `${(seconds / 60).toFixed(1)} min`;
+        }
+
+        // Compact log-x line chart used by the scaling section. All values
+        // are pre-computed; the SVG carries titles per point and the caller
+        // renders a table alternative for assistive technology.
+        function buildScalingChartSvg({ xValues, series, xFormat = formatTokensAxis, yFormat = formatCompactRate, yLabel = '', marker = null, unfitFrom = null, logY = false, ariaLabel = '' }) {
+            const width = 420;
+            const height = 230;
+            const margin = { left: 46, right: 12, top: 14, bottom: 34 };
+            const plotW = width - margin.left - margin.right;
+            const plotH = height - margin.top - margin.bottom;
+            const xs = xValues.filter(value => value > 0);
+            if (xs.length < 2) return '';
+            const minLog = Math.log2(xs[0]);
+            const maxLog = Math.log2(xs[xs.length - 1]);
+            const x = value => margin.left + ((Math.log2(Math.max(value, xs[0])) - minLog) / Math.max(maxLog - minLog, 1e-9)) * plotW;
+            const allY = series.flatMap(item => item.values).filter(value => Number.isFinite(value) && value > 0);
+            if (!allY.length) return '';
+            const maxY = Math.max(...allY);
+            const minY = logY ? Math.max(Math.min(...allY) * 0.7, 1e-6) : 0;
+            const y = value => {
+                if (logY) return margin.top + plotH - ((Math.log10(Math.max(value, minY)) - Math.log10(minY)) / Math.max(Math.log10(maxY * 1.15) - Math.log10(minY), 1e-9)) * plotH;
+                return margin.top + plotH - (Math.max(value, 0) / (maxY * 1.12)) * plotH;
+            };
+            const niceStep = (() => {
+                const rough = (maxY * 1.12) / 4;
+                const magnitude = 10 ** Math.floor(Math.log10(Math.max(rough, 1e-9)));
+                const candidates = [1, 2, 2.5, 5, 10].map(factor => factor * magnitude);
+                return candidates.find(step => step >= rough) || candidates[candidates.length - 1];
+            })();
+            const yTicks = logY
+                ? [0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000].filter(value => value >= minY && value <= maxY * 1.15)
+                : Array.from({ length: Math.floor((maxY * 1.12) / niceStep) + 1 }, (_, index) => index * niceStep);
+            const grid = yTicks.map(value => `<line class="gridline" x1="${margin.left}" y1="${y(value).toFixed(1)}" x2="${width - margin.right}" y2="${y(value).toFixed(1)}"/><text x="${margin.left - 6}" y="${(y(value) + 4).toFixed(1)}" text-anchor="end">${yFormat(value)}</text>`).join('');
+            const xTicks = xs.filter((value, index) => xs.length <= 7 || index % Math.ceil(xs.length / 7) === 0 || index === xs.length - 1)
+                .map(value => `<text x="${x(value).toFixed(1)}" y="${height - margin.bottom + 14}" text-anchor="middle">${xFormat(value)}</text>`).join('');
+            const unfit = unfitFrom !== null && unfitFrom <= xs[xs.length - 1]
+                ? `<rect class="unfit-zone" x="${x(unfitFrom).toFixed(1)}" y="${margin.top}" width="${(width - margin.right - x(unfitFrom)).toFixed(1)}" height="${plotH}"/><text class="unfit-label" x="${(width - margin.right - 4).toFixed(1)}" y="${margin.top + 11}" text-anchor="end">exceeds memory</text>`
+                : '';
+            const paths = series.map(item => {
+                const pts = xValues.map((value, index) => [value, item.values[index]]).filter(([, v]) => Number.isFinite(v) && v > 0);
+                if (!pts.length) return '';
+                const d = pts.map(([vx, vy], index) => `${index ? 'L' : 'M'}${x(vx).toFixed(1)} ${y(vy).toFixed(1)}`).join(' ');
+                const dots = pts.map(([vx, vy], index) => {
+                    const unfitPoint = item.fits && item.fits[xValues.indexOf(vx)] === false;
+                    return `<circle class="point ${unfitPoint ? 'is-unfit' : item.className}" cx="${x(vx).toFixed(1)}" cy="${y(vy).toFixed(1)}" r="3.2"><title>${escapeHtml(`${item.label}: ${yFormat(vy)} at ${xFormat(vx)}${unfitPoint ? ' (exceeds memory)' : ''}`)}</title></circle>`;
+                }).join('');
+                return `<path class="series ${item.className}" d="${d}"/>${dots}`;
+            }).join('');
+            const markerHtml = marker && marker.x >= xs[0] && marker.x <= xs[xs.length - 1]
+                ? `<line class="marker" x1="${x(marker.x).toFixed(1)}" y1="${margin.top}" x2="${x(marker.x).toFixed(1)}" y2="${margin.top + plotH}"/><text class="marker-label" x="${(x(marker.x) + (x(marker.x) > width * 0.6 ? -4 : 4)).toFixed(1)}" y="${margin.top + 10}" text-anchor="${x(marker.x) > width * 0.6 ? 'end' : 'start'}">${escapeHtml(marker.label)}</text>`
+                : '';
+            return `<svg class="scaling-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(ariaLabel)}">
+                ${grid}${unfit}${paths}${markerHtml}${xTicks}
+                <text class="axis-label" transform="translate(11 ${(margin.top + plotH / 2).toFixed(1)}) rotate(-90)" text-anchor="middle">${escapeHtml(yLabel)}</text>
+            </svg>`;
+        }
+
+        function buildScalingSectionHtml(modelConfig, metrics, currentCalibration, parallelism) {
+            if (!metrics?.length || metrics[0].isImageGen) return '';
+            const correction = currentCalibration?.correctionFactor || 1;
+            const resolvedConfig = { ...modelConfig, parallelismStrategy: parallelism };
+            const sweep = calculateContextSweep(resolvedConfig, devices, { correctionFactor: correction });
+            const concurrency = calculateConcurrencySweep(resolvedConfig, devices, { correctionFactor: correction });
+            const specMultiplier = metrics[0]?.speculationMultiplier || 1;
+            const rateLabel = specMultiplier > 1 ? ' (incl. speculation)' : '';
+            const points = sweep.points;
+            const xs = points.map(point => point.promptTokens);
+            const firstUnfit = points.find(point => !point.fits);
+            const lastFit = [...points].reverse().find(point => point.fits);
+            const current = points.find(point => point.isCurrent) || points[0];
+
+            const decodeChart = buildScalingChartSvg({
+                xValues: xs,
+                series: [
+                    { label: 'Engine model', className: 'is-engine', values: points.map(point => point.decodeTokS) },
+                    { label: 'Projected real', className: 'is-expected', values: points.map(point => point.expectedDecodeTokS), fits: points.map(point => point.fits) }
+                ],
+                yLabel: 'decode tok/s',
+                marker: { x: sweep.currentPromptTokens, label: 'your plan' },
+                unfitFrom: firstUnfit ? firstUnfit.promptTokens : null,
+                ariaLabel: `Projected decode speed versus input length: ${points.map(point => `${formatTokensAxis(point.promptTokens)} tokens ${formatCompactRate(point.expectedDecodeTokS)} tok/s${point.fits ? '' : ' (exceeds memory)'}`).join(', ')}`
+            });
+            const prefillChart = buildScalingChartSvg({
+                xValues: xs,
+                series: [
+                    { label: 'Prompt processing', className: 'is-prefill', values: points.map(point => point.prefillTokS), fits: points.map(point => point.fits) }
+                ],
+                yLabel: 'prompt tok/s',
+                marker: { x: sweep.currentPromptTokens, label: 'your plan' },
+                unfitFrom: firstUnfit ? firstUnfit.promptTokens : null,
+                ariaLabel: `Projected prompt processing speed versus input length: ${points.map(point => `${formatTokensAxis(point.promptTokens)} tokens ${formatCompactRate(point.prefillTokS)} tok/s, time to first token ${formatSecondsCompact(point.ttftSeconds)}`).join(', ')}`
+            });
+            const cPoints = concurrency.points;
+            const concurrencyChart = buildScalingChartSvg({
+                xValues: cPoints.map(point => point.concurrency),
+                series: [
+                    { label: 'Aggregate throughput', className: 'is-aggregate', values: cPoints.map(point => point.expectedAggregateTokS), fits: cPoints.map(point => point.fits) },
+                    { label: 'Per user', className: 'is-peruser', values: cPoints.map(point => point.expectedPerUserTokS), fits: cPoints.map(point => point.fits) }
+                ],
+                xFormat: value => `${value}`,
+                yLabel: 'tok/s',
+                marker: { x: Math.max(1, parseFloat(modelConfig.batchSize) || 1), label: 'your plan' },
+                unfitFrom: cPoints.find(point => !point.fits)?.concurrency ?? null,
+                ariaLabel: `Projected throughput versus concurrent users: ${cPoints.map(point => `${point.concurrency} users ${formatCompactRate(point.expectedAggregateTokS)} tok/s total, ${formatCompactRate(point.expectedPerUserTokS)} each${point.fits ? '' : ' (exceeds memory)'}`).join(', ')}`
+            });
+
+            const limitNote = sweep.modelLimit ? ` The model's own limit is ${formatTokensAxis(sweep.modelLimit)} tokens.` : '';
+            const fitNote = firstUnfit
+                ? `Memory holds up to about <strong>${formatTokensAxis(lastFit ? lastFit.promptTokens + sweep.outputTokens : sweep.outputTokens)} tokens</strong> of context; beyond that the KV cache spills and speed collapses.`
+                : `The full swept range fits in memory.`;
+            const longest = points[points.length - 1];
+            const decodeSummary = `At your ${formatTokensAxis(sweep.currentPromptTokens)}-token input, decode is <strong>${formatCompactRate(current.expectedDecodeTokS)} tok/s</strong>${rateLabel}; at ${formatTokensAxis(longest.promptTokens)} it falls to <strong>${formatCompactRate(longest.expectedDecodeTokS)} tok/s</strong> because every token re-reads a ${longest.kvReadGB.toFixed(1)} GB KV cache. ${fitNote}${limitNote}`;
+            const prefillSummary = `Time to first token: <strong>${formatSecondsCompact(current.ttftSeconds)}</strong> for your ${formatTokensAxis(sweep.currentPromptTokens)}-token prompt, ${formatSecondsCompact(longest.ttftSeconds)} at ${formatTokensAxis(longest.promptTokens)}. Short prompts run below peak because the GEMM tiles stay partly empty; very long prompts slow down as attention grows with length.`;
+
+            const best = concurrency.bestAggregate;
+            const maxFit = concurrency.maxFittingConcurrency;
+            const batchingCaveat = ['exo'].includes(concurrency.frameworkKey)
+                ? ' EXO serves one stream at a time in practice, so treat this as an upper bound.'
+                : (['llama_cpp', 'ollama'].includes(concurrency.frameworkKey)
+                    ? ` ${concurrency.frameworkLabel} needs parallel slots enabled (<code>-np</code> / <code>OLLAMA_NUM_PARALLEL</code>) and reserves KV for every slot up front.`
+                    : '');
+            const concurrencySummary = best
+                ? `With continuous batching, <strong>${best.concurrency} concurrent user${best.concurrency > 1 ? 's' : ''}</strong> reach about <strong>${formatCompactRate(best.expectedAggregateTokS)} tok/s</strong> combined (${formatCompactRate(best.expectedPerUserTokS)} tok/s each) at this context length. KV cache for ${maxFit} user${maxFit > 1 ? 's' : ''} fits in memory${cPoints.some(point => !point.fits) ? '; more would overflow' : ''}. The sweep is ${best.binding === 'compute' ? 'compute' : 'memory'}-bound at its best point.${batchingCaveat}`
+                : 'No concurrency level fits in memory at this context length.';
+
+            const contextTable = `<details><summary>View as table</summary><div class="table-scroll"><table>
+                <thead><tr><th scope="col">Input</th><th scope="col">Decode</th><th scope="col">Engine</th><th scope="col">Prompt</th><th scope="col">First token</th><th scope="col">KV read/token</th><th scope="col">Memory</th></tr></thead>
+                <tbody>${points.map(point => `<tr><td>${formatTokensAxis(point.promptTokens)}${point.isCurrent ? ' ◀' : ''}</td><td>${formatCompactRate(point.expectedDecodeTokS)} tok/s</td><td>${formatCompactRate(point.decodeTokS)}</td><td>${formatCompactRate(point.prefillTokS)} tok/s</td><td>${formatSecondsCompact(point.ttftSeconds)}</td><td>${point.kvReadGB < 0.1 ? `${(point.kvReadGB * 1000).toFixed(0)} MB` : `${point.kvReadGB.toFixed(1)} GB`}</td><td>${point.fits ? `${point.memoryUtilization.toFixed(0)}%` : 'overflow'}</td></tr>`).join('')}</tbody>
+            </table></div></details>`;
+            const concurrencyTable = `<details><summary>View as table</summary><div class="table-scroll"><table>
+                <thead><tr><th scope="col">Users</th><th scope="col">Combined</th><th scope="col">Per user</th><th scope="col">KV cache</th><th scope="col">Memory</th><th scope="col">Limit</th></tr></thead>
+                <tbody>${cPoints.map(point => `<tr><td>${point.concurrency}</td><td>${formatCompactRate(point.expectedAggregateTokS)} tok/s</td><td>${formatCompactRate(point.expectedPerUserTokS)} tok/s</td><td>${point.kvGB.toFixed(1)} GB</td><td>${point.fits ? `${point.memoryUtilization.toFixed(0)}%` : 'overflow'}</td><td>${point.binding}</td></tr>`).join('')}</tbody>
+            </table></div></details>`;
+
+            return `
+                <section class="scaling-section" aria-labelledby="scalingTitle">
+                    <div class="scaling-head">
+                        <h3 id="scalingTitle">How it scales</h3>
+                        <p>Same model, hardware, and runtime as above; one axis varies. Solid lines are the projected-real estimate (engine model × ${correction.toFixed(2)} benchmark correction).</p>
+                    </div>
+                    <div class="scaling-grid">
+                        <div class="scaling-card">
+                            <div class="scaling-card-title"><strong>Decode speed vs. input length</strong><span>${formatTokensAxis(sweep.outputTokens)}-token response</span></div>
+                            ${decodeChart}
+                            <div class="scaling-legend"><span><i></i>Projected real</span><span><i class="is-engine"></i>Engine model</span>${firstUnfit ? '<span><i class="is-unfit"></i>Exceeds memory</span>' : ''}</div>
+                            <p class="scaling-summary">${decodeSummary}</p>
+                            ${contextTable}
+                        </div>
+                        <div class="scaling-card">
+                            <div class="scaling-card-title"><strong>Prompt processing vs. input length</strong><span>prefill</span></div>
+                            ${prefillChart}
+                            <div class="scaling-legend"><span><i></i>Prompt tok/s</span>${firstUnfit ? '<span><i class="is-unfit"></i>Exceeds memory</span>' : ''}</div>
+                            <p class="scaling-summary">${prefillSummary}</p>
+                        </div>
+                        <div class="scaling-card">
+                            <div class="scaling-card-title"><strong>Throughput vs. concurrent users</strong><span>${formatTokensAxis(sweep.currentContextTokens)}-token context each</span></div>
+                            ${concurrencyChart}
+                            <div class="scaling-legend"><span><i></i>Combined tok/s</span><span><i class="is-peruser"></i>Per user</span>${cPoints.some(point => !point.fits) ? '<span><i class="is-unfit"></i>Exceeds memory</span>' : ''}</div>
+                            <p class="scaling-summary">${concurrencySummary}</p>
+                            ${concurrencyTable}
+                        </div>
+                    </div>
+                </section>`;
+        }
+
         function updateSystemAnalysis() {
             const metrics = calculateMetrics();
             _latestMetricsByDeviceId = new Map();
@@ -10644,7 +11636,7 @@ const DEVICE_TEMPLATES = {
                 // Show overflow warning if applicable
                 if (m.hasOverflow) {
                     systemAnalysisHtml += `
-                        <div style="background: rgba(255, 165, 0, 0.15); border: 1px solid #ffa500; border-radius: 4px; padding: 0.75rem; margin-top: 0.75rem;">
+                        <div style="background: rgba(255, 165, 0, 0.08); border: 1px solid var(--border); border-radius: 4px; padding: 0.75rem; margin-top: 0.75rem;">
                             <div style="color: #ffa500; font-weight: 600; margin-bottom: 0.25rem;">
                                 ⚠️ Memory Overflow Detected
                             </div>
@@ -10759,7 +11751,7 @@ const DEVICE_TEMPLATES = {
                 let autoModeHtml = '';
                 if (isAutoMode && lastAutoResults) {
                     autoModeHtml = `
-                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(74, 222, 128, 0.1); border: 1px solid #4ade80; border-radius: 6px;">
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(74, 222, 128, 0.07); border: 1px solid var(--border); border-radius: 6px;">
                             <div style="color: #4ade80; font-weight: 600; margin-bottom: 0.5rem;">
                                 🎯 AUTO Selected: ${parallelism.replace('_', ' ').toUpperCase()}
                             </div>
@@ -10795,7 +11787,7 @@ const DEVICE_TEMPLATES = {
                 let phaseSplitHtml = '';
                 if (lastPhaseSplitResults) {
                     phaseSplitHtml = `
-                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(168, 85, 247, 0.1); border: 1px solid #a855f7; border-radius: 6px;">
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(168, 85, 247, 0.07); border: 1px solid var(--border); border-radius: 6px;">
                             <div style="color: #a855f7; font-weight: 600; margin-bottom: 0.5rem;">
                                 ⚡ EXO Phase Split Optimization
                             </div>
@@ -10879,8 +11871,8 @@ const DEVICE_TEMPLATES = {
                                 <div style="font-size: 0.8rem; margin-bottom: 0.65rem;">
                                     <strong>${match.model}</strong> on <strong>${match.hardware}</strong><br>
                                     Projected: <strong>${planningRate.toFixed(1)} tok/s</strong> vs reference <strong>${match.referenceRate.toFixed(1)} tok/s</strong>
-                                    <span style="color: ${Math.abs(match.deltaPct) <= 15 ? '#4ade80' : (Math.abs(match.deltaPct) <= 35 ? '#fbbf24' : '#f87171')};">
-                                        (${match.deltaPct >= 0 ? '+' : ''}${match.deltaPct.toFixed(1)}%)
+                                    <span style="color: ${!match.hardwareMatched ? 'var(--text-secondary)' : (Math.abs(match.deltaPct) <= 15 ? '#4ade80' : (Math.abs(match.deltaPct) <= 35 ? '#fbbf24' : '#f87171'))};">
+                                        (${match.deltaPct >= 0 ? '+' : ''}${match.deltaPct.toFixed(1)}%${!match.hardwareMatched ? ', different hardware' : ''})
                                     </span><br>
                                     ${match.reasons.length > 0
                                         ? `<span style="color: var(--text-secondary);">Why it differs: ${match.reasons.join(' ')}</span>`
@@ -10946,7 +11938,11 @@ const DEVICE_TEMPLATES = {
                 const rateParts = systemRateLabel.split(' ');
                 const rateNum = currentCalibration ? formatCompactRate(currentCalibration.expectedTokS) : rateParts[0];
                 const rateUnits = currentCalibration ? 'tok/s' : (rateParts.slice(1).join(' ') || (isImageGen ? 'img/s' : 'tok/s'));
-                const nearestMeasured = benchmarkAlignment.length > 0 ? benchmarkAlignment[0] : null;
+                const nearestGoldRun = isImageGen ? null : findNearestGoldRun(modelConfig, devices);
+                const nearestStatic = benchmarkAlignment.find(match => match.hardwareMatched) || null;
+                const nearestMeasured = nearestGoldRun
+                    ? { referenceRate: nearestGoldRun.observedTokS, model: nearestGoldRun.model, hardware: nearestGoldRun.hardware, note: `${nearestGoldRun.label} · ${nearestGoldRun.sameSetup ? 'same runtime & quant' : 'different runtime or quant'}` }
+                    : (nearestStatic ? { ...nearestStatic, note: `${nearestStatic.model} · ${nearestStatic.hardware} · may include speculation` } : null);
                 const specMultiplier = metrics[0]?.speculationMultiplier || 1;
                 const speculationOn = specMultiplier > 1;
                 const calibrationSummaryHtml = currentCalibration ? (() => {
@@ -10985,7 +11981,7 @@ const DEVICE_TEMPLATES = {
                             ? rung('is-measured', 'Without speculation', expectedWithoutSpec, '≈ same setup, speculation off')
                             : ''}
                         ${nearestMeasured && Number.isFinite(nearestMeasured.referenceRate)
-                            ? rung('is-measured', 'Nearest measured', nearestMeasured.referenceRate, escapeHtml(`${nearestMeasured.model} · ${nearestMeasured.hardware}`) + ' · may include speculation')
+                            ? rung('is-measured', 'Nearest measured', nearestMeasured.referenceRate, escapeHtml(nearestMeasured.note))
                             : ''}
                     </div>`;
                 })() : '';
@@ -10997,9 +11993,9 @@ const DEVICE_TEMPLATES = {
                             <div class="phase-summary-sub">${formatDuration(workflowSummary.promptSeconds)} for ${formatTokenCount(workflowSummary.promptTokens)} input tokens</div>
                         </div>
                         <div class="phase-summary-card">
-                            <div class="phase-summary-label">Decode</div>
+                            <div class="phase-summary-label">Decode${workflowSummary.batchSize > 1 ? ' · per request' : ''}</div>
                             <div class="phase-summary-value">${formatTokenRate(workflowSummary.decodeSystemRate)}</div>
-                            <div class="phase-summary-sub">${formatDuration(workflowSummary.decodeSeconds)} for ${formatTokenCount(workflowSummary.outputTokens)} output tokens · ${speculationOn ? `speculation ×${specMultiplier.toFixed(2)}` : 'no speculation'}</div>
+                            <div class="phase-summary-sub">${formatDuration(workflowSummary.decodeSeconds)} for ${formatTokenCount(workflowSummary.outputTokens)} output tokens${workflowSummary.batchSize > 1 ? ` · ${formatTokenRate(workflowSummary.aggregateDecodeRate)} combined across ${workflowSummary.batchSize} requests` : ''} · ${speculationOn ? `speculation ×${specMultiplier.toFixed(2)}` : 'no speculation'}</div>
                         </div>
                         <div class="phase-summary-card">
                             <div class="phase-summary-label">Total</div>
@@ -11016,6 +12012,7 @@ const DEVICE_TEMPLATES = {
                     </details>
                 ` : '';
 
+                const scalingHtml = buildScalingSectionHtml(modelConfig, metrics, currentCalibration, parallelism);
                 systemAnalysisHtml += `
                     <div class="result-hero">
                         <div class="result-hero-main">
@@ -11030,6 +12027,7 @@ const DEVICE_TEMPLATES = {
                     </div>
                     ${phaseSummaryHtml}
                     ${responsiveCalibrationSummaryHtml}
+                    ${scalingHtml}
 
                     <details class="details-disclosure" style="margin-top: 1rem;">
                         <summary>Breakdown &amp; details</summary>
@@ -11108,9 +12106,10 @@ const DEVICE_TEMPLATES = {
 
         function formatCompactRate(value) {
             if (!Number.isFinite(value)) return '—';
-            if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
+            if (value === 0) return '0';
+            if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 || Number.isInteger(value / 1000) ? 0 : 1)}k`;
             if (value >= 100) return value.toFixed(0);
-            return value.toFixed(1);
+            return Number.isInteger(value) ? String(value) : value.toFixed(1);
         }
 
         function calculateGoldCaseProjection(reference) {
@@ -11127,9 +12126,32 @@ const DEVICE_TEMPLATES = {
             // Only vLLM/SGLang/TensorRT-LLM aggregate bandwidth via tensor
             // parallelism; llama.cpp, Ollama, and MLX split by layers, so a
             // multi-GPU run decodes at roughly single-GPU pace.
-            const tensorCapable = ['vllm', 'sglang', 'tensorrt_llm'].includes(reference.runtimeKey);
+            const tensorCapable = ['vllm', 'sglang', 'tensorrt_llm'].includes(reference.runtimeKey) || ['row', 'tensor'].includes(reference.splitMode);
             const strategy = caseDevices.length > 1 ? (tensorCapable ? 'tensor' : 'pipeline') : 'pipeline';
             const contextLength = Math.max(2, reference.contextLength || 2048);
+            // contextLength is the configured window (KV allocation). The
+            // depth a decode step actually reads comes from the recorded
+            // prompt/output lengths; llama-bench's tg test starts from an
+            // empty cache unless a depth (-d / -pg) was requested.
+            const command = reference.command || '';
+            const isLlamaBench = /llama-bench/i.test(command) && !/(?:^|\s)-(?:d|pg)\s|--n-depth/i.test(command);
+            const promptTokens = Number.isFinite(reference.promptTokens) ? reference.promptTokens : null;
+            const outputTokens = Number.isFinite(reference.outputTokens) && reference.outputTokens > 0 ? reference.outputTokens : 128;
+            const decodeDepth = promptTokens === null
+                ? Math.max(1, contextLength - 1)
+                : Math.max(1, (isLlamaBench ? 0 : promptTokens) + outputTokens / 2);
+            const kvDtype = String(reference.kvCacheDtype || '').toLowerCase();
+            const kvCacheCompression = /q8|fp8|int8|e4m3|e5m2/.test(kvDtype) ? 'q8_kv' : (/q4/.test(kvDtype) ? 'q4_kv' : 'none');
+            // A recorded peak residency below the device pool proves the run
+            // fit. Mixed-precision community quants ("UD-IQ4_XS") can be far
+            // smaller than the uniform byte estimate, so trust the recorded
+            // residency for the fit decision rather than assuming overflow.
+            const totalDeviceMemoryGB = caseDevices.reduce((sum, device) => sum + (device.memoryGB || 0), 0);
+            const peakVramGb = Number(reference.peakVramGb) || 0;
+            const uniformResidentGB = preset.totalParamsB * getWeightBytesPerParam(preset, DTYPE_SIZES[reference.quantKey]) * getWeightStorageOverhead(reference.quantKey);
+            const residentWeightsGB = peakVramGb > 0 && peakVramGb <= totalDeviceMemoryGB && uniformResidentGB > totalDeviceMemoryGB * 0.96
+                ? Math.min(uniformResidentGB, peakVramGb * 0.92)
+                : null;
             const modelConfig = normalizeModelConfig({
                 ...preset,
                 modelPreset: reference.presetKey,
@@ -11138,11 +12160,13 @@ const DEVICE_TEMPLATES = {
                 runtimeFramework: reference.runtimeKey,
                 parallelismStrategy: strategy,
                 optimizationMode: 'none',
-                kvCacheCompression: 'none',
+                kvCacheCompression,
                 batchSize: 1,
                 promptTokens: contextLength - 1,
                 outputTokens: 1,
-                seqLength: contextLength
+                seqLength: contextLength,
+                decodeContextTokens: Math.min(decodeDepth, contextLength),
+                ...(residentWeightsGB ? { residentWeightsGB } : {})
             });
             const coordinationSeconds = calculateDecodeCoordinationTimeSeconds(modelConfig, caseDevices);
             const genericRates = [];
@@ -11169,6 +12193,7 @@ const DEVICE_TEMPLATES = {
             return {
                 ...reference,
                 strategy,
+                decodeContextTokens: modelConfig.decodeContextTokens,
                 genericTokS,
                 physicalTokS,
                 latencyBoundTokS,
@@ -11192,10 +12217,12 @@ const DEVICE_TEMPLATES = {
             if (target.quantization && target.quantization === peer.quantization) score += 2;
             if (target.engineVersion && target.engineVersion === peer.engineVersion) score += 2;
             if ((target.deviceCount || 1) === (peer.deviceCount || 1)) score += 1;
-            if (target.contextLength && peer.contextLength) {
-                const contextRatio = Math.max(target.contextLength, peer.contextLength) / Math.max(1, Math.min(target.contextLength, peer.contextLength));
-                if (contextRatio <= 1.1) score += 2;
-                else if (contextRatio <= 2) score += 1;
+            const targetDepth = Number.isFinite(target.decodeContextTokens) ? target.decodeContextTokens : target.contextLength;
+            const peerDepth = Number.isFinite(peer.decodeContextTokens) ? peer.decodeContextTokens : peer.contextLength;
+            if (targetDepth && peerDepth) {
+                const contextRatio = Math.max(targetDepth, peerDepth, 64) / Math.max(64, Math.min(targetDepth, peerDepth));
+                if (contextRatio <= 1.25) score += 2;
+                else if (contextRatio <= 2.5) score += 1;
             }
             const targetPreset = MODEL_PRESETS[target.presetKey] || {};
             const peerPreset = MODEL_PRESETS[peer.presetKey] || {};
@@ -11280,6 +12307,7 @@ const DEVICE_TEMPLATES = {
                 quantKey: modelConfig.quantizationType,
                 deviceCount: devices.length,
                 contextLength: modelConfig.seqLength,
+                decodeContextTokens: getDecodeContextTokens(modelConfig),
                 batchSize: modelConfig.batchSize || 1
             };
             const validationRows = getGoldValidationRows();
@@ -11398,7 +12426,9 @@ const DEVICE_TEMPLATES = {
         // people wonder about, computed by the same engine.
         const QUICKSTART_SHOWCASES = [
             // Four Mac Studios pooling 2 TB of unified memory over EXO
-            { presetKey: 'kimi_k2.6', hardwareTemplate: 'Mac M3 Ultra (512)', deviceCount: 4, quantKey: 'q4', runtimeKey: 'exo', contextLength: 8192 },
+            { presetKey: 'qwen3.8_2.4t_a95b', hardwareTemplate: 'Mac M3 Ultra (512)', deviceCount: 4, quantKey: 'q4', runtimeKey: 'exo', contextLength: 8192 },
+            // Meta's new 30B on the most common 24 GB card
+            { presetKey: 'muse_glimmer_30b', hardwareTemplate: 'RTX 3090', deviceCount: 1, quantKey: 'q4', runtimeKey: 'llama_cpp', contextLength: 8192 },
             // NVIDIA's desktop box with its signature open model
             { presetKey: 'gpt_oss_120b', hardwareTemplate: 'NVIDIA DGX Spark (GB10)', deviceCount: 1, quantKey: 'q4', runtimeKey: 'llama_cpp', contextLength: 8192 },
             // 1.5 TB of bf16 weights streamed straight off flash — very slow, very fun
@@ -12132,11 +13162,46 @@ const DEVICE_TEMPLATES = {
                     uniformQuantizationWarning: hasExplicitProfile
                         ? 'The explicit bytes-per-pass profile overrides a uniform quantization estimate.'
                         : 'Bytes per pass are estimated from active parameters and the selected uniform storage format; mixed-precision tensors can materially change this.',
-                    ratesAre: config.batchSize > 1 ? 'Configured aggregate batch throughput' : 'Single-stream decode throughput'
+                    ratesAre: config.batchSize > 1 ? 'Per-request decode rate at the configured concurrency (combined throughput is listed under scaling)' : 'Single-stream decode throughput'
                 },
+                scaling: buildPlanScalingExport(plan, planDevices),
                 configurationChecklist: getPlanConfigurationChecklist(plan)
             };
             return payload;
+        }
+
+        // Context-length and concurrency sweeps for the export: the same
+        // engine run that draws the "How it scales" charts.
+        function buildPlanScalingExport(plan, planDevices = devices) {
+            try {
+                const config = { ...plan.modelConfig, parallelismStrategy: plan.strategy || plan.modelConfig.parallelismStrategy };
+                const correction = plan.calibration?.correctionFactor || 1;
+                const context = calculateContextSweep(config, planDevices, { correctionFactor: correction });
+                const concurrency = calculateConcurrencySweep(config, planDevices, { correctionFactor: correction });
+                return {
+                    basis: 'Projected-real rates (engine model times the benchmark correction of the active plan); memory fit marks where the KV cache no longer fits.',
+                    byInputLength: context.points.map(point => ({
+                        promptTokens: point.promptTokens,
+                        outputTokens: context.outputTokens,
+                        decodeTokensPerSecond: roundPlanNumber(point.expectedDecodeTokS),
+                        promptTokensPerSecond: roundPlanNumber(point.prefillTokS),
+                        timeToFirstTokenSeconds: Number.isFinite(point.ttftSeconds) ? roundPlanNumber(point.ttftSeconds) : null,
+                        kvReadGBPerToken: roundPlanNumber(point.kvReadGB),
+                        fitsInMemory: point.fits
+                    })),
+                    byConcurrentRequests: concurrency.points.map(point => ({
+                        concurrentRequests: point.concurrency,
+                        perRequestTokensPerSecond: roundPlanNumber(point.expectedPerUserTokS),
+                        combinedTokensPerSecond: roundPlanNumber(point.expectedAggregateTokS),
+                        kvCacheGB: roundPlanNumber(point.kvGB),
+                        fitsInMemory: point.fits,
+                        limit: point.binding
+                    })),
+                    maxConcurrentRequestsThatFit: concurrency.maxFittingConcurrency
+                };
+            } catch (error) {
+                return null;
+            }
         }
 
         function buildAiHandoff(payload = buildPlanExport()) {
@@ -12171,6 +13236,15 @@ const DEVICE_TEMPLATES = {
                 `- Optimized target: ${p.optimizedTarget.decodeTokensPerSecond} tok/s (${(p.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline * 100).toFixed(1)}% of the ${p.optimizedTarget.latencyAwareRooflineTokensPerSecond} tok/s latency-aware roofline)`,
                 `- Physical roofline (not a target): ${p.physicalRoofline.decodeTokensPerSecond} tok/s`,
                 `- Limiting component: ${p.limitingComponent || 'unknown'}`,
+                ...(payload.scaling ? [
+                    '',
+                    '## Scaling',
+                    ...payload.scaling.byInputLength.filter((point, index, list) => index % 2 === 0 || index === list.length - 1).map(point =>
+                        `- ${point.promptTokens}-token input: ${point.decodeTokensPerSecond} tok/s decode, ${point.promptTokensPerSecond} tok/s prompt, first token ${point.timeToFirstTokenSeconds ?? 'n/a'} s${point.fitsInMemory ? '' : ' (exceeds memory)'}`),
+                    ...payload.scaling.byConcurrentRequests.filter(point => point.fitsInMemory).map(point =>
+                        `- ${point.concurrentRequests} concurrent request${point.concurrentRequests > 1 ? 's' : ''}: ${point.combinedTokensPerSecond} tok/s combined, ${point.perRequestTokensPerSecond} tok/s each`),
+                    `- KV cache fits for up to ${payload.scaling.maxConcurrentRequestsThatFit} concurrent requests at this context length`
+                ] : []),
                 '',
                 '## Implementation checklist',
                 ...payload.configurationChecklist.map(item => `- ${item}`),
@@ -12332,15 +13406,49 @@ const DEVICE_TEMPLATES = {
             const numKVHeads = firstNumber(config.num_key_value_heads, config.n_kv_heads, config.num_kv_heads, numHeads);
             const intermediateSize = firstNumber(config.intermediate_size, config.ffn_dim, config.n_inner, config.hidden_dim, hiddenSize ? hiddenSize * 4 : undefined);
             const numExperts = firstNumber(config.num_local_experts, config.num_experts, config.n_routed_experts, config.moe_num_experts, 1);
-            const activeExperts = firstNumber(config.num_experts_per_tok, config.num_selected_experts, config.num_experts_per_token, config.moe_top_k, config.num_experts_per_token, 1);
+            const activeExperts = firstNumber(config.num_experts_per_tok, config.num_selected_experts, config.num_experts_per_token, config.moe_top_k, config.top_k_experts, 1);
+            const headDim = firstNumber(config.head_dim, config.attention_head_dim, hiddenSize && numHeads ? hiddenSize / numHeads : undefined);
+            const moeIntermediateSize = firstNumber(config.moe_intermediate_size, config.expert_intermediate_size);
+            const sharedExperts = firstNumber(config.n_shared_experts, config.num_shared_experts, config.shared_expert_count) || 0;
+            const sharedExpertSize = firstNumber(config.shared_expert_intermediate_size, config.moe_shared_expert_intermediate_size, moeIntermediateSize);
+            const kvLoraRank = firstNumber(config.kv_lora_rank);
+            const qLoraRank = firstNumber(config.q_lora_rank);
+            const qkRopeHeadDim = firstNumber(config.qk_rope_head_dim);
             const safetensorTotal = firstNumber(apiInfo.safetensors?.total);
             const declaredParams = firstNumber(config.num_parameters, config.n_params, apiInfo.numParameters);
             let totalParams = safetensorTotal || declaredParams;
 
+            // Layer mix: explicit per-layer types (Qwen 3.5+, Gemma 3/4, LFM2,
+            // Nemotron-H) or an interval (Qwen3-Next style full_attention_interval).
+            const layerTypes = Array.isArray(config.layer_types) ? config.layer_types.map(value => String(value).toLowerCase()) : [];
+            const countTypes = pattern => layerTypes.filter(value => pattern.test(value)).length;
+            const fullLayerCount = layerTypes.length ? countTypes(/^(full|global)/) : null;
+            const slidingLayerCount = layerTypes.length ? countTypes(/sliding|local/) : 0;
+            const linearLayerCount = layerTypes.length ? countTypes(/linear|mamba|ssm|conv|recurrent|delta|kda|gdn/) : 0;
+            const fullAttentionInterval = firstNumber(config.full_attention_interval, config.attn_layer_period);
+            const slidingWindow = config.use_sliding_window === false ? undefined : firstNumber(config.sliding_window, config.window_size);
+            let attentionMechanism = 'auto';
+            let fullAttentionLayers;
+            if (kvLoraRank) {
+                attentionMechanism = 'mla';
+                if (linearLayerCount > 0 && fullLayerCount !== null) fullAttentionLayers = fullLayerCount;
+            } else if (linearLayerCount > 0 && fullLayerCount !== null) {
+                attentionMechanism = 'hybrid_linear';
+                fullAttentionLayers = fullLayerCount;
+            } else if (fullAttentionInterval && fullAttentionInterval > 1) {
+                attentionMechanism = 'hybrid_linear';
+            } else if (slidingWindow && slidingLayerCount > 0 && fullLayerCount !== null) {
+                attentionMechanism = 'sliding_window';
+                fullAttentionLayers = fullLayerCount;
+            } else if (slidingWindow && slidingWindow < (firstNumber(config.max_position_embeddings) || Infinity)) {
+                attentionMechanism = 'sliding_window';
+            }
+
             if (!totalParams && hiddenSize && numLayers && numHeads && intermediateSize) {
-                const headDim = hiddenSize / numHeads;
-                const attentionParams = hiddenSize * hiddenSize * 2 + hiddenSize * (numKVHeads * headDim) * 2;
-                const feedForwardParams = 3 * hiddenSize * intermediateSize * Math.max(1, numExperts);
+                const attentionParams = hiddenSize * (numHeads * headDim) * 2 + hiddenSize * (numKVHeads * headDim) * 2;
+                const feedForwardParams = numExperts > 1 && moeIntermediateSize
+                    ? 3 * hiddenSize * (moeIntermediateSize * numExperts + sharedExpertSize * sharedExperts)
+                    : 3 * hiddenSize * intermediateSize * Math.max(1, numExperts);
                 const embeddingParams = (firstNumber(config.vocab_size, config.padded_vocab_size) || 0) * hiddenSize;
                 totalParams = numLayers * (attentionParams + feedForwardParams) + embeddingParams;
             }
@@ -12350,6 +13458,18 @@ const DEVICE_TEMPLATES = {
             }
 
             const isMoE = numExperts > 1;
+            // Active parameters: every parameter except the experts that a
+            // token does not route through.
+            let activeParamsB;
+            if (isMoE && moeIntermediateSize) {
+                const moeLayers = numLayers - (firstNumber(config.first_k_dense_replace, config.num_dense_layers) || 0);
+                const routedPerLayer = 3 * hiddenSize * moeIntermediateSize;
+                const inactiveParams = moeLayers * routedPerLayer * Math.max(0, numExperts - Math.min(activeExperts, numExperts));
+                activeParamsB = Math.max(0.1, (totalParams - inactiveParams) / 1e9);
+            }
+            const mtpLayers = firstNumber(config.num_nextn_predict_layers, config.mtp_num_hidden_layers, config.num_mtp_layers);
+            const contextLength = firstNumber(config.max_position_embeddings, config.max_sequence_length, config.seq_length, config.n_positions);
+            const hasVision = Boolean(rawConfig?.vision_config || apiInfo?.config?.vision_config || /vision|vl|conditionalgeneration/i.test(String((config.architectures || [])[0] || '')));
             return normalizeModelConfig({
                 hfId: hfId || apiInfo.id || apiInfo.modelId || '',
                 label: apiInfo.id || apiInfo.modelId || hfId || 'Imported model',
@@ -12358,13 +13478,26 @@ const DEVICE_TEMPLATES = {
                 numLayers,
                 numHeads,
                 numKVHeads,
+                headDim,
                 intermediateSize,
+                moeIntermediateSize,
                 numExperts,
                 activeExperts: Math.min(activeExperts, numExperts),
+                activeParamsB,
                 routingType: isMoE ? 'moe' : 'dense',
                 architectureType: 'transformer',
-                attentionMechanism: 'auto',
-                maxSeqLength: firstNumber(config.max_position_embeddings, config.max_sequence_length, config.seq_length),
+                attentionMechanism,
+                fullAttentionLayers,
+                fullAttentionInterval: attentionMechanism === 'hybrid_linear' && fullAttentionLayers === undefined ? fullAttentionInterval : undefined,
+                slidingWindow: attentionMechanism === 'sliding_window' || (attentionMechanism === 'hybrid_linear' && slidingWindow && slidingWindow < 4096) ? slidingWindow : undefined,
+                kvLoraRank,
+                qLoraRank,
+                qkRopeHeadDim,
+                useMTP: Boolean(mtpLayers && mtpLayers > 0),
+                mtpModules: mtpLayers || undefined,
+                contextLength,
+                maxSeqLength: contextLength,
+                hasVision,
                 isMoE,
                 modelType: config.model_type || '',
                 architectures: config.architectures || []
@@ -12665,7 +13798,7 @@ const DEVICE_TEMPLATES = {
 	                    <label title="If the model exceeds this device's memory, where to spill the overflow">If memory overflows → spill to</label>
 	                    <select class="input" onchange="updateDevice(${device.id}, 'overflowTarget', this.value === 'none' ? null : (this.value === 'ddr5' ? 'ddr5' : parseInt(this.value)))">
 	                        <option value="none" ${!device.overflowTarget ? 'selected' : ''}>Nothing — model must fit</option>
-	                        <option value="ddr5" ${device.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 system RAM (~115 GB/s)</option>
+	                        <option value="ddr5" ${device.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 system RAM (CPU runs spilled layers, ~55 GB/s effective)</option>
 	                        ${devices.filter(d => d.id !== device.id).map(d =>
 	                            `<option value="${d.id}" ${device.overflowTarget === d.id ? 'selected' : ''}>
 	                                ${escapeHtml(d.name)} (via PCIe)
@@ -12841,11 +13974,11 @@ const DEVICE_TEMPLATES = {
                 <div class="device ${isCustom || isEditedPreset ? 'custom-device' : ''}">
                     ${badgeHtml}
                     <div class="hardware-preset-row">
-                        <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0;">Hardware preset</label>
+                        <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0;" for="dev${selectedDevice.id}-template">Hardware preset</label>
                         <input class="input hardware-search" type="search" placeholder="Filter NVIDIA, AMD, Intel, Apple…" aria-label="Filter hardware presets"
                                oninput="filterHardwarePresets(this.value, this.closest('.hardware-preset-row').querySelector('select'))">
                         <div class="hardware-preset-line">
-                            <select class="input" onchange="handleDeviceTemplateChange(${selectedDevice.id}, this)">
+                            <select class="input" id="dev${selectedDevice.id}-template" onchange="handleDeviceTemplateChange(${selectedDevice.id}, this)">
                                 <optgroup label="Custom">
                                     <option value="Custom" ${isCustom ? 'selected' : ''}>Custom device</option>
                                 </optgroup>
@@ -12856,9 +13989,9 @@ const DEVICE_TEMPLATES = {
                         </div>
                     </div>
                     ${buildHardwareSpecMeta(selectedDevice)}
-                    <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.6rem; display: block;">Label</label>
+                    <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.6rem; display: block;" for="dev${selectedDevice.id}-name">Label</label>
                     <div class="device-name-row">
-                        <input class="input device-name-input" title="Rename this device (label only)" value="${escapeHtml(selectedDevice.name)}"
+                        <input class="input device-name-input" id="dev${selectedDevice.id}-name" title="Rename this device (label only)" value="${escapeHtml(selectedDevice.name)}"
                                onchange="updateDevice(${selectedDevice.id}, 'name', this.value)">
                         <div class="device-actions">
                             <button class="icon-button" onclick="cloneDevice(${selectedDevice.id})" title="Duplicate this device">Clone</button>
@@ -12872,41 +14005,41 @@ const DEVICE_TEMPLATES = {
                             ${selectedDevice.specNote ? `<div class="hardware-spec-detail">${escapeHtml(selectedDevice.specNote)}</div>` : ''}
                             <div class="device-grid">
                                 <div>
-                                    <label title="Total GPU/unified memory on the device">Memory (GB)</label>
-                                    <input type="number" class="input" value="${selectedDevice.memoryGB}"
+                                    <label title="Total GPU/unified memory on the device" for="dev${selectedDevice.id}-memory">Memory (GB)</label>
+                                    <input type="number" class="input" id="dev${selectedDevice.id}-memory" value="${selectedDevice.memoryGB}"
                                            onchange="updateDevice(${selectedDevice.id}, 'memoryGB', parseFloat(this.value) || 0)">
                                 </div>
                                 <div>
-                                    <label title="Vendor-specified peak memory bandwidth, used for the physical roofline and as an input to the optimized target">Peak memory BW (GB/s)</label>
-                                    <input type="number" class="input" value="${selectedDevice.localBandwidthGBps}"
+                                    <label title="Vendor-specified peak memory bandwidth, used for the physical roofline and as an input to the optimized target" for="dev${selectedDevice.id}-bw">Peak memory BW (GB/s)</label>
+                                    <input type="number" class="input" id="dev${selectedDevice.id}-bw" value="${selectedDevice.localBandwidthGBps}"
                                            onchange="updateDevice(${selectedDevice.id}, 'localBandwidthGBps', parseFloat(this.value) || 0)">
                                 </div>
                                 <div>
-                                    <label title="Optional measured sustained bandwidth, used for the projected result while leaving the official-peak physical roofline unchanged">Sustained memory BW (GB/s, optional)</label>
-                                    <input type="number" class="input" value="${Number.isFinite(selectedDevice.sustainedBandwidthGBps) ? selectedDevice.sustainedBandwidthGBps : ''}" placeholder="Runtime estimate"
+                                    <label title="Optional measured sustained bandwidth, used for the projected result while leaving the official-peak physical roofline unchanged" for="dev${selectedDevice.id}-sustained">Sustained memory BW (GB/s, optional)</label>
+                                    <input type="number" class="input" id="dev${selectedDevice.id}-sustained" value="${Number.isFinite(selectedDevice.sustainedBandwidthGBps) ? selectedDevice.sustainedBandwidthGBps : ''}" placeholder="Runtime estimate"
                                            onchange="updateDevice(${selectedDevice.id}, 'sustainedBandwidthGBps', this.value === '' ? null : (parseFloat(this.value) || 0))">
                                 </div>
                                 <div>
-                                    <label title="Bandwidth to other devices">Interconnect BW (GB/s)</label>
-                                    <input type="number" class="input" value="${selectedDevice.networkBandwidthGBps || 32}"
+                                    <label title="Bandwidth to other devices" for="dev${selectedDevice.id}-link">Interconnect BW (GB/s)</label>
+                                    <input type="number" class="input" id="dev${selectedDevice.id}-link" value="${selectedDevice.networkBandwidthGBps || 32}"
                                            onchange="updateDevice(${selectedDevice.id}, 'networkBandwidthGBps', parseFloat(this.value) || 0)">
                                 </div>
                                 <div>
-                                    <label title="Pick a common interconnect to auto-fill the bandwidth above">Interconnect type</label>
-                                    <select class="input" onchange="applyInterconnectPreset(${selectedDevice.id}, this.value)">
+                                    <label title="Pick a common interconnect to auto-fill the bandwidth above" for="dev${selectedDevice.id}-linktype">Interconnect type</label>
+                                    <select class="input" id="dev${selectedDevice.id}-linktype" onchange="applyInterconnectPreset(${selectedDevice.id}, this.value)">
                                         ${renderInterconnectOptions(selectedDevice.interconnectType || '')}
                                     </select>
                                 </div>
                                 <div>
-                                    <label title="Effective compute throughput for the current quantization">Compute TFLOPs (${currentQuant})</label>
-                                    <input type="number" class="input" value="${getDeviceComputeTflops(selectedDevice, currentQuant)}"
+                                    <label title="Effective compute throughput for the current quantization" for="dev${selectedDevice.id}-tflops">Compute TFLOPs (${currentQuant})</label>
+                                    <input type="number" class="input" id="dev${selectedDevice.id}-tflops" value="${getDeviceComputeTflops(selectedDevice, currentQuant)}"
                                            onchange="updateDevice(${selectedDevice.id}, 'computeTFlops', parseFloat(this.value) || 0)">
                                 </div>
                                 <div>
-                                    <label title="If the model exceeds this device's memory, where to spill the overflow">If memory overflows -> spill to</label>
-                                    <select class="input" onchange="updateDevice(${selectedDevice.id}, 'overflowTarget', this.value === 'none' ? null : (this.value === 'ddr5' ? 'ddr5' : parseInt(this.value)))">
+                                    <label title="If the model exceeds this device's memory, where to spill the overflow" for="dev${selectedDevice.id}-overflow">If memory overflows, spill to</label>
+                                    <select class="input" id="dev${selectedDevice.id}-overflow" onchange="updateDevice(${selectedDevice.id}, 'overflowTarget', this.value === 'none' ? null : (this.value === 'ddr5' ? 'ddr5' : parseInt(this.value)))">
                                         <option value="none" ${!selectedDevice.overflowTarget ? 'selected' : ''}>Nothing - model must fit</option>
-                                        <option value="ddr5" ${selectedDevice.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 system RAM (~115 GB/s)</option>
+                                        <option value="ddr5" ${selectedDevice.overflowTarget === 'ddr5' ? 'selected' : ''}>DDR5 system RAM (CPU runs spilled layers, ~55 GB/s effective)</option>
                                         ${devices.filter(d => d.id !== selectedDevice.id).map(d => `
                                             <option value="${d.id}" ${selectedDevice.overflowTarget === d.id ? 'selected' : ''}>
                                                 ${escapeHtml(d.name)} (via interconnect)
@@ -13184,7 +14317,7 @@ const DEVICE_TEMPLATES = {
 			}
 		} else if (modelPresetId === "") {
 			// Reset to empty values if no preset selected
-			const defaultKeys = ['totalParamsB', 'hiddenSize', 'numLayers', 'numHeads', 'numKVHeads', 'intermediateSize', 'activeParamsB', 'numExperts', 'activeExperts'];
+			const defaultKeys = ['totalParamsB', 'hiddenSize', 'numLayers', 'numHeads', 'numKVHeads', 'headDim', 'intermediateSize', 'activeParamsB', 'numExperts', 'activeExperts'];
 			defaultKeys.forEach(key => {
 				if (document.getElementById(key)) {
 					document.getElementById(key).value = '';
@@ -13817,28 +14950,29 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	    // Keep a short featured group for discovery, then list every model again
 	    // under its actual family so popular entries never disappear from it.
 	    const featuredModelKeys = [
-	        'minimax_m3', 'deepseek_v4_pro', 'deepseek_v4_flash', 'deepseek_v4_flash_reap_180b',
-	        'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b', 'nemotron3_nano_30b_a3b',
-	        'kimi_k3', 'gemma4_31b', 'gemma4_26b_a4b', 'qwen3.6_27b', 'qwen3.6_35b_a3b',
-	        'glm5_2', 'minimax_m2.7'
+	        'qwen3.8_27b', 'muse_glimmer_30b', 'qwen3.8_2.4t_a95b', 'deepseek_v4_pro', 'deepseek_v4_flash',
+	        'kimi_k3', 'glm5_2', 'ornith_1.5_35b_a3b', 'nemotron3.5_lightning_30b_a3b',
+	        'gemma4_31b', 'gemma4_26b_a4b', 'qwen3.6_35b_a3b', 'minimax_m3', 'mistral_medium_3.5_128b'
 	    ];
 
 	    // Family groups are intentionally mutually exclusive.
 	    const modelCategories = {
 	        'Gemma 4': ['gemma4_31b', 'gemma4_26b_a4b', 'gemma4_12b', 'gemma4_e4b', 'gemma4_e2b'],
+	        'Meta Muse': ['muse_glimmer_30b', 'muse_glimmer_assistant_2.6b'],
 	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision', 'llama4_scout', 'llama4_maverick'],
 	        'DeepSeek': ['deepseek_v4_pro', 'deepseek_v4_flash', 'deepseek_v4_flash_reap_180b', 'deepseek_v3.2', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
-	        'Qwen': ['qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
+	        'Qwen': ['qwen3.8_27b', 'qwen3.8_2.4t_a95b', 'qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
 	        'Gemma 3 and earlier': ['gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
-	        'Mistral': ['mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
+	        'Mistral': ['mistral_medium_3.5_128b', 'mistral_small_4_119b_a6b', 'mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
 	        'Kimi': ['kimi_k3', 'kimi_k2.7_code', 'kimi_k2.6', 'kimi_k2.5', 'kimi_k2'],
 	        'MiniMax': ['minimax_m3', 'minimax_m2.7', 'minimax_m2.5', 'minimax_m2'],
-	        'NVIDIA Nemotron 3': ['nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b', 'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b'],
+	        'NVIDIA Nemotron': ['nemotron3.5_lightning_30b_a3b', 'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b', 'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b'],
 	        'GLM': ['glm5_2', 'glm5_1', 'glm5', 'glm4.7_flash', 'glm4_9b'],
-	        'Ornith': ['ornith_1_9b', 'ornith_1_35b_a3b'],
-	        'Small & edge': ['minicpm5_1b', 'lfm2_350m'],
+	        'Ornith': ['ornith_1.5_35b_a3b', 'ornith_1.5_9b', 'ornith_1.5_397b_a17b', 'ornith_1_9b', 'ornith_1_35b_a3b'],
+	        'IBM Granite': ['granite4.1_8b'],
+	        'Small & edge': ['lfm2.5_2.6b', 'minicpm5_1b', 'lfm2_350m'],
 	        'Other MoE': ['gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],
 	        'Falcon': ['falcon_40b', 'falcon2_180b', 'falcon2_11b'],
 	        'Code Models': ['starcoder2_15b', 'starcoder2_7b', 'starcoder2_3b'],
@@ -14416,6 +15550,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             MODEL_PRESETS,
             DEVICE_TEMPLATES,
             FRAMEWORK_PROFILES,
+            LAYER_OVERHEAD_SCALES,
             ARCHITECTURE_PROFILES,
             ATTENTION_MECHANISM_PROFILES,
             KV_CACHE_COMPRESSION_PROFILES,
@@ -14463,6 +15598,16 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             calculateDecodeTokenRate,
             calculateDecodeCoordinationTimeSeconds,
             calculateMetrics,
+            calculateMetricsForConfig,
+            calculateContextSweep,
+            calculateConcurrencySweep,
+            buildScalingSectionHtml,
+            findNearestGoldRun,
+            calculateKVCacheBytes,
+            calculateTransformerFlops,
+            calculateDecodeFlops,
+            getAttentionLayerMix,
+            getHeadDim,
             calculateSystemRateFromDeviceRates,
             calculateIdealSystemRateFromDeviceRates,
             findOptimalStrategy,
