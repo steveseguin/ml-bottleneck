@@ -112,7 +112,7 @@ https://mlbottleneck.com/?model=qwen3.8_27b&hardware=Intel%20Arc%20Pro%20B70&cou
 
 - `package.json` `version` is the SDK version; `engine.version` reports it.
 - `npm test` rebuilds `dist/` from `engine.js` + `sdk/api.js` (and stamps the page's `engine.js?v=<hash>` cache key), so the committed bundle is always the one that passed the suite.
-- Bump the version when the engine, catalogs, or API change; `.github/workflows/release-sdk.yml` then publishes a `sdk-v<version>` GitHub release with the bundles, types, evidence snapshot, and checksums, and `.github/workflows/publish-npm.yml` publishes `dist/` to npm as `@mlbottleneck/engine` (name set by `sdkName` in `package.json`; needs the `NPM_TOKEN` repository secret and a LICENSE). The weekly evidence refresh updates `dist/localmaxxing-snapshot.json` in place without a release.
+- Bump the version when the engine, catalogs, or API change; `.github/workflows/release-sdk.yml` then publishes a `sdk-v<version>` GitHub release with the bundles, types, evidence snapshot, and checksums, and `.github/workflows/publish-npm.yml` publishes `dist/` to npm as `@mlbottleneck/engine` (name set by `sdkName` in `package.json`). It authenticates with npm trusted publishing (OIDC: the package's Trusted Publisher on npmjs.com points at `steveseguin/ml-bottleneck`, workflow `publish-npm.yml`), falling back to an `NPM_TOKEN` secret; a 2FA-gated token fails with `EOTP`, in which case publish by hand from `dist/` with `npm publish --access public --otp=<code>`. The weekly evidence refresh updates `dist/localmaxxing-snapshot.json` in place without a release.
 
 ## Limits
 

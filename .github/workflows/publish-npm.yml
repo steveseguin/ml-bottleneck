@@ -1,12 +1,21 @@
 name: Publish SDK to npm
 
 # Publishes dist/ (the ML Bottleneck engine SDK) to npm when the version in
-# package.json changes on main. Needs two things from the maintainer, once:
-#   1. a LICENSE file in the repo root and a "license" field in package.json
-#      (the workflow refuses to publish an unlicensed package);
-#   2. an npm granular access token with publish rights for the package
-#      (or the @mlbottleneck scope), stored as the NPM_TOKEN repository secret.
-# Provenance attestations are attached automatically (public repo + OIDC).
+# package.json changes on main, or on manual dispatch.
+#
+# Authentication, in order of preference:
+#   1. npm trusted publishing (OIDC, no secret at all): on npmjs.com open the
+#      package -> Settings -> Trusted Publisher -> GitHub Actions and enter
+#      user "steveseguin", repository "ml-bottleneck", workflow "publish-npm.yml"
+#      (environment blank). npm then mints a short-lived token for this
+#      workflow run and attaches provenance automatically. Recommended: it
+#      survives npm's 2FA-on-publish rules and needs no token rotation.
+#   2. an NPM_TOKEN repository secret holding a granular access token that is
+#      allowed to publish the package without 2FA. npm rejects 2FA-gated
+#      tokens with EOTP; if that happens, switch to trusted publishing or run
+#      `npm publish --otp=<code>` from dist/ locally.
+# The package must already exist on npm (0.4.0 was published by hand once) and
+# the repo needs a LICENSE file plus a "license" field in package.json.
 on:
   push:
     branches: [main]
@@ -27,6 +36,8 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      - name: Use an npm CLI with trusted-publishing support (11.5.1+)
+        run: npm install -g npm@latest && npm --version
       - name: Build and verify the SDK
         run: npm test
       - name: Check the package is publishable
@@ -41,8 +52,9 @@ jobs:
             exit 1
           fi
           if [ -z "${NPM_TOKEN}" ]; then
-            echo "::error::The NPM_TOKEN repository secret is not set (npmjs.com -> Access Tokens -> Granular, publish scope)."
-            exit 1
+            echo "No NPM_TOKEN secret: publishing through npm trusted publishing (OIDC)."
+          else
+            echo "NPM_TOKEN secret present: trusted publishing is tried first, the token is the fallback."
           fi
           if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
             echo "already=true" >> "$GITHUB_OUTPUT"
@@ -55,6 +67,15 @@ jobs:
       - name: Publish
         if: steps.check.outputs.already == 'false'
         working-directory: dist
+        # With a trusted publisher configured, npm exchanges this job's OIDC
+        # token for publish credentials and ignores NODE_AUTH_TOKEN; without
+        # one it falls back to the secret (setup-node's placeholder keeps the
+        # generated .npmrc valid when no secret is set).
         run: npm publish --access public --provenance
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || 'XXXXX-XXXXX-XXXXX-XXXXX' }}
+      - name: Confirm
+        if: steps.check.outputs.already == 'false'
+        run: |
+          sleep 20
+          npm view "${{ steps.check.outputs.name }}@${{ steps.check.outputs.version }}" version dist.tarball
