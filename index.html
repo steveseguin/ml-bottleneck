@@ -3,30 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ML Bottleneck - Visual Local LLM Deployment Planner</title>
+    <title>ML Bottleneck — How fast will an LLM run on your GPU? Local inference speed & memory planner</title>
+    <link rel="canonical" href="https://mlbottleneck.com/">
     
     <!-- A small, high-contrast mark that stays legible at favicon size. -->
     <link rel="icon" type="image/svg+xml" href="icon.svg">
 
     <!-- Primary Meta Tags -->
-    <meta name="title" content="ML Bottleneck - Visual Local LLM Deployment Planner">
-    <meta name="description" content="Map LLM layers, tensor shards, MoE experts, replicas, and speculative decoding across local GPUs. Estimate memory fit, communication, and token throughput.">
-    <meta name="keywords" content="local LLM, model sharding, tensor parallel, expert parallel, speculative decoding, GPU, token rate, memory utilization, bandwidth analysis">
+    <meta name="title" content="ML Bottleneck — How fast will an LLM run on your GPU?">
+    <meta name="description" content="Free local LLM planner: pick a model, quantization, and your GPUs (NVIDIA, AMD, Intel Arc, Apple silicon) to get decode and prefill tokens/sec, memory fit, multi-GPU strategy, and speculative-decoding gains — physics-based and calibrated on hundreds of real community benchmarks.">
+    <meta name="keywords" content="LLM tokens per second calculator, local LLM speed, GPU LLM benchmark estimate, VRAM calculator, llama.cpp speed, vLLM throughput, quantization Q4_K_M, MoE expert offload, speculative decoding MTP EAGLE, RTX 5090 LLM, Intel Arc B70 LLM, Mac M5 LLM">
+    <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="author" content="Steve Seguin">
     <meta name="theme-color" content="#0f766e">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://mlbottleneck.com/">
-    <meta property="og:title" content="ML Bottleneck - Visual Local LLM Deployment Planner">
-    <meta property="og:description" content="See exactly how an LLM maps across local hardware: layers, tensor slices, experts, replicas, communication, and speculative decoding.">
+    <meta property="og:title" content="ML Bottleneck — How fast will an LLM run on your GPU?">
+    <meta property="og:description" content="Decode and prefill tokens/sec, memory fit, multi-GPU strategy, and speculative-decoding gains for any model on your hardware — from physics, checked against real benchmarks.">
     <meta property="og:image" content="https://mlbottleneck.com/logo.png">
+    <meta property="og:image:alt" content="ML Bottleneck logo">
+    <meta property="og:site_name" content="ML Bottleneck">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://mlbottleneck.com/">
-    <meta property="twitter:title" content="ML Bottleneck - Visual Local LLM Deployment Planner">
-    <meta property="twitter:description" content="See exactly how an LLM maps across local hardware: layers, tensor slices, experts, replicas, communication, and speculative decoding.">
+    <meta property="twitter:title" content="ML Bottleneck — How fast will an LLM run on your GPU?">
+    <meta property="twitter:description" content="Decode and prefill tokens/sec, memory fit, multi-GPU strategy, and speculative-decoding gains for any model on your hardware — from physics, checked against real benchmarks.">
     <meta property="twitter:image" content="https://mlbottleneck.com/logo.png">
     <meta name="twitter:creator" content="@xyster">
 
@@ -40,31 +44,48 @@
 
     <!-- Preload Critical Resources -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="alternate" type="text/plain" href="https://mlbottleneck.com/llms.txt" title="llms.txt">
 
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
 	<script src="data/localmaxxing-snapshot.js?v=20260823051253"></script>
-	<script src="engine.js?v=da8381a50b61"></script>
+	<script src="engine.js?v=a6a82016c242"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "ML Bottleneck",
-      "description": "Visual local LLM deployment planner for model architecture, sharding, speculative decoding, memory fit, communication, and throughput.",
+      "alternateName": "mlbottleneck.com",
+      "description": "Free local LLM inference planner: decode and prefill tokens per second, memory fit, multi-GPU strategy, and speculative-decoding gains for any model on NVIDIA, AMD, Intel Arc, or Apple hardware, computed from physics and calibrated on hundreds of community benchmarks.",
       "url": "https://mlbottleneck.com",
       "author": {
         "@type": "Person",
-        "name": "Steve Seguin"
+        "name": "Steve Seguin",
+        "url": "https://github.com/steveseguin"
       },
-      "applicationCategory": "Machine Learning Tools",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "Machine learning inference planning",
       "operatingSystem": "Any",
       "browserRequirements": "Requires JavaScript",
+      "isAccessibleForFree": true,
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
-      }
+      },
+      "featureList": [
+        "Decode and prefill tokens/sec prediction for any model and GPU",
+        "Memory fit with KV cache, quantization formats, and MoE expert offload",
+        "Multi-GPU pipeline, tensor, expert, and data parallel strategy search",
+        "Speculative decoding model: MTP, DFlash, DSpark, EAGLE-3, draft models",
+        "Calibration against measured community benchmark runs",
+        "Open-source JavaScript SDK"
+      ],
+      "sameAs": [
+        "https://github.com/steveseguin/ml-bottleneck"
+      ],
+      "softwareHelp": "https://github.com/steveseguin/ml-bottleneck/blob/main/docs/sdk.md"
     }
     </script>
     <style>
@@ -3013,6 +3034,12 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .catalog-tag { padding: 0.16rem 0.36rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--text-secondary); font-size: 0.58rem; }
 .catalog-show-all { border: none; background: none; padding: 0; color: var(--primary); font-size: inherit; cursor: pointer; text-decoration: underline; }
 
+.site-footer { margin: 2.5rem 0 1.5rem; padding: 1rem 0.2rem 0; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 0.72rem; }
+.site-footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 1.25rem; }
+.site-footer-links { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; }
+.site-footer-links a { color: var(--text-secondary); text-decoration: none; border-bottom: 1px solid transparent; }
+.site-footer-links a:hover { color: var(--text); border-bottom-color: currentColor; }
+.site-footer-links a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .home-hero { max-width: 760px; margin: 3.4rem auto 0; text-align: center; }
 .home-hero h1 { margin: 0; font-size: clamp(1.7rem, 3.4vw, 2.35rem); letter-spacing: -0.015em; line-height: 1.15; }
 .home-hero p { margin: 0.75rem auto 0; max-width: 580px; color: var(--text-secondary); font-size: 0.98rem; }
@@ -4049,6 +4076,19 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         </details>
     </section>
     </main>
+
+    <footer class="site-footer" aria-label="About this site">
+        <div class="site-footer-inner">
+            <span class="site-footer-brand">ML Bottleneck · open source · predictions are planning estimates, not measurements</span>
+            <nav class="site-footer-links" aria-label="Related projects">
+                <a href="https://github.com/steveseguin/ml-bottleneck" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="https://github.com/steveseguin/ml-bottleneck/blob/main/docs/sdk.md" target="_blank" rel="noopener noreferrer">SDK</a>
+                <a href="https://neural.download/" target="_blank" rel="noopener noreferrer" title="Intel Arc Pro B70 LLM optimization lab: measured recipes and benchmarks">neural.download</a>
+                <a href="https://style-genome.com/" target="_blank" rel="noopener noreferrer" title="Style Genome: design-system generator">Style Genome</a>
+                <a href="https://github.com/steveseguin" target="_blank" rel="noopener noreferrer">Steve Seguin</a>
+            </nav>
+        </div>
+    </footer>
 
     <script>
         const LOCALMAXXING_DATA = window.LOCALMAXXING_SNAPSHOT || {
@@ -6671,6 +6711,96 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             }).join('');
         }
 
+        // Deep links (used by the SDK docs and partner sites such as
+        // neural.download): ?model=qwen3.8_27b&hardware=Intel%20Arc%20Pro%20B70&count=2
+        // &quant=q4&format=Q4_K_M&runtime=vllm&strategy=auto&prompt=4096&output=512
+        // &batch=1&spec=mtp:3. Unknown values are ignored; anything recognized
+        // opens the plan at the prediction step.
+        function findCatalogKey(catalog, query) {
+            if (!query) return null;
+            if (catalog[query]) return query;
+            const normalize = value => String(value).toLowerCase().replace(/[^a-z0-9]+/g, '');
+            const wanted = normalize(query);
+            const keys = Object.keys(catalog);
+            return keys.find(key => normalize(key) === wanted) ||
+                keys.find(key => normalize(catalog[key]?.name || catalog[key]?.label || '') === wanted) ||
+                keys.find(key => normalize(catalog[key]?.hfId || '') === wanted) ||
+                (keys.filter(key => normalize(catalog[key]?.name || catalog[key]?.label || '').includes(wanted) || normalize(key).includes(wanted)).length === 1
+                    ? keys.find(key => normalize(catalog[key]?.name || catalog[key]?.label || '').includes(wanted) || normalize(key).includes(wanted))
+                    : null);
+        }
+
+        function applyPlanFromQuery() {
+            let params;
+            try {
+                params = new URLSearchParams(window.location?.search || '');
+            } catch (error) {
+                return false;
+            }
+            if (!params || ![...params.keys()].length) return false;
+            const presetKey = findCatalogKey(MODEL_PRESETS, params.get('model'));
+            const templateKey = findCatalogKey(DEVICE_TEMPLATES, params.get('hardware'));
+            if (!presetKey && !templateKey) return false;
+            if (templateKey) {
+                const template = DEVICE_TEMPLATES[templateKey];
+                const count = Math.min(16, Math.max(1, parseInt(params.get('count'), 10) || 1));
+                devices = Array.from({ length: count }, (_, index) => ({
+                    id: index + 1,
+                    template: templateKey,
+                    ...JSON.parse(JSON.stringify(template)),
+                    name: `${template.name || templateKey}${count > 1 ? ` #${index + 1}` : ''}`
+                }));
+                selectedDeviceId = devices[0].id;
+            }
+            if (presetKey) {
+                document.getElementById('modelPreset').value = presetKey;
+                updateModelConfigFromPreset();
+            }
+            const quant = params.get('quant');
+            if (quant && DTYPE_SIZES[quant]) document.getElementById('quantizationType').value = quant;
+            const format = params.get('format');
+            if (format) {
+                const known = getQuantFormat(format);
+                const formatInput = document.getElementById('quantFormat');
+                if (known && formatInput) {
+                    formatInput.value = format;
+                    if (!quant) document.getElementById('quantizationType').value = known.family;
+                }
+            }
+            const runtime = params.get('runtime');
+            if (runtime && FRAMEWORK_PROFILES[runtime]) document.getElementById('runtimeFramework').value = runtime;
+            const strategy = params.get('strategy');
+            const strategySelect = document.getElementById('parallelismStrategy');
+            if (strategy && strategySelect && [...strategySelect.options].some(option => option.value === strategy)) strategySelect.value = strategy;
+            const prompt = parseInt(params.get('prompt'), 10);
+            const output = parseInt(params.get('output'), 10);
+            if (prompt > 0) document.getElementById('promptTokens').value = prompt;
+            if (output > 0) document.getElementById('outputTokens').value = output;
+            if (prompt > 0 || output > 0) {
+                const totalPrompt = parseInt(document.getElementById('promptTokens').value, 10) || DEFAULT_PROMPT_TOKENS;
+                const totalOutput = parseInt(document.getElementById('outputTokens').value, 10) || DEFAULT_OUTPUT_TOKENS;
+                document.getElementById('seqLength').value = totalPrompt + totalOutput;
+            }
+            const batch = parseInt(params.get('batch'), 10);
+            if (batch > 0) document.getElementById('batchSize').value = Math.min(4096, batch);
+            const spec = params.get('spec');
+            if (spec) {
+                const [method, tokens] = spec.split(':');
+                if (SPECULATION_METHODS[method]) {
+                    document.getElementById('optimizationMode').value = 'speculative';
+                    document.getElementById('specMethod').value = method;
+                    if (parseInt(tokens, 10) > 0) document.getElementById('specTokens').value = parseInt(tokens, 10);
+                    if (typeof updateSpeculativeControls === 'function') updateSpeculativeControls();
+                    if (typeof updateSpeculationSupportNote === 'function') updateSpeculationSupportNote();
+                }
+            }
+            saveDevices();
+            updateDeviceDisplay();
+            updateSystemAnalysis();
+            showPlanStep(4, { unlock: true });
+            return true;
+        }
+
         function loadQuickStart(index) {
             const combo = quickStartCombos[index];
             if (!combo) return;
@@ -7791,7 +7921,10 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             const source = device.sourceUrl
                 ? `<a href="${escapeHtml(device.sourceUrl)}" target="_blank" rel="noopener noreferrer">source</a>`
                 : '';
-            return `<div class="hardware-spec-meta"><span class="spec-pill${status.className}">${status.label}</span><span>${memory} GB · ${bandwidth} GB/s peak${sustained}</span>${source}</div>`;
+            const lab = device.labUrl
+                ? `<a href="${escapeHtml(device.labUrl)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(device.labNote || 'Measured recipes for this hardware')}">${escapeHtml(device.labLabel || 'lab recipes')}</a>`
+                : '';
+            return `<div class="hardware-spec-meta"><span class="spec-pill${status.className}">${status.label}</span><span>${memory} GB · ${bandwidth} GB/s peak${sustained}</span>${source}${lab}</div>`;
         }
 
 	function updateDeviceDisplay() {
@@ -9320,7 +9453,8 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        if (card) loadQuickStart(parseInt(card.dataset.quickstartIndex, 10));
 	    });
 	    const initialWorkspace = typeof window.location?.hash === 'string' ? window.location.hash.replace('#', '') : 'home';
-	    switchWorkspace(initialWorkspace || 'home', { updateHash: false });
+	    const deepLinked = applyPlanFromQuery();
+	    switchWorkspace(deepLinked ? 'plan' : (initialWorkspace || 'home'), { updateHash: false });
 	    
 	    renderTable(data);
 	    updateSystemAnalysis();

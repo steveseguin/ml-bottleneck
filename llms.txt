@@ -1,0 +1,29 @@
+# ML Bottleneck
+
+> Free, browser-based planner that predicts how fast a large language model will run on given hardware: decode and prefill tokens per second, memory fit, multi-GPU strategy, MoE expert offload, and speculative-decoding gains. Predictions come from a physical roofline model (memory bandwidth, compute, fixed runtime overhead) calibrated against hundreds of measured community benchmark runs. Numbers are planning estimates, not measurements.
+
+Site: https://mlbottleneck.com/
+Source: https://github.com/steveseguin/ml-bottleneck
+Author: Steve Seguin
+
+## How to use the planner
+
+- Home (https://mlbottleneck.com/#home): popular model + hardware combinations with measured medians.
+- Plan (https://mlbottleneck.com/#plan): choose a model (or import any public Hugging Face config), quantization (family or exact format such as Q4_K_M, UD-IQ4_XS, MXFP4, AWQ), hardware (NVIDIA, AMD, Intel Arc, Apple silicon, CPU/NVMe tiers; several devices), runtime (llama.cpp, Ollama, MLX, vLLM, SGLang, TensorRT-LLM, EXO), and workload; read the ceiling ladder (physical roofline -> optimized target -> projected real -> nearest measured run), the scaling charts (decode vs input length, prefill vs input length, throughput vs concurrent users), and the model execution map.
+- Models (https://mlbottleneck.com/#models): catalog of models with community benchmark coverage.
+- Evidence (https://mlbottleneck.com/#evidence): calibration scatter of measured vs predicted and the reproducible gold reference runs.
+- Explain (https://mlbottleneck.com/#explain): paste a measured result to see how it compares with the projected, optimized, and physical rates.
+
+## Deep links
+
+https://mlbottleneck.com/?model=qwen3.8_27b&hardware=Intel%20Arc%20Pro%20B70&count=2&quant=q4&format=Q4_K_M&runtime=vllm&prompt=4096&output=512&spec=mtp:3
+Parameters: model (preset key, label, or Hugging Face id), hardware (template name), count, quant (float16, bfloat16, int8, fp8, q6, q5, q4, q3, q2), format (exact quant label), runtime, strategy (auto, pipeline, tensor, data, expert, ...), prompt, output, batch, spec (method[:draft tokens]).
+
+## SDK
+
+The same engine ships as a dependency-free JavaScript library: https://mlbottleneck.com/dist/mlbottleneck-engine.umd.js (script tag, window.MLBottleneck) and https://mlbottleneck.com/dist/mlbottleneck-engine.mjs (ES module), with TypeScript types and the benchmark evidence snapshot. Documentation: https://github.com/steveseguin/ml-bottleneck/blob/main/docs/sdk.md
+
+## Related
+
+- https://neural.download/ — Intel Arc Pro B70 LLM optimization lab with measured recipes and benchmarks (same author).
+- https://style-genome.com/ — design-system generator (same author).

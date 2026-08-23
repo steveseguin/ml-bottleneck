@@ -71,8 +71,11 @@ const { ceiling } = engine.predict({ model: 'qwen3.6_35b_a3b', hardware: 'AMD St
   strategy: { key, reasoning, auto },
   decode:  { tokensPerSecond, msPerToken, perUserTokensPerSecond, withoutSpeculation, speculationMultiplier },
   prefill: { tokensPerSecond, timeToFirstTokenSeconds },
-  ceiling: { physicalTokensPerSecond, latencyBoundTokensPerSecond, optimizedTokensPerSecond,
-             expectedTokensPerSecond, engineTokensPerSecond, correctionFactor, confidence, peers, verifiedPeers },
+  ceiling: { physicalTokensPerSecond,      // zero-overhead bandwidth/compute roofline
+             latencyBoundTokensPerSecond,  // roofline plus the irreducible per-layer/per-token floor and coordination
+             optimizedTokensPerSecond,     // what the best-demonstrated kernel efficiency on this stack reaches
+             expectedTokensPerSecond,      // engine rate x peer correction (stock software)
+             engineTokensPerSecond, correctionFactor, confidence, peers, verifiedPeers },
   memory:  { modelSizeGB, residentWeightsGB, kvCacheGB, availableGB },
   bottleneck: 'memory' | 'compute' | 'runtime' | 'coordination' | ...,   // devices[].coreBinding adds 'attention' for deep contexts
   power:   { watts, tdpWatts, costPerDay, costPer1KTokens },
@@ -93,6 +96,16 @@ Numbers are *planning estimates*: the engine is calibrated so that the median co
 - `engine.setEvidence(snapshot)` — load or replace benchmark evidence after creation.
 - `engine.catalogs` — the raw `MODEL_PRESETS`, `DEVICE_TEMPLATES`, `FRAMEWORK_PROFILES`, `SPECULATION_METHODS`, `QUANT_FORMATS` tables.
 - `engine.engine.*` — lower-level functions with the same signatures as `engine.js` (`calculateMetricsForConfig`, `findOptimalStrategy`, `getSpeculationPlan`, `buildExecutionPlan`, …) for integrations that need the per-device breakdowns.
+
+## Deep links into the planner
+
+Any site can open the full planner pre-configured (no SDK needed):
+
+```
+https://mlbottleneck.com/?model=qwen3.8_27b&hardware=Intel%20Arc%20Pro%20B70&count=2&format=Q4_K_M&runtime=vllm&prompt=4096&output=512&spec=mtp:3#plan
+```
+
+`model` (preset key, label, or Hugging Face id), `hardware` (template name, case/space-insensitive), `count`, `quant` (family), `format` (exact quant label), `runtime`, `strategy`, `prompt`, `output`, `batch`, `spec` (`method[:draft tokens]`). Unknown values are ignored; anything recognized opens the prediction step.
 
 ## Versioning and releases
 

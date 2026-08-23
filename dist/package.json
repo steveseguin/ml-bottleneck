@@ -1,6 +1,6 @@
 {
   "name": "@mlbottleneck/engine",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Physics-based LLM inference planner: decode/prefill token rates, memory fit, and bottlenecks for any model on any hardware.",
   "license": "MIT",
   "homepage": "https://mlbottleneck.com",

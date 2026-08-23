@@ -3538,6 +3538,9 @@ const DEVICE_TEMPLATES = {
 
   // Intel
   'Intel Arc Pro B70': {
+    labUrl: 'https://neural.download/',
+    labLabel: 'neural.download lab',
+    labNote: 'Measured recipes and benchmarks for Intel Arc Pro B-series cards (community lab)',
     name: 'Intel Arc Pro B70 32GB',
     memoryGB: 32,
     localBandwidthGBps: 608,
@@ -3560,6 +3563,9 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'Intel Arc Pro B65': {
+    labUrl: 'https://neural.download/',
+    labLabel: 'neural.download lab',
+    labNote: 'Measured recipes and benchmarks for Intel Arc Pro B-series cards (community lab)',
     name: 'Intel Arc Pro B65 32GB',
     memoryGB: 32,
     localBandwidthGBps: 608,
@@ -3579,6 +3585,9 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'Intel Arc Pro B60': {
+    labUrl: 'https://neural.download/',
+    labLabel: 'neural.download lab',
+    labNote: 'Measured recipes and benchmarks for Intel Arc Pro B-series cards (community lab)',
     name: 'Intel Arc Pro B60 24GB',
     memoryGB: 24,
     localBandwidthGBps: 456,
@@ -5024,6 +5033,21 @@ function calculateIdealSystemRateFromDeviceRates(deviceRates, strategy, batchSiz
 // - latencyBoundTokS retains the modeled communication latency that a
 //   faster kernel cannot remove. Evidence caps the user-facing
 //   optimized target below this bound later in calibration.
+// The irreducible fixed cost per pass: the fewest microseconds per layer
+// and per token any production runtime has demonstrated (TensorRT-LLM
+// class, CUDA-class dispatch), scaled by the layer family. No stack on
+// any backend has decoded a 40-layer model faster than this floor, so the
+// "optimized target" must include it — otherwise a small-active MoE whose
+// pass is mostly launch overhead gets a target nothing can reach.
+function calculateMinimalRuntimeOverheadSeconds(modelConfig, layerShare = 1) {
+    const profiles = Object.values(FRAMEWORK_PROFILES).filter(profile => Number.isFinite(profile.perLayerOverheadUs));
+    const floorProfile = {
+        perLayerOverheadUs: Math.min(...profiles.map(profile => profile.perLayerOverheadUs)),
+        perTokenOverheadUs: Math.min(...profiles.map(profile => profile.perTokenOverheadUs || 0))
+    };
+    return calculateDecodeRuntimeOverheadSeconds(modelConfig, floorProfile, { kernelOverheadScale: 1 }, layerShare, 0);
+}
+
 function calculateProjectionBounds(modelConfig, metrics, strategy, devicesArray) {
     const physicalRates = [];
     const latencyBoundRates = [];
@@ -5033,12 +5057,13 @@ function calculateProjectionBounds(modelConfig, metrics, strategy, devicesArray)
         const passRate = Math.max(metric.theoreticalMaxTokensPerSecond || 0, 0);
         if (!Number.isFinite(passRate) || passRate <= 0) return;
         const emittedTokensPerPass = Math.max(metric.speculationTokensPerStep || metric.speculationMultiplier || 1, 1);
-        const coordinationScale = strategy === 'pipeline'
+        const layerShare = strategy === 'pipeline'
             ? getParallelismScales(modelConfig, devicesArray, index).accessedScale
             : 1;
-        const unavoidableCoordination = modeledCoordinationSeconds * coordinationScale;
+        const unavoidableCoordination = modeledCoordinationSeconds * layerShare;
+        const unavoidableOverhead = calculateMinimalRuntimeOverheadSeconds(modelConfig, layerShare);
         physicalRates.push(passRate * emittedTokensPerPass);
-        latencyBoundRates.push(emittedTokensPerPass / ((1 / passRate) + unavoidableCoordination));
+        latencyBoundRates.push(emittedTokensPerPass / ((1 / passRate) + unavoidableCoordination + unavoidableOverhead));
     });
 
     return {
@@ -5761,7 +5786,7 @@ function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, de
         computeSeconds,
         gemmComputeSeconds,
         attentionComputeSeconds,
-        coreBinding: !core.weightBound ? 'compute' : (core.attentionBound ? 'attention' : 'memory'),
+        coreBinding: !core.weightBound ? 'compute' : (core.attentionBound && attentionComputeSeconds >= 0.25 * Math.max(weightSeconds, gemmComputeSeconds) ? 'attention' : 'memory'),
         runtimeOverheadSeconds,
         hasSuppliedOverhead,
         frameworkLabel: frameworkProfile.label,
@@ -6402,7 +6427,10 @@ function calculateMetricsForConfig(modelConfig, devicesArray) {
 			// The weight stream hides the GEMM work unless the batch makes
 			// arithmetic the longer term; the attention kernel is its KV read
 			// unless the score arithmetic over a deep context is longer.
-			const coreBinding = !core.weightBound ? 'compute' : (core.attentionBound ? 'attention' : 'memory');
+			// 'attention' only when the score arithmetic is a material share of
+			// the pass; at short context it is attention-bound but negligible.
+			const attentionMaterial = core.attentionBound && attentionSecondsPerPass >= 0.25 * Math.max(weightSecondsPerPass, gemmSecondsPerPass);
+			const coreBinding = !core.weightBound ? 'compute' : (attentionMaterial ? 'attention' : 'memory');
 			const weightReadMs = core.weightBound ? weightSecondsPerPass * perTokenScale * 1000 : 0;
 			const kvReadMs = core.attentionBound ? 0 : kvSecondsPerPass * perTokenScale * 1000;
 			const computeMs = ((core.weightBound ? 0 : gemmSecondsPerPass) + (core.attentionBound ? attentionSecondsPerPass : 0)) * perTokenScale * 1000;
