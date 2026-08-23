@@ -43,7 +43,7 @@
 
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
-	<script src="data/localmaxxing-snapshot.js?v=20260823010950"></script>
+	<script src="data/localmaxxing-snapshot.js?v=20260823021216"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -6607,13 +6607,19 @@ const DEVICE_TEMPLATES = {
     memoryGB: 24,
     localBandwidthGBps: 1008,
     networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 40,
-      'float16': 80,
-      'bfloat16': 80,
-      'int8': 160,
-      'q4': 240
+      'float16': 160,
+      'bfloat16': 160,
+      'int8': 320,
+      'q4': 320
     },
+    powerWatts: 450,
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090-3090ti/',
+    specStatus: 'verified',
+    specNote: 'Ampere: FP16/BF16 are dense tensor-core rates (4x FP32), which is what the dequantized prefill GEMMs run at; INT8 is 2x that. No FP8 units.',
     type: 'GPU'
   },
   'RTX 3090': {
@@ -6621,13 +6627,19 @@ const DEVICE_TEMPLATES = {
     memoryGB: 24,
     localBandwidthGBps: 936,
     networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 35.6,
-      'float16': 71,
-      'bfloat16': 71,
-      'int8': 142,
-      'q4': 213
+      'float16': 142,
+      'bfloat16': 142,
+      'int8': 284,
+      'q4': 284
     },
+    powerWatts: 350,
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090-3090ti/',
+    specStatus: 'verified',
+    specNote: 'Ampere: FP16/BF16 are dense tensor-core rates (4x FP32), which is what the dequantized prefill GEMMs run at; INT8 is 2x that. No FP8 units.',
     type: 'GPU'
   },
   'RTX 3080 Ti': {
@@ -6635,13 +6647,19 @@ const DEVICE_TEMPLATES = {
     memoryGB: 12,
     localBandwidthGBps: 912,
     networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 34,
-      'float16': 68,
-      'bfloat16': 68,
-      'int8': 136,
-      'q4': 204
+      'float16': 136,
+      'bfloat16': 136,
+      'int8': 272,
+      'q4': 272
     },
+    powerWatts: 350,
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3080-3080ti/',
+    specStatus: 'verified',
+    specNote: 'Ampere: FP16/BF16 are dense tensor-core rates (4x FP32), which is what the dequantized prefill GEMMs run at; INT8 is 2x that. No FP8 units.',
     type: 'GPU'
   },
   'RTX 3080': {
@@ -6649,13 +6667,19 @@ const DEVICE_TEMPLATES = {
     memoryGB: 10,
     localBandwidthGBps: 760,
     networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 29.8,
-      'float16': 59.5,
-      'bfloat16': 59.5,
-      'int8': 119,
-      'q4': 178
+      'float16': 119,
+      'bfloat16': 119,
+      'int8': 238,
+      'q4': 238
     },
+    powerWatts: 320,
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3080-3080ti/',
+    specStatus: 'verified',
+    specNote: 'Ampere: FP16/BF16 are dense tensor-core rates (4x FP32), which is what the dequantized prefill GEMMs run at; INT8 is 2x that. No FP8 units.',
     type: 'GPU'
   },
   'RTX 3070': {
@@ -6663,13 +6687,19 @@ const DEVICE_TEMPLATES = {
     memoryGB: 8,
     localBandwidthGBps: 448,
     networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 20.3,
-      'float16': 40.6,
-      'bfloat16': 40.6,
-      'int8': 81,
-      'q4': 122
+      'float16': 81,
+      'bfloat16': 81,
+      'int8': 163,
+      'q4': 163
     },
+    powerWatts: 220,
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3070-3070ti/',
+    specStatus: 'verified',
+    specNote: 'Ampere: FP16/BF16 are dense tensor-core rates (4x FP32), which is what the dequantized prefill GEMMs run at; INT8 is 2x that. No FP8 units.',
     type: 'GPU'
   },
   'RTX 3060': {
@@ -6677,27 +6707,196 @@ const DEVICE_TEMPLATES = {
     memoryGB: 12,
     localBandwidthGBps: 360,
     networkBandwidthGBps: 16,
+    pcieGeneration: 4,
+    pcieLanes: 16,
     computeTFlops: {
-      'float32': 13,
-      'float16': 26,
-      'bfloat16': 26,
-      'int8': 52,
-      'q4': 78
+      'float32': 12.7,
+      'float16': 51,
+      'bfloat16': 51,
+      'int8': 102,
+      'q4': 102
     },
+    powerWatts: 170,
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/',
+    specStatus: 'verified',
+    specNote: 'Ampere: FP16/BF16 are dense tensor-core rates (4x FP32), which is what the dequantized prefill GEMMs run at; INT8 is 2x that. No FP8 units.',
     type: 'GPU'
+  },
+  'RTX 3060 Ti': {
+    name: 'NVIDIA RTX 3060 Ti 8GB',
+    memoryGB: 8,
+    localBandwidthGBps: 448,
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 16.2,
+      'float16': 65,
+      'bfloat16': 65,
+      'int8': 130,
+      'q4': 130
+    },
+    powerWatts: 200,
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3060-3060ti/',
+    specStatus: 'verified',
+    specNote: '8 GB GDDR6 at 448 GB/s; Ampere dense tensor FP16 = 4x FP32.',
+    type: 'GPU'
+  },
+  'RTX A5000': {
+    name: 'NVIDIA RTX A5000 24GB',
+    memoryGB: 24,
+    localBandwidthGBps: 768,
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 27.8,
+      'float16': 111,
+      'bfloat16': 111,
+      'int8': 222,
+      'q4': 222
+    },
+    powerWatts: 230,
+    sourceUrl: 'https://www.nvidia.com/en-us/design-visualization/rtx-a5000/',
+    specStatus: 'verified',
+    specNote: '24 GB GDDR6 ECC at 768 GB/s; 111 dense tensor FP16 TFLOPS (222 with sparsity).',
+    type: 'GPU'
+  },
+  'Tesla V100 32GB': {
+    name: 'NVIDIA Tesla V100 32GB (SXM2)',
+    memoryGB: 32,
+    localBandwidthGBps: 900,
+    networkBandwidthGBps: 32,
+    pcieGeneration: 3,
+    pcieLanes: 16,
+    computeTFlops: {
+      'float32': 15.7,
+      'float16': 125,
+      'bfloat16': 125,
+      'int8': 125,
+      'q4': 125
+    },
+    powerWatts: 300,
+    sourceUrl: 'https://www.nvidia.com/en-us/data-center/v100/',
+    specStatus: 'verified',
+    specNote: 'Volta: 900 GB/s HBM2, 125 tensor FP16 TFLOPS. No INT8/BF16 tensor paths, so lower precisions are planned at the FP16 rate.',
+    type: 'GPU'
+  },
+  'RX 6700 XT': {
+    name: 'AMD RX 6700 XT 12GB',
+    memoryGB: 12,
+    localBandwidthGBps: 384,
+    networkBandwidthGBps: 32,
+    pcieGeneration: 4,
+    pcieLanes: 16,
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
+    computeTFlops: {
+      'float32': 13.2,
+      'float16': 26.4,
+      'bfloat16': 26.4,
+      'int8': 52.8,
+      'q4': 52.8
+    },
+    powerWatts: 230,
+    sourceUrl: 'https://www.amd.com/en/products/graphics/desktops/radeon/6000-series/amd-radeon-rx-6700-xt.html',
+    specStatus: 'verified',
+    specNote: 'RDNA 2: 12 GB GDDR6 at 384 GB/s; no matrix cores, FP16 is 2x FP32 packed math.',
+    type: 'GPU'
+  },
+  'RX 9060 XT': {
+    name: 'AMD RX 9060 XT 16GB',
+    memoryGB: 16,
+    localBandwidthGBps: 322,
+    networkBandwidthGBps: 32,
+    pcieGeneration: 5,
+    pcieLanes: 16,
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
+    computeTFlops: {
+      'float32': 25.6,
+      'float16': 51,
+      'bfloat16': 51,
+      'int8': 102,
+      'q4': 204
+    },
+    powerWatts: 160,
+    sourceUrl: 'https://www.amd.com/en/products/graphics/desktops/radeon/9000-series/amd-radeon-rx-9060xt.html',
+    specStatus: 'verified',
+    specNote: 'RDNA 4: 16 GB GDDR6 at 322 GB/s, 25.6 FP32 TFLOPS; FP16/INT8/FP4 via WMMA.',
+    type: 'GPU'
+  },
+  'AMD Radeon 780M (Ryzen 7840HS / 8745H)': {
+    name: 'AMD Radeon 780M iGPU (Ryzen 7840HS / 8745H)',
+    memoryGB: 16,
+    localBandwidthGBps: 90,             // dual-channel DDR5-5600 shared with the CPU
+    networkBandwidthGBps: 8,
+    kernelOverheadScale: 1.5,   // ROCm/Vulkan dispatch overhead relative to CUDA (fit on R9700 runs)
+    computeTFlops: {
+      'float32': 8.6,
+      'float16': 17,
+      'bfloat16': 17,
+      'int8': 34,
+      'q4': 34
+    },
+    powerWatts: 54,
+    sourceUrl: 'https://www.amd.com/en/products/processors/laptop/ryzen/7000-series/amd-ryzen-7-7840hs.html',
+    specStatus: 'verified',
+    specNote: 'RDNA 3 12-CU iGPU sharing system LPDDR5/DDR5; 16 GB is the usual allocation, raise memory to match the system. Bandwidth is the dual-channel DDR5-5600 peak.',
+    type: 'CPU/Integrated GPU'
+  },
+  'Mac M4 Pro (48)': {
+    name: 'Mac M4 Pro (48GB)',
+    memoryGB: 48,
+    localBandwidthGBps: 273,
+    networkBandwidthGBps: 80 / 8,   // Thunderbolt 5
+    computeTFlops: {
+      'float32': 9.2,
+      'bfloat16': 18,
+      'float16': 18,
+      'int8': 36,
+      'q4': 54
+    },
+    powerWatts: 80,
+    sourceUrl: 'https://www.apple.com/mac-mini/specs/',
+    specStatus: 'verified',
+    specNote: 'M4 Pro: 273 GB/s unified memory (24/48/64 GB configurations); 20-core GPU.',
+    type: 'CPU/Integrated GPU'
+  },
+  'Mac M1 Max (64)': {
+    name: 'Mac M1 Max (64GB)',
+    memoryGB: 64,
+    localBandwidthGBps: 400,
+    networkBandwidthGBps: 40 / 8,   // Thunderbolt 4
+    computeTFlops: {
+      'float32': 10.4,
+      'bfloat16': 21,
+      'float16': 21,
+      'int8': 42,
+      'q4': 63
+    },
+    powerWatts: 90,
+    sourceUrl: 'https://www.apple.com/newsroom/2021/10/introducing-m1-pro-and-m1-max-the-most-powerful-chips-apple-has-ever-built/',
+    specStatus: 'verified',
+    specNote: 'M1 Max: 400 GB/s unified memory (32/64 GB); 32-core GPU at 10.4 FP32 TFLOPS.',
+    type: 'CPU/Integrated GPU'
   },
   'RTX 3050': {
     name: 'NVIDIA RTX 3050 8GB',
     memoryGB: 8,
     localBandwidthGBps: 224,
     networkBandwidthGBps: 16,
+    pcieGeneration: 4,
+    pcieLanes: 16,
     computeTFlops: {
-      'float32': 9,
-      'float16': 18,
-      'bfloat16': 18,
-      'int8': 36,
-      'q4': 54
+      'float32': 9.1,
+      'float16': 36,
+      'bfloat16': 36,
+      'int8': 73,
+      'q4': 73
     },
+    powerWatts: 130,
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3050/',
+    specStatus: 'verified',
+    specNote: 'Ampere: FP16/BF16 are dense tensor-core rates (4x FP32), which is what the dequantized prefill GEMMs run at; INT8 is 2x that. No FP8 units.',
     type: 'GPU'
   },
   'RTX 2060': {
@@ -6705,13 +6904,19 @@ const DEVICE_TEMPLATES = {
     memoryGB: 6,
     localBandwidthGBps: 336,
     networkBandwidthGBps: 16,
+    pcieGeneration: 3,
+    pcieLanes: 16,
     computeTFlops: {
       'float32': 6.5,
-      'float16': 13,
-      'bfloat16': 6.5,
-      'int8': 26,
-      'q4': 39
+      'float16': 52,
+      'bfloat16': 52,
+      'int8': 103,
+      'q4': 103
     },
+    powerWatts: 160,
+    sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/rtx-2060/',
+    specStatus: 'verified',
+    specNote: 'Turing: 51.6 dense tensor FP16 TFLOPS (no sparsity on Turing); BF16 is not native and is planned at the FP16 rate.',
     type: 'GPU'
   },
   'GTX 1650': {
@@ -10227,14 +10432,16 @@ const DEVICE_TEMPLATES = {
 					dominant: dominantDecodeComponent,
 					overheadSource: hasSuppliedDecodeOverhead ? 'supplied' : 'modeled'
 				};
+				const prefillBindingSeconds = Math.max(effectivePrefillComputeTime, prefillBandwidthLimitedTime, networkTime);
 				const prefillTimeBreakdown = {
 					computeSeconds: effectivePrefillComputeTime,
 					bandwidthSeconds: prefillBandwidthLimitedTime,
 					networkSeconds: networkTime,
+					overheadSeconds: prefillOverheadTime,
 					totalSeconds: actualPrefillTime,
-					binding: actualPrefillTime === effectivePrefillComputeTime
+					binding: prefillBindingSeconds === effectivePrefillComputeTime
 						? 'compute'
-						: (actualPrefillTime === prefillBandwidthLimitedTime ? 'bandwidth' : 'network')
+						: (prefillBindingSeconds === prefillBandwidthLimitedTime ? 'bandwidth' : 'network')
 				};
 
 				// Check if this is an image generation model
@@ -12116,6 +12323,11 @@ const DEVICE_TEMPLATES = {
             const preset = MODEL_PRESETS[reference.presetKey];
             const template = DEVICE_TEMPLATES[reference.hardwareTemplate];
             if (!preset || !template || !DTYPE_SIZES[reference.quantKey]) return null;
+            // A recorded parameter count far from the preset's means the run
+            // is a different model (a 9B fine-tune mapped onto a 7B preset);
+            // it cannot be evidence for this preset's physics.
+            if (Number.isFinite(reference.paramsB) && reference.paramsB > 0 && preset.totalParamsB > 0 &&
+                Math.abs(reference.paramsB - preset.totalParamsB) / preset.totalParamsB > 0.25) return null;
 
             const caseDevices = Array.from({ length: Math.max(1, reference.deviceCount || 1) }, (_, index) => ({
                 id: index + 1,
@@ -12131,15 +12343,16 @@ const DEVICE_TEMPLATES = {
             const contextLength = Math.max(2, reference.contextLength || 2048);
             // contextLength is the configured window (KV allocation). The
             // depth a decode step actually reads comes from the recorded
-            // prompt/output lengths; llama-bench's tg test starts from an
-            // empty cache unless a depth (-d / -pg) was requested.
-            const command = reference.command || '';
-            const isLlamaBench = /llama-bench/i.test(command) && !/(?:^|\s)-(?:d|pg)\s|--n-depth/i.test(command);
+            // prompt/output lengths. This holds for llama-bench rows too: in
+            // the corpus, tg rates fall as 1/p with the -p size (2x RTX 3060,
+            // 8B Q4: 33 -> 16 -> 9 tok/s for p = 32K/64K/128K), which only a
+            // decode at the prompt depth reproduces; modeling tg at depth 0
+            // doubled the RMS log error of those rows.
             const promptTokens = Number.isFinite(reference.promptTokens) ? reference.promptTokens : null;
             const outputTokens = Number.isFinite(reference.outputTokens) && reference.outputTokens > 0 ? reference.outputTokens : 128;
             const decodeDepth = promptTokens === null
                 ? Math.max(1, contextLength - 1)
-                : Math.max(1, (isLlamaBench ? 0 : promptTokens) + outputTokens / 2);
+                : Math.max(1, promptTokens + outputTokens / 2);
             const kvDtype = String(reference.kvCacheDtype || '').toLowerCase();
             const kvCacheCompression = /q8|fp8|int8|e4m3|e5m2/.test(kvDtype) ? 'q8_kv' : (/q4/.test(kvDtype) ? 'q4_kv' : 'none');
             // A recorded peak residency below the device pool proves the run
@@ -12207,11 +12420,15 @@ const DEVICE_TEMPLATES = {
             };
         }
 
+        // Similarity for peer selection. Hardware and runtime dominate because
+        // decode speed is a property of the machine; the exact repo id only
+        // breaks ties between variants of the same preset (it must never let
+        // a different GPU's run outrank a same-GPU run).
         function getGoldSimilarity(target, peer) {
             let score = 0;
-            if (target.hfId && target.hfId === peer.hfId) score += 8;
+            if (target.hfId && target.hfId === peer.hfId) score += 2;
             if (target.presetKey && target.presetKey === peer.presetKey) score += 5;
-            if (target.hardwareTemplate && target.hardwareTemplate === peer.hardwareTemplate) score += 5;
+            if (target.hardwareTemplate && target.hardwareTemplate === peer.hardwareTemplate) score += 6;
             if (target.runtimeKey && target.runtimeKey === peer.runtimeKey) score += 3;
             if (target.quantKey && target.quantKey === peer.quantKey) score += 2;
             if (target.quantization && target.quantization === peer.quantization) score += 2;
@@ -12231,10 +12448,18 @@ const DEVICE_TEMPLATES = {
         }
 
         function getPeerCorrection(target, rows, excludeId = null) {
-            const candidates = rows
-                .filter(row => row.id !== excludeId &&
-                    Number.isFinite(row.observedToGeneric) && row.observedToGeneric >= 0.02 && row.observedToGeneric <= 30 &&
-                    (!Number.isFinite(row.observedToPhysical) || row.observedToPhysical <= 1.05))
+            // A run is comparable only when it shares the runtime and either
+            // the hardware or the model: an observed/predicted ratio carries
+            // stack and kernel behaviour, which does not transfer from a
+            // different engine on a different GPU.
+            const isComparable = row => row.runtimeKey === target.runtimeKey &&
+                ((target.hardwareTemplate && row.hardwareTemplate === target.hardwareTemplate) ||
+                    (target.presetKey && row.presetKey === target.presetKey));
+            const validRows = rows.filter(row => row.id !== excludeId &&
+                Number.isFinite(row.observedToGeneric) && row.observedToGeneric >= 0.02 && row.observedToGeneric <= 30 &&
+                (!Number.isFinite(row.observedToPhysical) || row.observedToPhysical <= 1.05));
+            const candidates = validRows
+                .filter(isComparable)
                 .map(row => ({ row, score: getGoldSimilarity(target, row) }))
                 .sort((a, b) => b.score - a.score || b.row.reproducibility - a.row.reproducibility);
             const bestScore = candidates[0]?.score || 0;
@@ -12246,8 +12471,12 @@ const DEVICE_TEMPLATES = {
             const envelope = candidates.filter(candidate => candidate.score >= 6).slice(0, 40);
             const correction = median(chosen.map(candidate => candidate.row.observedToGeneric));
             const upperCorrection = percentile((envelope.length ? envelope : chosen).map(candidate => candidate.row.observedToGeneric), 0.90);
+            // The global envelope deliberately spans every runtime and device:
+            // it states what strong stacks anywhere reach against the
+            // latency-aware roofline, so an immature local stack cannot
+            // define the ideal.
             const globalOptimizedEfficiency = percentile(
-                candidates.map(candidate => candidate.row.observedToLatencyBound), 0.90
+                validRows.map(row => row.observedToLatencyBound), 0.90
             );
             const localOptimizedEfficiency = percentile(
                 (envelope.length ? envelope : chosen).map(candidate => candidate.row.observedToLatencyBound), 0.90

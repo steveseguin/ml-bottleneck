@@ -536,7 +536,7 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   await expect(page.locator('#systemAnalysis .rate-number')).toHaveText('42.2');
   await expect(page.locator('#systemAnalysis')).toContainText('directional confidence');
   const optimizedRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Optimized target' }).first();
-  await expect(optimizedRow).toContainText('184 tok/s');
+  await expect(optimizedRow).toContainText('179 tok/s');
   const physicalRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Physical roofline' }).first();
   await expect(physicalRow).toContainText('418 tok/s');
   await expect(page.locator('#systemAnalysis .scaling-section')).toContainText('How it scales');
@@ -548,7 +548,7 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   await expect(page.locator('#planExportStatus')).toHaveText('AI handoff copied.');
   const copied = await page.evaluate(() => window.__copiedPlanText);
   expect(copied).toContain('42.22 tok/s projected real');
-  expect(copied).toContain('184.13 tok/s optimized');
+  expect(copied).toContain('178.726 tok/s optimized');
   expect(copied).toContain('418.066 tok/s physical roofline');
   expect(copied).toContain('Profile provenance: planner-estimate');
 
@@ -564,8 +564,8 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   expect(payload.execution.profile.provenance).toBe('planner-estimate');
   expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(42.10);
   expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(42.35);
-  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(184.0);
-  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(184.3);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(178.5);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(178.9);
   expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeGreaterThanOrEqual(417.9);
   expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeLessThanOrEqual(418.2);
 });

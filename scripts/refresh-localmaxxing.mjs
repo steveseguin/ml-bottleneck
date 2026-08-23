@@ -79,24 +79,65 @@ const MODEL_PRESET_RULES = [
   [/^mistralai\/mistral-7b/i, 'mistral_7b']
 ];
 
+// Hardware label -> device template. Specific patterns must precede general
+// ones ("3090 Ti" before "3090"). Labels that combine two GPUs ("RTX 3060 +
+// RTX 5060 Ti") are heterogeneous rigs the planner cannot attribute; they
+// fall through unmatched on purpose.
 const HARDWARE_RULES = [
+  [/\+/, null],
   [/rtx\s*pro\s*6000.*blackwell/i, 'RTX PRO 6000 Blackwell'],
+  [/rtx\s*a5000/i, 'RTX A5000'],
   [/rtx\s*5090/i, 'RTX 5090'],
+  [/rtx\s*5080/i, 'RTX 5080'],
+  [/rtx\s*5070\s*ti/i, 'RTX 5070 Ti'],
+  [/rtx\s*5070/i, 'RTX 5070'],
+  [/rtx\s*5060\s*ti/i, 'RTX 5060 Ti 16GB'],
   [/rtx\s*4090/i, 'RTX 4090'],
+  [/rtx\s*4080\s*super/i, 'RTX 4080 Super'],
+  [/rtx\s*4080/i, 'RTX 4080'],
+  [/rtx\s*4070\s*ti\s*super/i, 'RTX 4070 Ti Super'],
+  [/rtx\s*4070/i, 'RTX 4070'],
+  [/rtx\s*4060/i, 'RTX 4060'],
+  [/rtx\s*3090\s*ti/i, 'RTX 3090 Ti'],
   [/rtx\s*3090/i, 'RTX 3090'],
+  [/rtx\s*3080\s*ti/i, 'RTX 3080 Ti'],
+  [/rtx\s*3080/i, 'RTX 3080'],
+  [/rtx\s*3070/i, 'RTX 3070'],
+  [/rtx\s*3060\s*ti/i, 'RTX 3060 Ti'],
+  [/rtx\s*3060/i, 'RTX 3060'],
+  [/rtx\s*3050/i, 'RTX 3050'],
+  [/rtx\s*2060/i, 'RTX 2060'],
+  [/gtx\s*1060/i, 'GTX 1060'],
+  [/tesla\s*v100|\bv100\b/i, 'Tesla V100 32GB'],
   [/h200/i, 'H200'],
   [/h100/i, 'H100'],
   [/a100/i, 'A100'],
   [/arc\s*pro\s*b70/i, 'Intel Arc Pro B70'],
   [/arc\s*pro\s*b65/i, 'Intel Arc Pro B65'],
   [/arc\s*pro\s*b60/i, 'Intel Arc Pro B60'],
+  [/arc\s*(a|b)?\s*770/i, 'Intel Arc A770'],
+  [/arc\s*b580/i, 'Intel Arc B580'],
   [/radeon\s*(ai\s*)?pro\s*r9700|\br9700\b/i, 'AMD Radeon AI PRO R9700'],
+  [/rx\s*7900\s*xtx/i, 'RX 7900 XTX'],
+  [/rx\s*7900\s*xt\b/i, 'RX 7900 XT'],
+  [/rx\s*9070\s*xt/i, 'RX 9070 XT'],
+  [/rx\s*9060\s*xt/i, 'RX 9060 XT'],
+  [/rx\s*6700\s*xt/i, 'RX 6700 XT'],
+  [/rx\s*7600\b/i, 'RX 7600'],
+  [/rx\s*6600\b/i, 'RX 6600'],
+  [/radeon\s*780m|7840hs|8745h|8845hs|7840u/i, 'AMD Radeon 780M (Ryzen 7840HS / 8745H)'],
+  [/ryzen\s*ai\s*max\+?\s*395|strix\s*halo/i, 'AMD Strix Halo (Ryzen AI Max+ 395)'],
+  [/ryzen\s*ai\s*max\+?\s*388/i, 'AMD Strix Halo (Ryzen AI Max+ 388)'],
   [/mi355x/i, 'AMD MI355X'],
   [/mi350x/i, 'AMD MI350X'],
   [/mi300x/i, 'AMD MI300X'],
   [/dgx\s*spark|\bgb10\b/i, 'NVIDIA DGX Spark (GB10)'],
+  [/m5\s*max/i, 'Mac M5 Max (128)'],
   [/m4\s*max/i, 'Mac M4 Max (128)'],
-  [/m3\s*ultra/i, 'Mac M3 Ultra (512)']
+  [/m4\s*pro/i, 'Mac M4 Pro (48)'],
+  [/m3\s*ultra/i, 'Mac M3 Ultra (512)'],
+  [/m2\s*ultra/i, 'Mac M2 Ultra (192GB)'],
+  [/m1\s*max/i, 'Mac M1 Max (64)']
 ];
 
 const RUNTIME_KEYS = new Map([
@@ -109,7 +150,8 @@ const RUNTIME_KEYS = new Map([
 ]);
 
 function pickRule(value, rules) {
-  return rules.find(([pattern]) => pattern.test(value || ''))?.[1] || null;
+  const match = rules.find(([pattern]) => pattern.test(value || ''));
+  return match ? (match[1] || null) : null;
 }
 
 function normalizeQuantization(value) {
@@ -181,7 +223,9 @@ function normalizeGoldCase(run) {
   // size and active-weight traffic to pruned/REAP/distilled checkpoints.
   const runPresetKey = pickRule(runHfId, MODEL_PRESET_RULES);
   const presetKey = runPresetKey || pickRule(sourceHfId, MODEL_PRESET_RULES);
-  const hardwareTemplate = pickRule(run.hardwareGroupLabel || run.hardware?.gpuName || run.hardware?.chipVariant || '', HARDWARE_RULES);
+  let hardwareTemplate = pickRule(run.hardwareGroupLabel || run.hardware?.gpuName || run.hardware?.chipVariant || '', HARDWARE_RULES);
+  // Same label, two memory sizes: pick by the recorded VRAM.
+  if (hardwareTemplate === 'RTX 5060 Ti 16GB' && Number(run.hardware?.vramGb) > 0 && Number(run.hardware?.vramGb) < 12) hardwareTemplate = 'RTX 5060 Ti 8GB';
   const runtimeKey = RUNTIME_KEYS.get((run.engine?.engineName || '').toLowerCase()) || null;
   const quantKey = normalizeQuantization(run.engine?.quantization);
   const command = run.engineFlags?.commandSnippet || '';
@@ -322,10 +366,10 @@ function chooseGoldCases(runs) {
   const perModel = new Map();
   for (const candidate of candidates) {
     const count = perModel.get(candidate.presetKey) || 0;
-    if (count >= 12) continue;
+    if (count >= 16) continue;
     selected.push(candidate);
     perModel.set(candidate.presetKey, count + 1);
-    if (selected.length >= 120) break;
+    if (selected.length >= 200) break;
   }
   return selected;
 }

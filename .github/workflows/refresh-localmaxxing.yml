@@ -18,14 +18,25 @@ jobs:
           node-version: 22
       - name: Refresh public model and benchmark data
         run: node scripts/refresh-localmaxxing.mjs
-      - name: Commit changed snapshot
+      # The engine is calibrated against the gold corpus. A refresh that
+      # pushes the calibration guard outside its envelope must fail loudly
+      # here and be triaged by a person (see .claude/skills/refresh-evidence),
+      # never committed silently.
+      - name: Validate the refreshed snapshot against the engine
         run: |
-          if git diff --quiet -- data/localmaxxing-snapshot.js; then
+          npm test
+          npm run audit:gold
+      - name: Commit changed snapshot and its cache key
+        run: |
+          if git diff --quiet -- data/localmaxxing-snapshot.js index.html; then
             echo "Snapshot is already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/localmaxxing-snapshot.js
+          # The refresh script also rewrites the ?v= cache key in index.html;
+          # committing only the data file leaves browsers serving a stale
+          # cached snapshot and breaks the cache-key integrity test.
+          git add data/localmaxxing-snapshot.js index.html
           git commit -m "data: refresh Localmaxxing snapshot"
           git push

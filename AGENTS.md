@@ -51,13 +51,21 @@ The analyzer supports two distribution strategies:
 - **Pipeline Parallelism** - Layers distributed across devices
 - **Tensor Parallelism** - Each layer split across devices
 
+## Recurring jobs — read the skill first
+
+`.claude/skills/*/SKILL.md` are plain Markdown procedures (written for Claude Code but valid for any
+agent): `add-model`, `add-hardware`, `calibrate-engine`, `refresh-evidence`. They list every place a
+new model/device must be wired (preset, picker group, evidence regex, tests), the config.json → preset
+field mapping, the physics constants and what may and may not be tuned, and the verification commands.
+`CLAUDE.md` holds the engine invariants the tests enforce.
+
 ## Development
 
 To develop locally:
 1. Run a small static server from the repository root (the external data snapshot must be served beside `index.html`)
 2. Open the local server URL in a browser
-3. Run `npm run refresh:localmaxxing` when refreshing the benchmark evidence and model catalog
-4. Run `npm test` before committing
+3. Run `npm run refresh:localmaxxing` when refreshing the benchmark evidence and model catalog (commit the snapshot and `index.html` together — the cache key lives there)
+4. Run `npm test` before committing; `npm run audit:gold` after physics or preset changes; `npm run fit:decode` / `npm run pins` when calibrating
 
 To deploy:
 - Upload `index.html` to any static hosting (GitHub Pages via CNAME file)

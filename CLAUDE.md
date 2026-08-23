@@ -28,7 +28,7 @@ pass = max(weights/(BW·bandwidthEff) + KV_read/(BW·kvReadEff), FLOPs/(TFLOPs·
 and prefill as a max-of-bottlenecks roofline (compute / bandwidth / network) plus the same per-layer floor, with compute efficiency ramping up with prompt length. Key invariants, all enforced by tests:
 
 - **Fixed overhead is fixed, not proportional.** Kernel launches, routing, norms, sampling, and scheduler work cost the same microseconds for a 1 MB GEMV as for a 1 GB one. `perLayerOverheadUs`/`perTokenOverheadUs` per runtime, scaled by attention type (`LAYER_OVERHEAD_SCALES`: Gated DeltaNet/KDA layers ≈2×, MoE routing extra) and by the backend (`kernelOverheadScale` on AMD ROCm/Vulkan and Intel SYCL templates, fit on community runs). This is why a 3B-active MoE decodes at ~200 tok/s on a 5090 instead of the ~1,100 tok/s its byte count implies. Never "fix" such a model by inflating bandwidth efficiency.
-- **KV allocation ≠ KV read depth.** `seqLength` (prompt + response) sizes the resident cache for memory fit; `getDecodeContextTokens` (prompt + response/2, or an explicit `decodeContextTokens`) sizes the bytes one decode step reads. Gold rows decode at their recorded `promptTokens`, not the configured window (`llama-bench` tg tests start from an empty cache); `contextLength` only drives residency.
+- **KV allocation ≠ KV read depth.** `seqLength` (prompt + response) sizes the resident cache for memory fit; `getDecodeContextTokens` (prompt + response/2, or an explicit `decodeContextTokens`) sizes the bytes one decode step reads. Gold rows decode at their recorded `promptTokens` (+ half the output), not the configured window — including `llama-bench` rows, whose tg rates in the corpus fall as 1/p with `-p`; `contextLength` only drives residency.
 - **Explicit `headDim` wins** (`getHeadDim`). Qwen 3.5+/Gemma use 256, Muse Glimmer 128 on a 6656 hidden size — deriving hidden/heads mis-sizes KV by up to 2×.
 - **The attention layer mix is explicit** (`getAttentionLayerMix` → `getAttendedLayerTokens`): full-attention layers read the whole depth, sliding-window layers at most `slidingWindow`, linear/SSM layers nothing. Presets carry `fullAttentionLayers` or `fullAttentionInterval` plus `slidingWindow`; attention-profile multipliers are only the fallback when a preset has no explicit mix.
 - **FLOPs follow the 2N rule**: 2 FLOPs per *active* parameter per token plus `4·heads·head_dim·attended positions` (halved for causal prefill). Do not re-derive matrix shapes per architecture.
@@ -55,8 +55,20 @@ The plan results lead with an answer card + **ceiling ladder** (hardware ceiling
 2. `npm test` before committing — Node unit tests drive the real inline script through a fake DOM (`tests/load-index-app.mjs`); `tests/integrity.test.mjs` guards duplicate keys/functions, XSS escaping, physics anchors, and waterfall consistency
 3. `npm run test:playwright` for browser tests (requires Playwright browsers)
 4. `npm run refresh:localmaxxing` to refresh benchmark evidence and the model catalog
-5. `npm run audit:gold` after any physics or preset change — it runs the engine against every snapshot gold case and reports the observed/predicted distribution, per-runtime/hardware medians, and physics-ceiling violations. Root-cause any run that beats the ideal ceiling; never absorb it into an efficiency constant.
-6. The snapshot's gold rows carry `promptTokens`/`outputTokens`/`kvCacheDtype`/`backend`/`splitMode` (parsed from the API and the command line) — keep them when touching `scripts/refresh-localmaxxing.mjs`; the projection depends on them.
+5. `npm run fit:decode` (residuals per runtime/hardware/model type; `--grid` to search constants) and `npm run pins` (values behind the exact-value regression tests) when calibrating — see the `calibrate-engine` skill
+6. `npm run audit:gold` after any physics or preset change — it runs the engine against every snapshot gold case and reports the observed/predicted distribution, per-runtime/hardware medians, and physics-ceiling violations. Root-cause any run that beats the ideal ceiling; never absorb it into an efficiency constant.
+7. The snapshot's gold rows carry `promptTokens`/`outputTokens`/`kvCacheDtype`/`backend`/`splitMode` (parsed from the API and the command line) — keep them when touching `scripts/refresh-localmaxxing.mjs`; the projection depends on them.
+
+## Skills (use them)
+
+Project skills in `.claude/skills/` encode the exact procedure and pitfalls for the recurring jobs —
+invoke them (`/add-model`, `/add-hardware`, `/calibrate-engine`, `/refresh-evidence`) or read the
+`SKILL.md` before doing the work by hand:
+
+- `add-model` — preset fields from config.json (head_dim, layer mix, MoE/MLA/MTP), picker groups, evidence regex, sanity math, anchors.
+- `add-hardware` — official-peak template fields, backend `kernelOverheadScale`, default runtime, picker group, `HARDWARE_RULES`.
+- `calibrate-engine` — the fitted constants and their meaning, outlier triage, `npm run fit:decode --grid`, re-pinning regression tests with `npm run pins`.
+- `refresh-evidence` — snapshot refresh, gold-case semantics, CI failure triage, data hygiene.
 
 ## Rules of the road
 
