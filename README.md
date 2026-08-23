@@ -43,7 +43,7 @@ The same physics + calibration ships as a dependency-free JS library (`dist/`), 
 </script>
 ```
 
-ESM (`dist/mlbottleneck-engine.mjs`), TypeScript types, and the benchmark evidence snapshot are in `dist/` and on every `sdk-v*` [GitHub release](https://github.com/steveseguin/ml-bottleneck/releases). See [docs/sdk.md](docs/sdk.md).
+Or install it: `npm install @mlbottleneck/engine` ([npm](https://www.npmjs.com/package/@mlbottleneck/engine)). ESM, TypeScript types, and the benchmark evidence snapshot ship in the package, in `dist/`, and on every `sdk-v*` [GitHub release](https://github.com/steveseguin/ml-bottleneck/releases). See [docs/sdk.md](docs/sdk.md).
 
 ## 🛠️ Configuration Options
 
