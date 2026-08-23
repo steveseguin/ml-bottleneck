@@ -31,7 +31,12 @@ All of it lives in `engine.js` (shared by the site and the SDK; `index.html` onl
   `batchedComputeEfficiency`, `batchRampSequences`, speculation costs (`specDraftStepOverheadUs`,
   `specBatchedDrafting`, `specVerifyReadsKvPerToken`), optional `attentionOverheadScales` /
   `moeOverheadExtra` overrides, and per-backend overrides under `backends` (llama.cpp/Ollama on
-  `metal`: `bandwidthEfficiency 0.66`, `moeOverheadScale 6`).
+  `metal`: `bandwidthEfficiency 0.66`, `moeOverheadScale 6`; Intel `sycl`: `moeOverheadScale 0.25`
+  on llama.cpp, `0.75` + `batchedComputeScale 0.55` + `specDraftOverheadScale 3` on vLLM XPU).
+  Templates declare `backend` (`metal`, `sycl`); `getBackendEfficiency` merges the overrides.
+- `data/lab-evidence.json` + `tests/lab-evidence.test.mjs`: neural.download lab rows (stock /
+  lab-baseline / tuned) with shape checks (depth sweep, MTP ladder). Add a row there when the lab
+  publishes a new measured series; never put a tuned row into the gold set.
 - `LAYER_OVERHEAD_SCALES.attention[mechanism]` (GDN/KDA hybrids ≈ 2×, MLA 1.25, SSM 1.35) and
   `LAYER_OVERHEAD_SCALES.moeExtra` (routing cost, scaled by the backend).
 - `DEVICE_TEMPLATES[*].kernelOverheadScale` (AMD ROCm/Vulkan 1.5, Intel SYCL 2, Apple M5 0.6;

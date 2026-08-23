@@ -22,8 +22,10 @@
     <meta property="og:url" content="https://mlbottleneck.com/">
     <meta property="og:title" content="ML Bottleneck — How fast will an LLM run on your GPU?">
     <meta property="og:description" content="Decode and prefill tokens/sec, memory fit, multi-GPU strategy, and speculative-decoding gains for any model on your hardware — from physics, checked against real benchmarks.">
-    <meta property="og:image" content="https://mlbottleneck.com/logo.png">
-    <meta property="og:image:alt" content="ML Bottleneck logo">
+    <meta property="og:image" content="https://mlbottleneck.com/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="ML Bottleneck — how fast will a model run on your hardware? Physical roofline, optimized target, projected real, nearest measured.">
     <meta property="og:site_name" content="ML Bottleneck">
 
     <!-- Twitter -->
@@ -31,7 +33,7 @@
     <meta property="twitter:url" content="https://mlbottleneck.com/">
     <meta property="twitter:title" content="ML Bottleneck — How fast will an LLM run on your GPU?">
     <meta property="twitter:description" content="Decode and prefill tokens/sec, memory fit, multi-GPU strategy, and speculative-decoding gains for any model on your hardware — from physics, checked against real benchmarks.">
-    <meta property="twitter:image" content="https://mlbottleneck.com/logo.png">
+    <meta property="twitter:image" content="https://mlbottleneck.com/og-image.png">
     <meta name="twitter:creator" content="@xyster">
 
     <!-- Additional Meta -->
@@ -48,8 +50,8 @@
 
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
-	<script src="data/localmaxxing-snapshot.js?v=20260823051253"></script>
-	<script src="engine.js?v=a6a82016c242"></script>
+	<script src="data/localmaxxing-snapshot.js?v=20260823154549"></script>
+	<script src="engine.js?v=109086451eb3"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -9294,19 +9296,20 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        'Meta Muse': ['muse_glimmer_30b', 'muse_glimmer_assistant_2.6b'],
 	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision', 'llama4_scout', 'llama4_maverick'],
 	        'DeepSeek': ['deepseek_v4_pro', 'deepseek_v4_flash', 'deepseek_v4_flash_reap_180b', 'deepseek_v3.2', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
-	        'Qwen': ['qwen3.8_27b', 'qwen3.8_2.4t_a95b', 'qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
+	        'Qwen': ['qwen3.8_27b', 'qwen3.8_2.4t_a95b', 'qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_1.7b', 'qwen3_0.6b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_4b', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
 	        'Gemma 3 and earlier': ['gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
-	        'Mistral': ['mistral_medium_3.5_128b', 'mistral_small_4_119b_a6b', 'mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
+	        'Mistral': ['mistral_medium_3.5_128b', 'mistral_small_4_119b_a6b', 'ministral_3_3b', 'mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
 	        'Mixtral (MoE)': ['mixtral_8x7b', 'mixtral_8x22b'],
 	        'Kimi': ['kimi_k3', 'kimi_k2.7_code', 'kimi_k2.6', 'kimi_k2.5', 'kimi_k2'],
 	        'MiniMax': ['minimax_m3', 'minimax_m2.7', 'minimax_m2.5', 'minimax_m2'],
-	        'NVIDIA Nemotron': ['nemotron3.5_lightning_30b_a3b', 'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b', 'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b'],
+	        'NVIDIA Nemotron': ['nemotron3.5_lightning_30b_a3b', 'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b', 'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b', 'nemotron_nano_9b_v2'],
 	        'GLM': ['glm5_2', 'glm5_1', 'glm5', 'glm4.7_flash', 'glm4_9b'],
 	        'Ornith': ['ornith_1.5_35b_a3b', 'ornith_1.5_9b', 'ornith_1.5_397b_a17b', 'ornith_1_9b', 'ornith_1_35b_a3b'],
 	        'IBM Granite': ['granite4.1_8b'],
-	        'Small & edge': ['lfm2.5_2.6b', 'minicpm5_1b', 'lfm2_350m'],
-	        'Other MoE': ['gpt_oss_120b', 'gpt_oss_20b', 'lfm2.5_8b_a1b', 'dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],
+	        'Small & edge': ['lfm2.5_2.6b', 'lfm2.5_1.2b', 'lfm2.5_350m', 'lfm2.5_230m', 'minicpm5_1b', 'lfm2_350m'],
+	        'Poolside Laguna': ['laguna_s_2.1', 'laguna_xs_2.1'],
+	        'Other MoE': ['gpt_oss_120b', 'gpt_oss_20b', 'trinity_mini', 'lfm2.5_8b_a1b', 'dbrx_132b', 'arctic_480b', 'jamba_1.5_large_398b', 'jamba_1.5_mini_52b'],
 	        'Falcon': ['falcon_40b', 'falcon2_180b', 'falcon2_11b'],
 	        'Code Models': ['starcoder2_15b', 'starcoder2_7b', 'starcoder2_3b'],
 	        'Vision Models': ['llava_1.5_7b', 'llava_1.5_13b'],

@@ -12,6 +12,28 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const plannerHooks = loadApp().hooks;
 
 const MODEL_PRESET_RULES = [
+  [/^poolside\/laguna-s-2\.1/i, 'laguna_s_2.1'],
+  [/^poolside\/laguna-xs-2\.1/i, 'laguna_xs_2.1'],
+  [/^qwen\/qwen3-1\.7b/i, 'qwen3_1.7b'],
+  [/^qwen\/qwen3-0\.6b/i, 'qwen3_0.6b'],
+  [/^qwen\/qwen3\.5-4b/i, 'qwen3.5_4b'],
+  [/^liquidai\/lfm2\.5-1\.2b/i, 'lfm2.5_1.2b'],
+  [/^liquidai\/lfm2\.5-350m/i, 'lfm2.5_350m'],
+  [/^liquidai\/lfm2\.5-230m/i, 'lfm2.5_230m'],
+  [/^liquidai\/lfm2-8b-a1b/i, 'lfm2.5_8b_a1b'],
+  [/^mistralai\/ministral-3-3b/i, 'ministral_3_3b'],
+  [/^nvidia\/nvidia-nemotron-nano-9b-v2/i, 'nemotron_nano_9b_v2'],
+  [/^arcee-ai\/trinity-mini/i, 'trinity_mini'],
+  // Fine-tunes and distills keep the base architecture.
+  [/openreasoning-nemotron-7b/i, 'qwen2.5_7b'],
+  [/acereason-nemotron-1\.1-7b/i, 'qwen2.5_7b'],
+  [/deephermes-3-mistral-24b/i, 'mistral_small_24b'],
+  [/^microsoft\/phi-4-reasoning/i, 'phi4_14b'],
+  [/phi-4-mini-reasoning/i, 'phi4_mini_3.8b'],
+  [/^qwen\/qwen3-coder-30b-a3b/i, 'qwen3_30b_a3b'],
+  [/ornstein3\.6-27b/i, 'qwen3.6_27b'],
+  [/qwopus3\.5-27b/i, 'qwen3.5_27b'],
+  [/qwythos-9b/i, 'qwen3.5_9b'],
   [/^qwen\/qwen3\.8-27b/i, 'qwen3.8_27b'],
   [/^qwen\/qwen3\.8-2\.4t/i, 'qwen3.8_2.4t_a95b'],
   [/^meta-models\/muse-glimmer-30b-assistant/i, 'muse_glimmer_assistant_2.6b'],
@@ -245,6 +267,13 @@ function normalizeGoldCase(run) {
   // from KV *reads per token* (bandwidth).
   const promptTokens = Number.isFinite(run.promptTokens) ? run.promptTokens : null;
   const outputTokens = Number.isFinite(run.outputTokens) ? run.outputTokens : null;
+  // llama-bench decodes at an explicit depth: `-d N` / `--n-depth N`, or the
+  // prompt half of `-pg N,M`. Recorded here so the projection can use it
+  // instead of the pp test's `-p` size.
+  const benchDepthMatch = /llama-bench/.test(command)
+    ? (command.match(/(?:\s-d|--n-depth)[=\s]+(\d+)/) || command.match(/-pg[=\s]+(\d+)\s*,\s*\d+/))
+    : null;
+  const decodeDepthTokens = benchDepthMatch ? parseInt(benchDepthMatch[1], 10) : null;
   // The structured kvCacheDtype flag is often missing while the command
   // line carries it (llama.cpp -ctk/-ctv, vLLM --kv-cache-dtype).
   const kvFlagMatch = command.match(/(?:-ctk|--cache-type-k|--kv-cache-dtype)[=\s]+([A-Za-z0-9_]+)/);
@@ -289,6 +318,9 @@ function normalizeGoldCase(run) {
   const hasEngineInvocation = /llama|vllm|sglang|ollama|mlx|trtllm|trt-llm|exo/i.test(command);
 
   if (!presetKey || !hardwareTemplate || !runtimeKey || !quantKey) return null;
+  // The command's model file must agree with the declared model: a run that
+  // loads Qwen3.5-9B under a Qwen2.5-7B label is a different model.
+  if (commandNamesDifferentModel(command, runHfId)) return null;
   if (batchSize !== 1 || isSpeculative || !command || !Number.isFinite(run.tokSOut)) return null;
   if (isModifiedVariant || isRecordedEndpoint || !hasEngineInvocation) return null;
   if (run.tokSOut <= 0 || run.tokSOut > 1000 || contextLength > 131072) return null;
@@ -344,6 +376,7 @@ function normalizeGoldCase(run) {
     backend,
     splitMode,
     cpuMoeLayers,
+    decodeDepthTokens,
     batchSize,
     observedTokS: run.tokSOut,
     prefillTokS: plausiblePrefillRate(run, presetKey, hardwareTemplate, deviceCount, quantKey),
@@ -377,6 +410,28 @@ function plausiblePrefillRate(run, presetKey, hardwareTemplate, deviceCount, qua
   if (!(peakTflops > 0)) return prefill;
   const impliedTflops = prefill * 2 * activeParamsB * 1e9 / 1e12;
   return impliedTflops <= peakTflops ? prefill : null;
+}
+
+// Size ("9b") and family-version ("qwen3.5") tokens from a model name.
+function modelNameTokens(text) {
+  const lower = String(text || '').toLowerCase();
+  const size = lower.match(/(?<![a-z0-9.])(\d+(?:\.\d+)?)b(?![a-z0-9])/);
+  const family = lower.match(/(qwen|gemma|llama|mistral|phi|deepseek|glm|kimi|minimax|nemotron|ornith|granite|lfm)[-_ ]?(\d+(?:\.\d+)?)/);
+  return {
+    sizeB: size ? parseFloat(size[1]) : null,
+    family: family ? `${family[1]}${family[2]}` : null
+  };
+}
+
+function commandNamesDifferentModel(command, hfId) {
+  const fileMatch = String(command || '').match(/(?:-m|--model)[=\s]+"?([^"\s]+\.gguf)/i);
+  if (!fileMatch) return false;
+  const file = fileMatch[1].split(/[\/]/).pop();
+  const fromFile = modelNameTokens(file);
+  const fromId = modelNameTokens(String(hfId || '').split('/').pop());
+  if (fromFile.family && fromId.family && fromFile.family !== fromId.family) return true;
+  if (fromFile.sizeB && fromId.sizeB && Math.abs(fromFile.sizeB - fromId.sizeB) / Math.max(fromId.sizeB, 0.1) > 0.25) return true;
+  return false;
 }
 
 function chooseGoldCases(runs) {
@@ -425,16 +480,31 @@ function chooseGoldCases(runs) {
     perModel.set(candidate.presetKey, (perModel.get(candidate.presetKey) || 0) + 1);
     perHardware.set(candidate.hardwareTemplate, (perHardware.get(candidate.hardwareTemplate) || 0) + 1);
   };
+  // Round-robin across hardware templates (each round takes every template's
+  // best remaining row) so a burst of runs on one rig cannot push another
+  // rig's rows out between refreshes; per-preset cap keeps one model from
+  // dominating.
+  const CAP = 320;
+  const PER_MODEL = 16;
+  const queues = new Map();
   for (const candidate of candidates) {
-    if ((perHardware.get(candidate.hardwareTemplate) || 0) >= 4) continue;
-    if ((perModel.get(candidate.presetKey) || 0) >= 16) continue;
-    take(candidate);
+    if (!queues.has(candidate.hardwareTemplate)) queues.set(candidate.hardwareTemplate, []);
+    queues.get(candidate.hardwareTemplate).push(candidate);
   }
-  for (const candidate of candidates) {
-    if (selected.length >= 240) break;
-    if (selectedIds.has(candidate.id)) continue;
-    if ((perModel.get(candidate.presetKey) || 0) >= 16) continue;
-    take(candidate);
+  let progressed = true;
+  while (selected.length < CAP && progressed) {
+    progressed = false;
+    for (const queue of queues.values()) {
+      while (queue.length) {
+        const candidate = queue.shift();
+        if (selectedIds.has(candidate.id)) continue;
+        if ((perModel.get(candidate.presetKey) || 0) >= PER_MODEL) continue;
+        take(candidate);
+        progressed = true;
+        break;
+      }
+      if (selected.length >= CAP) break;
+    }
   }
   return selected;
 }

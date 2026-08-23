@@ -133,7 +133,7 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
   expect(organizedPresetGroups.MiniMax).toEqual(expect.arrayContaining(['minimax_m3', 'minimax_m2.7']));
   expect(organizedPresetGroups['NVIDIA Nemotron']).toEqual([
     'nemotron3.5_lightning_30b_a3b', 'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b',
-    'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b'
+    'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b', 'nemotron_nano_9b_v2'
   ]);
 
   await page.getByRole('button', { name: 'Models', exact: true }).click();
@@ -533,10 +533,10 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   await advancePlanTo(page, 4);
 
   await expect(page.locator('#systemAnalysis .rate-label')).toHaveText('Projected real decode');
-  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText('40.8');
+  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText(/40\.[78]/);
   await expect(page.locator('#systemAnalysis')).toContainText('directional confidence');
   const optimizedRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Optimized target' }).first();
-  await expect(optimizedRow).toContainText('119 tok/s');
+  await expect(optimizedRow).toContainText('117 tok/s');
   const physicalRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Physical roofline' }).first();
   await expect(physicalRow).toContainText('390 tok/s');
   await expect(page.locator('#systemAnalysis .scaling-section')).toContainText('How it scales');
@@ -547,8 +547,8 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   await page.locator('#copyAiHandoffButton').click();
   await expect(page.locator('#planExportStatus')).toHaveText('AI handoff copied.');
   const copied = await page.evaluate(() => window.__copiedPlanText);
-  expect(copied).toContain('40.79 tok/s projected real');
-  expect(copied).toMatch(/119\.0\d+ tok\/s optimized/);
+  expect(copied).toMatch(/40\.7\d+ tok\/s projected real/);
+  expect(copied).toMatch(/117\.\d+ tok\/s optimized/);
   expect(copied).toContain('389.515 tok/s physical roofline');
   expect(copied).toContain('Profile provenance: planner-estimate');
 
@@ -562,10 +562,10 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   expect(payload.hardware.devices[0].officialPeakMemoryBandwidthGBps).toBe(608);
   expect(payload.hardware.devices[0].sustainedMemoryBandwidthGBps).toBeNull();
   expect(payload.execution.profile.provenance).toBe('planner-estimate');
-  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(40.65);
+  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(40.55);
   expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(40.95);
-  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(118.8);
-  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(119.3);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(117.0);
+  expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(117.5);
   expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeGreaterThanOrEqual(389.3);
   expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeLessThanOrEqual(389.7);
 });

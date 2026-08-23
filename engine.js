@@ -207,7 +207,10 @@ const FRAMEWORK_PROFILES = {
             // llama.cpp's Metal backend: weight streaming reaches ~65% of
             // peak and mul_mat_id (MoE) layers cost ~6x the CUDA launch
             // overhead (fit on community M1 Max-M5 Max rows).
-            metal: { bandwidthEfficiency: 0.66, moeOverheadScale: 6 }
+            metal: { bandwidthEfficiency: 0.66, moeOverheadScale: 6 },
+            // Intel SYCL: the MoE routing penalty does not grow with the
+            // dispatch scale (fit on Arc Pro B70/B60 rows + lab baselines).
+            sycl: { moeOverheadScale: 0.25 }
         },
         kvReadEfficiency: 0.86,
         perLayerOverheadUs: 45,
@@ -251,7 +254,10 @@ const FRAMEWORK_PROFILES = {
             // llama.cpp's Metal backend: weight streaming reaches ~65% of
             // peak and mul_mat_id (MoE) layers cost ~6x the CUDA launch
             // overhead (fit on community M1 Max-M5 Max rows).
-            metal: { bandwidthEfficiency: 0.66, moeOverheadScale: 6 }
+            metal: { bandwidthEfficiency: 0.66, moeOverheadScale: 6 },
+            // Intel SYCL: the MoE routing penalty does not grow with the
+            // dispatch scale (fit on Arc Pro B70/B60 rows + lab baselines).
+            sycl: { moeOverheadScale: 0.25 }
         },
         kvReadEfficiency: 0.86,
         perLayerOverheadUs: 52,
@@ -271,6 +277,14 @@ const FRAMEWORK_PROFILES = {
         specBatchedDrafting: true,       // whether one draft pass serves every sequence in the batch
         label: 'vLLM',
         bandwidthEfficiency: 0.84,
+        backends: {
+            // vLLM XPU on Intel Arc: MoE routing penalty fit on B70 rows; small-M
+            // GEMMs (speculative verification, small batches) reach ~55% of the
+            // CUDA-class batched efficiency and the MTP draft path costs ~3x its
+            // CUDA price (community Qwen3.6-27B GPTQ ladder on one B70: off 33.2,
+            // MTP1 47.1, MTP2 52.2, MTP3/4 51.6 — gains plateau at x1.57).
+            sycl: { moeOverheadScale: 0.75, specDraftOverheadScale: 3, batchedComputeScale: 0.55 }
+        },
         kvReadEfficiency: 0.90,
         perLayerOverheadUs: 45,
         perTokenOverheadUs: 600,
@@ -2057,6 +2071,242 @@ const MODEL_PRESETS = {
     attentionMechanism: 'hybrid_ssm',
     contextLength: 128000
   },
+  // Poolside Laguna 2.1 (agentic coding MoE; sliding-window mix with 512-token windows)
+  'laguna_s_2.1': {
+    label: 'Laguna S 2.1 118B A8B',
+    hfId: 'poolside/Laguna-S-2.1',
+    totalParamsB: 117.6,
+    activeParamsB: 8,
+    vocabSize: 100352,
+    hiddenSize: 3072,
+    numLayers: 48,
+    numHeads: 48,
+    numKVHeads: 8,
+    headDim: 128,
+    intermediateSize: 12288,
+    moeIntermediateSize: 1024,
+    isMoE: true,
+    numExperts: 256,
+    activeExperts: 10,
+    routingType: 'moe',
+    attentionMechanism: 'sliding_window',
+    slidingWindow: 512,
+    fullAttentionLayers: 12,
+    contextLength: 1048576,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/poolside/Laguna-S-2.1/blob/main/config.json',
+    specNote: 'config.json: 48 layers (12 full-attention, 36 sliding-window 512), 48 Q / 8 KV heads at 128, 256 experts with 10 routed + 1 shared (1024 wide); 117.6B safetensors, model card says ~8B active. Verified 2026-08-23.'
+  },
+  'laguna_xs_2.1': {
+    label: 'Laguna XS 2.1 33B A3B',
+    hfId: 'poolside/Laguna-XS-2.1',
+    totalParamsB: 33.4,
+    activeParamsB: 3,
+    vocabSize: 100352,
+    hiddenSize: 2048,
+    numLayers: 40,
+    numHeads: 48,
+    numKVHeads: 8,
+    headDim: 128,
+    intermediateSize: 8192,
+    moeIntermediateSize: 512,
+    isMoE: true,
+    numExperts: 256,
+    activeExperts: 8,
+    routingType: 'moe',
+    attentionMechanism: 'sliding_window',
+    slidingWindow: 512,
+    fullAttentionLayers: 10,
+    contextLength: 262144,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/poolside/Laguna-XS-2.1/blob/main/config.json',
+    specNote: 'config.json: 40 layers (10 full-attention, 30 sliding-window 512), 48 Q / 8 KV heads at 128, 256 experts with 8 routed + 1 shared (512 wide); 33.4B safetensors, model card says 3B active. Verified 2026-08-23.'
+  },
+  // Qwen 3 small dense
+  'qwen3_1.7b': {
+    label: 'Qwen 3 1.7B',
+    hfId: 'Qwen/Qwen3-1.7B',
+    totalParamsB: 2.03,
+    vocabSize: 151936,
+    hiddenSize: 2048,
+    numLayers: 28,
+    numHeads: 16,
+    numKVHeads: 8,
+    headDim: 128,
+    intermediateSize: 6144,
+    routingType: 'dense',
+    attentionMechanism: 'grouped_query',
+    contextLength: 40960,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/Qwen/Qwen3-1.7B/blob/main/config.json',
+    specNote: 'config.json: 28 layers, 16 Q / 8 KV heads at 128, 6144 FFN; 2.03B safetensors (tied embeddings). Verified 2026-08-23.'
+  },
+  'qwen3_0.6b': {
+    label: 'Qwen 3 0.6B',
+    hfId: 'Qwen/Qwen3-0.6B',
+    totalParamsB: 0.75,
+    vocabSize: 151936,
+    hiddenSize: 1024,
+    numLayers: 28,
+    numHeads: 16,
+    numKVHeads: 8,
+    headDim: 128,
+    intermediateSize: 3072,
+    routingType: 'dense',
+    attentionMechanism: 'grouped_query',
+    contextLength: 40960,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/Qwen/Qwen3-0.6B/blob/main/config.json',
+    specNote: 'config.json: 28 layers, 16 Q / 8 KV heads at 128, 3072 FFN; 0.75B safetensors. Verified 2026-08-23.'
+  },
+  'qwen3.5_4b': {
+    label: 'Qwen 3.5 4B',
+    hfId: 'Qwen/Qwen3.5-4B',
+    totalParamsB: 4.66,
+    vocabSize: 248320,
+    hiddenSize: 2560,
+    numLayers: 32,
+    numHeads: 16,
+    numKVHeads: 4,
+    headDim: 256,
+    intermediateSize: 9216,
+    routingType: 'dense',
+    attentionMechanism: 'hybrid_linear',
+    fullAttentionInterval: 4,
+    contextLength: 262144,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/Qwen/Qwen3.5-4B/blob/main/config.json',
+    specNote: 'config.json (text_config): 32 layers with full attention every 4th (8 full, 24 Gated DeltaNet), 16 Q / 4 KV heads at 256, 9216 FFN; 4.66B safetensors. Verified 2026-08-23.'
+  },
+  // Liquid LFM2.5 small (short-conv hybrids: 6 attention layers, the rest gated short convolutions)
+  'lfm2.5_1.2b': {
+    label: 'LFM 2.5 1.2B',
+    hfId: 'LiquidAI/LFM2.5-1.2B-Instruct',
+    totalParamsB: 1.17,
+    vocabSize: 65536,
+    hiddenSize: 2048,
+    numLayers: 16,
+    numHeads: 32,
+    numKVHeads: 8,
+    headDim: 64,
+    intermediateSize: 12288,
+    routingType: 'dense',
+    architectureType: 'hybrid_ssm_transformer',
+    attentionMechanism: 'hybrid_ssm',
+    fullAttentionLayers: 6,
+    contextLength: 128000,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/LiquidAI/LFM2.5-1.2B-Instruct/blob/main/config.json',
+    specNote: 'config.json: 16 layers (6 full attention, 10 short-conv), 32 Q / 8 KV heads at 64; 1.17B safetensors. Verified 2026-08-23.'
+  },
+  'lfm2.5_350m': {
+    label: 'LFM 2.5 350M',
+    hfId: 'LiquidAI/LFM2.5-350M',
+    totalParamsB: 0.354,
+    vocabSize: 65536,
+    hiddenSize: 1024,
+    numLayers: 16,
+    numHeads: 16,
+    numKVHeads: 8,
+    headDim: 64,
+    intermediateSize: 6656,
+    routingType: 'dense',
+    architectureType: 'hybrid_ssm_transformer',
+    attentionMechanism: 'hybrid_ssm',
+    fullAttentionLayers: 6,
+    contextLength: 128000,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/LiquidAI/LFM2.5-350M/blob/main/config.json',
+    specNote: 'config.json: 16 layers (6 full attention, 10 short-conv), 16 Q / 8 KV heads at 64; 0.354B safetensors. Verified 2026-08-23.'
+  },
+  'lfm2.5_230m': {
+    label: 'LFM 2.5 230M',
+    hfId: 'LiquidAI/LFM2.5-230M',
+    totalParamsB: 0.23,
+    vocabSize: 65536,
+    hiddenSize: 1024,
+    numLayers: 14,
+    numHeads: 16,
+    numKVHeads: 8,
+    headDim: 64,
+    intermediateSize: 2560,
+    routingType: 'dense',
+    architectureType: 'hybrid_ssm_transformer',
+    attentionMechanism: 'hybrid_ssm',
+    fullAttentionLayers: 6,
+    contextLength: 128000,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/LiquidAI/LFM2.5-230M/blob/main/config.json',
+    specNote: 'config.json: 14 layers (6 full attention, 8 short-conv), 16 Q / 8 KV heads at 64; 0.23B safetensors. Verified 2026-08-23.'
+  },
+  // Mistral Ministral 3 (3B dense with a vision tower in the checkpoint)
+  'ministral_3_3b': {
+    label: 'Ministral 3 3B',
+    hfId: 'mistralai/Ministral-3-3B-Instruct-2512',
+    totalParamsB: 3.85,
+    vocabSize: 131072,
+    hiddenSize: 3072,
+    numLayers: 26,
+    numHeads: 32,
+    numKVHeads: 8,
+    headDim: 128,
+    intermediateSize: 9216,
+    routingType: 'dense',
+    attentionMechanism: 'grouped_query',
+    contextLength: 262144,
+    hasVision: true,
+    nativeBytesPerParam: 1.05,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512/blob/main/config.json',
+    specNote: 'config.json: 26 layers, 32 Q / 8 KV heads at 128, 9216 FFN; 3.85B safetensors including the vision tower, shipped FP8 (3.0B FP8 + 0.8B BF16). Verified 2026-08-23.'
+  },
+  // NVIDIA Nemotron Nano 9B v2 (Mamba2 hybrid: 4 attention layers in 56)
+  'nemotron_nano_9b_v2': {
+    label: 'Nemotron Nano 9B v2',
+    hfId: 'nvidia/NVIDIA-Nemotron-Nano-9B-v2',
+    totalParamsB: 8.89,
+    vocabSize: 131072,
+    hiddenSize: 4480,
+    numLayers: 56,
+    numHeads: 40,
+    numKVHeads: 8,
+    headDim: 128,
+    intermediateSize: 15680,
+    routingType: 'dense',
+    architectureType: 'hybrid_ssm_transformer',
+    attentionMechanism: 'hybrid_ssm',
+    fullAttentionLayers: 4,
+    contextLength: 131072,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-9B-v2/blob/main/config.json',
+    specNote: 'config.json: 56 layers, hybrid_override_pattern with 4 attention (*) layers, Mamba2 (M) and MLP (-) for the rest; 40 Q / 8 KV heads at 128; 8.89B safetensors. Verified 2026-08-23.'
+  },
+  // Arcee Trinity Mini (26B MoE, 3B active; sliding-window mix with global attention every 4th layer)
+  'trinity_mini': {
+    label: 'Trinity Mini 26B A3B',
+    hfId: 'arcee-ai/Trinity-Mini',
+    totalParamsB: 26.1,
+    activeParamsB: 3,
+    vocabSize: 200192,
+    hiddenSize: 2048,
+    numLayers: 32,
+    numHeads: 32,
+    numKVHeads: 4,
+    headDim: 128,
+    intermediateSize: 6144,
+    moeIntermediateSize: 1024,
+    isMoE: true,
+    numExperts: 128,
+    activeExperts: 8,
+    routingType: 'moe',
+    attentionMechanism: 'sliding_window',
+    slidingWindow: 2048,
+    fullAttentionLayers: 8,
+    contextLength: 131072,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/arcee-ai/Trinity-Mini/blob/main/config.json',
+    specNote: 'config.json: 32 layers (global attention every 4th, 2048 sliding window elsewhere; 2 dense layers), 32 Q / 4 KV heads at 128, 128 experts with 8 routed + 1 shared; 26.1B safetensors, model card says 3B active. Verified 2026-08-23.'
+  },
   'lfm2.5_2.6b': {
     label: 'LFM 2.5 2.6B',
     hfId: 'LiquidAI/LFM2.5-2.6B',
@@ -3538,6 +3788,7 @@ const DEVICE_TEMPLATES = {
 
   // Intel
   'Intel Arc Pro B70': {
+    backend: 'sycl',
     labUrl: 'https://neural.download/',
     labLabel: 'neural.download lab',
     labNote: 'Measured recipes and benchmarks for Intel Arc Pro B-series cards (community lab)',
@@ -3563,6 +3814,7 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'Intel Arc Pro B65': {
+    backend: 'sycl',
     labUrl: 'https://neural.download/',
     labLabel: 'neural.download lab',
     labNote: 'Measured recipes and benchmarks for Intel Arc Pro B-series cards (community lab)',
@@ -3585,6 +3837,7 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'Intel Arc Pro B60': {
+    backend: 'sycl',
     labUrl: 'https://neural.download/',
     labLabel: 'neural.download lab',
     labNote: 'Measured recipes and benchmarks for Intel Arc Pro B-series cards (community lab)',
@@ -3607,6 +3860,7 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'Intel Arc Pro B50': {
+    backend: 'sycl',
     name: 'Intel Arc Pro B50 16GB',
     memoryGB: 16,
     localBandwidthGBps: 224,
@@ -3626,6 +3880,7 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'Intel Arc B580': {
+    backend: 'sycl',
     name: 'Intel Arc B580 12GB',
     memoryGB: 12,
     localBandwidthGBps: 456,            // GDDR6 19 Gbps x 192-bit
@@ -3643,6 +3898,7 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'Intel Arc A770': {
+    backend: 'sycl',
     name: 'Intel Arc A770 16GB',
     memoryGB: 16,
     localBandwidthGBps: 560,            // GDDR6 17.5 Gbps x 256-bit
@@ -3660,6 +3916,7 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'Intel Arc A750': {
+    backend: 'sycl',
     name: 'Intel Arc A750 8GB',
     memoryGB: 8,
     localBandwidthGBps: 512,
@@ -3998,6 +4255,7 @@ const DEVICE_TEMPLATES = {
     type: 'CPU'
   },
   'Arc A770': {
+    backend: 'sycl',
     name: 'Intel Arc A770 16GB',
     memoryGB: 16,
     localBandwidthGBps: 560,
@@ -4013,6 +4271,7 @@ const DEVICE_TEMPLATES = {
     type: 'GPU'
   },
   'Arc A380': {
+    backend: 'sycl',
     name: 'Intel Arc A380 6GB',
     memoryGB: 6,
     localBandwidthGBps: 192,
@@ -4698,7 +4957,9 @@ function getBackendEfficiency(frameworkProfile, device) {
     return {
         bandwidthEfficiency: Number.isFinite(overrides.bandwidthEfficiency) ? overrides.bandwidthEfficiency : frameworkProfile.bandwidthEfficiency,
         kvReadEfficiency: Number.isFinite(overrides.kvReadEfficiency) ? overrides.kvReadEfficiency : (frameworkProfile.kvReadEfficiency || frameworkProfile.bandwidthEfficiency),
-        moeOverheadScale: Number.isFinite(overrides.moeOverheadScale) && overrides.moeOverheadScale > 0 ? overrides.moeOverheadScale : 1
+        moeOverheadScale: Number.isFinite(overrides.moeOverheadScale) && overrides.moeOverheadScale > 0 ? overrides.moeOverheadScale : 1,
+        specDraftOverheadScale: Number.isFinite(overrides.specDraftOverheadScale) && overrides.specDraftOverheadScale > 0 ? overrides.specDraftOverheadScale : 1,
+        batchedComputeScale: Number.isFinite(overrides.batchedComputeScale) && overrides.batchedComputeScale > 0 ? overrides.batchedComputeScale : 1
     };
 }
 
@@ -5609,7 +5870,7 @@ function calculateDecodeComputeSeconds(modelConfig, device, frameworkProfile, co
     // weight stream; efficiency climbs from about half the batched
     // ceiling toward it as more sequences share each weight tile.
     const ramp = Math.max(1, frameworkProfile.batchRampSequences || 24);
-    const maxEfficiency = frameworkProfile.batchedComputeEfficiency || 0.45;
+    const maxEfficiency = (frameworkProfile.batchedComputeEfficiency || 0.45) * getBackendEfficiency(frameworkProfile, device).batchedComputeScale;
     const efficiency = Math.max(0.02, maxEfficiency * (0.5 + 0.5 * (batchSize / (batchSize + ramp))));
     return flops / (Math.max(tflops, 0.001) * 1e12 * efficiency);
 }
@@ -5723,7 +5984,7 @@ function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, de
         // ~1.5 ms on llama.cpp, a few hundred microseconds on
         // graph-captured engines. Block drafters pay it once per step,
         // but llama.cpp's unmerged DFlash path is still immature.
-        const draftStepOverhead = ((frameworkProfile.specDraftStepOverheadUs || 500) * deviceScale) / 1e6;
+        const draftStepOverhead = ((frameworkProfile.specDraftStepOverheadUs || 500) * deviceScale * getBackendEfficiency(frameworkProfile, device).specDraftOverheadScale) / 1e6;
         // Engines without batched drafting run the draft per slot.
         const draftBatchScale = frameworkProfile.specBatchedDrafting === false ? batchSize : 1;
         let draftSeconds = 0;
@@ -6896,9 +7157,13 @@ function calculateGoldCaseProjection(reference) {
     // doubled the RMS log error of those rows.
     const promptTokens = Number.isFinite(reference.promptTokens) ? reference.promptTokens : null;
     const outputTokens = Number.isFinite(reference.outputTokens) && reference.outputTokens > 0 ? reference.outputTokens : 128;
-    const decodeDepth = promptTokens === null
-        ? Math.max(1, contextLength - 1)
-        : Math.max(1, promptTokens + outputTokens / 2);
+    // An explicit llama-bench depth (-d N, or the prompt half of -pg N,M)
+    // overrides the prompt-length rule.
+    const decodeDepth = Number.isFinite(reference.decodeDepthTokens)
+        ? Math.max(1, reference.decodeDepthTokens + outputTokens / 2)
+        : (promptTokens === null
+            ? Math.max(1, contextLength - 1)
+            : Math.max(1, promptTokens + outputTokens / 2));
     const kvDtype = String(reference.kvCacheDtype || '').toLowerCase();
     const kvCacheCompression = /q8|fp8|int8|e4m3|e5m2/.test(kvDtype) ? 'q8_kv' : (/q4/.test(kvDtype) ? 'q4_kv' : 'none');
     // A recorded peak residency below the device pool proves the run
@@ -6909,13 +7174,13 @@ function calculateGoldCaseProjection(reference) {
     const peakVramGb = Number(reference.peakVramGb) || 0;
     const uniformResidentGB = preset.totalParamsB * getStoredBytesPerParam({ ...preset, quantizationType: reference.quantKey, quantFormat: reference.quantization }, DTYPE_SIZES[reference.quantKey]);
     // The proof only holds when the recorded residency is close to the
-    // uniform estimate (dynamic quants run ~10-30% under it). A peak far
+    // uniform estimate (dynamic "UD" quants run 10-40% under it). A peak far
     // below it means weights were not resident: experts pinned by
     // --n-cpu-moe or moved by llama.cpp's automatic fit, or a dense
     // model spilled to RAM — the overflow physics models those instead.
     const cpuMoeLayers = reference.cpuMoeLayers === 'all' ? 'all' : (Number(reference.cpuMoeLayers) > 0 ? Number(reference.cpuMoeLayers) : null);
     const residentWeightsGB = !cpuMoeLayers && peakVramGb > 0 && peakVramGb <= totalDeviceMemoryGB &&
-        uniformResidentGB > totalDeviceMemoryGB * 0.96 && peakVramGb >= uniformResidentGB * 0.7
+        uniformResidentGB > totalDeviceMemoryGB * 0.96 && peakVramGb >= uniformResidentGB * 0.6
         ? Math.min(uniformResidentGB, peakVramGb * 0.92)
         : null;
     const modelConfig = normalizeModelConfig({
