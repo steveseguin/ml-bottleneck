@@ -118,6 +118,10 @@ Visit the [GitHub repository](https://github.com/steveseguin/ml-bottleneck) to g
 
 Created by [Steve Seguin](https://github.com/steveseguin)
 
+## 📄 License
+
+MIT — see [LICENSE](LICENSE). The SDK on npm (`@mlbottleneck/engine`) ships under the same license.
+
 ## 🌟 Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=steveseguin/ml-bottleneck&type=Date)](https://star-history.com/#steveseguin/ml-bottleneck&Date)

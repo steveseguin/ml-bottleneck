@@ -15,6 +15,7 @@
     "planner",
     "benchmark"
   ],
+  "license": "MIT",
   "author": "Steve Seguin (https://github.com/steveseguin)",
   "homepage": "https://mlbottleneck.com",
   "repository": {
