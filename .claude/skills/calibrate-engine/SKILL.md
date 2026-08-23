@@ -72,10 +72,11 @@ Each constant has one physical meaning. If you find yourself wanting a constant 
      beats physics on MLX/oMLX usually is one that slipped through — extend the detector.
    - Prompt-processing rates above the device's dense tensor peak are prompt-cache hits; the refresh
      script nulls them (`plausiblePrefillRate`) so they never calibrate prefill.
-   - `--n-cpu-moe N` / `-ncmoe N` rows carry `cpuMoeLayers`; the projection pins that offload. A MoE
-     checkpoint larger than the card with a low `peakVramGb` was auto-fit by llama.cpp (experts on the
-     CPU), not a small quant — the residency shortcut applies to dense models only. A recorded
-     `memoryGB` below the template's (3 GB 1060) is the real pool.
+   - `--n-cpu-moe N` / `-ncmoe N` rows carry `cpuMoeLayers`; the projection pins that offload. The
+     peak-VRAM residency shortcut only applies when the peak is ≥70% of the uniform size estimate; a
+     MoE checkpoint far larger than the card with a low `peakVramGb` was auto-fit by llama.cpp (experts
+     on the CPU), not a small quant. A recorded `memoryGB` below the template's (3 GB 1060) is the real
+     pool.
    A run that beats the **physical roofline** (>1.05×) is always one of these or a preset error.
    Fix the data/preset; never widen a tolerance or lower a ceiling.
 3. **Fit**: `node scripts/fit-decode-constants.mjs --grid "FRAMEWORK_PROFILES.llama_cpp.perLayerOverheadUs=35,45,55" "LAYER_OVERHEAD_SCALES.moeExtra=0.4,0.6" …`

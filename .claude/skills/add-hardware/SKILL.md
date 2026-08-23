@@ -31,7 +31,7 @@ If a figure is unpublished (e.g. NVIDIA gives "AI TOPS" not dense TFLOPS), deriv
   },
   powerWatts: 575,                  // TDP for the power/cost card (estimateDeviceTDP falls back to name heuristics)
   kernelOverheadScale: 1.5,         // ONLY for non-CUDA stacks: AMD ROCm/Vulkan 1.5, Intel SYCL/XPU 2.0; Apple M5 0.6 (fit on community runs)
-  prefillEfficiencyScale: 0.45,     // ONLY when measured pp rates show immature prefill kernels (RDNA4 0.45, 780M 0.2, V100 0.15, M5 0.6)
+  prefillEfficiencyScale: 0.45,     // ONLY when measured pp rates show immature prefill kernels (RDNA4 0.45, 780M 0.2, V100 0.15); a per-runtime map when only some backends miss the hardware's matrix paths (M5: { llama_cpp: 0.8, ollama: 0.8, default: 1 })
   backend: 'metal',                 // ONLY Apple: lets runtimes apply their Metal efficiency (llama.cpp streams at 0.66x peak, MoE layers cost 6x)
   sourceUrl: 'https://…',
   specStatus: 'verified',           // 'verified' | 'preview'
@@ -51,9 +51,10 @@ Apple M1–M4 = 1, Apple M5 = 0.6 (faster GPU dispatch, fit on 11 MLX rows). Nev
 one model.
 
 `prefillEfficiencyScale` (default 1) scales the prompt-processing efficiency only — for backends whose
-GEMM/flash-attention paths are immature (RDNA4 WMMA 0.45, iGPU 780M 0.2, Volta 0.15, Apple M5 Metal
-tensor paths 0.6). Fit it on measured `pp` rates (`scripts/../prefill-check.mjs` style: obs/pred on
-the gold rows with `prefillTokS`), never on decode.
+GEMM/flash-attention paths are immature (RDNA4 WMMA 0.45, iGPU 780M 0.2, Volta 0.15). It may be a
+per-runtime map (`getDevicePrefillScale`): Apple M5 uses `{ llama_cpp: 0.8, ollama: 0.8, default: 1 }`
+because llama.cpp's Metal backend does not reach the Neural Accelerators MLX uses. Fit it on measured
+`pp` rates (obs/pred on the gold rows with `prefillTokS`), never on decode.
 
 `backend: 'metal'` marks Apple templates. Framework profiles carry per-backend overrides
 (`FRAMEWORK_PROFILES.llama_cpp.backends.metal = { bandwidthEfficiency: 0.66, moeOverheadScale: 6 }`):

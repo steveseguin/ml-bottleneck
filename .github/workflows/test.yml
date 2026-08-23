@@ -18,4 +18,14 @@ jobs:
       # dependencies are needed. The gold audit exits non-zero when the
       # calibration guard leaves its envelope.
       - run: npm test
+      # npm test re-stamps the engine cache key and rebuilds dist/. If that
+      # changed anything, the commit shipped a stale bundle/cache key: the
+      # live site serves the committed files, not what CI built.
+      - name: Committed engine cache key and SDK bundle are current
+        run: |
+          if ! git diff --quiet -- index.html dist; then
+            echo "::error::index.html / dist are out of date. Run 'npm test' locally and commit the result."
+            git --no-pager diff --stat -- index.html dist
+            exit 1
+          fi
       - run: npm run audit:gold

@@ -1325,11 +1325,20 @@ function createEngine(options = {}) {
         numKVHeads: 8
       },
       'deepseek_r1_distill_8b': {
-        totalParamsB: 8,
+        // Key kept for saved plans; this is the Qwen2.5-7B-based distill (7.6B), not the Llama-8B one.
+        label: 'DeepSeek R1 Distill Qwen 7B',
+        hfId: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
+        totalParamsB: 7.6,
+        vocabSize: 152064,
         hiddenSize: 3584,
         numLayers: 28,
         numHeads: 28,
-        numKVHeads: 4
+        numKVHeads: 4,
+        intermediateSize: 18944,
+        contextLength: 131072,
+        specStatus: 'verified',
+        specSourceUrl: 'https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B/blob/main/config.json',
+        specNote: 'Qwen2.5-7B architecture (3584 hidden, 28 layers, 28 Q / 4 KV heads, 18944 FFN) verified against config.json.'
       },
       'deepseek_r1_distill_1.5b': {
         totalParamsB: 1.5,
@@ -3908,7 +3917,7 @@ function createEngine(options = {}) {
           'q4': 60
         },
         kernelOverheadScale: 0.6,       // M5 GPU dispatch is ~40% cheaper than M3/M4-class Metal (fit on 11 community MLX rows: 35B-A3B 134 tok/s, gpt-oss-20b 137 tok/s)
-        prefillEfficiencyScale: 0.6,    // llama.cpp/MLX reach ~60% of the CUDA-class efficiency on the new Metal tensor paths (fit on 11 community pp rates)
+        prefillEfficiencyScale: { llama_cpp: 0.8, ollama: 0.8, default: 1 },   // llama.cpp's Metal backend does not reach the M5 Neural Accelerators MLX uses (fit on community pp rates)
         powerWatts: 80,
         sourceUrl: 'https://www.apple.com/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/',
         specStatus: 'derived',
@@ -3929,7 +3938,7 @@ function createEngine(options = {}) {
           'q4': 120
         },
         kernelOverheadScale: 0.6,       // M5 GPU dispatch is ~40% cheaper than M3/M4-class Metal (fit on 11 community MLX rows: 35B-A3B 134 tok/s, gpt-oss-20b 137 tok/s)
-        prefillEfficiencyScale: 0.6,    // same Metal tensor-path maturity as the M5 Pro
+        prefillEfficiencyScale: { llama_cpp: 0.8, ollama: 0.8, default: 1 },   // llama.cpp's Metal backend does not reach the M5 Neural Accelerators MLX uses (fit on community pp rates)
         sourceUrl: 'https://www.apple.com/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/',
         specStatus: 'derived',
         specNote: 'Apple confirms 128 GB and 614 GB/s. Apple publishes no tensor TFLOPS; 120 TFLOPS is derived from the >4x-M4-Max claim and measured MLX prefill rates (gemma-3 4B: 3,400 tok/s at 256 tokens).',
@@ -5156,13 +5165,38 @@ function createEngine(options = {}) {
         const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
         const seqLength = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
         const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
-        const headDim = getHeadDim(modelConfig);
+        const headDim = getPrefillAttentionDim(modelConfig);
         const activeParams = Math.max(getActiveParamsB(modelConfig), 0.001) * 1e9;
         const layerTokens = getAttendedLayerTokens(modelConfig, seqLength);
         // Average causal span is half the prompt; per-layer attended tokens
         // already encode windows and linear layers.
         const scoreFlopsPerToken = 4 * numHeads * headDim * (layerTokens / 2);
         return batchSize * seqLength * ((2 * activeParams) + scoreFlopsPerToken);
+    }
+
+    // A template's prefillEfficiencyScale is a number, or a per-runtime map
+    // ({ llama_cpp: 0.8, default: 1 }) when only some backends miss the
+    // hardware's matrix paths (llama.cpp's Metal backend on Apple M5 does not
+    // use the Neural Accelerators that MLX does).
+    function getDevicePrefillScale(device, frameworkKey) {
+        const raw = device?.prefillEfficiencyScale;
+        const value = raw && typeof raw === 'object'
+            ? (Number.isFinite(raw[frameworkKey]) ? raw[frameworkKey] : raw.default)
+            : raw;
+        return Number.isFinite(value) && value > 0 ? value : 1;
+    }
+
+    // Per-head width for prefill attention FLOPs. MLA prefill runs the
+    // non-absorbed projection: scores over qk_nope + qk_rope, values over
+    // v_head_dim (DeepSeek V3/V4, GLM-5, Kimi: 128 + 64 and 128), so the
+    // 4·heads·dim·positions rule needs their average, not hidden/heads.
+    function getPrefillAttentionDim(modelConfig) {
+        if (modelConfig.attentionMechanism === 'mla' && Number(modelConfig.kvLoraRank) > 0) {
+            const qkDim = (Number(modelConfig.qkNopeHeadDim) || 128) + (Number(modelConfig.qkRopeHeadDim) || 64);
+            const vDim = Number(modelConfig.vHeadDim) || 128;
+            return (qkDim + vDim) / 2;
+        }
+        return getHeadDim(modelConfig);
     }
 
     // Per-head score/value width the decode attention kernel works over.
@@ -5518,8 +5552,9 @@ function createEngine(options = {}) {
         const mode = modelConfig.kvCacheCompression || 'none';
         const base = DECODE_ATTENTION_EFFICIENCY[mode] ?? (mode === 'none' ? DECODE_ATTENTION_EFFICIENCY.none : DECODE_ATTENTION_EFFICIENCY.q4_kv);
         const deviceScale = Number.isFinite(device?.kernelOverheadScale) && device.kernelOverheadScale > 0 ? device.kernelOverheadScale : 1;
-        // Backends with slower dispatch also run the attention kernels slower.
-        return base / Math.max(deviceScale, 0.5);
+        // Backends with slower dispatch also run the attention kernels slower;
+        // a faster-dispatch backend (Apple M5) is not credited without data.
+        return base / Math.max(deviceScale, 1);
     }
 
     function calculateDecodeAttentionSeconds(modelConfig, device, frameworkProfile, computeScale = 1) {
@@ -6266,7 +6301,7 @@ function createEngine(options = {}) {
     			const moePrefillFactor = modelConfig.isMoE ? Math.max(0.25, Math.min(1, Math.sqrt(tokensPerExpert / MOE_PREFILL_TOKENS_PER_EXPERT_REF))) : 1;
     			// Backend kernel maturity for prefill (Volta without FA/MMQ paths,
     			// RDNA WMMA paths, iGPUs) is a template property like kernelOverheadScale.
-    			const devicePrefillScale = Number.isFinite(device?.prefillEfficiencyScale) && device.prefillEfficiencyScale > 0 ? device.prefillEfficiencyScale : 1;
+    			const devicePrefillScale = getDevicePrefillScale(device, frameworkProfile.key);
     			const effectivePrefillComputeTime = theoreticalPrefillComputeTime /
     				Math.max(frameworkProfile.prefillEfficiency * prefillLengthEfficiency * moePrefillFactor * devicePrefillScale * optimization.prefillMultiplier, 0.02);
     			// Every prefill step still pays the per-layer launch floor once.
@@ -6849,13 +6884,14 @@ function createEngine(options = {}) {
         const totalDeviceMemoryGB = caseDevices.reduce((sum, device) => sum + (device.memoryGB || 0), 0);
         const peakVramGb = Number(reference.peakVramGb) || 0;
         const uniformResidentGB = preset.totalParamsB * getStoredBytesPerParam({ ...preset, quantizationType: reference.quantKey, quantFormat: reference.quantization }, DTYPE_SIZES[reference.quantKey]);
-        // With experts on the CPU — pinned by --n-cpu-moe, or moved by
-        // llama.cpp's automatic fit for a MoE checkpoint larger than the
-        // card — a low peak VRAM says nothing about the checkpoint's size;
-        // the expert-offload physics models the run instead. The residency
-        // proof stays for dense mixed-precision quants only.
+        // The proof only holds when the recorded residency is close to the
+        // uniform estimate (dynamic quants run ~10-30% under it). A peak far
+        // below it means weights were not resident: experts pinned by
+        // --n-cpu-moe or moved by llama.cpp's automatic fit, or a dense
+        // model spilled to RAM — the overflow physics models those instead.
         const cpuMoeLayers = reference.cpuMoeLayers === 'all' ? 'all' : (Number(reference.cpuMoeLayers) > 0 ? Number(reference.cpuMoeLayers) : null);
-        const residentWeightsGB = !cpuMoeLayers && !preset.isMoE && peakVramGb > 0 && peakVramGb <= totalDeviceMemoryGB && uniformResidentGB > totalDeviceMemoryGB * 0.96
+        const residentWeightsGB = !cpuMoeLayers && peakVramGb > 0 && peakVramGb <= totalDeviceMemoryGB &&
+            uniformResidentGB > totalDeviceMemoryGB * 0.96 && peakVramGb >= uniformResidentGB * 0.7
             ? Math.min(uniformResidentGB, peakVramGb * 0.92)
             : null;
         const modelConfig = normalizeModelConfig({

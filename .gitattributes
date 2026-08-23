@@ -1,0 +1,3 @@
+# Generated files: collapse their diffs in reviews.
+dist/** linguist-generated=true
+data/localmaxxing-snapshot.js linguist-generated=true
