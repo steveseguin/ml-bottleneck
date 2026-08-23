@@ -55,10 +55,11 @@ const { ceiling } = engine.predict({ model: 'qwen3.6_35b_a3b', hardware: 'AMD St
 | `quantization` | string | Family `float32 | float16 | bfloat16 | int8 | fp8 | q6 | q5 | q4 | q3 | q2` or a format label (`Q4_K_M`, `UD-IQ4_XS`, `MXFP4`, `NVFP4`, `AWQ`, `Q8_0`, …) — formats carry their real bits-per-weight. Default `q4`. |
 | `runtime` | string | `auto` (llama.cpp on consumer GPUs, vLLM on data-center NVIDIA, SGLang on Instinct/Gaudi/TPU, MLX on Macs), `llama_cpp`, `ollama`, `mlx`, `vllm`, `sglang`, `tensorrt_llm`, `exo`. |
 | `strategy` | string | `auto` (search), `pipeline`, `tensor`, `data`, `expert`, `sequence`, `context`, `hybrid_tp_pp`, `hybrid_tp_dp`. |
-| `batchSize` | number | Concurrent sequences. `decode.tokensPerSecond` is the aggregate; `decode.perUserTokensPerSecond` is per sequence. |
+| `batchSize` | number | Concurrent sequences. `decode.tokensPerSecond` is the aggregate across the batch; `decode.perUserTokensPerSecond` (and `msPerToken`) is what one sequence sees. |
 | `promptTokens`, `outputTokens` | number | The workload. KV memory is sized for prompt + output; the decode rate is read at prompt + output/2. |
 | `speculation` | object | `{ method: 'mtp' | 'dflash' | 'dspark' | 'eagle3' | 'draft_model' | 'ngram' | 'suffix', tokens?, acceptance?, draftRatio? }`. Omitted fields use the method's published defaults. Draft weights and draft KV count toward memory; gains shrink with batch size and context. |
-| `kvCacheCompression` | string | `none` or a KV compression mode key from the site. |
+| `kvCacheCompression` | string | `none`, `q8_kv`, `q4_kv` (llama.cpp `-ctk q8_0` / `q4_0`, vLLM fp8 KV). Compressed KV reads fewer bytes but the decode attention kernel pays a dequantization cost, so deep contexts do not get the full byte saving. |
+| `cpuMoeLayers` | number | MoE only: pin this many layers' routed experts to system RAM (llama.cpp `--n-cpu-moe N`). Default: only what memory forces. |
 | `usage` | object | `{ hoursPerDay, costPerKwh }` for the power/cost estimate. |
 | `includeRaw` | boolean | Attach the full per-device engine output under `result.raw`. |
 
@@ -73,7 +74,7 @@ const { ceiling } = engine.predict({ model: 'qwen3.6_35b_a3b', hardware: 'AMD St
   ceiling: { physicalTokensPerSecond, latencyBoundTokensPerSecond, optimizedTokensPerSecond,
              expectedTokensPerSecond, engineTokensPerSecond, correctionFactor, confidence, peers, verifiedPeers },
   memory:  { modelSizeGB, residentWeightsGB, kvCacheGB, availableGB },
-  bottleneck: 'memory' | 'compute' | 'runtime' | 'coordination' | ...,
+  bottleneck: 'memory' | 'compute' | 'runtime' | 'coordination' | ...,   // devices[].coreBinding adds 'attention' for deep contexts
   power:   { watts, tdpWatts, costPerDay, costPer1KTokens },
   devices: [{ name, template, residentWeightGB, kvCacheGB, hasOverflow, overflowMode,
               decodeTokensPerSecond, prefillTokensPerSecond, rooflineTokensPerSecond,

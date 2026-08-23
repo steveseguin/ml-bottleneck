@@ -247,3 +247,27 @@ test('sanity matrix: speculation raises decode, costs memory, and stops helping 
   assert.ok(gainSingle > 1.2, `speculation gain at batch 1 was ${gainSingle}`);
   assert.ok(gainBatch < gainSingle, `speculation gain should shrink under batching (${gainBatch} vs ${gainSingle})`);
 });
+
+test('a single device is not a pipeline: the system rate equals the device rate at any batch', () => {
+  const app = loadApp();
+  for (const batch of [1, 4, 32]) {
+    const result = run(app, { preset: 'llama3_8b', hardware: 'RTX 4090', quant: 'q4', runtime: 'llama_cpp', strategy: 'pipeline', batch });
+    const plan = app.hooks.getActivePlanOutcome();
+    assert.ok(Math.abs(plan.genericSystemRate - result.metrics[0].decodeTokensPerSecond) < 1e-6,
+      `batch ${batch}: system ${plan.genericSystemRate} vs device ${result.metrics[0].decodeTokensPerSecond}`);
+  }
+});
+
+test('decode attention is charged at long context: deep contexts slow down more than KV bytes alone imply', () => {
+  const app = loadApp();
+  // Llama 3 8B, q4_0 KV on a 3060 Ti: measured 72 tok/s short, 25 tok/s at 65k, 19 tok/s at 98k (llama-bench, community row).
+  const short = run(app, { preset: 'llama3_8b', hardware: 'RTX 3060 Ti', quant: 'q4', runtime: 'llama_cpp', prompt: 512, output: 128, kv: 'q4_kv' });
+  const deep = run(app, { preset: 'llama3_8b', hardware: 'RTX 3060 Ti', quant: 'q4', runtime: 'llama_cpp', prompt: 65536, output: 128, kv: 'q4_kv' });
+  const deeper = run(app, { preset: 'llama3_8b', hardware: 'RTX 3060 Ti', quant: 'q4', runtime: 'llama_cpp', prompt: 98304, output: 128, kv: 'q4_kv' });
+  const rate = result => result.metrics[0].decodeTokensPerSecond;
+  assert.ok(rate(short) > 55 && rate(short) < 110, `short ${rate(short)}`);
+  assert.ok(rate(deep) > 14 && rate(deep) < 36, `65k ${rate(deep)}`);
+  assert.ok(rate(deeper) > 10 && rate(deeper) < 28, `98k ${rate(deeper)}`);
+  assert.equal(deep.metrics[0].decodeTimeBreakdown.coreBinding, 'attention', 'deep context is attention-bound, not bandwidth-bound');
+  assert.ok(deep.metrics[0].decodeTimeBreakdown.attentionComputeMs > deep.metrics[0].decodeTimeBreakdown.weightReadMs);
+});

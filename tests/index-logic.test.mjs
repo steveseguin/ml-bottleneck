@@ -1238,7 +1238,7 @@ test('four-B70 DeepSeek plan uses benchmark peers without hidden case-specific m
   // Measured: 40-44 tok/s on this exact rig. The generic engine now lands
   // within ~12% of that on its own (fixed per-layer overhead on a 43-layer
   // MoE over SYCL), so the peer correction is mild rather than the old 4x.
-  assert.ok(plan.calibration.expectedTokS >= 41.45 && plan.calibration.expectedTokS <= 41.75,
+  assert.ok(plan.calibration.expectedTokS >= 40.65 && plan.calibration.expectedTokS <= 40.95,
     `projected real was ${plan.calibration.expectedTokS} tok/s`);
   assert.ok(plan.calibration.optimizedTokS >= 183.5 && plan.calibration.optimizedTokS <= 184.0,
     `optimized target was ${plan.calibration.optimizedTokS} tok/s`);
@@ -1260,13 +1260,13 @@ test('four-B70 DeepSeek plan uses benchmark peers without hidden case-specific m
 
   app.hooks.updateSystemAnalysis();
   const analysisHtml = app.elements.get('systemAnalysis').innerHTML;
-  assert.match(analysisHtml, /recommendation-label">Decode Rate<\/div>\s*<div class="recommendation-value">41\.6 tok\/s/,
+  assert.match(analysisHtml, /recommendation-label">Decode Rate<\/div>\s*<div class="recommendation-value">40\.8 tok\/s/,
     'recommended setup must use the projected primary result');
-  assert.match(analysisHtml, /phase-summary-label">Decode<\/div>\s*<div class="phase-summary-value">41\.6 tok\/s/,
+  assert.match(analysisHtml, /phase-summary-label">Decode<\/div>\s*<div class="phase-summary-value">40\.8 tok\/s/,
     'workflow timing must use the projected primary result');
   assert.doesNotMatch(analysisHtml, /observed stack efficiency/,
     'a mild correction must not be presented as a stack-efficiency problem');
-  assert.match(app.elements.get('headerResultRate').textContent, /41\.6 tok\/s \/ 184 optimized/,
+  assert.match(app.elements.get('headerResultRate').textContent, /40\.8 tok\/s \/ 184 optimized/,
     'the compact result strip must label the optimized target, not the physical roofline');
 });
 
@@ -1280,7 +1280,7 @@ test('supplied execution assumptions reproduce their arithmetic without becoming
   app.setValue('executionProfileName', 'Unverified mixed-precision hypothesis');
   const baseline = app.hooks.getActivePlanOutcome();
 
-  assert.ok(baseline.calibration.expectedTokS >= 43.70 && baseline.calibration.expectedTokS <= 43.80,
+  assert.ok(baseline.calibration.expectedTokS >= 42.90 && baseline.calibration.expectedTokS <= 43.10,
     `supplied-input projection was ${baseline.calibration.expectedTokS} tok/s`);
   assert.ok(baseline.calibration.physicalTokS >= 158.90 && baseline.calibration.physicalTokS <= 159.00,
     `official-peak physical roofline was ${baseline.calibration.physicalTokS} tok/s`);
@@ -1297,7 +1297,7 @@ test('supplied execution assumptions reproduce their arithmetic without becoming
 
   assert.ok(Math.abs(slower.calibration.physicalTokS - baseline.calibration.physicalTokS) < 0.0001,
     'supplied sustained bandwidth must not lower the official-spec physical roofline');
-  assert.ok(slower.calibration.expectedTokS >= 39.70 && slower.calibration.expectedTokS <= 39.80,
+  assert.ok(slower.calibration.expectedTokS >= 39.05 && slower.calibration.expectedTokS <= 39.25,
     `400 GB/s sustained projection was ${slower.calibration.expectedTokS} tok/s`);
   assert.ok(slower.calibration.expectedTokS < baseline.calibration.expectedTokS);
 
@@ -1354,14 +1354,14 @@ test('AI handoff and Plan JSON distinguish estimates, targets, and physical boun
   assert.equal(payload.execution.profile.provenance, 'planner-estimate');
   assert.equal(payload.hardware.devices[0].officialPeakMemoryBandwidthGBps, 608);
   assert.equal(payload.hardware.devices[0].sustainedMemoryBandwidthGBps, null);
-  assert.ok(payload.prediction.primary.decodeTokensPerSecond >= 41.45 && payload.prediction.primary.decodeTokensPerSecond <= 41.75);
-  assert.ok(payload.prediction.primary.millisecondsPerToken >= 23.9 && payload.prediction.primary.millisecondsPerToken <= 24.2);
+  assert.ok(payload.prediction.primary.decodeTokensPerSecond >= 40.65 && payload.prediction.primary.decodeTokensPerSecond <= 40.95);
+  assert.ok(payload.prediction.primary.millisecondsPerToken >= 24.4 && payload.prediction.primary.millisecondsPerToken <= 24.65);
   assert.ok(payload.prediction.primary.benchmarkCorrectionFactor >= 0.86 && payload.prediction.primary.benchmarkCorrectionFactor <= 0.89);
   assert.ok(payload.prediction.optimizedTarget.decodeTokensPerSecond >= 183.5 && payload.prediction.optimizedTarget.decodeTokensPerSecond <= 184.0);
   assert.ok(payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond >= 232.2 && payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond <= 232.5);
   assert.ok(payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline >= 0.78 && payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline <= 0.80);
   assert.ok(payload.prediction.physicalRoofline.decodeTokensPerSecond >= 389.3 && payload.prediction.physicalRoofline.decodeTokensPerSecond <= 389.7);
-  assert.match(handoff, /41\.5\d tok\/s projected real/);
+  assert.match(handoff, /40\.7\d tok\/s projected real/);
   assert.match(handoff, /183\.7\d+ tok\/s optimized/);
   assert.match(handoff, /389\.5\d+ tok\/s physical roofline/);
   assert.match(handoff, /Profile provenance: planner-estimate/);

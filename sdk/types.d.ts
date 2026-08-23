@@ -64,7 +64,9 @@ export interface PredictRequest {
   batchSize?: number;
   promptTokens?: number;
   outputTokens?: number;
-  kvCacheCompression?: 'none' | string;
+  kvCacheCompression?: 'none' | 'q8_kv' | 'q4_kv' | string;
+  /** MoE only: pin this many layers' routed experts to system RAM (llama.cpp --n-cpu-moe N). */
+  cpuMoeLayers?: number;
   optimization?: 'none' | 'speculative' | string;
   speculation?: SpeculationRequest;
   usage?: { hoursPerDay?: number; costPerKwh?: number };
@@ -85,8 +87,10 @@ export interface DeviceSummary {
   prefillTokensPerSecond: number | null;
   rooflineTokensPerSecond: number | null;
   dominant: string | null;
+  /** 'memory' (weight stream), 'compute' (batched GEMMs), or 'attention' (score arithmetic over a deep KV). */
+  coreBinding: 'memory' | 'compute' | 'attention' | null;
   decodeBreakdownMs: {
-    weightRead: number | null; kvRead: number | null; compute: number | null; runtime: number | null;
+    weightRead: number | null; kvRead: number | null; compute: number | null; attentionCompute: number | null; runtime: number | null;
     draft: number | null; coordination: number | null; total: number | null;
   } | null;
 }

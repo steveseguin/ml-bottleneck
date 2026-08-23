@@ -14,11 +14,15 @@ physics being right for each architecture, not from per-model fudge factors. Rea
 Per decode pass (all sequences in a batch advance one token):
 
 ```
-memory   = weights / (BW × bandwidthEfficiency) + KV_read / (BW × kvReadEfficiency)
-compute  = FLOPs(batch, depth) / (TFLOPs × batchedComputeEfficiency(batch))
-overhead = layers × perLayerOverheadUs × attentionScale × (1 + moeExtra × deviceScale) × deviceScale + perTokenOverheadUs × deviceScale
-pass     = max(memory, compute) + overhead + coordination(strategy, interconnect)
+weights   = weight bytes / (BW × bandwidthEfficiency)        gemm = 2N·batch / (TFLOPs × batchedComputeEfficiency(batch))
+kv        = KV bytes / (BW × kvReadEfficiency)               attn = 4·heads·dim·depth·batch / (fp32 TFLOPs × DECODE_ATTENTION_EFFICIENCY[kv dtype] / kernelOverheadScale)
+overhead  = layers × perLayerOverheadUs × attentionScale × (1 + moeExtra × deviceScale × backendMoeScale) × deviceScale + perTokenOverheadUs × deviceScale
+pass      = max(weights, gemm) + max(kv, attn) + overhead + coordination(strategy, interconnect)
 ```
+
+`DECODE_ATTENTION_EFFICIENCY` (fp16 KV 0.2, q8 0.1, q4 0.06 of the fp32 peak) was fit on the long-context
+rows (3060 Ti 65k/98k, V100 46k with f16/q8/q4 KV, 5090 64k); it is what makes deep contexts slow down
+more than their KV bytes. Fit it only on rows deeper than ~16k tokens — short rows cannot see it.
 
 All of it lives in `engine.js` (shared by the site and the SDK; `index.html` only holds the UI).
 
@@ -68,6 +72,10 @@ Each constant has one physical meaning. If you find yourself wanting a constant 
      beats physics on MLX/oMLX usually is one that slipped through — extend the detector.
    - Prompt-processing rates above the device's dense tensor peak are prompt-cache hits; the refresh
      script nulls them (`plausiblePrefillRate`) so they never calibrate prefill.
+   - `--n-cpu-moe N` / `-ncmoe N` rows carry `cpuMoeLayers`; the projection pins that offload. A MoE
+     checkpoint larger than the card with a low `peakVramGb` was auto-fit by llama.cpp (experts on the
+     CPU), not a small quant — the residency shortcut applies to dense models only. A recorded
+     `memoryGB` below the template's (3 GB 1060) is the real pool.
    A run that beats the **physical roofline** (>1.05×) is always one of these or a preset error.
    Fix the data/preset; never widen a tolerance or lower a ceiling.
 3. **Fit**: `node scripts/fit-decode-constants.mjs --grid "FRAMEWORK_PROFILES.llama_cpp.perLayerOverheadUs=35,45,55" "LAYER_OVERHEAD_SCALES.moeExtra=0.4,0.6" …`
@@ -98,8 +106,8 @@ Each constant has one physical meaning. If you find yourself wanting a constant 
 Generic engine (no peer correction): median 0.85–1.15, ≥70% within 1.5×, ≥85% within 2×, ≤2% roofline
 violations. Leave-one-out calibrated model: median 0.9–1.1, ≥85% within 1.5×, ≥92% within 2×,
 optimized-target coverage ≥90%, physical coverage ≥97%. Current state (Aug 2026, 240 rows across 31
-device templates): 1.00 / 84% / 91% / 0 and 1.00 / 88% / 94% / 95% / 100%; prefill (llama.cpp, 129
-rows) 0.98 / 76% / 92%. Do not regress these to make a single row fit. `tests/sanity-matrix.test.mjs`
+device templates): 1.02 / 92% / 96% / 0 (rmsLog 0.37; long-context rows >16k: 0.92, 93% within 1.5×);
+prefill (llama.cpp, 129 rows) 0.98 / 76% / 92%. Do not regress these to make a single row fit. `tests/sanity-matrix.test.mjs`
 adds wide physical bands across ~500 model × hardware × runtime combinations — if it fails after a
 fit, a constant left the plausible range somewhere the gold corpus does not look.
 

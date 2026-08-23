@@ -38,7 +38,9 @@ Fields the engine depends on (keep them when editing the script): `contextLength
 KV *allocation*), `promptTokens`/`outputTokens` (decode *depth* = prompt + output/2, for llama-bench rows
 as well — their tg rates fall as 1/p with `-p`), `kvCacheDtype` (from the API flag or `-ctk`/`--kv-cache-dtype` in the
 command), `splitMode` (`-sm tensor|row` → tensor strategy), `deviceCount` (honours `-ts a/b` and `-tp N`),
-`peakVramGb` (proves residency for mixed-precision quants), `backend`, `command`, `reproducibility`.
+`peakVramGb` (proves residency for dense mixed-precision quants), `cpuMoeLayers` (`--n-cpu-moe N` /
+`-ncmoe N`, or `'all'` for `--cpu-moe` / `-ot exps=CPU`), `memoryGB` (the recorded pool; a smaller SKU
+than the template is honored), `backend`, `command`, `reproducibility`.
 
 ## Adding evidence for a new model or device
 

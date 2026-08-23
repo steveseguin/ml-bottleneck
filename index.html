@@ -43,8 +43,8 @@
 
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
-	<script src="data/localmaxxing-snapshot.js?v=20260823033512"></script>
-	<script src="engine.js?v=febee4049d5c"></script>
+	<script src="data/localmaxxing-snapshot.js?v=20260823051253"></script>
+	<script src="engine.js?v=b1b6e0913271"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -3648,6 +3648,10 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                                             <input id="decodeOverheadMs" class="input" type="number" min="0" step="0.01" placeholder="Estimated from runtime">
                                         </div>
                                         <div>
+                                            <label for="cpuMoeLayers">Expert layers on CPU (<code>--n-cpu-moe</code>)</label>
+                                            <input id="cpuMoeLayers" class="input" type="number" min="0" step="1" placeholder="Only what memory forces">
+                                        </div>
+                                        <div>
                                             <label for="executionProfileName">Profile label</label>
                                             <input id="executionProfileName" class="input" type="text" placeholder="e.g. native mixed XPU">
                                         </div>
@@ -4116,7 +4120,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	                'activeParamsB', 'numExperts', 'activeExperts', 'routingType', 'attentionMechanism',
 	                'parallelismStrategy', 'optimizationMode', 'specMethod', 'specTokens', 'specDraftModel',
 	                'kvCacheCompression', 'runtimeFramework', 'decodeBytesPerPassGB', 'residentWeightsGB', 'decodeOverheadMs',
-	                'executionProfileName'
+	                'cpuMoeLayers', 'executionProfileName'
 	            ];
 	            directFields.forEach(id => setStoredControlValue(id, model[id]));
 	            setStoredControlValue('seqLength', model.seqLength);
@@ -4147,7 +4151,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	            ['parallelismStrategy', 'auto'], ['optimizationMode', 'none'], ['runtimeFramework', 'auto'],
 	            ['kvCacheCompression', 'none'], ['specMethod', 'mtp'], ['specTokens', 3],
 	            ['specAcceptance', 70], ['specDraftRatio', 8], ['specDraftModel', ''],
-	            ['decodeBytesPerPassGB', ''], ['residentWeightsGB', ''], ['decodeOverheadMs', ''], ['executionProfileName', ''],
+	            ['decodeBytesPerPassGB', ''], ['residentWeightsGB', ''], ['decodeOverheadMs', ''], ['cpuMoeLayers', ''], ['executionProfileName', ''],
 	            ['hoursPerDay', 8], ['costPerKwh', 0.12]
 	        ].forEach(([id, value]) => setStoredControlValue(id, value));
 	        updateSpeculativeControls();
@@ -4224,6 +4228,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 decodeBytesPerPassGB: parseOptionalNumber('decodeBytesPerPassGB'),
                 residentWeightsGB: parseOptionalNumber('residentWeightsGB'),
                 decodeOverheadMs: parseOptionalNumber('decodeOverheadMs'),
+                cpuMoeLayers: parseOptionalNumber('cpuMoeLayers'),
                 executionProfileName: document.getElementById('executionProfileName')?.value?.trim() || ''
             };
         }
@@ -4596,6 +4601,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    setStoredControlValue('decodeBytesPerPassGB', '');
 	    setStoredControlValue('residentWeightsGB', '');
 	    setStoredControlValue('decodeOverheadMs', '');
+	    setStoredControlValue('cpuMoeLayers', '');
 	    setStoredControlValue('executionProfileName', '');
 
 	    switch(scenario) {
@@ -5348,7 +5354,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                         <span class="wf-bar" role="img" aria-label="${escapeHtml(shard.device.name || 'device')}: ${formatMsCompact(b.weightReadMs)} weight reads, ${formatMsCompact(b.kvReadMs)} KV reads, ${formatMsCompact(b.computeMs)} exposed compute, ${formatMsCompact(b.runtimeMs)} runtime loss${b.draftMs ? `, ${formatMsCompact(b.draftMs)} draft passes` : ''}, ${formatMsCompact(b.coordinationMs)} coordination; ${formatMsCompact(b.totalMs)} per token">
                             ${seg('is-weights', b.weightReadMs, 'Weight reads')}
                             ${seg('is-kv', b.kvReadMs, 'KV-cache reads')}
-                            ${seg('is-compute', b.computeMs, 'Exposed compute')}
+                            ${seg('is-compute', b.computeMs, (b.attentionComputeMs || 0) > b.computeMs / 2 ? 'Attention over the KV cache (compute-bound at this depth)' : 'Exposed compute')}
                             ${seg('is-runtime', b.runtimeMs, 'Runtime / kernel loss')}
                             ${seg('is-draft', b.draftMs || 0, 'Draft passes (speculation)')}
                             ${seg('is-sync', b.coordinationMs, b.overheadSource === 'supplied' ? 'Supplied non-memory time' : 'Modeled coordination')}
@@ -6290,8 +6296,12 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                     };
                     bottleneckLineClass = 'is-warning';
                     bottleneckText = labels[dominant] || labels.memory;
+                    const attentionBound = dominant === 'compute' && (breakdown.attentionComputeMs || 0) > (breakdown.computeMs || 0) / 2;
+                    if (attentionBound) bottleneckText = 'Projected limit: attention over the KV cache';
                     if (dominant === 'memory') {
                         bottleneckReason = `Weight and KV reads occupy about ${share.toFixed(0)}% of projected decode time. Faster sustained memory bandwidth or fewer bytes per pass has the most leverage.`;
+                    } else if (attentionBound) {
+                        bottleneckReason = `Scoring every token of this context occupies about ${share.toFixed(0)}% of projected decode time — decode attention runs on the vector units, and quantized KV caches pay a dequantization cost on top. Shorter context, an fp16 KV cache, or faster attention kernels has the most leverage.`;
                     } else if (dominant === 'compute') {
                         bottleneckReason = `Arithmetic occupies about ${share.toFixed(0)}% of projected decode time. Faster kernels or more usable low-precision compute has the most leverage.`;
                     } else if (dominant === 'runtime') {
@@ -6821,7 +6831,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             'hiddenSize', 'numLayers', 'numHeads', 'numKVHeads', 'intermediateSize', 'architectureType', 'activeParamsB',
             'numExperts', 'activeExperts', 'routingType', 'attentionMechanism', 'dtype', 'parallelismStrategy',
             'optimizationMode', 'runtimeFramework', 'kvCacheCompression', 'decodeBytesPerPassGB',
-            'residentWeightsGB', 'decodeOverheadMs', 'executionProfileName'
+            'residentWeightsGB', 'decodeOverheadMs', 'cpuMoeLayers', 'executionProfileName'
         ];
 
         function normalizeResultLookup(value) {
@@ -6963,6 +6973,13 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             const quantizationType = normalizeImportedQuantization(quantRaw);
             const contextLength = Number(contextRaw);
             const recognizedContext = Number.isFinite(contextLength) && contextLength > 0 ? Math.round(contextLength) : null;
+            // A recorded workload (plan exports, community benchmark rows) says how deep
+            // the run actually decoded; without it, the configured window is the
+            // only depth we know.
+            const promptRaw = Number(isPlanExport ? payload.workload?.promptTokens : findResultField(payload, ['promptTokens', 'prompt_tokens', 'prompt_eval_count', 'promptEvalCount', 'inputTokens', 'input_tokens']));
+            const outputRaw = Number(isPlanExport ? payload.workload?.outputTokens : findResultField(payload, ['outputTokens', 'output_tokens', 'eval_count', 'evalCount', 'generatedTokens', 'generated_tokens', 'maxTokens', 'max_tokens']));
+            const recognizedPrompt = Number.isFinite(promptRaw) && promptRaw > 0 ? Math.round(promptRaw) : null;
+            const recognizedOutput = Number.isFinite(outputRaw) && outputRaw > 0 ? Math.round(outputRaw) : null;
             const unmatched = [];
             if (modelRaw && !modelPreset) unmatched.push(`model "${resultValueText(modelRaw)}"`);
             if (hardware.unmatched.length) unmatched.push(`hardware "${hardware.unmatched.join(', ')}"`);
@@ -6976,6 +6993,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 runtimeFramework,
                 quantizationType,
                 contextLength: recognizedContext,
+                promptTokens: recognizedPrompt,
+                outputTokens: recognizedOutput,
                 parallelismStrategy: isPlanExport ? payload.execution?.parallelism : null,
                 decodeBytesPerPassGB: hasExplicitExportedProfile ? Number(exportedProfile.aggregateBytesPerDecodePassGB) || null : null,
                 residentWeightsGB: hasExplicitExportedProfile ? Number(exportedProfile.aggregateResidentWeightsGB) || null : null,
@@ -6983,6 +7002,13 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                     ? Number(exportedProfile.exposedNonMemoryOverheadMsPerPass)
                     : null,
                 executionProfileName: hasExplicitExportedProfile ? exportedProfile.name || '' : '',
+                cpuMoeLayers: (() => {
+                    const exported = Number(exportedProfile?.expertLayersOnCpu);
+                    if (Number.isFinite(exported) && exported > 0) return Math.round(exported);
+                    const commandText = typeof engineFlags === 'string' ? engineFlags : (engineFlags?.commandSnippet || engineFlags?.command || '');
+                    const match = String(commandText).match(/(?:--n-cpu-moe|-ncmoe)[=\s]+(\d+)/);
+                    return match && parseInt(match[1], 10) > 0 ? parseInt(match[1], 10) : null;
+                })(),
                 executionProfileProvenance: exportedProfile?.provenance || null,
                 hardwareDetails: isPlanExport && Array.isArray(payload.hardware?.devices) ? payload.hardware.devices : [],
                 engineFlags,
@@ -7078,8 +7104,18 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             if (imported.decodeBytesPerPassGB) document.getElementById('decodeBytesPerPassGB').value = imported.decodeBytesPerPassGB;
             if (imported.residentWeightsGB) document.getElementById('residentWeightsGB').value = imported.residentWeightsGB;
             if (Number.isFinite(imported.decodeOverheadMs)) document.getElementById('decodeOverheadMs').value = imported.decodeOverheadMs;
+            if (Number(imported.cpuMoeLayers) > 0) document.getElementById('cpuMoeLayers').value = imported.cpuMoeLayers;
             if (imported.executionProfileName) document.getElementById('executionProfileName').value = imported.executionProfileName;
-            if (imported.contextLength) {
+            if (imported.promptTokens || imported.outputTokens) {
+                // Decode depth follows the recorded workload (prompt + half the
+                // response), residency follows the larger of the recorded total
+                // and the configured window.
+                const promptTokens = Math.max(1, imported.promptTokens || Math.max(1, (imported.contextLength || 2) - (imported.outputTokens || 1)));
+                const outputTokens = Math.max(1, imported.outputTokens || 1);
+                document.getElementById('promptTokens').value = promptTokens;
+                document.getElementById('outputTokens').value = outputTokens;
+                document.getElementById('seqLength').value = Math.max(promptTokens + outputTokens, imported.contextLength || 0);
+            } else if (imported.contextLength) {
                 document.getElementById('promptTokens').value = Math.max(1, imported.contextLength - 1);
                 document.getElementById('outputTokens').value = 1;
                 document.getElementById('seqLength').value = imported.contextLength;
@@ -7215,7 +7251,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                             : roundPlanNumber(plan.metrics.reduce((sum, metric) => sum + (metric.residentWeightSizeGB || 0), 0)),
                         aggregateBytesPerDecodePassGB: roundPlanNumber(aggregateBytesPerPassGB),
                         includesKvAndAuxiliaryReads: hasExplicitProfile,
-                        exposedNonMemoryOverheadMsPerPass: Number.isFinite(config.decodeOverheadMs) ? roundPlanNumber(config.decodeOverheadMs) : null
+                        exposedNonMemoryOverheadMsPerPass: Number.isFinite(config.decodeOverheadMs) ? roundPlanNumber(config.decodeOverheadMs) : null,
+                        expertLayersOnCpu: Number(config.cpuMoeLayers) > 0 ? Math.round(Number(config.cpuMoeLayers)) : null
                     }
                 },
                 hardware: {

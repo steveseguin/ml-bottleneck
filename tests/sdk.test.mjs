@@ -78,6 +78,14 @@ test('auto strategy, speculation, overflow warnings, and sweeps work through the
   assert.equal(spill.fits, false);
   assert.ok(spill.warnings.some(warning => /spill|system RAM/.test(warning)), spill.warnings.join(' | '));
 
+  // Batch semantics: the aggregate is per-user x batch; per-user falls as the batch grows.
+  const single = engine.predict({ model: 'llama3_8b', hardware: 'H100', quantization: 'fp16', runtime: 'vllm', batchSize: 1 });
+  const batched = engine.predict({ model: 'llama3_8b', hardware: 'H100', quantization: 'fp16', runtime: 'vllm', batchSize: 64 });
+  assert.ok(Math.abs(batched.decode.tokensPerSecond - batched.decode.perUserTokensPerSecond * 64) < 1, 'aggregate = per-user x batch');
+  assert.ok(batched.decode.perUserTokensPerSecond < single.decode.perUserTokensPerSecond, 'per-user rate falls with concurrency');
+  assert.ok(batched.decode.tokensPerSecond > single.decode.tokensPerSecond * 20, `64 users on an H100 aggregate ${batched.decode.tokensPerSecond} vs single ${single.decode.tokensPerSecond}`);
+  assert.ok(batched.decode.perUserTokensPerSecond > 40, `per-user at 64 concurrent: ${batched.decode.perUserTokensPerSecond}`);
+
   const sweeps = engine.sweep({ model: 'llama3_8b', hardware: 'RTX 4090', quantization: 'q4', runtime: 'llama_cpp' }, { levels: [1, 4, 16] });
   assert.ok(sweeps.context.points.length > 3);
   assert.equal(sweeps.concurrency.points.length, 3);

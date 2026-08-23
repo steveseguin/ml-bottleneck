@@ -24,7 +24,7 @@ A static web application with no bundler, served from the repo root:
 One decode pass (all sequences in the batch get one token) is modeled as
 
 ```
-pass = max(weights/(BW·bandwidthEff) + KV_read/(BW·kvReadEff), FLOPs/(TFLOPs·batchedEff)) + layers·perLayerOverhead + perTokenOverhead + coordination
+pass = max(weights/(BW·bandwidthEff), GEMM_FLOPs/(TFLOPs·batchedEff)) + max(KV_read/(BW·kvReadEff), attention_FLOPs/(fp32·attentionEff)) + layers·perLayerOverhead + perTokenOverhead + coordination
 ```
 
 and prefill as a max-of-bottlenecks roofline (compute / bandwidth / network) plus the same per-layer floor, with compute efficiency ramping up with prompt length. Key invariants, all enforced by tests:
@@ -36,6 +36,8 @@ and prefill as a max-of-bottlenecks roofline (compute / bandwidth / network) plu
 - **FLOPs follow the 2N rule**: 2 FLOPs per *active* parameter per token plus `4·heads·head_dim·attended positions` (halved for causal prefill). Do not re-derive matrix shapes per architecture.
 - **Computation precision ≠ storage precision.** Weight-only quantization (q4; int8/fp8 outside TensorRT-LLM/vLLM/SGLang) dequantizes to fp16 for GEMMs — low-bit storage shrinks memory traffic, not compute throughput (`getComputationPrecisionTflops`).
 - **KV cache is fp16** regardless of weight quant unless explicit KV compression is chosen (`q8_kv`/`q4_kv` map llama.cpp `-ctk q8_0`/vLLM fp8; TurboQuant modes are research options).
+- **Decode attention is charged as compute, not just bytes.** The weight stream hides the GEMM work; the attention kernel is its KV read *or* its score arithmetic, whichever is longer (`combineDecodeCoreSeconds`). Single-query attention runs on the vector units at `DECODE_ATTENTION_EFFICIENCY` of the fp32 peak (fp16 KV 0.2, q8 0.1, q4 0.06 — measured 3060 Ti/V100/5090 long-context rows), so deep contexts slow down far more than the KV bytes imply (8B q4 on a 3060 Ti: 72 → 25 → 19 tok/s at 0/65k/98k). MLA decodes in the absorbed form (`getDecodeAttentionDim`: kv_lora_rank + rope/2 per head). `coreBinding` is `memory` / `compute` / `attention`; the waterfall's compute band carries `attentionComputeMs`.
+- **Explicit expert offload is honored.** `cpuMoeLayers` (planner "Expert layers on CPU", plan-export `expertLayersOnCpu`, gold rows parsed from `--n-cpu-moe N` / `-ncmoe N` / `--cpu-moe` / `-ot exps=CPU`) pins the offloaded fraction (`getExplicitExpertOffloadFraction`), never below what memory forces. In gold projections the "peak VRAM proves a fit" shortcut applies to dense checkpoints only (llama.cpp auto-fits MoE experts to the CPU, so a low peak VRAM on a MoE says nothing about the checkpoint), and a recorded memory size below the template's is used as the device's pool (3 GB GTX 1060, 8 GB 5060 Ti).
 - **No S² attention memory** — flash/tiled attention workspace is linear in sequence length.
 - **Activations are a working set** (~2 layers), not all-layers (that's training accounting). Traffic still counts all layers once.
 - **GQA/MQA shrinkage lives in `numKVHeads`** in the KV formulas — the attention-mechanism profiles must not double-count it (MLA uses `kvLoraRank` latents).

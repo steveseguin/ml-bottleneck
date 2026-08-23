@@ -248,6 +248,12 @@ function normalizeGoldCase(run) {
   // The structured kvCacheDtype flag is often missing while the command
   // line carries it (llama.cpp -ctk/-ctv, vLLM --kv-cache-dtype).
   const kvFlagMatch = command.match(/(?:-ctk|--cache-type-k|--kv-cache-dtype)[=\s]+([A-Za-z0-9_]+)/);
+  // Expert offload: llama.cpp --n-cpu-moe N / -ncmoe N pin N layers' routed
+  // experts to the CPU; --cpu-moe or -ot ...exps=CPU pins every layer's.
+  const cpuMoeMatch = command.match(/(?:--n-cpu-moe|-ncmoe)[=\s]+(\d+)/);
+  const cpuMoeLayers = cpuMoeMatch
+    ? (parseInt(cpuMoeMatch[1], 10) > 0 ? parseInt(cpuMoeMatch[1], 10) : null)
+    : (/--cpu-moe\b|(?:-ot|--override-tensor)[=\s]+"?[^"\s]*exps[^"\s]*=CPU/i.test(command) ? 'all' : null);
   const kvCacheDtype = run.engineFlags?.kvCacheDtype || (kvFlagMatch ? kvFlagMatch[1] : null);
   const backend = run.engine?.backend || null;
   // llama.cpp row split (-sm row) shards each matrix across GPUs, which
@@ -337,6 +343,7 @@ function normalizeGoldCase(run) {
     kvCacheDtype,
     backend,
     splitMode,
+    cpuMoeLayers,
     batchSize,
     observedTokS: run.tokSOut,
     prefillTokS: plausiblePrefillRate(run, presetKey, hardwareTemplate, deviceCount, quantKey),

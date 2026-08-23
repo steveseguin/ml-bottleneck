@@ -3231,11 +3231,13 @@ const DEVICE_TEMPLATES = {
     networkBandwidthGBps: 16,
     computeTFlops: {
       'float32': 4.4,
-      'float16': 8.8,
+      'float16': 4.4,     // Pascal (GP106) has no usable fp16 rate (1/64 of fp32); kernels run fp32 / dp4a int8
       'bfloat16': 4.4,
       'int8': 17.6,
-      'q4': 26
+      'q4': 17.6
     },
+    specStatus: 'verified',
+    specNote: 'GP106: 192 GB/s, 4.4 FP32 TFLOPS, dp4a INT8 17.6 TOPS; FP16 is crippled on consumer Pascal, so prefill runs at the FP32 rate. Community rows on the 3 GB SKU use their recorded memory.',
     type: 'GPU'
   },
   'GT 730': {
@@ -4973,6 +4975,11 @@ function calculateSystemRateFromDeviceRates(deviceRates, strategy, batchSize, de
     }
 
     if (strategy === 'pipeline') {
+        // One device is not a pipeline: its rate is the rate. Across
+        // stages, a batch of sequences streams through (micro-batching:
+        // the slowest stage sets the pace, with bubble losses), while a
+        // single sequence visits every stage in turn.
+        if (validRates.length === 1) return validRates[0];
         return batchSize > 1
             ? (1 / Math.max(...stageTimes)) * 0.85
             : 1 / stageTimes.reduce((sum, value) => sum + value, 0);
@@ -5154,18 +5161,41 @@ function calculateTransformerFlops(modelConfig) {
     return batchSize * seqLength * ((2 * activeParams) + scoreFlopsPerToken);
 }
 
+// Per-head score/value width the decode attention kernel works over.
+// MLA runs decode in the absorbed form (every head reads the shared
+// latent + RoPE key and the latent value), so the arithmetic per
+// attended position is 4·kv_lora_rank + 2·rope, not 4·head_dim.
+function getDecodeAttentionDim(modelConfig) {
+    if (modelConfig.attentionMechanism === 'mla' && Number(modelConfig.kvLoraRank) > 0) {
+        const rope = Math.max(1, Number(modelConfig.qkRopeHeadDim) || 64);
+        return Number(modelConfig.kvLoraRank) + rope / 2;
+    }
+    return getHeadDim(modelConfig);
+}
+
+// GEMM/GEMV FLOPs for one decode step: 2 per active parameter per
+// sequence (the 2N rule).
+function calculateDecodeGemmFlops(modelConfig) {
+    const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
+    const activeParams = Math.max(getActiveParamsB(modelConfig), 0.001) * 1e9;
+    return batchSize * 2 * activeParams;
+}
+
+// Attention-score FLOPs for one decode step: every sequence's new token
+// attends its whole (windowed) KV — 4·heads·dim per attended position.
+function calculateDecodeAttentionFlops(modelConfig) {
+    const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
+    const depth = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
+    const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
+    const layerTokens = getAttendedLayerTokens(modelConfig, depth);
+    return batchSize * 4 * numHeads * getDecodeAttentionDim(modelConfig) * layerTokens;
+}
+
 // Decode FLOPs for one step over `batchSize` sequences at the
 // configured context depth (seqLength is the depth here; callers pass
 // the decode-context config).
 function calculateDecodeFlops(modelConfig) {
-    const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
-    const depth = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
-    const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
-    const headDim = getHeadDim(modelConfig);
-    const activeParams = Math.max(getActiveParamsB(modelConfig), 0.001) * 1e9;
-    const layerTokens = getAttendedLayerTokens(modelConfig, depth);
-    const scoreFlops = 4 * numHeads * headDim * layerTokens;
-    return batchSize * ((2 * activeParams) + scoreFlops);
+    return calculateDecodeGemmFlops(modelConfig) + calculateDecodeAttentionFlops(modelConfig);
 }
 
 function calculateDecodeKVCacheBytes(modelConfig, dtypeSize, kvScale = 1) {
@@ -5181,6 +5211,18 @@ const EXPERT_OFFLOAD_RUNTIMES = new Set(['llama_cpp', 'ollama']);
 // expert layers must live in RAM, and the per-token bytes each side
 // reads. Returns null when expert offload does not apply (dense model,
 // runtime without the feature, or even the non-expert part overflows).
+// An explicit `cpuMoeLayers` (llama.cpp --n-cpu-moe N / -ncmoe N; 'all' or
+// -ot exps=CPU for every layer) pins the offloaded fraction instead of
+// deriving it from what fits.
+function getExplicitExpertOffloadFraction(modelConfig) {
+    const raw = modelConfig?.cpuMoeLayers;
+    if (raw === 'all' || raw === true || raw === Infinity) return 1;
+    const layers = Number(raw);
+    const numLayers = Math.max(1, parseFloat(modelConfig?.numLayers) || 1);
+    if (!Number.isFinite(layers) || layers <= 0) return null;
+    return Math.min(1, layers / numLayers);
+}
+
 function describeExpertOffload(modelConfig, device, residentWeightBytes, residentKvCacheBytes, accessedWeightBytes, parallelScales) {
     if (!modelConfig?.isMoE) return null;
     const runtimeKey = getFrameworkProfile(modelConfig, [device]).key;
@@ -5196,7 +5238,11 @@ function describeExpertOffload(modelConfig, device, residentWeightBytes, residen
     const reservedBytes = Math.min(deviceMemoryBytes * 0.08, 2.5e9);
     const gpuBudgetForExperts = deviceMemoryBytes - residentDenseBytes - residentKvCacheBytes - reservedBytes;
     if (gpuBudgetForExperts <= 0) return null; // the dense part alone does not fit: plain overflow
-    const offloadedLayerFraction = Math.min(1, Math.max(0, 1 - gpuBudgetForExperts / residentExpertBytes));
+    const explicitFraction = getExplicitExpertOffloadFraction(modelConfig);
+    const neededFraction = Math.min(1, Math.max(0, 1 - gpuBudgetForExperts / residentExpertBytes));
+    // A user-chosen layer count is honored even when fewer layers would
+    // fit; it can never be less than what memory forces.
+    const offloadedLayerFraction = explicitFraction !== null ? Math.max(explicitFraction, neededFraction) : neededFraction;
     if (offloadedLayerFraction <= 0) return null;
     const activeExpertBytesPerToken = accessedWeightBytes * activeExpertShare;
     return {
@@ -5207,6 +5253,40 @@ function describeExpertOffload(modelConfig, device, residentWeightBytes, residen
     };
 }
 
+
+// Bandwidth summary for a token whose routed experts partly stream from
+// system RAM (shared by the explicit and the memory-forced offload paths).
+function buildExpertOffloadBandwidth(device, expertOffload, sizes, overflowBandwidthGBps) {
+    const { residentWeightBytes, residentModelSizeBytes, residentKvCacheBytes, accessedModelSizeBytes, accessedWeightBytes, decodeKvCacheBytes, weightProfile } = sizes;
+    const gpuBytes = expertOffload.gpuAccessBytes + decodeKvCacheBytes;
+    const cpuBytes = expertOffload.cpuAccessBytes;
+    const gpuTimeMs = (gpuBytes / (device.localBandwidthGBps * 1e9)) * 1000;
+    const cpuTimeMs = (cpuBytes / (overflowBandwidthGBps * 1e9)) * 1000;
+    const offloadTotalMs = gpuTimeMs + cpuTimeMs;
+    return {
+        effectiveBandwidthGBps: (accessedModelSizeBytes / (offloadTotalMs / 1000)) / 1e9,
+        localPortion: residentModelSizeBytes - expertOffload.offloadedBytes,
+        overflowPortion: expertOffload.offloadedBytes,
+        overflowBandwidthGBps,
+        bottleneckReason: `expert offload to system RAM (${Math.round(expertOffload.offloadedLayerFraction * 100)}% of expert layers on the CPU)`,
+        localTimeMs: gpuTimeMs,
+        overflowTimeMs: cpuTimeMs,
+        totalTimeMs: offloadTotalMs,
+        hasOverflow: true,
+        overflowMode: 'experts',
+        overflowGB: expertOffload.offloadedBytes / 1e9,
+        offloadedLayerFraction: expertOffload.offloadedLayerFraction,
+        cpuExpertBytesPerToken: cpuBytes,
+        residentWeightBytes,
+        residentModelSizeBytes,
+        residentKvCacheBytes,
+        accessedModelSizeBytes,
+        accessedWeightBytes,
+        decodeKvCacheBytes,
+        byteProfileSource: weightProfile.source,
+        byteProfileLabel: weightProfile.label
+    };
+}
 
 /**
  * Calculate effective memory bandwidth considering PCIe overflow
@@ -5253,6 +5333,17 @@ function calculateEffectiveBandwidth(device, modelSizeBytes, allDevices, modelCo
     const accessedWeightBytes = weightProfile.includesKv
         ? Math.max(0, accessedModelSizeBytes - decodeKvCacheBytes)
         : profiledAccessBytes;
+    // Explicit expert offload (--n-cpu-moe) runs the routed experts of
+    // the chosen layers from system RAM whether or not they would fit.
+    const explicitExpertOffload = modelConfig && getExplicitExpertOffloadFraction(modelConfig) !== null && (device.overflowTarget === 'ddr5' || !device.overflowTarget)
+        ? describeExpertOffload(modelConfig, device, residentWeightBytes, residentKvCacheBytes, accessedWeightBytes, parallelScales)
+        : null;
+    if (explicitExpertOffload) {
+        return buildExpertOffloadBandwidth(device, explicitExpertOffload, {
+            residentWeightBytes, residentModelSizeBytes, residentKvCacheBytes, accessedModelSizeBytes, accessedWeightBytes, decodeKvCacheBytes, weightProfile
+        }, (device.ddr5BandwidthGBps || OVERFLOW_BANDWIDTH['ddr5_7200']) * CPU_OFFLOAD_BANDWIDTH_EFFICIENCY);
+    }
+
     // Case 1: Model fits entirely in device memory
     if (residentModelSizeBytes <= deviceMemoryBytes) {
         return {
@@ -5325,34 +5416,9 @@ function calculateEffectiveBandwidth(device, modelSizeBytes, allDevices, modelCo
         ? describeExpertOffload(modelConfig, device, residentWeightBytes, residentKvCacheBytes, accessedWeightBytes, parallelScales)
         : null;
     if (expertOffload) {
-        const gpuBytes = expertOffload.gpuAccessBytes + decodeKvCacheBytes;
-        const cpuBytes = expertOffload.cpuAccessBytes;
-        const gpuTimeMs = (gpuBytes / (device.localBandwidthGBps * 1e9)) * 1000;
-        const cpuTimeMs = (cpuBytes / (overflowBandwidthGBps * 1e9)) * 1000;
-        const offloadTotalMs = gpuTimeMs + cpuTimeMs;
-        return {
-            effectiveBandwidthGBps: (accessedModelSizeBytes / (offloadTotalMs / 1000)) / 1e9,
-            localPortion: residentModelSizeBytes - expertOffload.offloadedBytes,
-            overflowPortion: expertOffload.offloadedBytes,
-            overflowBandwidthGBps,
-            bottleneckReason: `expert offload to system RAM (${Math.round(expertOffload.offloadedLayerFraction * 100)}% of expert layers on the CPU)`,
-            localTimeMs: gpuTimeMs,
-            overflowTimeMs: cpuTimeMs,
-            totalTimeMs: offloadTotalMs,
-            hasOverflow: true,
-            overflowMode: 'experts',
-            overflowGB: expertOffload.offloadedBytes / 1e9,
-            offloadedLayerFraction: expertOffload.offloadedLayerFraction,
-            cpuExpertBytesPerToken: cpuBytes,
-            residentWeightBytes,
-            residentModelSizeBytes,
-            residentKvCacheBytes,
-            accessedModelSizeBytes,
-            accessedWeightBytes,
-            decodeKvCacheBytes,
-            byteProfileSource: weightProfile.source,
-            byteProfileLabel: weightProfile.label
-        };
+        return buildExpertOffloadBandwidth(device, expertOffload, {
+            residentWeightBytes, residentModelSizeBytes, residentKvCacheBytes, accessedModelSizeBytes, accessedWeightBytes, decodeKvCacheBytes, weightProfile
+        }, overflowBandwidthGBps);
     }
 
     // Calculate weighted effective bandwidth
@@ -5435,12 +5501,49 @@ function calculateDecodeRuntimeOverheadSeconds(modelConfig, frameworkProfile, de
 }
 
 
+// Decode attention runs on the vector units, not the tensor cores: a
+// single query row per sequence is a GEMV over the KV blocks, so the
+// kernel reaches only a small fraction of the card's fp32 peak, and
+// dequantizing a compressed KV cache inside the kernel costs more
+// (measured: 3060 Ti q4_0 KV ~1 TFLOP/s, V100 f16 ~3 / q8 ~1.4 /
+// q4 ~1.05 TFLOP/s, 5090 f16 ~16 TFLOP/s). Below ~8k tokens the work
+// hides under the KV read; past it, attention becomes the limiter.
+const DECODE_ATTENTION_EFFICIENCY = { none: 0.2, q8_kv: 0.1, q4_kv: 0.06 };
+
+function getDecodeAttentionEfficiency(modelConfig, device) {
+    const mode = modelConfig.kvCacheCompression || 'none';
+    const base = DECODE_ATTENTION_EFFICIENCY[mode] ?? (mode === 'none' ? DECODE_ATTENTION_EFFICIENCY.none : DECODE_ATTENTION_EFFICIENCY.q4_kv);
+    const deviceScale = Number.isFinite(device?.kernelOverheadScale) && device.kernelOverheadScale > 0 ? device.kernelOverheadScale : 1;
+    // Backends with slower dispatch also run the attention kernels slower.
+    return base / Math.max(deviceScale, 0.5);
+}
+
+function calculateDecodeAttentionSeconds(modelConfig, device, frameworkProfile, computeScale = 1) {
+    const flops = calculateDecodeAttentionFlops(modelConfig) * computeScale;
+    const vectorTflops = Math.max(getDeviceComputeTflops(device, 'float32') || 0, (getDeviceComputeTflops(device, 'float16') || 0) / 8, 0.5);
+    return flops / (vectorTflops * 1e12 * getDecodeAttentionEfficiency(modelConfig, device));
+}
+
+// One decode pass = the weight stream (or the GEMM work it hides) plus
+// the attention kernel (its KV read or its score arithmetic, whichever
+// is longer). Used by the engine and by the per-token waterfall so the
+// bands always sum to the modeled total.
+function combineDecodeCoreSeconds(weightSeconds, kvSeconds, gemmComputeSeconds, attentionComputeSeconds) {
+    const weightBound = weightSeconds >= gemmComputeSeconds;
+    const attentionBound = attentionComputeSeconds > kvSeconds;
+    return {
+        seconds: Math.max(weightSeconds, gemmComputeSeconds) + Math.max(kvSeconds, attentionComputeSeconds),
+        weightBound,
+        attentionBound
+    };
+}
+
 // Compute time for one decode step over the batch. GEMV/GEMM
 // efficiency ramps with the number of sequences sharing a weight read:
 // one row cannot feed the tensor cores, a few dozen rows can.
 function calculateDecodeComputeSeconds(modelConfig, device, frameworkProfile, computeScale = 1) {
     const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
-    const flops = calculateDecodeFlops(modelConfig) * computeScale;
+    const flops = calculateDecodeGemmFlops(modelConfig) * computeScale;
     const tflops = getComputationPrecisionTflops(device, modelConfig, frameworkProfile.key);
     // A single row is memory-bound, so its arithmetic hides under the
     // weight stream; efficiency climbs from about half the batched
@@ -5490,7 +5593,9 @@ function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, de
     const realisticMemorySeconds = weightSeconds + kvSeconds;
 
     const decodeDepthConfig = { ...modelConfig, seqLength: getDecodeContextTokens(modelConfig) };
-    const computeSeconds = calculateDecodeComputeSeconds(decodeDepthConfig, device, frameworkProfile, computeScale);
+    const gemmComputeSeconds = calculateDecodeComputeSeconds(decodeDepthConfig, device, frameworkProfile, computeScale);
+    const attentionComputeSeconds = calculateDecodeAttentionSeconds(decodeDepthConfig, device, frameworkProfile, computeScale);
+    const computeSeconds = gemmComputeSeconds + attentionComputeSeconds;
 
     const hasSuppliedOverhead = Number.isFinite(modelConfig.decodeOverheadMs) && modelConfig.decodeOverheadMs >= 0;
     const layerShare = modelConfig.parallelismStrategy === 'pipeline' ? parallelScales.accessedScale : 1;
@@ -5506,7 +5611,8 @@ function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, de
     // tokens per step, so it can pass the per-pass bandwidth ceiling —
     // and it can also lose once verification turns compute-bound.
     const efficiencyMultiplier = optimization.speculation ? 1 : optimization.decodeMultiplier;
-    const coreSeconds = Math.max(realisticMemorySeconds, computeSeconds);
+    const core = combineDecodeCoreSeconds(realisticMemorySeconds - kvSeconds, kvSeconds, gemmComputeSeconds, attentionComputeSeconds);
+    const coreSeconds = core.seconds;
     const plainPassSeconds = (coreSeconds + runtimeOverheadSeconds) / Math.max(efficiencyMultiplier, 0.05);
     const baselineTokensPerSec = plainPassSeconds > 0 ? 1 / plainPassSeconds : 0;
     let speculation = null;
@@ -5534,7 +5640,12 @@ function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, de
         // bonus-token bookkeeping; measured batched EAGLE-3 gains
         // (1.38x at 64 requests on an H100) put them near 60% of the
         // plain batched efficiency.
-        const verifyComputeSeconds = calculateDecodeComputeSeconds({ ...decodeDepthConfig, batchSize: batchSize * (K + 1) }, device, frameworkProfile, computeScale) / SPEC_VERIFY_COMPUTE_EFFICIENCY;
+        const verifyBatchConfig = { ...decodeDepthConfig, batchSize: batchSize * (K + 1) };
+        const verifyGemmSeconds = calculateDecodeComputeSeconds(verifyBatchConfig, device, frameworkProfile, computeScale) / SPEC_VERIFY_COMPUTE_EFFICIENCY;
+        // Every drafted token attends the whole KV, so the attention
+        // arithmetic grows with K+1 even where the KV read does not.
+        const verifyAttentionSeconds = calculateDecodeAttentionSeconds(verifyBatchConfig, device, frameworkProfile, computeScale);
+        const verifyComputeSeconds = verifyGemmSeconds + verifyAttentionSeconds;
         // Draft cost.
         const draftBytesPerParam = Math.max(getStoredBytesPerParam(modelConfig, dtypeSize), 1);
         // Per-draft-token reads: the draft's transformer layers plus the
@@ -5564,7 +5675,7 @@ function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, de
             const perDraftToken = (draftWeightBytes + headBytes) / (Math.max(realisticBandwidthGBps, 0.0001) * 1e9) + Math.max(0, draftKvBytes) / (Math.max(kvBandwidthGBps, 0.0001) * 1e9) + draftLayerOverhead + draftStepOverhead;
             draftSeconds = perDraftToken * K * draftBatchScale;
         }
-        const verifyCoreSeconds = Math.max(verifyWeightSeconds + verifyKvSeconds, verifyComputeSeconds);
+        const verifyCoreSeconds = combineDecodeCoreSeconds(verifyWeightSeconds, verifyKvSeconds, verifyGemmSeconds, verifyAttentionSeconds).seconds;
         const speculativeStepSeconds = verifyCoreSeconds + runtimeOverheadSeconds + draftSeconds;
         if (effective) {
             stepSeconds = speculativeStepSeconds;
@@ -5576,6 +5687,8 @@ function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, de
             verifyWeightSeconds,
             verifyKvSeconds,
             verifyComputeSeconds,
+            verifyGemmSeconds,
+            verifyAttentionSeconds,
             verifyBinding: verifyComputeSeconds > verifyWeightSeconds + verifyKvSeconds ? 'compute' : 'memory',
             draftSeconds,
             stepSeconds: speculativeStepSeconds,
@@ -5611,7 +5724,9 @@ function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, de
         weightSeconds,
         kvSeconds,
         computeSeconds,
-        coreBinding: computeSeconds > realisticMemorySeconds ? 'compute' : 'memory',
+        gemmComputeSeconds,
+        attentionComputeSeconds,
+        coreBinding: !core.weightBound ? 'compute' : (core.attentionBound ? 'attention' : 'memory'),
         runtimeOverheadSeconds,
         hasSuppliedOverhead,
         frameworkLabel: frameworkProfile.label,
@@ -6215,8 +6330,11 @@ function calculateMetricsForConfig(modelConfig, devicesArray) {
 			const weightSecondsPerPass = spec ? spec.verifyWeightSeconds : (tokenRateInfo.weightSeconds || 0);
 			const kvSecondsPerPass = spec ? spec.verifyKvSeconds : (tokenRateInfo.kvSeconds || 0);
 			const computeSecondsPerPass = spec ? spec.verifyComputeSeconds : (tokenRateInfo.computeSeconds || 0);
+			const gemmSecondsPerPass = spec ? spec.verifyGemmSeconds : (tokenRateInfo.gemmComputeSeconds || 0);
+			const attentionSecondsPerPass = spec ? spec.verifyAttentionSeconds : (tokenRateInfo.attentionComputeSeconds || 0);
 			const draftSecondsPerPass = spec ? spec.draftSeconds : 0;
-			const computeOrMemorySeconds = Math.max(memorySecondsPerPass, computeSecondsPerPass);
+			const core = combineDecodeCoreSeconds(weightSecondsPerPass, kvSecondsPerPass, gemmSecondsPerPass, attentionSecondsPerPass);
+			const computeOrMemorySeconds = core.seconds;
 			const engineCoreSeconds = (computeOrMemorySeconds + tokenRateInfo.runtimeOverheadSeconds) /
 				Math.max(tokenRateInfo.efficiencyMultiplier || 1, 0.05) + draftSecondsPerPass;
 			const perPassSeconds = engineCoreSeconds + exposedDecodeOverheadTime;
@@ -6246,10 +6364,14 @@ function calculateMetricsForConfig(modelConfig, devicesArray) {
 			// to the per-token total under speculation.
 			const efficiencyScale = 1 / Math.max(tokenRateInfo.efficiencyMultiplier || 1, 0.05);
 			const perTokenScale = efficiencyScale / tokensPerStep;
-			const coreBinding = computeSecondsPerPass > memorySecondsPerPass ? 'compute' : 'memory';
-			const weightReadMs = coreBinding === 'memory' ? weightSecondsPerPass * perTokenScale * 1000 : 0;
-			const kvReadMs = coreBinding === 'memory' ? kvSecondsPerPass * perTokenScale * 1000 : 0;
-			const computeMs = coreBinding === 'compute' ? computeSecondsPerPass * perTokenScale * 1000 : 0;
+			// The weight stream hides the GEMM work unless the batch makes
+			// arithmetic the longer term; the attention kernel is its KV read
+			// unless the score arithmetic over a deep context is longer.
+			const coreBinding = !core.weightBound ? 'compute' : (core.attentionBound ? 'attention' : 'memory');
+			const weightReadMs = core.weightBound ? weightSecondsPerPass * perTokenScale * 1000 : 0;
+			const kvReadMs = core.attentionBound ? 0 : kvSecondsPerPass * perTokenScale * 1000;
+			const computeMs = ((core.weightBound ? 0 : gemmSecondsPerPass) + (core.attentionBound ? attentionSecondsPerPass : 0)) * perTokenScale * 1000;
+			const attentionComputeMs = core.attentionBound ? attentionSecondsPerPass * perTokenScale * 1000 : 0;
 			const memoryMsPerToken = memorySecondsPerPass * perTokenScale * 1000;
 			const runtimeMsPerToken = (tokenRateInfo.runtimeOverheadSeconds || 0) * perTokenScale * 1000;
 			const draftMsPerToken = (draftSecondsPerPass / tokensPerStep) * 1000;
@@ -6266,6 +6388,7 @@ function calculateMetricsForConfig(modelConfig, devicesArray) {
 				weightReadMs,
 				kvReadMs,
 				computeMs,
+				attentionComputeMs,
 				memoryReadMs: memoryMsPerToken,
 				runtimeMs: runtimeMsPerToken,
 				draftMs: draftMsPerToken,
@@ -6685,11 +6808,15 @@ function calculateGoldCaseProjection(reference) {
     if (Number.isFinite(reference.paramsB) && reference.paramsB > 0 && preset.totalParamsB > 0 &&
         Math.abs(reference.paramsB - preset.totalParamsB) / preset.totalParamsB > 0.25) return null;
 
+    // A recorded memory size below the template's is a smaller SKU of the
+    // same card (GTX 1060 3GB, 8 GB 5060 Ti); the run lived in that pool.
+    const recordedMemoryGB = Number(reference.memoryGB) || 0;
     const caseDevices = Array.from({ length: Math.max(1, reference.deviceCount || 1) }, (_, index) => ({
         id: index + 1,
         template: reference.hardwareTemplate,
         name: `${template.name || reference.hardwareTemplate}${reference.deviceCount > 1 ? ` #${index + 1}` : ''}`,
-        ...JSON.parse(JSON.stringify(template))
+        ...JSON.parse(JSON.stringify(template)),
+        ...(recordedMemoryGB > 0 && recordedMemoryGB < template.memoryGB ? { memoryGB: recordedMemoryGB } : {})
     }));
     // Only vLLM/SGLang/TensorRT-LLM aggregate bandwidth via tensor
     // parallelism; llama.cpp, Ollama, and MLX split by layers, so a
@@ -6718,7 +6845,13 @@ function calculateGoldCaseProjection(reference) {
     const totalDeviceMemoryGB = caseDevices.reduce((sum, device) => sum + (device.memoryGB || 0), 0);
     const peakVramGb = Number(reference.peakVramGb) || 0;
     const uniformResidentGB = preset.totalParamsB * getStoredBytesPerParam({ ...preset, quantizationType: reference.quantKey, quantFormat: reference.quantization }, DTYPE_SIZES[reference.quantKey]);
-    const residentWeightsGB = peakVramGb > 0 && peakVramGb <= totalDeviceMemoryGB && uniformResidentGB > totalDeviceMemoryGB * 0.96
+    // With experts on the CPU — pinned by --n-cpu-moe, or moved by
+    // llama.cpp's automatic fit for a MoE checkpoint larger than the
+    // card — a low peak VRAM says nothing about the checkpoint's size;
+    // the expert-offload physics models the run instead. The residency
+    // proof stays for dense mixed-precision quants only.
+    const cpuMoeLayers = reference.cpuMoeLayers === 'all' ? 'all' : (Number(reference.cpuMoeLayers) > 0 ? Number(reference.cpuMoeLayers) : null);
+    const residentWeightsGB = !cpuMoeLayers && !preset.isMoE && peakVramGb > 0 && peakVramGb <= totalDeviceMemoryGB && uniformResidentGB > totalDeviceMemoryGB * 0.96
         ? Math.min(uniformResidentGB, peakVramGb * 0.92)
         : null;
     const modelConfig = normalizeModelConfig({
@@ -6736,6 +6869,7 @@ function calculateGoldCaseProjection(reference) {
         outputTokens: 1,
         seqLength: contextLength,
         decodeContextTokens: Math.min(decodeDepth, contextLength),
+        ...(cpuMoeLayers ? { cpuMoeLayers } : {}),
         ...(residentWeightsGB ? { residentWeightsGB } : {})
     });
     const coordinationSeconds = calculateDecodeCoordinationTimeSeconds(modelConfig, caseDevices);

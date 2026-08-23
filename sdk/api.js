@@ -126,6 +126,7 @@ function sdkBuildConfig(request) {
         parallelismStrategy: strategy,
         optimizationMode,
         kvCacheCompression: request.kvCacheCompression || 'none',
+        cpuMoeLayers: Number(request.cpuMoeLayers) > 0 ? Math.round(Number(request.cpuMoeLayers)) : null,
         specMethod: speculation?.method || 'mtp',
         specTokens: Number.isFinite(speculation?.tokens) ? speculation.tokens : null,
         specAcceptance: Number.isFinite(speculation?.acceptance) ? speculation.acceptance : null,
@@ -148,11 +149,13 @@ function sdkSummarizeDevice(metric, device) {
         prefillTokensPerSecond: sdkRound(metric.prefillTokensPerSecond, 1),
         rooflineTokensPerSecond: sdkRound(metric.theoreticalMaxTokensPerSecond, 2),
         dominant: metric.decodeTimeBreakdown?.dominant || null,
+        coreBinding: metric.decodeTimeBreakdown?.coreBinding || null,
         decodeBreakdownMs: metric.decodeTimeBreakdown
             ? {
                 weightRead: sdkRound(metric.decodeTimeBreakdown.weightReadMs, 3),
                 kvRead: sdkRound(metric.decodeTimeBreakdown.kvReadMs, 3),
                 compute: sdkRound(metric.decodeTimeBreakdown.computeMs, 3),
+                attentionCompute: sdkRound(metric.decodeTimeBreakdown.attentionComputeMs || 0, 3),
                 runtime: sdkRound(metric.decodeTimeBreakdown.runtimeMs, 3),
                 draft: sdkRound(metric.decodeTimeBreakdown.draftMs || 0, 3),
                 coordination: sdkRound(metric.decodeTimeBreakdown.coordinationMs, 3),
@@ -173,7 +176,10 @@ function predict(request = {}) {
     const strategy = config.parallelismStrategy;
     const metrics = calculateMetricsForConfig(config, devices);
     const decodeRates = metrics.map(metric => metric.decodeTokensPerSecond);
-    const systemDecode = calculateSystemRateFromDeviceRates(decodeRates, strategy, config.batchSize || 1, devices, getSystemRateOptions(config));
+    // Engine system rates are per request; the aggregate is that times the batch.
+    const batchSize = Math.max(1, config.batchSize || 1);
+    const systemDecode = calculateSystemRateFromDeviceRates(decodeRates, strategy, batchSize, devices, getSystemRateOptions(config));
+    const aggregateDecode = systemDecode * batchSize;
     const systemPrefill = getSystemPrefillRateForMetrics(config, metrics, devices, strategy);
     const calibration = calculateCurrentCalibration(config, metrics, systemDecode, strategy, devices);
     const fits = metrics.every(metric => !metric.hasOverflow);
@@ -190,21 +196,21 @@ function predict(request = {}) {
     if (primary?.speculation?.missingModelSupport) {
         warnings.push('This model ships no MTP head; modeled without speculation.');
     }
-    const power = calculatePowerAndCost(devices, systemDecode, metrics, request.usage || {});
+    const power = calculatePowerAndCost(devices, aggregateDecode, metrics, request.usage || {});
     const speculationActive = Boolean(primary?.speculation && primary.speculationMultiplier > 1);
     return {
         fits,
         strategy: { key: strategy, label: strategy, reasoning: strategyInfo?.reasoning || null, auto: Boolean(strategyInfo) },
         decode: {
-            tokensPerSecond: sdkRound(systemDecode, 2),
+            tokensPerSecond: sdkRound(aggregateDecode, 2),
             msPerToken: systemDecode > 0 ? sdkRound(1000 / systemDecode, 3) : null,
-            perUserTokensPerSecond: sdkRound(systemDecode / Math.max(1, config.batchSize || 1), 2),
-            withoutSpeculation: speculationActive ? sdkRound(systemDecode / primary.speculationMultiplier, 2) : null,
+            perUserTokensPerSecond: sdkRound(systemDecode, 2),
+            withoutSpeculation: speculationActive ? sdkRound(aggregateDecode / primary.speculationMultiplier, 2) : null,
             speculationMultiplier: speculationActive ? sdkRound(primary.speculationMultiplier, 3) : null
         },
         prefill: {
             tokensPerSecond: sdkRound(systemPrefill, 1),
-            timeToFirstTokenSeconds: systemPrefill > 0 ? sdkRound(config.promptTokens * (config.batchSize || 1) / systemPrefill, 3) : null
+            timeToFirstTokenSeconds: systemPrefill > 0 ? sdkRound(config.promptTokens * batchSize / systemPrefill, 3) : null
         },
         ceiling: calibration
             ? {
