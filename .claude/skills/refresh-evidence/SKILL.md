@@ -8,6 +8,8 @@ description: Refresh the community benchmark snapshot (data/localmaxxing-snapsho
 `data/localmaxxing-snapshot.js` is generated — never hand-edit it. It carries the model catalog
 (`models`) and the calibration corpus (`goldCases`, ≤240 rows). The engine's peer correction, the
 "nearest measured" ladder rung, the evidence workspace, and the landing-page quick start all read it.
+The neural.download lab rows live apart in `data/lab-evidence.json` (hand-edited; `npm test`
+regenerates `data/lab-evidence.js` and stamps its cache key) — see the `calibrate-engine` skill.
 
 ## Commands
 

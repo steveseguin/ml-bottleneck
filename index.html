@@ -51,7 +51,8 @@
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
 	<script src="data/localmaxxing-snapshot.js?v=20260823154549"></script>
-	<script src="engine.js?v=109086451eb3"></script>
+	<script src="data/lab-evidence.js?v=df020a0b67f5"></script>
+	<script src="engine.js?v=515dafbf6931"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -2986,6 +2987,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .ladder-fill.is-engine { background: var(--ladder-2); }
 .ladder-fill.is-expected { background: var(--ladder-3); }
 .ladder-fill.is-measured { background: var(--text-secondary); opacity: 0.6; }
+.ladder-fill.is-tuned { background: repeating-linear-gradient(135deg, var(--ladder-2) 0 4px, transparent 4px 7px); }
+.ladder-link { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .ladder-value { font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ladder-note { color: var(--text-secondary); font-size: 0.62rem; }
 @media (max-width: 640px) {
@@ -3188,6 +3191,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 }
 .gold-run-title { display: block; font-weight: 650; }
 .gold-run-meta { display: block; color: var(--text-secondary); font-size: 0.61rem; }
+.lab-set-note { color: var(--text-secondary); font-size: 0.72rem; margin: 0.2rem 0 0.8rem; max-width: 64rem; }
+.lab-stack { display: inline-block; padding: 0.1rem 0.4rem; border: 1px solid var(--border); border-radius: 999px; font-size: 0.6rem; white-space: nowrap; }
 .error-good { color: #22c55e; }.error-near { color: #f59e0b; }.error-far { color: var(--destructive); }
 
 .interpreter-layout { display: grid; grid-template-columns: minmax(18rem, 0.75fr) minmax(0, 1.4fr); gap: 1rem; align-items: stretch; }
@@ -4038,6 +4043,11 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         </div>
         <div class="gold-set-head"><div><span class="eyebrow">Gold set</span><h2>Reproducible reference runs</h2></div><label class="visually-hidden" for="goldSearch">Filter reference runs</label><input class="input" id="goldSearch" type="search" placeholder="Filter model, hardware, runtime…"></div>
         <div class="gold-table-wrap"><table class="gold-table"><thead><tr><th>Model / setup</th><th>Observed</th><th>Optimized</th><th>Projected</th><th>Error</th></tr></thead><tbody id="goldTableBody"></tbody></table></div>
+        <div class="lab-set" id="labEvidenceSection" hidden>
+            <div class="gold-set-head lab-set-head"><div><span class="eyebrow">Lab measurements</span><h2>Intel Arc Pro runs from the <a href="https://neural.download/" target="_blank" rel="noopener noreferrer">neural.download</a> lab</h2></div></div>
+            <p class="lab-set-note">Same author, kept apart from the gold set and never used to calibrate the engine. Stock and baseline rows are compared with the projection for that setup; tuned rows show how much of the optimized target a tuned software stack actually reached. Every row links to its measurement.</p>
+            <div class="gold-table-wrap"><table class="gold-table"><thead><tr><th>Run / setup</th><th>Stack</th><th>Measured</th><th>Projected</th><th>Optimized</th><th>Comparison</th></tr></thead><tbody id="labTableBody"></tbody></table></div>
+        </div>
     </section>
 
     <section id="workspace-explain" class="workspace-view" data-workspace-view="explain" hidden>
@@ -4100,7 +4110,10 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             models: [],
             goldCases: []
         };
-        setEngineEvidence(LOCALMAXXING_DATA);
+        // Lab rows (neural.download) ride beside the gold set as measured
+        // references; the engine keeps them out of its calibration.
+        const LAB_EVIDENCE_DATA = window.LAB_EVIDENCE || { rows: [] };
+        setEngineEvidence({ ...LOCALMAXXING_DATA, labCases: Array.isArray(LAB_EVIDENCE_DATA.rows) ? LAB_EVIDENCE_DATA.rows : [] });
 
         let devices = [{
             id: 1,
@@ -4500,35 +4513,33 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 .slice(0, 3);
         }
 
-        // Closest reproducible community run for the ladder: same preset and
-        // hardware template are required; runtime, quantization, device count,
-        // and decode depth refine the choice.
+        // Closest measured run for the ladder (community gold rows and the
+        // lab's stock rows compete equally): same preset and hardware
+        // template are required; runtime, quantization, device count, and
+        // decode depth refine the choice.
         function findNearestGoldRun(modelConfig, devicesArray) {
             if (!devicesArray.length || !modelConfig?.modelPreset) return null;
-            const target = {
-                hfId: modelConfig.hfId,
-                presetKey: modelConfig.modelPreset,
-                hardwareTemplate: devicesArray[0]?.template || '',
-                runtimeKey: getFrameworkProfile(modelConfig, devicesArray).key,
-                quantKey: modelConfig.quantizationType,
-                deviceCount: devicesArray.length,
-                contextLength: modelConfig.seqLength,
-                decodeContextTokens: getDecodeContextTokens(modelConfig),
-                batchSize: modelConfig.batchSize || 1
-            };
-            const candidates = getGoldValidationRows()
-                .filter(row => row.presetKey === target.presetKey && row.hardwareTemplate === target.hardwareTemplate)
-                .map(row => ({ row, score: getGoldSimilarity(target, row) }))
-                .sort((a, b) => b.score - a.score || b.row.reproducibility - a.row.reproducibility);
-            const best = candidates[0];
-            if (!best) return null;
-            const row = best.row;
-            const sameSetup = row.runtimeKey === target.runtimeKey && row.quantKey === target.quantKey && (row.deviceCount || 1) === target.deviceCount;
-            return {
-                ...row,
-                sameSetup,
-                label: `${row.model} · ${row.hardware}${(row.deviceCount || 1) > 1 ? ` ×${row.deviceCount}` : ''} · ${FRAMEWORK_PROFILES[row.runtimeKey]?.label || row.engine} ${String(row.quantization || row.quantKey).toUpperCase()} · ${formatTokensAxis(Math.round(row.decodeContextTokens || row.contextLength || 0))}-token depth`
-            };
+            const row = findNearestMeasuredRun(buildEvidenceTarget(modelConfig, devicesArray));
+            return row ? { ...row, label: describeMeasuredRunSetup(row) } : null;
+        }
+
+        // The closest tuned lab result on this hardware, shown as its own
+        // rung: what a tuned stack has actually reached, never a stock reference.
+        function findLabTunedReference(modelConfig, devicesArray) {
+            if (!devicesArray.length || !modelConfig?.modelPreset) return null;
+            const row = findLabTunedRun(buildEvidenceTarget(modelConfig, devicesArray));
+            return row ? { ...row, label: describeMeasuredRunSetup(row) } : null;
+        }
+
+        function describeSpeculationShort(spec) {
+            if (!spec || !spec.method) return '';
+            const label = SPECULATION_METHODS[spec.method]?.shortLabel || SPECULATION_METHODS[spec.method]?.label || spec.method;
+            return spec.tokens ? `${label} ${spec.tokens}` : label;
+        }
+
+        function describeMeasuredRunSetup(row) {
+            const spec = row.speculation ? ` · ${describeSpeculationShort(row.speculation)}` : '';
+            return `${row.model} · ${row.hardware}${(row.deviceCount || 1) > 1 ? ` ×${row.deviceCount}` : ''} · ${FRAMEWORK_PROFILES[row.runtimeKey]?.label || row.engine} ${String(row.quantization || row.quantKey).toUpperCase()}${spec} · ${formatTokensAxis(Math.round(row.decodeContextTokens || row.contextLength || 0))}-token depth`;
         }
 
         function getSelectedModelLabel(modelConfig) {
@@ -6367,10 +6378,12 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 const rateNum = currentCalibration ? formatCompactRate(currentCalibration.expectedTokS) : rateParts[0];
                 const rateUnits = currentCalibration ? 'tok/s' : (rateParts.slice(1).join(' ') || (isImageGen ? 'img/s' : 'tok/s'));
                 const nearestGoldRun = isImageGen ? null : findNearestGoldRun(modelConfig, devices);
+                const labTunedRun = isImageGen ? null : findLabTunedReference(modelConfig, devices);
                 const nearestStatic = benchmarkAlignment.find(match => match.hardwareMatched) || null;
                 const nearestMeasured = nearestGoldRun
-                    ? { referenceRate: nearestGoldRun.observedTokS, model: nearestGoldRun.model, hardware: nearestGoldRun.hardware, note: `${nearestGoldRun.label} · ${nearestGoldRun.sameSetup ? 'same runtime & quant' : 'different runtime or quant'}` }
+                    ? { referenceRate: nearestGoldRun.observedTokS, model: nearestGoldRun.model, hardware: nearestGoldRun.hardware, url: nearestGoldRun.source || '', note: `${nearestGoldRun.label} · ${nearestGoldRun.sameSetup ? 'same runtime & quant' : 'different runtime or quant'}${nearestGoldRun.isLab ? ' · neural.download lab' : ''}` }
                     : (nearestStatic ? { ...nearestStatic, note: `${nearestStatic.model} · ${nearestStatic.hardware} · may include speculation` } : null);
+                const proofLink = url => url ? ` <a class="ladder-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">proof</a>` : '';
                 const specMultiplier = metrics[0]?.speculationMultiplier || 1;
                 const speculationOn = specMultiplier > 1;
                 const calibrationSummaryHtml = currentCalibration ? (() => {
@@ -6381,7 +6394,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                         currentCalibration.physicalTokS,
                         currentCalibration.optimizedTokS,
                         currentCalibration.expectedTokS,
-                        nearestMeasured?.referenceRate || 0
+                        nearestMeasured?.referenceRate || 0,
+                        labTunedRun?.observedTokS || 0
                     ];
                     const scale = Math.max(...rungValues.filter(Number.isFinite), 1e-9);
                     const rung = (cls, label, value, note) => `
@@ -6394,12 +6408,15 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                         ? `Projected is primary. The optimized target includes modeled latency and evidence from strong real runs; rates include accepted speculative tokens.`
                         : `Projected is primary. The optimized target keeps unavoidable communication latency and uses efficiency already demonstrated by strong benchmark runs.`;
                     return `
-                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: physical roofline ${formatCompactRate(currentCalibration.physicalTokS)}, optimized target ${formatCompactRate(currentCalibration.optimizedTokS)}, projected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second${speculationOn ? ' with speculative decoding' : ', no speculative decoding'}">
+                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: physical roofline ${formatCompactRate(currentCalibration.physicalTokS)}, optimized target ${formatCompactRate(currentCalibration.optimizedTokS)}, projected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second${speculationOn ? ' with speculative decoding' : ', no speculative decoding'}${labTunedRun ? `, lab tuned ${formatCompactRate(labTunedRun.observedTokS)}` : ''}${nearestMeasured && Number.isFinite(nearestMeasured.referenceRate) ? `, nearest measured ${formatCompactRate(nearestMeasured.referenceRate)}` : ''}">
                         <div class="ladder-title">${title}</div>
                         ${rung('is-ceiling', 'Physical roofline', currentCalibration.physicalTokS, 'official peak + current bytes/pass · sanity reference')}
                         ${rung('is-engine', 'Optimized target', currentCalibration.optimizedTokS, currentCalibration.envelopePeers
                             ? `irreducible latency · strong-run evidence · ${currentCalibration.envelopePeers} comparable peers`
                             : 'irreducible latency · broad benchmark envelope')}
+                        ${labTunedRun
+                            ? rung('is-tuned', 'Lab tuned', labTunedRun.observedTokS, `${escapeHtml(labTunedRun.label)} · ${labTunedRun.sameSetup ? 'same runtime & quant' : 'different runtime or quant'} · tuned neural.download stack, not stock${proofLink(labTunedRun.source)}`)
+                            : ''}
                         ${rung('is-expected', 'Projected real', currentCalibration.expectedTokS, speculationOn
                             ? `speculation ×${specMultiplier.toFixed(2)} modeled · ${currentCalibration.peers} peers`
                             : (currentCalibration.hasExplicitExecutionProfile
@@ -6409,7 +6426,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                             ? rung('is-measured', 'Without speculation', expectedWithoutSpec, '≈ same setup, speculation off')
                             : ''}
                         ${nearestMeasured && Number.isFinite(nearestMeasured.referenceRate)
-                            ? rung('is-measured', 'Nearest measured', nearestMeasured.referenceRate, escapeHtml(nearestMeasured.note))
+                            ? rung('is-measured', 'Nearest measured', nearestMeasured.referenceRate, `${escapeHtml(nearestMeasured.note)}${proofLink(nearestMeasured.url)}`)
                             : ''}
                     </div>`;
                 })() : '';
@@ -6945,6 +6962,26 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 <div><dt>Catalog models</dt><dd>${getCatalogModels().length.toLocaleString()}</dd></div>
                 <div><dt>Validation</dt><dd>leave one out</dd></div>`;
             renderGoldTable();
+            renderLabTable();
+        }
+
+        function renderLabTable() {
+            const section = document.getElementById('labEvidenceSection');
+            const tbody = document.getElementById('labTableBody');
+            if (!section || !tbody) return;
+            const rows = getLabValidationRows();
+            section.hidden = rows.length === 0;
+            if (!rows.length) return;
+            const stackLabel = { stock: 'stock software', 'lab-baseline': 'lab baseline', tuned: 'tuned stack' };
+            tbody.innerHTML = rows.map(row => {
+                const tuned = row.stack === 'tuned';
+                const ratio = tuned ? row.observedToOptimized : row.observedToExpected;
+                const comparisonClass = tuned
+                    ? (ratio >= 0.7 ? 'error-good' : (ratio >= 0.5 ? 'error-near' : 'error-far'))
+                    : (Math.abs(ratio - 1) <= 0.2 ? 'error-good' : (Math.abs(ratio - 1) <= 0.4 ? 'error-near' : 'error-far'));
+                const comparison = tuned ? `${Math.round(ratio * 100)}% of target` : `${ratio.toFixed(2)}× projected`;
+                return `<tr><td><a class="gold-run-title" href="${escapeHtml(row.source)}" target="_blank" rel="noopener">${escapeHtml(row.model)}</a><span class="gold-run-meta">${escapeHtml(describeMeasuredRunSetup(row).replace(`${row.model} · `, ''))}</span></td><td><span class="lab-stack">${escapeHtml(stackLabel[row.stack] || row.stack)}</span></td><td>${row.observedTokS.toFixed(1)}</td><td>${row.expectedTokS.toFixed(1)}</td><td>${row.optimizedTokS.toFixed(1)}</td><td class="${comparisonClass}">${escapeHtml(comparison)}</td></tr>`;
+            }).join('');
         }
 
         function renderGoldTable() {
@@ -9947,6 +9984,13 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             calculateConcurrencySweep,
             buildScalingSectionHtml,
             findNearestGoldRun,
+            findLabTunedReference,
+            findNearestMeasuredRun,
+            findLabTunedRun,
+            getLabEvidenceRows,
+            getLabValidationRows,
+            calculateLabCaseProjection,
+            buildEvidenceTarget,
             getPresetSuccessor,
             getQuantFormat,
             getStoredBytesPerParam,

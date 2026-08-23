@@ -19,6 +19,16 @@ test('benchmark snapshot URL is cache-keyed to its generated timestamp', () => {
   assert.match(html, new RegExp(`data/localmaxxing-snapshot\\.js\\?v=${expectedVersion}["']`));
 });
 
+test('data/lab-evidence.js is generated from the JSON and cache-keyed to its content', async () => {
+  const { buildLabEvidenceScript, labEvidenceVersionHash } = await import('../scripts/stamp-engine.mjs');
+  const expected = buildLabEvidenceScript();
+  const generated = fs.readFileSync(path.join(repoRoot, 'data', 'lab-evidence.js'), 'utf8');
+  assert.equal(generated, expected, 'data/lab-evidence.js is stale: run "npm run stamp:engine"');
+  assert.match(html, new RegExp(`<script src="data/lab-evidence[.]js[?]v=${labEvidenceVersionHash(expected)}"></script>`),
+    'lab evidence cache key is stale: run "npm run stamp:engine"');
+  assert.ok(html.indexOf('<script src="data/lab-evidence.js?v=') < html.indexOf('<script src="engine.js?v='), 'lab evidence must load before engine.js');
+});
+
 test('engine.js is loaded before the page script with a content-hash cache key', async () => {
   const { engineVersionHash } = await import('../scripts/stamp-engine.mjs');
   const engineTag = html.indexOf('<script src="engine.js?v=');

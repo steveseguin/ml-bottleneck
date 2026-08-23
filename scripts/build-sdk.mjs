@@ -25,7 +25,17 @@ const snapshotContext = { window: {} };
 vm.createContext(snapshotContext);
 vm.runInContext(snapshotSource, snapshotContext);
 const snapshot = snapshotContext.window.LOCALMAXXING_SNAPSHOT;
-const evidence = { generatedAt: snapshot.generatedAt, source: snapshot.source, goldCases: snapshot.goldCases };
+const labEvidence = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data', 'lab-evidence.json'), 'utf8'));
+// Gold rows calibrate the engine; lab rows (neural.download, same author) are
+// measured references only and travel in their own collection.
+const evidence = {
+    generatedAt: snapshot.generatedAt,
+    source: snapshot.source,
+    goldCases: snapshot.goldCases,
+    labSource: labEvidence.source,
+    labUpdated: labEvidence.updated,
+    labCases: labEvidence.rows
+};
 
 const indent = source => source.split('\n').map(line => (line ? `    ${line}` : line)).join('\n');
 

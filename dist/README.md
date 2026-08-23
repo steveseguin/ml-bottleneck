@@ -78,6 +78,10 @@ const { ceiling } = engine.predict({ model: 'qwen3.6_35b_a3b', hardware: 'AMD St
              expectedTokensPerSecond,      // engine rate x peer correction (stock software)
              engineTokensPerSecond, correctionFactor, confidence, peers, verifiedPeers },
   memory:  { modelSizeGB, residentWeightsGB, kvCacheGB, availableGB },
+  measured: { nearest,                     // closest stock measurement on this model + hardware template (community gold run or lab stock row), or null
+              labTuned },                  // closest tuned neural.download lab run on the same machine (same template and device count), or null
+           // each: { tokensPerSecond, origin: 'community'|'lab', stack, model, hardware, deviceCount, runtime, quantization,
+           //         depthTokens, speculation, sameSetup, url, note }
   bottleneck: 'memory' | 'compute' | 'runtime' | 'coordination' | ...,   // devices[].coreBinding adds 'attention' for deep contexts
   power:   { watts, tdpWatts, costPerDay, costPer1KTokens },
   devices: [{ name, template, residentWeightGB, kvCacheGB, hasOverflow, overflowMode,
@@ -88,7 +92,9 @@ const { ceiling } = engine.predict({ model: 'qwen3.6_35b_a3b', hardware: 'AMD St
 }
 ```
 
-Numbers are *planning estimates*: the engine is calibrated so that the median community run lands on its prediction and ~85% land within 1.5×. Show users the ceiling ladder (`physical` → `optimized` → `expected`) rather than a single number when you can.
+Numbers are *planning estimates*: the engine is calibrated so that the median community run lands on its prediction and ~85% land within 1.5×. Show users the ceiling ladder (`physical` → `optimized` → `expected`) rather than a single number when you can, and `measured.nearest` / `measured.labTuned` beside it when they exist — they are real runs, with links.
+
+The evidence snapshot carries two collections: `goldCases` (community runs, the calibration corpus) and `labCases` (the author's [neural.download](https://neural.download/) Intel Arc Pro lab: `stock`, `lab-baseline`, and `tuned` rows). Lab rows never calibrate the engine; they only surface as measured references.
 
 ## Other methods
 

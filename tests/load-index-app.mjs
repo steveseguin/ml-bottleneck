@@ -12,6 +12,13 @@ export function loadSnapshot() {
   return context.window.LOCALMAXXING_SNAPSHOT;
 }
 
+// The lab rows the page loads from data/lab-evidence.js (generated from the
+// JSON by scripts/stamp-engine.mjs); the JSON is the source of truth here.
+export function loadLabEvidence() {
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  return JSON.parse(fs.readFileSync(path.join(repoRoot, 'data', 'lab-evidence.json'), 'utf8'));
+}
+
 class FakeClassList {
   constructor() {
     this.classes = new Set();
@@ -312,6 +319,10 @@ export function loadApp(options = {}) {
   window.Chart = FakeChart;
   if (options.snapshot) {
     window.LOCALMAXXING_SNAPSHOT = options.snapshot;
+  }
+  // Lab evidence loads by default like in the page; pass labEvidence: null to omit it.
+  if (options.labEvidence !== null) {
+    window.LAB_EVIDENCE = options.labEvidence || loadLabEvidence();
   }
 
   vm.createContext(sandbox);

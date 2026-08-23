@@ -198,6 +198,7 @@ function predict(request = {}) {
     }
     const power = calculatePowerAndCost(devices, aggregateDecode, metrics, request.usage || {});
     const speculationActive = Boolean(primary?.speculation && primary.speculationMultiplier > 1);
+    const evidenceTarget = buildEvidenceTarget(config, devices, metrics);
     return {
         fits,
         strategy: { key: strategy, label: strategy, reasoning: strategyInfo?.reasoning || null, auto: Boolean(strategyInfo) },
@@ -231,6 +232,10 @@ function predict(request = {}) {
             kvCacheGB: sdkRound(metrics.reduce((sum, metric) => sum + (metric.residentKvCacheGB || 0), 0), 2),
             availableGB: sdkRound(devices.reduce((sum, device) => sum + (parseFloat(device.memoryGB) || 0), 0), 1)
         },
+        measured: {
+            nearest: sdkSummarizeMeasuredRun(findNearestMeasuredRun(evidenceTarget)),
+            labTuned: sdkSummarizeMeasuredRun(findLabTunedRun(evidenceTarget))
+        },
         bottleneck: primary?.decodeTimeBreakdown?.dominant || null,
         power: power ? { watts: sdkRound(power.actualPowerWatts, 0), tdpWatts: sdkRound(power.totalTDP, 0), costPerDay: sdkRound(power.dailyCost, 3), costPer1KTokens: sdkRound(power.costPer1KTokens, 5) } : null,
         devices: metrics.map((metric, index) => sdkSummarizeDevice(metric, devices[index])),
@@ -257,6 +262,27 @@ function sweep(request = {}, options = {}) {
     return {
         context: calculateContextSweep(config, devices, { strategy, maxContext: options.maxContext }),
         concurrency: calculateConcurrencySweep(config, devices, { strategy, levels: options.levels })
+    };
+}
+
+// A measured reference run (community gold row or neural.download lab row)
+// in a stable shape; null when nothing on the same model + hardware exists.
+function sdkSummarizeMeasuredRun(row) {
+    if (!row) return null;
+    return {
+        tokensPerSecond: sdkRound(row.observedTokS, 2),
+        origin: row.isLab ? 'lab' : 'community',
+        stack: row.isLab ? row.stack : 'stock',
+        model: row.model,
+        hardware: row.hardware,
+        deviceCount: row.deviceCount || 1,
+        runtime: row.runtimeKey,
+        quantization: row.quantization || row.quantKey,
+        depthTokens: Math.round(row.decodeContextTokens || row.contextLength || 0),
+        speculation: row.speculation ? { method: row.speculation.method, tokens: row.speculation.tokens ?? null } : null,
+        sameSetup: Boolean(row.sameSetup),
+        url: row.source || row.url || null,
+        note: row.note || null
     };
 }
 

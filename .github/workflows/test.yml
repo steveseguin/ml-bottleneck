@@ -23,9 +23,9 @@ jobs:
       # live site serves the committed files, not what CI built.
       - name: Committed engine cache key and SDK bundle are current
         run: |
-          if ! git diff --quiet -- index.html dist; then
+          if ! git diff --quiet -- index.html dist data/lab-evidence.js; then
             echo "::error::index.html / dist are out of date. Run 'npm test' locally and commit the result."
-            git --no-pager diff --stat -- index.html dist
+            git --no-pager diff --stat -- index.html dist data/lab-evidence.js
             exit 1
           fi
       - run: npm run audit:gold

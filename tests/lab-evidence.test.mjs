@@ -120,3 +120,83 @@ test('the MTP ladder on vLLM XPU plateaus around x1.5 as the community measured'
     assert.ok(engineGain < measuredGain + 0.45, `${row.id} MTP${rung.tokens}: engine x${engineGain.toFixed(2)} vs measured x${measuredGain.toFixed(2)} — too optimistic`);
   }
 });
+
+// ---- Lab rows as measured references in the plan and the SDK -------------
+
+test('a B70 plan shows the lab baseline as nearest measured and the tuned run as its own rung', () => {
+  const b70 = H.DEVICE_TEMPLATES['Intel Arc Pro B70'];
+  app.hooks.setDevices([{ id: 1, template: 'Intel Arc Pro B70', ...JSON.parse(JSON.stringify(b70)), name: 'Intel Arc Pro B70' }]);
+  app.setValue('modelPreset', 'ornith_1.5_35b_a3b');
+  app.setValue('quantizationType', 'q4');
+  app.setValue('quantFormat', 'Q4_K_M');
+  app.setValue('runtimeFramework', 'llama_cpp');
+  app.setValue('parallelismStrategy', 'pipeline');
+  app.setValue('optimizationMode', 'none');
+  app.setValue('batchSize', '1');
+  app.setValue('promptTokens', '1024');
+  app.setValue('outputTokens', '256');
+  app.setValue('seqLength', '1280');
+  const config = H.buildEffectiveModelConfig();
+  const devices = H.getDevices();
+
+  const nearest = H.findNearestGoldRun(config, devices);
+  assert.ok(nearest, 'no nearest measured run for Ornith 35B on a B70');
+  assert.equal(nearest.isLab, true);
+  assert.equal(nearest.stack, 'lab-baseline');
+  assert.equal(nearest.observedTokS, 105.78);
+  assert.equal(nearest.sameSetup, true);
+  assert.match(nearest.label, /Ornith 1.5 35B A3B · Intel Arc Pro B70 32GB · llama.cpp Q4_K_M · 178-token depth/);
+
+  const tuned = H.findLabTunedReference(config, devices);
+  assert.ok(tuned, 'no tuned lab run surfaced');
+  assert.equal(tuned.stack, 'tuned');
+  assert.equal(tuned.observedTokS, 128.83);
+  assert.match(tuned.source, /^https:\/\/github\.com\/steveseguin\/b70-optimization-lab\//);
+
+  H.updateSystemAnalysis();
+  const html = app.elements.get('systemAnalysis').innerHTML;
+  assert.match(html, /data-tier="is-tuned"/, 'ladder has no Lab tuned rung');
+  assert.match(html, /Lab tuned/);
+  assert.match(html, /tuned neural\.download stack, not stock/);
+  assert.match(html, /neural\.download lab/, 'nearest measured rung does not name the lab');
+  assert.match(html, /class="ladder-link" href="https:\/\/github\.com\/steveseguin\/b70-optimization-lab\//, 'rungs do not link to the lab proof');
+  assert.match(html, /Nearest measured/);
+});
+
+test('the tuned rung follows the plan depth and the device count', () => {
+  const b70 = H.DEVICE_TEMPLATES['Intel Arc Pro B70'];
+  const device = count => Array.from({ length: count }, (_, index) => ({ id: index + 1, template: 'Intel Arc Pro B70', ...JSON.parse(JSON.stringify(b70)), name: `Intel Arc Pro B70 #${index + 1}` }));
+  const target = (config, devices) => H.buildEvidenceTarget(config, devices);
+  const base = H.normalizeModelConfig({ ...H.MODEL_PRESETS['ornith_1.5_35b_a3b'], modelPreset: 'ornith_1.5_35b_a3b', quantizationType: 'q4', quantFormat: 'Q4_K_M', runtimeFramework: 'llama_cpp', parallelismStrategy: 'pipeline', optimizationMode: 'none', kvCacheCompression: 'none', batchSize: 1, promptTokens: 32768, outputTokens: 256, seqLength: 33024 });
+  // At 32K the lab's own 32K sweep point is the reference, not the 128-token headline.
+  const deep = H.findLabTunedRun(target(base, device(1)));
+  assert.equal(deep.observedTokS, 96.996);
+  assert.equal(deep.promptTokens, 32768);
+  // Two cards is a different machine: no single-card tuned run applies.
+  assert.equal(H.findLabTunedRun(target(base, device(2))), null);
+  // Qwen3.8 27B has only a 2x B70 vLLM MTP tuned run; a single-card plan shows none.
+  const qwen = H.normalizeModelConfig({ ...H.MODEL_PRESETS['qwen3.8_27b'], modelPreset: 'qwen3.8_27b', quantizationType: 'q4', quantFormat: 'Q4_K_M', runtimeFramework: 'llama_cpp', parallelismStrategy: 'pipeline', optimizationMode: 'none', kvCacheCompression: 'none', batchSize: 1, promptTokens: 1024, outputTokens: 256, seqLength: 1280 });
+  assert.equal(H.findLabTunedRun(target(qwen, device(1))), null);
+  const twoCard = H.findLabTunedRun(target({ ...qwen, runtimeFramework: 'vllm', parallelismStrategy: 'tensor' }, device(2)));
+  assert.equal(twoCard.observedTokS, 101.17);
+  assert.deepEqual(twoCard.speculation, { method: 'mtp', tokens: 5 });
+  // Tuned rows never become a stock reference.
+  const nearest = H.findNearestMeasuredRun(target(base, device(1)));
+  assert.notEqual(nearest.stack, 'tuned');
+});
+
+test('lab rows project through the engine for the evidence tab (stock near 1x, tuned at or below target)', () => {
+  const rows = H.getLabValidationRows();
+  assert.ok(rows.length >= evidence.rows.length, 'sweep / ladder points should expand into rows');
+  for (const row of rows) {
+    assert.ok(Number.isFinite(row.expectedTokS) && row.expectedTokS > 0, `${row.id}: no projection`);
+    assert.ok(row.optimizedTokS >= row.expectedTokS * 0.99, `${row.id}: optimized below projected`);
+    if (row.stack !== 'tuned' && !row.speculation) {
+      assert.ok(row.observedToExpected >= 0.5 && row.observedToExpected <= 2, `${row.id}: measured ${row.observedTokS} vs projected ${row.expectedTokS.toFixed(1)}`);
+    }
+    if (row.stack === 'tuned') {
+      assert.ok(row.observedToOptimized <= 1 / 0.85, `${row.id}: tuned run ${row.observedTokS} far above optimized ${row.optimizedTokS.toFixed(1)}`);
+    }
+  }
+  app.hooks.renderEvidenceWorkspace?.();
+});

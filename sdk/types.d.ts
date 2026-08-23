@@ -95,6 +95,23 @@ export interface DeviceSummary {
   } | null;
 }
 
+export interface MeasuredRun {
+  tokensPerSecond: number;
+  origin: 'community' | 'lab';
+  stack: 'stock' | 'lab-baseline' | 'tuned';
+  model: string;
+  hardware: string;
+  deviceCount: number;
+  runtime: string;
+  quantization: string;
+  depthTokens: number;
+  speculation: { method: string; tokens: number | null } | null;
+  /** Same runtime, quantization family, and device count as the request. */
+  sameSetup: boolean;
+  url: string | null;
+  note: string | null;
+}
+
 export interface Prediction {
   fits: boolean;
   strategy: { key: Strategy; label: string; reasoning: string | null; auto: boolean };
@@ -118,6 +135,13 @@ export interface Prediction {
     verifiedPeers: number;
   } | null;
   memory: { modelSizeGB: number | null; residentWeightsGB: number | null; kvCacheGB: number | null; availableGB: number | null };
+  /** Measured runs on the same model and hardware template (null when none exist). */
+  measured: {
+    /** Closest stock measurement: a community gold run or a lab stock/baseline row. */
+    nearest: MeasuredRun | null;
+    /** Closest tuned neural.download lab result: what a tuned stack reached, never a stock reference. */
+    labTuned: MeasuredRun | null;
+  };
   bottleneck: string | null;
   power: { watts: number | null; tdpWatts: number | null; costPerDay: number | null; costPer1KTokens: number | null } | null;
   devices: DeviceSummary[];
@@ -142,7 +166,12 @@ export interface HardwareListing {
 
 export interface EvidenceSnapshot {
   generatedAt?: string;
+  /** Community gold rows: calibrate the engine (peer correction, optimized target). */
   goldCases: any[];
+  /** neural.download lab rows (stock / lab-baseline / tuned): measured references only, never calibration. */
+  labCases?: any[];
+  labSource?: string;
+  labUpdated?: string;
 }
 
 export interface Engine {

@@ -109,6 +109,33 @@ test('benchmark evidence makes calibration available; catalogs list models and h
   assert.equal(models.find(model => model.key === 'qwen3.6_27b').supersededBy, 'qwen3.8_27b');
 });
 
+test('the evidence snapshot carries the lab rows and predictions expose measured references', () => {
+  const snapshot = JSON.parse(fs.readFileSync(path.join(distDir, 'localmaxxing-snapshot.json'), 'utf8'));
+  const lab = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data', 'lab-evidence.json'), 'utf8'));
+  assert.equal(snapshot.labCases.length, lab.rows.length);
+  const engine = sdk.createEngine({ snapshot });
+
+  const b70 = engine.predict({ model: 'ornith_1.5_35b_a3b', hardware: 'Intel Arc Pro B70', quantization: 'Q4_K_M', runtime: 'llama_cpp', promptTokens: 1024, outputTokens: 256 });
+  assert.equal(b70.measured.nearest.origin, 'lab');
+  assert.equal(b70.measured.nearest.stack, 'lab-baseline');
+  assert.equal(b70.measured.nearest.tokensPerSecond, 105.78);
+  assert.equal(b70.measured.nearest.sameSetup, true);
+  assert.equal(b70.measured.labTuned.stack, 'tuned');
+  assert.equal(b70.measured.labTuned.tokensPerSecond, 128.83);
+  assert.match(b70.measured.labTuned.url, /github\.com\/steveseguin\/b70-optimization-lab/);
+  // The tuned stack sits between the stock projection and the optimized target.
+  assert.ok(b70.measured.labTuned.tokensPerSecond > b70.ceiling.expectedTokensPerSecond);
+  assert.ok(b70.measured.labTuned.tokensPerSecond <= b70.ceiling.optimizedTokensPerSecond);
+
+  // Community gold rows serve as nearest measured elsewhere; no lab rows exist off Intel.
+  const nvidia = engine.predict({ model: 'qwen3.8_27b', hardware: 'RTX 5090', quantization: 'Q4_K_M', runtime: 'llama_cpp', promptTokens: 1024, outputTokens: 256 });
+  assert.equal(nvidia.measured.labTuned, null);
+  if (nvidia.measured.nearest) assert.equal(nvidia.measured.nearest.origin, 'community');
+
+  // Without evidence there is nothing measured to show.
+  assert.deepEqual(sdk.createEngine().predict({ model: 'ornith_1.5_35b_a3b', hardware: 'Intel Arc Pro B70', quantization: 'Q4_K_M', runtime: 'llama_cpp' }).measured, { nearest: null, labTuned: null });
+});
+
 test('UMD bundle loads via require() and as a browser global', () => {
   const umdPath = path.join(distDir, 'mlbottleneck-engine.umd.js');
   const viaRequire = require(umdPath);
