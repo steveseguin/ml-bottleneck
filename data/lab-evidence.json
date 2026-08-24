@@ -118,9 +118,9 @@
       "quantization": "Q4_K_M",
       "promptTokens": 128,
       "outputTokens": 100,
-      "observedTokS": 128.83,
+      "observedTokS": 131.46,
       "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/repro/ornith-15-35b-a3b-q4km-b70/README.md",
-      "note": "eleven-feature lab kernel stack, target-only, two fresh servers"
+      "note": "twelve-feature lab kernel stack, target-only; mean of two fresh cache-zero conventional 99-interval suite medians (site headline row)"
     },
     {
       "id": "nd-ornith35b-tuned-depth-sweep",

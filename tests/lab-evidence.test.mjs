@@ -150,7 +150,7 @@ test('a B70 plan shows the lab baseline as nearest measured and the tuned run as
   const tuned = H.findLabTunedReference(config, devices);
   assert.ok(tuned, 'no tuned lab run surfaced');
   assert.equal(tuned.stack, 'tuned');
-  assert.equal(tuned.observedTokS, 128.83);
+  assert.equal(tuned.observedTokS, 131.46);
   assert.match(tuned.source, /^https:\/\/github\.com\/steveseguin\/b70-optimization-lab\//);
 
   H.updateSystemAnalysis();

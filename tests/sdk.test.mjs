@@ -121,7 +121,7 @@ test('the evidence snapshot carries the lab rows and predictions expose measured
   assert.equal(b70.measured.nearest.tokensPerSecond, 105.78);
   assert.equal(b70.measured.nearest.sameSetup, true);
   assert.equal(b70.measured.labTuned.stack, 'tuned');
-  assert.equal(b70.measured.labTuned.tokensPerSecond, 128.83);
+  assert.equal(b70.measured.labTuned.tokensPerSecond, 131.46);
   assert.match(b70.measured.labTuned.url, /github\.com\/steveseguin\/b70-optimization-lab/);
   // The tuned stack sits between the stock projection and the optimized target.
   assert.ok(b70.measured.labTuned.tokensPerSecond > b70.ceiling.expectedTokensPerSecond);
