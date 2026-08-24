@@ -1,6 +1,6 @@
 {
   "name": "ml-bottleneck",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "sdkName": "@mlbottleneck/engine",
   "license": "MIT",
   "private": true,

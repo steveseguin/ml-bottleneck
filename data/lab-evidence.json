@@ -1,6 +1,6 @@
 {
   "source": "neural.download — Unofficial Intel XPU Optimization Lab (same author); measurements are the lab's, reproduced from the linked packets. Not part of the Localmaxxing gold set: `stack` says whether a row is stock software, the lab's baseline build, or a tuned lab stack.",
-  "updated": "2026-08-23",
+  "updated": "2026-08-24",
   "rows": [
     {
       "id": "nd-ornith35b-q4km-baseline",
@@ -248,6 +248,81 @@
       "observedTokS": 30.17,
       "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/community/dominick253-qwen36-27b-fp8-tp2-docker/STATUS.md",
       "note": "community Docker/vLLM setup re-run by the lab; FP8 on Arc is emulated"
+    },
+    {
+      "stack": "tuned",
+      "presetKey": "qwen3.6_35b_a3b",
+      "hardwareTemplate": "Intel Arc Pro B70",
+      "deviceCount": 1,
+      "runtimeKey": "vllm",
+      "quantization": "AutoRound INT4",
+      "promptTokens": 128,
+      "outputTokens": 1024,
+      "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/docs/qwen36-35b-aggregate-throughput-evidence.md",
+      "id": "nd-qwen36-35b-autoround-b70-users-r14",
+      "concurrencySweep": [
+        {
+          "users": 1,
+          "perUserTokS": 87.638,
+          "aggregateTokS": 87.638
+        },
+        {
+          "users": 2,
+          "perUserTokS": 38.593,
+          "aggregateTokS": 77.186
+        },
+        {
+          "users": 4,
+          "perUserTokS": 37.371,
+          "aggregateTokS": 149.484
+        },
+        {
+          "users": 8,
+          "perUserTokS": 34.596,
+          "aggregateTokS": 276.766
+        },
+        {
+          "users": 16,
+          "perUserTokS": 30.54,
+          "aggregateTokS": 488.647
+        },
+        {
+          "users": 32,
+          "perUserTokS": 25.723,
+          "aggregateTokS": 823.151
+        },
+        {
+          "users": 64,
+          "perUserTokS": 16.241,
+          "aggregateTokS": 1039.408
+        }
+      ],
+      "note": "grouped-w4a16-piecewise-graph-r14: one coherent measured sweep (persistent raw-engine batching, temp 0, 2 repeats). XPU Graphs are captured only at batch 1/32/64, so 2-16 users run off-graph and aggregate throughput dips below one user at B2 - a capture-shape artifact of this tuned stack, not a scaling law. perUserTokS is aggregate/users by definition. B64 fixed-seed determinism unresolved (27/64) - experimental evidence, not a promoted recipe."
+    },
+    {
+      "stack": "tuned",
+      "presetKey": "qwen3.6_35b_a3b",
+      "hardwareTemplate": "Intel Arc Pro B70",
+      "deviceCount": 1,
+      "runtimeKey": "vllm",
+      "quantization": "AutoRound INT4",
+      "promptTokens": 128,
+      "outputTokens": 1024,
+      "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/docs/qwen36-35b-aggregate-throughput-evidence.md",
+      "id": "nd-qwen36-35b-autoround-b70-users-r16",
+      "concurrencySweep": [
+        {
+          "users": 1,
+          "perUserTokS": 90.909,
+          "aggregateTokS": 90.909
+        },
+        {
+          "users": 64,
+          "perUserTokS": 16.451,
+          "aggregateTokS": 1052.87
+        }
+      ],
+      "note": "combined-runtime-guards-r16: separate treatment measured at B1 and B64 only; the lab forbids joining these to the r14 curve. Faster than r14 but B64 determinism still unresolved (29/64)."
     }
   ]
 }

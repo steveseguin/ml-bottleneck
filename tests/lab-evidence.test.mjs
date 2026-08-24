@@ -203,32 +203,74 @@ test('lab rows project through the engine for the evidence tab (stock near 1x, t
 
 // ---- Concurrency (multi-user) evidence ------------------------------------
 // Rows with `concurrencySweep: [{ users, perUserTokS, aggregateTokS }]` check
-// the "Throughput vs concurrent users" curve, the one projection with no
-// community evidence behind it (every Localmaxxing gold row is batch 1). See
-// docs/concurrency-evidence.md for how to measure one. Skipped until a row exists.
+// the "Throughput vs concurrent users" curve, the one projection no community
+// gold row covers (every Localmaxxing run is batch 1). See
+// docs/concurrency-evidence.md for how to measure one.
 const concurrencyRows = evidence.rows.filter(row => Array.isArray(row.concurrencySweep) && row.concurrencySweep.length >= 2);
 
-test('measured concurrency sweeps: the engine reproduces how aggregate throughput grows with users', { skip: concurrencyRows.length === 0 && 'no concurrencySweep rows yet' }, () => {
+function engineConcurrency(row) {
+  const { devices, strategy, config } = configFor(row);
+  const levels = row.concurrencySweep.map(point => point.users);
+  return H.calculateConcurrencySweep(config, devices, { levels, strategy });
+}
+
+test('measured concurrency sweeps: the engine tracks aggregate throughput as users grow', { skip: concurrencyRows.length === 0 && 'no concurrencySweep rows yet' }, () => {
+  for (const row of concurrencyRows) {
+    const sweep = engineConcurrency(row);
+    const enginePoints = new Map(sweep.points.map(point => [point.concurrency, point]));
+    // The engine's own curve must be monotone: more users never lowers aggregate.
+    for (let index = 1; index < sweep.points.length; index++) {
+      assert.ok(sweep.points[index].aggregateTokS >= sweep.points[index - 1].aggregateTokS * 0.999,
+        `${row.id}: engine aggregate falls from ${sweep.points[index - 1].concurrency} to ${sweep.points[index].concurrency} users`);
+    }
+    const top = row.concurrencySweep[row.concurrencySweep.length - 1];
+    const engineTop = enginePoints.get(top.users);
+    assert.ok(engineTop, `${row.id}: engine sweep has no ${top.users}-user point`);
+    if (row.stack === 'tuned') {
+      // A tuned measurement bounds the stock projection from above at the top
+      // anchor (stock <= tuned in reality), and every measured point must stay
+      // within a wide absolute band of the stock curve. Tuned stacks can have
+      // capture-shape cliffs (the r14 stack graphs only batch 1/32/64, so
+      // 2-16 users dip below the batch-1 aggregate); the band is deliberately
+      // loose there, and gains are not compared point-for-point.
+      assert.ok(engineTop.aggregateTokS <= top.aggregateTokS * 1.05,
+        `${row.id}: stock projection ${engineTop.aggregateTokS.toFixed(0)} exceeds the tuned measurement ${top.aggregateTokS} at ${top.users} users`);
+      assert.ok(engineTop.aggregateTokS >= top.aggregateTokS * 0.55,
+        `${row.id}: stock projection ${engineTop.aggregateTokS.toFixed(0)} implausibly far below the tuned ${top.aggregateTokS} at ${top.users} users`);
+      for (const point of row.concurrencySweep) {
+        const engine = enginePoints.get(point.users);
+        const ratio = engine.aggregateTokS / point.aggregateTokS;
+        assert.ok(ratio >= 0.45 && ratio <= 1.8,
+          `${row.id} at ${point.users} users: engine ${engine.aggregateTokS.toFixed(0)} vs tuned ${point.aggregateTokS} (x${ratio.toFixed(2)})`);
+      }
+    } else {
+      // Stock / lab-baseline sweeps compare directly: level rate and scaling gain.
+      const first = row.concurrencySweep[0];
+      const engineFirst = enginePoints.get(first.users);
+      const firstRatio = first.aggregateTokS / engineFirst.aggregateTokS;
+      assert.ok(firstRatio >= 0.6 && firstRatio <= 1.6,
+        `${row.id}: ${first.users}-user measured ${first.aggregateTokS} vs engine ${engineFirst.aggregateTokS.toFixed(1)} (x${firstRatio.toFixed(2)})`);
+      for (const point of row.concurrencySweep.slice(1)) {
+        const engine = enginePoints.get(point.users);
+        const measuredGain = point.aggregateTokS / first.aggregateTokS;
+        const engineGain = engine.aggregateTokS / engineFirst.aggregateTokS;
+        assert.ok(engineGain >= measuredGain * 0.65 && engineGain <= measuredGain * 1.35,
+          `${row.id} at ${point.users} users: aggregate gain engine x${engineGain.toFixed(2)} vs measured x${measuredGain.toFixed(2)}`);
+      }
+    }
+  }
+});
+
+test('the measured 64-user sweep stays below the physical roofline at every level', { skip: concurrencyRows.length === 0 && 'no concurrencySweep rows yet' }, () => {
   for (const row of concurrencyRows) {
     const { devices, strategy, config } = configFor(row);
-    const levels = row.concurrencySweep.map(point => point.users);
-    const sweep = H.calculateConcurrencySweep(config, devices, { levels, strategy });
-    const measured1 = row.concurrencySweep[0];
-    const engine1 = sweep.points[0];
-    // Single-user rate near the engine (stock/baseline rows only; tuned rows can beat it).
-    if (row.stack !== 'tuned') {
-      const ratio = measured1.perUserTokS / engine1.perUserTokS;
-      assert.ok(ratio >= 0.6 && ratio <= 1.6, `${row.id}: 1-user ${measured1.perUserTokS} vs engine ${engine1.perUserTokS.toFixed(1)} (x${ratio.toFixed(2)})`);
-    }
-    for (let index = 1; index < row.concurrencySweep.length; index++) {
-      const measured = row.concurrencySweep[index];
-      const point = sweep.points[index];
-      assert.ok(point && point.concurrency === measured.users, `${row.id}: engine sweep has no ${measured.users}-user point`);
-      const measuredGain = (measured.aggregateTokS || measured.perUserTokS * measured.users) / (measured1.aggregateTokS || measured1.perUserTokS);
-      const engineGain = point.aggregateTokS / engine1.aggregateTokS;
-      // Aggregate scaling must agree in direction and within ~35% in magnitude.
-      assert.ok(engineGain >= measuredGain * 0.65 && engineGain <= measuredGain * 1.35,
-        `${row.id} at ${measured.users} users: aggregate gain engine x${engineGain.toFixed(2)} vs measured x${measuredGain.toFixed(2)}`);
+    for (const point of row.concurrencySweep) {
+      const batched = H.normalizeModelConfig({ ...config, batchSize: point.users });
+      const metrics = H.calculateMetricsForConfig(batched, devices);
+      const perUser = H.calculateSystemRateFromDeviceRates(metrics.map(m => m.decodeTokensPerSecond), strategy, point.users, devices);
+      const calibration = H.calculateCurrentCalibration(batched, metrics, perUser, strategy, devices);
+      assert.ok(calibration.physicalTokS * point.users >= point.aggregateTokS,
+        `${row.id} at ${point.users} users: measured ${point.aggregateTokS} beats the physical roofline ${(calibration.physicalTokS * point.users).toFixed(0)}`);
     }
   }
 });

@@ -1,6 +1,6 @@
 {
   "name": "@mlbottleneck/engine",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Physics-based LLM inference planner: decode/prefill tokens per second, memory fit, multi-GPU strategy, and speculative-decoding gains for any model on any hardware, calibrated on community benchmarks.",
   "keywords": [
     "llm",

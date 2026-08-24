@@ -287,12 +287,17 @@ const FRAMEWORK_PROFILES = {
         label: 'vLLM',
         bandwidthEfficiency: 0.84,
         backends: {
-            // vLLM XPU on Intel Arc: MoE routing penalty fit on B70 rows; small-M
-            // GEMMs (speculative verification, small batches) reach ~55% of the
-            // CUDA-class batched efficiency and the MTP draft path costs ~3x its
-            // CUDA price (community Qwen3.6-27B GPTQ ladder on one B70: off 33.2,
-            // MTP1 47.1, MTP2 52.2, MTP3/4 51.6 — gains plateau at x1.57).
-            sycl: { moeOverheadScale: 0.75, specDraftOverheadScale: 3, batchedComputeScale: 0.55 }
+            // vLLM XPU on Intel Arc: MoE routing penalty fit on B70 rows; batched
+            // GEMMs reach ~40% of the CUDA-class efficiency and the MTP draft
+            // path costs ~3x its CUDA price. Two independent anchors: the
+            // community Qwen3.6-27B GPTQ MTP ladder on one B70 (off 33.2, MTP1
+            // 47.1, MTP2 52.2, MTP3/4 51.6 — gains plateau at x1.57) and the
+            // lab's measured Qwen3.6-35B AutoRound aggregate sweep (one B70:
+            // 823 tok/s at 32 users, 1039 at 64). At 0.40 the stock projection
+            // lands on the sweep's graph-captured anchors (832/1056) instead of
+            // overshooting a tuned measurement by 27% as 0.55 did; the tuned
+            // stack's edge lives at small M (87.6 vs 65 stock at one user).
+            sycl: { moeOverheadScale: 0.75, specDraftOverheadScale: 3, batchedComputeScale: 0.40 }
         },
         kvReadEfficiency: 0.90,
         perLayerOverheadUs: 45,
