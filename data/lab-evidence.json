@@ -1,6 +1,6 @@
 {
   "source": "neural.download — Unofficial Intel XPU Optimization Lab (same author); measurements are the lab's, reproduced from the linked packets. Not part of the Localmaxxing gold set: `stack` says whether a row is stock software, the lab's baseline build, or a tuned lab stack.",
-  "updated": "2026-08-24",
+  "updated": "2026-08-25",
   "rows": [
     {
       "id": "nd-ornith35b-q4km-baseline",
@@ -323,6 +323,59 @@
         }
       ],
       "note": "combined-runtime-guards-r16: separate treatment measured at B1 and B64 only; the lab forbids joining these to the r14 curve. Faster than r14 but B64 determinism still unresolved (29/64)."
+    },
+    {
+      "id": "nd-qwen38-27b-int4-vllm-tp1-depth",
+      "stack": "lab-baseline",
+      "presetKey": "qwen3.8_27b",
+      "hardwareTemplate": "Intel Arc Pro B70",
+      "deviceCount": 1,
+      "runtimeKey": "vllm",
+      "quantization": "AutoRound INT4",
+      "outputTokens": 128,
+      "depthSweep": [
+        {
+          "promptTokens": 2048,
+          "decodeTokS": 30.0957
+        },
+        {
+          "promptTokens": 4096,
+          "decodeTokS": 29.7669
+        },
+        {
+          "promptTokens": 8192,
+          "decodeTokS": 29.2778
+        },
+        {
+          "promptTokens": 16384,
+          "decodeTokS": 28.4202
+        },
+        {
+          "promptTokens": 24576,
+          "decodeTokS": 27.6576
+        },
+        {
+          "promptTokens": 32768,
+          "decodeTokS": 26.9888
+        }
+      ],
+      "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/experiments/qwen38-27b-b70/notes/2026-08-25-qwen38-b2dd9ce73d-tp1-exact-depth-r1-result.md",
+      "note": "b2dd9ce73d/1e90ffa672 zero-overlay vLLM XPU (dated current-main, no lab kernel patches), graph on, f16 KV, MTP0, exact flat-token active-context requests, 128 output tokens, 99-interval median; full quality battery passed; depth 0 not measured"
+    },
+    {
+      "id": "nd-qwen38-27b-int4-vllm-tp4-strict",
+      "stack": "tuned",
+      "presetKey": "qwen3.8_27b",
+      "hardwareTemplate": "Intel Arc Pro B70",
+      "deviceCount": 4,
+      "runtimeKey": "vllm",
+      "quantization": "AutoRound INT4",
+      "strategy": "tensor",
+      "promptTokens": 512,
+      "outputTokens": 256,
+      "observedTokS": 71.45,
+      "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/families/qwen-27b.json",
+      "note": "a3561ef8 TP4 graph overlay, strict natural-EOS 25-prompt cache-zero gate, 99-interval median (71.35 / 71.45 across two arms); the lab's curated family headline. Prompt/response shape approximated as 512/256 (natural EOS, conventional suite)"
     }
   ]
 }
