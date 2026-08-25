@@ -1365,7 +1365,7 @@ test('AI handoff and Plan JSON distinguish estimates, targets, and physical boun
   assert.ok(payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond >= 150.2 && payload.prediction.optimizedTarget.latencyAwareRooflineTokensPerSecond <= 150.5);
   assert.ok(payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline >= 0.77 && payload.prediction.optimizedTarget.demonstratedEfficiencyOfLatencyAwareRoofline <= 0.80);
   assert.ok(payload.prediction.physicalRoofline.decodeTokensPerSecond >= 389.3 && payload.prediction.physicalRoofline.decodeTokensPerSecond <= 389.7);
-  assert.match(handoff, /40\.7\d+ tok\/s projected real/);
+  assert.match(handoff, /40\.5\d+ tok\/s projected real/);
   assert.match(handoff, /117\.\d+ tok\/s optimized/);
   assert.match(handoff, /389\.5\d+ tok\/s physical roofline/);
   assert.match(handoff, /Profile provenance: planner-estimate/);

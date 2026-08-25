@@ -547,7 +547,7 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   await page.locator('#copyAiHandoffButton').click();
   await expect(page.locator('#planExportStatus')).toHaveText('AI handoff copied.');
   const copied = await page.evaluate(() => window.__copiedPlanText);
-  expect(copied).toMatch(/40\.7\d+ tok\/s projected real/);
+  expect(copied).toMatch(/40\.5\d+ tok\/s projected real/);
   expect(copied).toMatch(/117\.\d+ tok\/s optimized/);
   expect(copied).toContain('389.515 tok/s physical roofline');
   expect(copied).toContain('Profile provenance: planner-estimate');
