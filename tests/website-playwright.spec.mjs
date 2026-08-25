@@ -562,8 +562,8 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   expect(payload.hardware.devices[0].officialPeakMemoryBandwidthGBps).toBe(608);
   expect(payload.hardware.devices[0].sustainedMemoryBandwidthGBps).toBeNull();
   expect(payload.execution.profile.provenance).toBe('planner-estimate');
-  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(40.55);
-  expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(40.95);
+  expect(payload.prediction.primary.decodeTokensPerSecond).toBeGreaterThanOrEqual(40.3);
+  expect(payload.prediction.primary.decodeTokensPerSecond).toBeLessThanOrEqual(40.7);
   expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeGreaterThanOrEqual(117.0);
   expect(payload.prediction.optimizedTarget.decodeTokensPerSecond).toBeLessThanOrEqual(117.5);
   expect(payload.prediction.physicalRoofline.decodeTokensPerSecond).toBeGreaterThanOrEqual(389.3);

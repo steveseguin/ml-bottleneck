@@ -281,7 +281,7 @@ function sdkSummarizeMeasuredRun(row) {
         depthTokens: Math.round(row.decodeContextTokens || row.contextLength || 0),
         concurrency: row.batchSize || 1,
         aggregateTokensPerSecond: sdkRound(row.aggregateTokS || row.observedTokS * (row.batchSize || 1), 2),
-        speculation: row.speculation ? { method: row.speculation.method, tokens: row.speculation.tokens ?? null } : null,
+        speculation: row.speculation ? { method: row.speculation.method, tokens: row.speculation.tokens ?? null, ...(Number.isFinite(row.speculation.acceptance) ? { acceptance: row.speculation.acceptance } : {}) } : null,
         sameSetup: Boolean(row.sameSetup),
         url: row.source || row.url || null,
         note: row.note || null

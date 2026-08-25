@@ -5023,7 +5023,13 @@ function createEngine(options = {}) {
 
         const numLayers = Math.max(1, parseFloat(modelConfig.numLayers) || 1);
         const activeParamsB = getActiveParamsB(modelConfig);
+        // Storage width: a MoE MTP layer keeps every expert resident. Read
+        // width: routing touches only the active experts, so one drafted token
+        // streams the active slice, not the whole layer (Gemma 4 26B-A4B: the
+        // MTP layer holds ~0.87B but a draft token reads ~0.13B; charging the
+        // full width made MTP lose to plain decode while the lab measures x1.6).
         const layerParamsB = (method.draftUsesTotalLayerWidth ? modelConfig.totalParamsB : activeParamsB) / numLayers;
+        const layerReadParamsB = activeParamsB / numLayers;
         const vocabSize = parseFloat(modelConfig.vocabSize) || DEFAULT_VOCAB_SIZE;
         const hiddenSize = Math.max(1, parseFloat(modelConfig.hiddenSize) || 4096);
         const headParamsB = vocabSize * hiddenSize / 1e9;
@@ -5057,6 +5063,8 @@ function createEngine(options = {}) {
             reusesTargetHead: Boolean(method.reusesTargetHead),
             draftHeadParamsB: method.ownHead ? headParamsB * (method.headVocabFraction || 1) : 0,
             draftLayerParamsB: method.kind === 'autoregressive-model' ? draftParamsB : layerParamsB * (method.draftLayersOfTarget || 0),
+            // Bytes one drafted token actually streams through the draft layers.
+            draftLayerReadParamsB: method.kind === 'autoregressive-model' ? draftParamsB : layerReadParamsB * (method.draftLayersOfTarget || 0),
             headParamsB,
             kvLayers: method.kvLayers || 0,
             kvWindow: method.kvWindow || null,
@@ -5335,7 +5343,13 @@ function createEngine(options = {}) {
         metrics.forEach((metric, index) => {
             const passRate = Math.max(metric.theoreticalMaxTokensPerSecond || 0, 0);
             if (!Number.isFinite(passRate) || passRate <= 0) return;
-            const emittedTokensPerPass = Math.max(metric.speculationTokensPerStep || metric.speculationMultiplier || 1, 1);
+            // A speculative pass verifies K+1 drafted tokens but only the accepted
+            // ones are emitted. The ceiling therefore scales by the modeled
+            // acceptance multiplier, never by the drafted window: DSpark 7 on
+            // DeepSeek V4 Flash drafts 8 tokens a pass and the community's own
+            // runs gain x1.0-1.1 (4x RTX PRO 6000: 297-346 plain vs 308-310
+            // DSpark), so a 7x roofline would be a fantasy no run could approach.
+            const emittedTokensPerPass = Math.max(metric.speculationMultiplier || 1, 1);
             const layerShare = strategy === 'pipeline'
                 ? getParallelismScales(modelConfig, devicesArray, index).accessedScale
                 : 1;
@@ -5815,8 +5829,24 @@ function createEngine(options = {}) {
     const CPU_PREFILL_TFLOPS = 1.2;
 
 
-    function calculateDecodeRuntimeOverheadSeconds(modelConfig, frameworkProfile, device, layerShare = 1, offloadedLayerFraction = 0) {
+    function calculateDecodeRuntimeOverheadSeconds(modelConfig, frameworkProfile, device, layerShare = 1, offloadedLayerFraction = 0, tensorWays = 1) {
         const layers = Math.max(1, parseFloat(modelConfig.numLayers) || 1) * Math.max(0, Math.min(1, layerShare));
+        // Tensor parallelism splits every layer's kernels across the cards, so
+        // the per-layer launch work each card does shrinks with the split. It
+        // does not vanish (each card still launches its slice and the
+        // all-reduce is charged as coordination); the lab's B70 ladder for a
+        // dense 27B on vLLM XPU (TP1 30.3, TP2 ~46, TP4 71.5 tok/s - about
+        // x1.5 per doubling) is reproduced by a 1/sqrt(N) share. Pipeline
+        // strategies keep the whole per-layer cost on the card running the
+        // layer (layerShare already scopes the layer count).
+        // On CUDA-class backends the split is clean. On SYCL/XPU the MoE routing
+        // kernels are the least optimized part and do not shrink with the
+        // split (six multi-card B70 MoE gold rows land at 1.23x over-projection
+        // with a full share; the dense 27B ladder wants the full share), so MoE
+        // targets on such backends keep half of the launch work per card.
+        const backendDamped = modelConfig.isMoE && Number.isFinite(device?.kernelOverheadScale) && device.kernelOverheadScale > 1;
+        const rawShare = tensorWays > 1 ? 1 / Math.sqrt(tensorWays) : 1;
+        const tensorLaunchShare = backendDamped ? (0.5 + 0.5 * rawShare) : rawShare;
         // Runtimes with fused kernels for a layer family (MLX's gated-delta
         // and SSM paths) override the default per-mechanism launch scale.
         const runtimeAttentionScale = frameworkProfile.attentionOverheadScales?.[modelConfig.attentionMechanism];
@@ -5830,7 +5860,7 @@ function createEngine(options = {}) {
         // backends, so the expert penalty grows with the backend factor.
         const moeExtra = Number.isFinite(frameworkProfile.moeOverheadExtra) ? frameworkProfile.moeOverheadExtra : LAYER_OVERHEAD_SCALES.moeExtra;
         const moeScale = modelConfig.isMoE ? (1 + moeExtra * deviceScale * getBackendEfficiency(frameworkProfile, device).moeOverheadScale) : 1;
-        const perLayerUs = (frameworkProfile.perLayerOverheadUs || 0) * attentionScale * moeScale * deviceScale;
+        const perLayerUs = (frameworkProfile.perLayerOverheadUs || 0) * attentionScale * moeScale * deviceScale * tensorLaunchShare;
         const perTokenUs = (frameworkProfile.perTokenOverheadUs || 0) * deviceScale;
         // Layers whose experts live in system RAM add a GPU->CPU->GPU round
         // trip (activation copy, CPU thread fan-out, result copy) each step.
@@ -5940,7 +5970,8 @@ function createEngine(options = {}) {
         const layerShare = modelConfig.parallelismStrategy === 'pipeline' ? parallelScales.accessedScale : 1;
         const runtimeOverheadSeconds = hasSuppliedOverhead
             ? 0
-            : calculateDecodeRuntimeOverheadSeconds(modelConfig, frameworkProfile, device, layerShare, bandwidthInfo.offloadedLayerFraction || 0);
+            : calculateDecodeRuntimeOverheadSeconds(modelConfig, frameworkProfile, device, layerShare, bandwidthInfo.offloadedLayerFraction || 0,
+                ['tensor', 'hybrid_tp_pp', 'hybrid_tp_dp'].includes(modelConfig.parallelismStrategy) ? Math.max(1, (allDevices || []).length) : 1);
 
         // Other optimization modes are modest efficiency changes on the core
         // pass. Speculative decoding is modeled as a real step: the target
@@ -5992,7 +6023,7 @@ function createEngine(options = {}) {
             // reduced-vocab head for EAGLE-3); embedding rows are lookups.
             const draftReadParamsB = plan.kind === 'autoregressive-model'
                 ? plan.draftParamsB
-                : plan.draftLayerParamsB + plan.draftHeadParamsB;
+                : (Number.isFinite(plan.draftLayerReadParamsB) ? plan.draftLayerReadParamsB : plan.draftLayerParamsB) + plan.draftHeadParamsB;
             const draftWeightBytes = Math.max(0, draftReadParamsB) * 1e9 * draftBytesPerParam * parallelScales.accessedScale;
             const headBytes = plan.reusesTargetHead ? plan.headParamsB * 1e9 * getStoredBytesPerParam(modelConfig, dtypeSize) * parallelScales.accessedScale : 0;
             const draftKvBytes = getSpeculationMemoryBytes(modelConfig, dtypeSize, plan, allDevices) * parallelScales.residentScale - plan.draftParamsB * 1e9 * draftBytesPerParam * parallelScales.residentScale - plan.bufferGB * 1e9 * parallelScales.residentScale;
@@ -6011,7 +6042,13 @@ function createEngine(options = {}) {
             } else if (plan.kind === 'block') {
                 draftSeconds = (draftWeightBytes / (Math.max(realisticBandwidthGBps, 0.0001) * 1e9) + Math.max(0, draftKvBytes) / (Math.max(kvBandwidthGBps, 0.0001) * 1e9) + draftLayerOverhead + draftStepOverhead * (frameworkProfile.key === 'llama_cpp' ? 4 : 1)) * draftBatchScale;
             } else {
-                const perDraftToken = (draftWeightBytes + headBytes) / (Math.max(realisticBandwidthGBps, 0.0001) * 1e9) + Math.max(0, draftKvBytes) / (Math.max(kvBandwidthGBps, 0.0001) * 1e9) + draftLayerOverhead + draftStepOverhead;
+                // A native MTP head on a MoE target drafts through one routed
+                // layer: launches are per active expert slice, not per full
+                // layer, so the fixed per-draft-token cost scales with the
+                // active fraction (Gemma 4 26B-A4B on SYCL: the lab measures
+                // x1.19 at MTP3 where a full-cost draft predicted x1.06).
+                const draftActiveShare = modelConfig.isMoE ? Math.max(0.25, Math.min(1, getActiveParamsB(modelConfig) / Math.max(modelConfig.totalParamsB, 1e-9) * 2)) : 1;
+                const perDraftToken = (draftWeightBytes + headBytes) / (Math.max(realisticBandwidthGBps, 0.0001) * 1e9) + Math.max(0, draftKvBytes) / (Math.max(kvBandwidthGBps, 0.0001) * 1e9) + draftLayerOverhead + draftStepOverhead * draftActiveShare;
                 draftSeconds = perDraftToken * K * draftBatchScale;
             }
             const verifyCoreSeconds = combineDecodeCoreSeconds(verifyWeightSeconds, verifyKvSeconds, verifyGemmSeconds, verifyAttentionSeconds).seconds;
@@ -7421,6 +7458,9 @@ function createEngine(options = {}) {
             // aggregate across a batched run is kept separately.
             observedTokS,
             batchSize,
+            // A flagged research row may exceed the engine's optimized target;
+            // it is shown, never used as a stock reference or a calibration anchor.
+            exceedsOptimizedTarget: Boolean(row.exceedsOptimizedTarget),
             aggregateTokS: Number.isFinite(overrides.aggregateTokS) ? overrides.aggregateTokS : observedTokS * batchSize,
             prefillTokS: Number.isFinite(overrides.prefillTokS) ? overrides.prefillTokS : (Number.isFinite(row.prefillTokS) ? row.prefillTokS : null),
             reproducibility: 1
@@ -7571,7 +7611,7 @@ function createEngine(options = {}) {
             optimizationMode: spec ? 'speculative' : 'none',
             specMethod: spec ? spec.method : 'mtp',
             specTokens: spec ? spec.tokens : null,
-            specAcceptance: null,
+            specAcceptance: spec && Number.isFinite(spec.acceptance) ? spec.acceptance : null,
             specDraftRatio: spec && Number.isFinite(spec.draftRatio) ? spec.draftRatio : null,
             kvCacheCompression: 'none',
             batchSize: row.batchSize || 1,
@@ -8004,7 +8044,7 @@ function createEngine(options = {}) {
             depthTokens: Math.round(row.decodeContextTokens || row.contextLength || 0),
             concurrency: row.batchSize || 1,
             aggregateTokensPerSecond: sdkRound(row.aggregateTokS || row.observedTokS * (row.batchSize || 1), 2),
-            speculation: row.speculation ? { method: row.speculation.method, tokens: row.speculation.tokens ?? null } : null,
+            speculation: row.speculation ? { method: row.speculation.method, tokens: row.speculation.tokens ?? null, ...(Number.isFinite(row.speculation.acceptance) ? { acceptance: row.speculation.acceptance } : {}) } : null,
             sameSetup: Boolean(row.sameSetup),
             url: row.source || row.url || null,
             note: row.note || null

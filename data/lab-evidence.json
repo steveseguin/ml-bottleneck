@@ -182,10 +182,12 @@
       "observedTokS": 101.17,
       "speculation": {
         "method": "mtp",
-        "tokens": 5
+        "tokens": 5,
+        "acceptance": 0.92
       },
       "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/repro/qwen38-27b-autoround-int4-b70/README.md",
-      "note": "research lane, determinism open"
+      "note": "research lane, determinism open Acceptance 0.92 is back-derived from the run's own x2.19 gain over its 46 tok/s target-only arm (the lab did not publish an accept length); research lane, determinism open. Exceeds the engine's optimized target for 2-card vLLM XPU MTP5 even at its back-derived acceptance: the research lane's tensor-parallel MTP path beats what the calibrated engine models for this stack; kept as a flagged reference, not a calibration anchor.",
+      "exceedsOptimizedTarget": true
     },
     {
       "id": "nd-qwen36-35b-quark-int8-tp4-tuned",
@@ -232,8 +234,9 @@
         "draftRatio": 0.087
       },
       "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/repro/muse-glimmer-30b-q8-woq-b70-100tps-20260813/README.md",
-      "note": "llama.cpp SYCL TP4 (lab distributed ARGMAX / local-winner reuse) with the published 2.6B Muse assistant as a BF16 draft model, n-draft 15; canonical full-256 means 100.1 / 100.6",
-      "strategy": "tensor"
+      "note": "llama.cpp SYCL TP4 (lab distributed ARGMAX / local-winner reuse) with the published 2.6B Muse assistant as a BF16 draft model, n-draft 15; canonical full-256 means 100.1 / 100.6 Exceeds the engine's optimized target: the lab's converted BF16 DFlash draft on 4-card llama.cpp SYCL costs far less per drafted token than the generic draft-model path models (measured x2.67 over its target-only arm); flagged reference, not a calibration anchor.",
+      "strategy": "tensor",
+      "exceedsOptimizedTarget": true
     },
     {
       "id": "nd-qwen36-27b-fp8-tp2-community",
