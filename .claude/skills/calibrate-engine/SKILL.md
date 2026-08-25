@@ -127,3 +127,22 @@ multi-node EXO beyond the coordination term, Apple M5 Neural Accelerator through
 derived 120/60 TFLOPS (no vendor figure). Expert offload and speculation *are* modeled now — calibrate
 them against paired rows (same rig with/without) rather than absolute rates. If a class of runs is
 systematically off because of one of these, add the physics, then re-fit.
+
+## Open calibration items (2026-08-25)
+
+- **DSpark acceptance on large MoE.** `SPECULATION_METHODS.dspark.acceptance`
+  (0.78, decay 1.0, 7 tokens → 3.9 tokens/step) is fit on the Qwen 3.8 27B
+  DSpark drafter. On DeepSeek V4 Flash the community's own runs gain only
+  x1.0-1.1 (4x RTX PRO 6000: 297-346 plain vs 308-310 DSpark; accept_len 4.48
+  reported but verify cost eats it) and the lab's 4x B70 REAP run is 80.8 vs
+  a 140 stock / 266 optimized projection. Anchor: add those Localmaxxing rows
+  (deepseek-ai/DeepSeek-V4-Flash-0731, RTX PRO 6000 x2/x4, vLLM FP8) to the
+  gold set and fit a per-model or per-size acceptance, never the ceiling.
+- **CUDA fixed floor for 40+ layer MoE.** 4x RTX PRO 6000 DeepSeek V4 Flash
+  projects 138 vs 297-346 measured after the TP launch split; the vLLM CUDA
+  per-layer overhead is the remaining term. Same rows are the anchor.
+- **Research rows flagged `exceedsOptimizedTarget`** in `data/lab-evidence.json`
+  (Qwen3.8 INT4 MTP5 TP2 101.17; Muse Glimmer BF16 DFlash draft 100.37) beat
+  the engine's optimized target for their stack; they are shown, never used
+  as anchors. Revisit once the speculative multi-card XPU path has a second
+  measurement.
