@@ -290,7 +290,7 @@ const FRAMEWORK_PROFILES = {
             // vLLM XPU on Intel Arc: MoE routing penalty fit on B70 rows; batched
             // GEMMs reach ~40% of the CUDA-class efficiency and the MTP draft
             // path costs ~3x its CUDA price. Two independent anchors: the
-            // community Qwen3.6-27B GPTQ MTP ladder on one B70 (off 33.2, MTP1
+            // community Qwen3.8-27B GPTQ MTP ladder on one B70 (off 33.2, MTP1
             // 47.1, MTP2 52.2, MTP3/4 51.6 — gains plateau at x1.57) and the
             // lab's measured Qwen3.6-35B AutoRound aggregate sweep (one B70:
             // 823 tok/s at 32 users, 1039 at 64). At 0.40 the stock projection

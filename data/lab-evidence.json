@@ -73,9 +73,9 @@
       "note": "vLLM XPU nightly, TP1, XPU graph on, MTP off"
     },
     {
-      "id": "nd-qwen36-27b-gptq-vllm-mtp-ladder",
+      "id": "nd-qwen38-27b-gptq-vllm-mtp-ladder",
       "stack": "stock",
-      "presetKey": "qwen3.6_27b",
+      "presetKey": "qwen3.8_27b",
       "hardwareTemplate": "Intel Arc Pro B70",
       "deviceCount": 1,
       "runtimeKey": "vllm",
@@ -106,7 +106,7 @@
         }
       ],
       "url": "https://neural.download/learn/mtp-ladder.html",
-      "note": "community (Reddit) ladder on one B70 with GPTQ weights; gains plateau at MTP2 (x1.57) because the verify step is compute-limited on XPU"
+      "note": "community (Reddit) ladder on one B70 with Qwen3.8-27B GPTQ INT4 weights (fp8 KV, prefix caching on); gains plateau at MTP2 (x1.57) because the verify step is compute-limited on XPU. Earlier evidence labeled this ladder Qwen3.6-27B; the field report names Qwen3.8-27B."
     },
     {
       "id": "nd-ornith35b-tuned",
