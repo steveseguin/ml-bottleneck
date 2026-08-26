@@ -128,7 +128,7 @@ derived 120/60 TFLOPS (no vendor figure). Expert offload and speculation *are* m
 them against paired rows (same rig with/without) rather than absolute rates. If a class of runs is
 systematically off because of one of these, add the physics, then re-fit.
 
-## Open calibration items (2026-08-25)
+## Open calibration items (updated 2026-08-26)
 
 - **DSpark acceptance on large MoE.** `SPECULATION_METHODS.dspark.acceptance`
   (0.78, decay 1.0, 7 tokens → 3.9 tokens/step) is fit on the Qwen 3.8 27B
@@ -141,6 +141,31 @@ systematically off because of one of these, add the physics, then re-fit.
 - **CUDA fixed floor for 40+ layer MoE.** 4x RTX PRO 6000 DeepSeek V4 Flash
   projects 138 vs 297-346 measured after the TP launch split; the vLLM CUDA
   per-layer overhead is the remaining term. Same rows are the anchor.
+- **Arc Pro `float16` is the Xe vector rate, not the XMX matrix rate** (verified
+  2026-08-26, change written and reverted — do not re-apply piecemeal). Intel
+  publishes only FP32 TFLOPS and INT8 TOPS on ARK. Xe2 XMX does 2,048 FP16 and
+  4,096 INT8 ops/clock per Xe core (Jon Peddie Research), which reproduces the
+  official INT8 exactly on all four cards and puts the real dense FP16 matrix
+  peak at B70 183.5 / B65 98.3 / B60 98.3 / B50 85.2 — roughly 4x the catalogued
+  45.88 / 24.56 / 24.56 / 21.3. Two measured dense SYCL prefill runs already beat
+  the catalogued ceiling (Llama-3.1-8B pp512 3,400 tok/s and Qwen3.6-27B Q8
+  pp512 949 imply 54.4 and 53.1 TFLOPS), so those rows are being silently
+  dropped from gold prefill evidence today. INT8 367/197/197/170 and every
+  memory, bandwidth, TDP and PCIe value are correct as catalogued, Arc Pro B65
+  is a real SKU (ARK 245796), and Xe2 has no FP8 datapath (B70's `fp8: 183.5`
+  happens to equal the correct FP16 matrix rate).
+  **Why it is not applied:** raising `float16` alone fixes dense prefill
+  (0.30x -> 1.18x) but breaks three lab anchors, because the SYCL constants were
+  fit against the understated peak — Ornith 35B-A3B 8K prefill goes to 5.2x the
+  lab's 1,284.8 tok/s, the vLLM XPU MTP ladder to x2.12 against a measured
+  x1.57, and the 64-user sweep projects 2,380 against a measured 1,039. The gap
+  is model-type dependent (dense wants the full XMX peak, MoE lands ~5x under
+  it), so no single template scale fixes both. A correct fix is a coordinated
+  re-fit: a backend-scoped MoE prefill factor for `sycl` (today `moePrefillFactor`
+  floors at 0.25 for every backend) plus dividing `vllm.backends.sycl
+  .batchedComputeScale` (0.40) by ~4. Anchors: the lab depth sweep and MTP
+  ladder in `data/lab-evidence.json`, plus community MoE prefill rows (B70
+  35B-A3B 1,341 tok/s; B60 35B-A3B 327.6 @8K; B60 gpt-oss-20b 1,611 @2K).
 - **Research rows flagged `exceedsOptimizedTarget`** in `data/lab-evidence.json`
   (Qwen3.8 INT4 MTP5 TP2 101.17; Muse Glimmer BF16 DFlash draft 100.37) beat
   the engine's optimized target for their stack; they are shown, never used
