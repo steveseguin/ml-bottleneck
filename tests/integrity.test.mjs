@@ -136,6 +136,20 @@ test('deduped catalog entries keep the physically correct specs', () => {
     assert.equal(templates[key].computeTFlops.q4, templates[key].computeTFlops.float16, `${key} q4 must equal float16`);
   }
 
+  // Arc Pro float16 is the XMX *matrix* rate, not the Xe *vector* rate. Intel
+  // publishes no FP16 figure, but Xe2 XMX runs INT8 at exactly 2x FP16, so the
+  // official ARK INT8 TOPS pins it: B70 367 -> 183.5, B50 170 -> 85.2.
+  for (const [key, fp16] of [['Intel Arc Pro B70', 183.5], ['Intel Arc Pro B65', 98.3], ['Intel Arc Pro B60', 98.3], ['Intel Arc Pro B50', 85.2]]) {
+    assert.equal(templates[key].computeTFlops.float16, fp16, `${key} float16`);
+    assert.equal(templates[key].computeTFlops.bfloat16, fp16, `${key} bfloat16`);
+    // Intel rounds the published TOPS (B65 197 vs 2 x 98.3 = 196.6), so allow 1%.
+    const int8Ratio = templates[key].computeTFlops.int8 / (2 * fp16);
+    assert.ok(int8Ratio > 0.99 && int8Ratio < 1.01,
+      `${key} int8 ${templates[key].computeTFlops.int8} must be 2x the XMX FP16 rate ${fp16}`);
+    // Xe2 XMX has no FP8 datapath: FP8 weights convert up and run at FP16.
+    assert.equal(templates[key].computeTFlops.fp8, fp16, `${key} fp8 must mirror float16`);
+  }
+
   // M5 Ultra: 1.2 TB/s (Apple's "50% more than M3 Ultra"), 80-core GPU derived
   // as 2x the 40-core M5 Max.
   assert.equal(templates['Mac M5 Ultra (512)'].localBandwidthGBps, 1200);
@@ -166,6 +180,20 @@ test('physics stays anchored to measured hardware behavior', () => {
     `4090 q4 prefill was ${consumer.prefillTokensPerSecond}`);
   assert.ok(consumer.decodeTokensPerSecond > 90 && consumer.decodeTokensPerSecond < 170,
     `4090 q4 decode was ${consumer.decodeTokensPerSecond}`);
+
+  // llama.cpp SYCL on an Arc Pro B60, Qwen3.5 9B Q8: 1,425 tok/s prefill measured
+  // (gold rows; three independent runs 1,364-1,426). Dense SYCL prompt processing
+  // reaches ~25% of the XMX matrix peak, which is why the templates carry a 0.6
+  // prefillEfficiencyScale on llama.cpp/Ollama on top of the corrected peak.
+  const arcDense = run('Intel Arc Pro B60', 'qwen3.5_9b', 'int8', 'llama_cpp');
+  assert.ok(arcDense.prefillTokensPerSecond > 900 && arcDense.prefillTokensPerSecond < 3200,
+    `B60 int8 dense prefill was ${arcDense.prefillTokensPerSecond}`);
+  // MoE prompt processing on the same stack loses another ~2x to grouped GEMMs
+  // (moePrefillScale 0.5): the lab's tuned Ornith 35B-A3B 8K run measured 1,285
+  // tok/s, which must bound the stock projection from above.
+  const arcMoE = run('Intel Arc Pro B70', 'ornith_1.5_35b_a3b', 'q4', 'llama_cpp');
+  assert.ok(arcMoE.prefillTokensPerSecond > 700 && arcMoE.prefillTokensPerSecond < 3000,
+    `B70 q4 MoE prefill was ${arcMoE.prefillTokensPerSecond}`);
 
   // TensorRT-LLM on H100, Llama 3 8B FP16: ~25-30k tok/s prefill measured. The old
   // q4-TFLOPS-times-quant-factor model overpromised prefill by up to 7x.

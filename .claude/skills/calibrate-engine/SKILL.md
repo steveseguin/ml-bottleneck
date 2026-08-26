@@ -32,7 +32,8 @@ All of it lives in `engine.js` (shared by the site and the SDK; `index.html` onl
   `specBatchedDrafting`, `specVerifyReadsKvPerToken`), optional `attentionOverheadScales` /
   `moeOverheadExtra` overrides, and per-backend overrides under `backends` (llama.cpp/Ollama on
   `metal`: `bandwidthEfficiency 0.66`, `moeOverheadScale 6`; Intel `sycl`: `moeOverheadScale 0.25`
-  on llama.cpp, `0.75` + `batchedComputeScale 0.55` + `specDraftOverheadScale 3` on vLLM XPU).
+  + `moePrefillScale 0.5` on llama.cpp/Ollama, `0.75` + `batchedComputeScale 0.10`
+  + `specDraftOverheadScale 3` on vLLM XPU).
   Templates declare `backend` (`metal`, `sycl`); `getBackendEfficiency` merges the overrides.
 - `data/lab-evidence.json` + `tests/lab-evidence.test.mjs`: neural.download lab rows (stock /
   lab-baseline / tuned) with shape checks (depth sweep, MTP ladder). Add a row there when the lab
@@ -43,7 +44,7 @@ All of it lives in `engine.js` (shared by the site and the SDK; `index.html` onl
 - `LAYER_OVERHEAD_SCALES.attention[mechanism]` (GDN/KDA hybrids ≈ 2×, MLA 1.25, SSM 1.35) and
   `LAYER_OVERHEAD_SCALES.moeExtra` (routing cost, scaled by the backend).
 - `DEVICE_TEMPLATES[*].kernelOverheadScale` (AMD ROCm/Vulkan 1.5, Intel SYCL 2, Apple M5 0.6;
-  CUDA/M1–M4 1), `prefillEfficiencyScale` (RDNA4 0.45, 780M 0.2, V100 0.15, M5 0.6), `backend`.
+  CUDA/M1–M4 1), `prefillEfficiencyScale` (RDNA4 0.45, 780M 0.2, V100 0.15, M5 0.6, Arc Pro llama.cpp/Ollama 0.6), `backend`.
 - `QUANT_FORMATS` bits-per-weight (Q4_K_M 4.9, UD-IQ4_XS 4.0, NVFP4 4.5, AWQ 4.3, Q8_0 8.5 …) and
   `getWeightStorageOverhead` (k-quant scales/metadata 1.16) — the *bytes* side of decode.
 - Prefill: `prefillEfficiency × ramp(prompt tokens; floor, rampTokens) × moePrefillFactor
@@ -141,31 +142,28 @@ systematically off because of one of these, add the physics, then re-fit.
 - **CUDA fixed floor for 40+ layer MoE.** 4x RTX PRO 6000 DeepSeek V4 Flash
   projects 138 vs 297-346 measured after the TP launch split; the vLLM CUDA
   per-layer overhead is the remaining term. Same rows are the anchor.
-- **Arc Pro `float16` is the Xe vector rate, not the XMX matrix rate** (verified
-  2026-08-26, change written and reverted — do not re-apply piecemeal). Intel
-  publishes only FP32 TFLOPS and INT8 TOPS on ARK. Xe2 XMX does 2,048 FP16 and
-  4,096 INT8 ops/clock per Xe core (Jon Peddie Research), which reproduces the
-  official INT8 exactly on all four cards and puts the real dense FP16 matrix
-  peak at B70 183.5 / B65 98.3 / B60 98.3 / B50 85.2 — roughly 4x the catalogued
-  45.88 / 24.56 / 24.56 / 21.3. Two measured dense SYCL prefill runs already beat
-  the catalogued ceiling (Llama-3.1-8B pp512 3,400 tok/s and Qwen3.6-27B Q8
-  pp512 949 imply 54.4 and 53.1 TFLOPS), so those rows are being silently
-  dropped from gold prefill evidence today. INT8 367/197/197/170 and every
-  memory, bandwidth, TDP and PCIe value are correct as catalogued, Arc Pro B65
-  is a real SKU (ARK 245796), and Xe2 has no FP8 datapath (B70's `fp8: 183.5`
-  happens to equal the correct FP16 matrix rate).
-  **Why it is not applied:** raising `float16` alone fixes dense prefill
-  (0.30x -> 1.18x) but breaks three lab anchors, because the SYCL constants were
-  fit against the understated peak — Ornith 35B-A3B 8K prefill goes to 5.2x the
-  lab's 1,284.8 tok/s, the vLLM XPU MTP ladder to x2.12 against a measured
-  x1.57, and the 64-user sweep projects 2,380 against a measured 1,039. The gap
-  is model-type dependent (dense wants the full XMX peak, MoE lands ~5x under
-  it), so no single template scale fixes both. A correct fix is a coordinated
-  re-fit: a backend-scoped MoE prefill factor for `sycl` (today `moePrefillFactor`
-  floors at 0.25 for every backend) plus dividing `vllm.backends.sycl
-  .batchedComputeScale` (0.40) by ~4. Anchors: the lab depth sweep and MTP
-  ladder in `data/lab-evidence.json`, plus community MoE prefill rows (B70
-  35B-A3B 1,341 tok/s; B60 35B-A3B 327.6 @8K; B60 gpt-oss-20b 1,611 @2K).
+- **Arc Pro XMX rates — RESOLVED 2026-08-26.** `float16` held the Xe *vector*
+  rate, not the XMX *matrix* rate, understating dense tensor throughput ~4x;
+  measured SYCL prefill beat the old ceiling, so those rows were being dropped
+  from gold prefill evidence. Xe2 XMX does 2,048 FP16 and 4,096 INT8 ops/clock
+  per Xe core, which reproduces Intel's official ARK INT8 exactly and pins the
+  peaks at B70 183.5 / B65 98.3 / B60 98.3 / B50 85.2 (`fp8` mirrors `float16`;
+  Xe2 has no FP8 datapath). Because the SYCL constants had been fit against the
+  understated peak, they were re-fit with it: templates gained
+  `prefillEfficiencyScale { llama_cpp: 0.6, ollama: 0.6, default: 1 }`,
+  llama.cpp/Ollama `backends.sycl.moePrefillScale 0.5` (a new backend override —
+  dense and MoE prefill are not off by the same factor on a stack whose
+  grouped-GEMM path is weaker than its dense path), and vLLM XPU
+  `batchedComputeScale` 0.40 -> 0.10. Result on the 27 Arc Pro gold rows that
+  carry `prefillTokS`: median obs/pred 1.42 -> 0.83, within 1.5x 33% -> 59%,
+  vLLM MoE 3.48 -> 0.95; decode is untouched (batch-1 decode is
+  bandwidth-bound) and the whole-corpus decode fit is byte-identical at median
+  0.99 / 84% / 2 violations. Arc Pro B65 is a real SKU (ARK 245796) and every
+  memory, bandwidth, TDP and PCIe value was already correct.
+  *Still open here:* the 6 koboldcpp `llama3_8b` B60 rows span 97-826 tok/s
+  prefill for the same model on the same card and should be triaged out of the
+  corpus; B70 dense prefill rests on 3 rows, one of which sets
+  `GGML_SYCL_DISABLE_DNN=1` and so cannot see XMX at all.
 - **Research rows flagged `exceedsOptimizedTarget`** in `data/lab-evidence.json`
   (Qwen3.8 INT4 MTP5 TP2 101.17; Muse Glimmer BF16 DFlash draft 100.37) beat
   the engine's optimized target for their stack; they are shown, never used

@@ -223,7 +223,7 @@ function createEngine(options = {}) {
                 metal: { bandwidthEfficiency: 0.66, moeOverheadScale: 6 },
                 // Intel SYCL: the MoE routing penalty does not grow with the
                 // dispatch scale (fit on Arc Pro B70/B60 rows + lab baselines).
-                sycl: { moeOverheadScale: 0.25 }
+                sycl: { moeOverheadScale: 0.25, moePrefillScale: 0.5 }
             },
             kvReadEfficiency: 0.86,
             perLayerOverheadUs: 45,
@@ -270,7 +270,7 @@ function createEngine(options = {}) {
                 metal: { bandwidthEfficiency: 0.66, moeOverheadScale: 6 },
                 // Intel SYCL: the MoE routing penalty does not grow with the
                 // dispatch scale (fit on Arc Pro B70/B60 rows + lab baselines).
-                sycl: { moeOverheadScale: 0.25 }
+                sycl: { moeOverheadScale: 0.25, moePrefillScale: 0.5 }
             },
             kvReadEfficiency: 0.86,
             perLayerOverheadUs: 52,
@@ -301,7 +301,7 @@ function createEngine(options = {}) {
                 // lands on the sweep's graph-captured anchors (832/1056) instead of
                 // overshooting a tuned measurement by 27% as 0.55 did; the tuned
                 // stack's edge lives at small M (87.6 vs 65 stock at one user).
-                sycl: { moeOverheadScale: 0.75, specDraftOverheadScale: 3, batchedComputeScale: 0.40 }
+                sycl: { moeOverheadScale: 0.75, specDraftOverheadScale: 3, batchedComputeScale: 0.10 }
             },
             kvReadEfficiency: 0.90,
             perLayerOverheadUs: 45,
@@ -3924,16 +3924,26 @@ function createEngine(options = {}) {
         networkBandwidthGBps: 64,
         pcieGeneration: 5,
         pcieLanes: 16,
+        // 45.88 was the Xe *vector* FP16 rate; the XMX *matrix* rate is 4x that
+        // and is what prompt processing actually runs on. Measured SYCL prefill
+        // already exceeded the old ceiling (Llama-3.1-8B pp512 3,400 tok/s implies
+        // 54 TFLOPS), which silently dropped those rows from the gold evidence.
+        // SYCL prompt-processing kernels reach ~60% of the CUDA-class
+        // efficiency the runtime profile assumes (fit on the Arc Pro gold
+        // rows that carry prefillTokS). vLLM XPU needs no penalty.
+        prefillEfficiencyScale: { llama_cpp: 0.6, ollama: 0.6, default: 1 },
         computeTFlops: {
           'float32': 22.94,
-          'float16': 45.88,
-          'bfloat16': 45.88,
-          'int8': 367,
-          'fp8': 183.5,
-          'q4': 550.5
+          'float16': 183.5,
+          'bfloat16': 183.5,
+          'int8': 367,        // Intel ARK, dense (not sparsity)
+          'fp8': 183.5,       // no FP8 datapath on Xe2 XMX: converts up to FP16
+          'q4': 734           // 2x INT8; Intel publishes no INT4 figure
         },
         powerWatts: 230,
-        sourceUrl: 'https://www.intel.com/content/www/us/en/products/docs/discrete-gpus/arc/workstations/b-series/overview.html',
+        sourceUrl: 'https://www.intel.com/content/www/us/en/products/sku/245797/intel-arc-pro-b70-graphics/specifications.html',
+        specStatus: 'verified',
+        specNote: 'Memory, bandwidth, TDP, PCIe, FP32 and INT8 are Intel ARK specifications. Intel publishes no FP16 figure; 183.5 TFLOPS is the XMX matrix rate derived from 32 Xe cores x 2,048 FP16 ops/clock x 2.8 GHz, which reproduces the official 367 INT8 TOPS at the matching 4,096 ops/clock. Xe2 XMX has no FP8 datapath, so fp8 mirrors the FP16 rate (verified 2026-08-26).',
         type: 'GPU'
       },
       'Intel Arc Pro B65': {
@@ -3948,15 +3958,22 @@ function createEngine(options = {}) {
         networkBandwidthGBps: 64,
         pcieGeneration: 5,
         pcieLanes: 16,
+        // SYCL prompt-processing kernels reach ~60% of the CUDA-class
+        // efficiency the runtime profile assumes (fit on the Arc Pro gold
+        // rows that carry prefillTokS). vLLM XPU needs no penalty.
+        prefillEfficiencyScale: { llama_cpp: 0.6, ollama: 0.6, default: 1 },
         computeTFlops: {
           'float32': 12.28,
-          'float16': 24.56,
-          'bfloat16': 24.56,
-          'int8': 197,
+          'float16': 98.3,     // XMX matrix rate; 24.56 was the Xe vector rate
+          'bfloat16': 98.3,
+          'int8': 197,         // Intel ARK, dense
+          'fp8': 98.3,         // no FP8 datapath on Xe2 XMX
           'q4': 394
         },
         powerWatts: 200,
-        sourceUrl: 'https://www.intel.com/content/www/us/en/products/docs/discrete-gpus/arc/workstations/b-series/overview.html',
+        sourceUrl: 'https://www.intel.com/content/www/us/en/products/sku/245796/intel-arc-pro-b65-graphics/specifications.html',
+        specStatus: 'verified',
+        specNote: 'Memory, bandwidth, TDP, PCIe, FP32 and INT8 are Intel ARK specifications. Intel publishes no FP16 figure; 98.3 TFLOPS is the XMX matrix rate derived from 20 Xe cores x 2,048 FP16 ops/clock x 2.4 GHz, which reproduces the official 197 INT8 TOPS at the matching 4,096 ops/clock. Xe2 XMX has no FP8 datapath, so fp8 mirrors the FP16 rate (verified 2026-08-26). Same compute configuration as the B60 on the B70 memory system, and PCIe 5.0 x16 rather than x8.',
         type: 'GPU'
       },
       'Intel Arc Pro B60': {
@@ -3971,15 +3988,22 @@ function createEngine(options = {}) {
         networkBandwidthGBps: 32,
         pcieGeneration: 5,
         pcieLanes: 8,
+        // SYCL prompt-processing kernels reach ~60% of the CUDA-class
+        // efficiency the runtime profile assumes (fit on the Arc Pro gold
+        // rows that carry prefillTokS). vLLM XPU needs no penalty.
+        prefillEfficiencyScale: { llama_cpp: 0.6, ollama: 0.6, default: 1 },
         computeTFlops: {
           'float32': 12.28,
-          'float16': 24.56,
-          'bfloat16': 24.56,
-          'int8': 197,
+          'float16': 98.3,     // XMX matrix rate; 24.56 was the Xe vector rate
+          'bfloat16': 98.3,
+          'int8': 197,         // Intel ARK, dense
+          'fp8': 98.3,         // no FP8 datapath on Xe2 XMX
           'q4': 394
         },
         powerWatts: 200,
-        sourceUrl: 'https://www.intel.com/content/www/us/en/products/docs/discrete-gpus/arc/workstations/b-series/overview.html',
+        sourceUrl: 'https://www.intel.com/content/www/us/en/products/sku/243916/intel-arc-pro-b60-graphics/specifications.html',
+        specStatus: 'verified',
+        specNote: 'Memory, bandwidth, TDP, PCIe, FP32 and INT8 are Intel ARK specifications. Intel publishes no FP16 figure; 98.3 TFLOPS is the XMX matrix rate derived from 20 Xe cores x 2,048 FP16 ops/clock x 2.4 GHz, which reproduces the official 197 INT8 TOPS at the matching 4,096 ops/clock. Xe2 XMX has no FP8 datapath, so fp8 mirrors the FP16 rate (verified 2026-08-26). The Maxsun 48 GB Dual board carries two of these GPUs behind a bifurcated x8+x8 slot and must be planned as two 24 GB devices, not one 48 GB pool.',
         type: 'GPU'
       },
       'Intel Arc Pro B50': {
@@ -3991,15 +4015,22 @@ function createEngine(options = {}) {
         networkBandwidthGBps: 32,
         pcieGeneration: 5,
         pcieLanes: 8,
+        // SYCL prompt-processing kernels reach ~60% of the CUDA-class
+        // efficiency the runtime profile assumes (fit on the Arc Pro gold
+        // rows that carry prefillTokS). vLLM XPU needs no penalty.
+        prefillEfficiencyScale: { llama_cpp: 0.6, ollama: 0.6, default: 1 },
         computeTFlops: {
           'float32': 10.65,
-          'float16': 21.3,
-          'bfloat16': 21.3,
-          'int8': 170,
+          'float16': 85.2,     // XMX matrix rate; 21.3 was the Xe vector rate
+          'bfloat16': 85.2,
+          'int8': 170,         // Intel ARK, dense
+          'fp8': 85.2,         // no FP8 datapath on Xe2 XMX
           'q4': 340
         },
         powerWatts: 70,
-        sourceUrl: 'https://www.intel.com/content/www/us/en/products/docs/discrete-gpus/arc/workstations/b-series/overview.html',
+        sourceUrl: 'https://www.intel.com/content/www/us/en/products/sku/242615/intel-arc-pro-b50-graphics/specifications.html',
+        specStatus: 'verified',
+        specNote: 'Memory, bandwidth, TDP, PCIe, FP32 and INT8 are Intel ARK specifications. Intel publishes no FP16 figure; 85.2 TFLOPS is the XMX matrix rate derived from 16 Xe cores x 2,048 FP16 ops/clock x 2.6 GHz, which reproduces the official 170 INT8 TOPS at the matching 4,096 ops/clock. Xe2 XMX has no FP8 datapath, so fp8 mirrors the FP16 rate (verified 2026-08-26).',
         type: 'GPU'
       },
       'Intel Arc B580': {
@@ -5182,7 +5213,12 @@ function createEngine(options = {}) {
             kvReadEfficiency: Number.isFinite(overrides.kvReadEfficiency) ? overrides.kvReadEfficiency : (frameworkProfile.kvReadEfficiency || frameworkProfile.bandwidthEfficiency),
             moeOverheadScale: Number.isFinite(overrides.moeOverheadScale) && overrides.moeOverheadScale > 0 ? overrides.moeOverheadScale : 1,
             specDraftOverheadScale: Number.isFinite(overrides.specDraftOverheadScale) && overrides.specDraftOverheadScale > 0 ? overrides.specDraftOverheadScale : 1,
-            batchedComputeScale: Number.isFinite(overrides.batchedComputeScale) && overrides.batchedComputeScale > 0 ? overrides.batchedComputeScale : 1
+            batchedComputeScale: Number.isFinite(overrides.batchedComputeScale) && overrides.batchedComputeScale > 0 ? overrides.batchedComputeScale : 1,
+            // MoE prompt processing relative to the same backend's dense GEMMs.
+            // Dense and MoE prefill are not off by the same factor on every stack:
+            // Intel's SYCL grouped-GEMM path leaves the XMX array far emptier than
+            // its dense path does, so one template-wide prefill scale cannot fit both.
+            moePrefillScale: Number.isFinite(overrides.moePrefillScale) && overrides.moePrefillScale > 0 ? overrides.moePrefillScale : 1
         };
     }
 
@@ -6840,7 +6876,11 @@ function createEngine(options = {}) {
     			const tokensPerExpert = modelConfig.isMoE
     				? Math.min(PREFILL_MICRO_BATCH_TOKENS, promptBatchTokens) * Math.min(1, (modelConfig.activeExperts || 1) / Math.max(modelConfig.numExperts || 1, 1))
     				: Infinity;
-    			const moePrefillFactor = modelConfig.isMoE ? Math.max(0.25, Math.min(1, Math.sqrt(tokensPerExpert / MOE_PREFILL_TOKENS_PER_EXPERT_REF))) : 1;
+    			// ...and the backend's own grouped-GEMM maturity scales that further.
+    			const moePrefillFactor = modelConfig.isMoE
+    				? Math.max(0.25, Math.min(1, Math.sqrt(tokensPerExpert / MOE_PREFILL_TOKENS_PER_EXPERT_REF)))
+    					* getBackendEfficiency(frameworkProfile, device).moePrefillScale
+    				: 1;
     			// Backend kernel maturity for prefill (Volta without FA/MMQ paths,
     			// RDNA WMMA paths, iGPUs) is a template property like kernelOverheadScale.
     			const devicePrefillScale = getDevicePrefillScale(device, frameworkProfile.key);
