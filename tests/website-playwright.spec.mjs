@@ -533,7 +533,9 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
   await advancePlanTo(page, 4);
 
   await expect(page.locator('#systemAnalysis .rate-label')).toHaveText('Projected real decode');
-  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText(/40\.[78]/);
+  // Pinned to the same projection as the index-logic test (40.51 tok/s); both
+  // must move together when this plan's physics changes.
+  await expect(page.locator('#systemAnalysis .rate-number')).toHaveText(/40\.5/);
   await expect(page.locator('#systemAnalysis')).toContainText('directional confidence');
   const optimizedRow = page.locator('#systemAnalysis .ladder-row').filter({ hasText: 'Optimized target' }).first();
   await expect(optimizedRow).toContainText('117 tok/s');
