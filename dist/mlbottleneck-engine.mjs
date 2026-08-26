@@ -2918,6 +2918,111 @@ function createEngine(options = {}) {
         },
         type: 'GPU'
       },
+      'RTX PRO 6000 Blackwell Max-Q': {
+        name: 'NVIDIA RTX PRO 6000 Blackwell Max-Q',
+        memoryGB: 96,
+        localBandwidthGBps: 1792,
+        networkBandwidthGBps: 64,
+        pcieGeneration: 5,
+        pcieLanes: 16,
+        computeTFlops: {
+          'float32': 110,
+          'float16': 440,     // dense; the 3,511 "AI TOPS" figure is sparse FP4
+          'bfloat16': 440,
+          'int8': 880,
+          'fp8': 880,
+          'q4': 1760
+        },
+        powerWatts: 300,      // same silicon as the 600 W Workstation card, clocked for 300 W
+        sourceUrl: 'https://www.nvidia.com/en-sg/products/workstations/professional-desktop-gpus/rtx-pro-6000-max-q',
+        specStatus: 'verified',
+        specNote: '96 GB GDDR7 ECC and 110 TFLOPS FP32 are NVIDIA specifications; tensor rates are the dense halves of the sparse "AI TOPS" headline (verified 2026-08-26).',
+        type: 'GPU'
+      },
+      'RTX PRO 5000 Blackwell 72GB': {
+        name: 'NVIDIA RTX PRO 5000 Blackwell (72GB)',
+        memoryGB: 72,
+        localBandwidthGBps: 1344,
+        networkBandwidthGBps: 64,
+        pcieGeneration: 5,
+        pcieLanes: 16,
+        computeTFlops: {
+          'float32': 65,
+          'float16': 258,     // dense; NVIDIA quotes 2,064 sparse FP4 "AI TOPS"
+          'bfloat16': 258,
+          'int8': 516,
+          'fp8': 516,
+          'q4': 1032
+        },
+        powerWatts: 300,
+        sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/',
+        specStatus: 'verified',
+        specNote: '72 GB GDDR7 ECC on a 384-bit bus (1,344 GB/s), released 2025-12-22 with the same GB202 configuration as the 48 GB card. Tensor rates are the dense halves of the sparse AI TOPS headline (verified 2026-08-26).',
+        type: 'GPU'
+      },
+      'RTX PRO 5000 Blackwell': {
+        name: 'NVIDIA RTX PRO 5000 Blackwell (48GB)',
+        memoryGB: 48,
+        localBandwidthGBps: 1344,
+        networkBandwidthGBps: 64,
+        pcieGeneration: 5,
+        pcieLanes: 16,
+        computeTFlops: {
+          'float32': 65,
+          'float16': 258,
+          'bfloat16': 258,
+          'int8': 516,
+          'fp8': 516,
+          'q4': 1032
+        },
+        powerWatts: 300,
+        sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/',
+        specStatus: 'verified',
+        specNote: '48 GB GDDR7 ECC, 384-bit, 1,344 GB/s, 14,080 CUDA cores. Tensor rates are dense (verified 2026-08-26).',
+        type: 'GPU'
+      },
+      'RTX PRO 4500 Blackwell': {
+        name: 'NVIDIA RTX PRO 4500 Blackwell',
+        memoryGB: 32,
+        localBandwidthGBps: 896,
+        networkBandwidthGBps: 64,
+        pcieGeneration: 5,
+        pcieLanes: 16,
+        computeTFlops: {
+          'float32': 51,
+          'float16': 203,
+          'bfloat16': 203,
+          'int8': 405,
+          'fp8': 405,
+          'q4': 808
+        },
+        powerWatts: 200,
+        sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-4500/',
+        specStatus: 'verified',
+        specNote: '32 GB GDDR7 ECC, 256-bit, 896 GB/s, 10,496 CUDA cores. Tensor rates are dense (verified 2026-08-26).',
+        type: 'GPU'
+      },
+      'RTX PRO 4000 Blackwell': {
+        name: 'NVIDIA RTX PRO 4000 Blackwell',
+        memoryGB: 24,
+        localBandwidthGBps: 672,
+        networkBandwidthGBps: 64,
+        pcieGeneration: 5,
+        pcieLanes: 16,
+        computeTFlops: {
+          'float32': 40,
+          'float16': 161,
+          'bfloat16': 161,
+          'int8': 323,
+          'fp8': 323,
+          'q4': 645
+        },
+        powerWatts: 145,
+        sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-4000/',
+        specStatus: 'verified',
+        specNote: '24 GB GDDR7 ECC, 192-bit, 672 GB/s, 8,960 CUDA cores, single slot. Tensor rates are dense (verified 2026-08-26).',
+        type: 'GPU'
+      },
       'RTX 5090 SUPRIM SOC': {
         name: 'MSI GeForce RTX 5090 SUPRIM SOC',
         memoryGB: 32,
@@ -3039,10 +3144,10 @@ function createEngine(options = {}) {
         localBandwidthGBps: 273,
         networkBandwidthGBps: 200/8,
         computeTFlops: {
-          'float32': 50,
-          'float16': 100,
-          'int8': 200,
-          'q4': 1000
+          'float32': 30,
+          'float16': 120,
+          'int8': 240,
+          'q4': 480                          // dense NVFP4, matching the current DGX Spark template
         },
         hidden: true,
         type: 'GPU'
@@ -3956,18 +4061,58 @@ function createEngine(options = {}) {
       'NVIDIA DGX Spark (GB10)': {
         name: 'NVIDIA DGX Spark (GB10)',
         memoryGB: 128,
-        localBandwidthGBps: 273,            // LPDDR5X-9400 unified memory
+        localBandwidthGBps: 273,            // LPDDR5X-8533 on a 256-bit bus (docs.nvidia.com/dgx/dgx-spark/hardware.html)
         networkBandwidthGBps: 200 / 8,      // built-in ConnectX-7 200Gb cluster link
+        // DENSE rates. NVIDIA's headline "1 PFLOP FP4" is with sparsity; dense is
+        // half of it, and the rest of the ladder follows Blackwell's 2x steps.
+        // Derived from 48 SMs x 1024 FP16 FLOP/clk x ~2.45 GHz = ~120 TFLOPS dense
+        // FP16, which matches The Register's measured ~125 TFLOPS dense BF16.
         computeTFlops: {
-          'float32': 125,                    // Grace Blackwell Superchip
-          'float16': 250,
-          'bfloat16': 250,
-          'int8': 500,
-          'q4': 1000                         // 1 PFLOP at FP4
+          'float32': 30,                     // 6,144 CUDA cores x 2 x ~2.45 GHz
+          'float16': 120,
+          'bfloat16': 120,
+          'int8': 240,
+          'fp8': 240,
+          'q4': 480                          // dense NVFP4; the 1 PFLOP figure is sparse
         },
+        // GB10 is consumer-class Blackwell (sm_121): no tcgen05/TMEM, so the
+        // datacenter attention kernels (FA3, FlashInfer sm_100 paths) do not run
+        // and prompt processing lands well under the CUDA-class efficiency.
+        // Fit on the llama.cpp bench suite (b7941: gpt-oss-120b pp2048 2,444 tok/s,
+        // gpt-oss-20b 4,506, Qwen3-30B-A3B q8 2,987, Qwen3.8-27B q4 837) -> median
+        // 1.02x. The Ollama blog's prompt rates are excluded: llama3.3-70b at
+        // 1,911 tok/s implies 267 TFLOPS on a 120 TFLOPS dense part, i.e. cache hits.
+        prefillEfficiencyScale: 0.7,
+        powerWatts: 140,                     // GB10 SoC TDP (240 W system PSU)
         sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/dgx-spark/',
         specStatus: 'verified',
-        specNote: '128 GB unified memory, 273 GB/s bandwidth, 200 Gb/s ConnectX networking, and 1 PFLOP headline FP4.',
+        specNote: '128 GB unified memory and 273 GB/s are NVIDIA specifications. Tensor rates are dense: the marketed 1 PFLOP FP4 includes sparsity, and NVIDIA publishes no FP16 figure, so 120 TFLOPS is derived from the 48-SM Blackwell GPU at its ~2.45 GHz boost clock (verified 2026-08-26).',
+        type: 'AI PC'
+      },
+      'NVIDIA Jetson AGX Thor (T5000)': {
+        name: 'NVIDIA Jetson AGX Thor (T5000)',
+        memoryGB: 128,
+        localBandwidthGBps: 273,            // 256-bit LPDDR5X, same memory system as GB10
+        networkBandwidthGBps: 25 / 8,
+        // NVIDIA markets "2,070 TFLOPS FP4 (sparse)", which would put a 130 W
+        // embedded module above every workstation card per watt and give this
+        // 2,560-core part (~20 Blackwell SMs) twice the FP16 of the 48-SM GB10 at
+        // the same power. It cannot be a dense GEMM rate. Derived instead from the
+        // architecture (~20 SMs x 1024 FP16 FLOP/clk x ~2 GHz = ~40 TFLOPS), which
+        // also reproduces the measured llama.cpp prefill (jetsonhacks b6767:
+        // gpt-oss-120b pp 938 tok/s, gpt-oss-20b 1,861, Qwen3-30B-A3B q8 1,534).
+        computeTFlops: {
+          'float32': 8,
+          'float16': 40,
+          'bfloat16': 40,
+          'int8': 80,
+          'fp8': 80,
+          'q4': 160
+        },
+        powerWatts: 130,                     // configurable 40-130 W
+        sourceUrl: 'https://developer.nvidia.com/blog/introducing-nvidia-jetson-thor-the-ultimate-platform-for-physical-ai/',
+        specStatus: 'derived',
+        specNote: '128 GB LPDDR5X at 273 GB/s and 2,560 Blackwell CUDA cores (sm_110) are NVIDIA specifications. Tensor rates are derived from the SM count rather than the 2,070 TFLOPS sparse-FP4 headline, which is inconsistent with both the core count and measured prefill by 5-7x. Decode still runs ~1.3x optimistic against the three published llama.cpp rows, likely the 40-130 W thermal envelope (derived 2026-08-26).',
         type: 'AI PC'
       },
       'NVIDIA DGX Station (GB300)': {
@@ -3977,11 +4122,11 @@ function createEngine(options = {}) {
         networkBandwidthGBps: 800 / 8,
         computeTFlops: {
           'float32': 80,
-          'float16': 5000,
-          'bfloat16': 5000,
-          'fp8': 10000,
-          'int8': 330,
-          'q4': 15000
+          'float16': 2500,     // dense; NVIDIA's 5 PFLOPS FP16 / 10 PFLOPS FP8 headline figures include sparsity
+          'bfloat16': 2500,
+          'fp8': 5000,
+          'int8': 330,         // Blackwell Ultra cut the INT8 tensor rate
+          'q4': 15000          // dense NVFP4 per the product page footnote (20 PFLOPS sparse)
         },
         hostMemoryGB: 496,
         hostMemoryBandwidthGBps: 396,
@@ -3989,7 +4134,7 @@ function createEngine(options = {}) {
         powerWatts: 1600,
         sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/dgx-station/',
         specStatus: 'verified',
-        specNote: 'The fast tier is 252 GB HBM3e at 7.1 TB/s. An additional 496 GB CPU tier runs at 396 GB/s and is not counted as HBM.',
+        specNote: 'The fast tier is 252 GB HBM3e at 7.1 TB/s (7 of 8 stacks enabled; the GTC announcement quoted 288 GB / 8 TB/s). An additional 496 GB CPU tier runs at 396 GB/s and is not counted as HBM. Tensor rates are dense: the page footnotes that its Tensor Core specs include sparsity unless noted (verified 2026-08-26).',
         type: 'AI Workstation'
       },
 
@@ -4222,6 +4367,66 @@ function createEngine(options = {}) {
         sourceUrl: 'https://www.apple.com/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/',
         specStatus: 'derived',
         specNote: 'Apple confirms 128 GB and 614 GB/s. Apple publishes no tensor TFLOPS; 120 TFLOPS is derived from the >4x-M4-Max claim and measured MLX prefill rates (gemma-3 4B: 3,400 tok/s at 256 tokens).',
+        type: 'CPU/Integrated GPU'
+      },
+      'Mac M5 Ultra (256)': {
+        backend: 'metal',
+        name: 'Apple M5 Ultra (256GB)',
+        memoryGB: 256,
+        localBandwidthGBps: 1200,
+        networkBandwidthGBps: 80 / 8,   // Thunderbolt 5
+        computeTFlops: {
+          'float32': 48,
+          'bfloat16': 240,
+          'float16': 240,     // 80 GPU cores, each with a Neural Accelerator: 2x the 40-core M5 Max
+          'int8': 240,
+          'q4': 240           // no FP4 matmul path on Apple silicon: 4-bit weights dequantize to FP16
+        },
+        kernelOverheadScale: 0.6,       // M5-generation Metal dispatch (fit on the M5 Pro/Max community rows)
+        prefillEfficiencyScale: { llama_cpp: 0.8, ollama: 0.8, default: 1 },   // llama.cpp's Metal backend does not reach the Neural Accelerators MLX uses
+        sourceUrl: 'https://www.apple.com/newsroom/2026/08/apple-introduces-m6-and-m5-ultra-for-a-big-leap-in-performance-and-ai-compute/',
+        specStatus: 'verified',
+        specNote: 'Announced 2026-08-25, ships 2026-09-22. Apple confirms 1.2 TB/s (50% over M3 Ultra) and 96/256/512 GB options on the 36-core CPU / 80-core GPU part; a 30-core CPU / 64-core GPU variant ships with 96 GB. Apple publishes no tensor TFLOPS: 240 is the 40-core M5 Max figure doubled, the same derivation the calibrated M5 templates use. FP8/FP4 are storage formats on Metal 4.1, not hardware matmul paths.',
+        type: 'CPU/Integrated GPU'
+      },
+      'Mac M5 Ultra (512)': {
+        backend: 'metal',
+        name: 'Apple M5 Ultra (512GB)',
+        memoryGB: 512,
+        localBandwidthGBps: 1200,
+        networkBandwidthGBps: 80 / 8,   // Thunderbolt 5
+        computeTFlops: {
+          'float32': 48,
+          'bfloat16': 240,
+          'float16': 240,
+          'int8': 240,
+          'q4': 240           // no FP4 matmul path on Apple silicon
+        },
+        kernelOverheadScale: 0.6,
+        prefillEfficiencyScale: { llama_cpp: 0.8, ollama: 0.8, default: 1 },
+        sourceUrl: 'https://www.apple.com/newsroom/2026/08/apple-introduces-m6-and-m5-ultra-for-a-big-leap-in-performance-and-ai-compute/',
+        specStatus: 'verified',
+        specNote: 'Announced 2026-08-25; the 512 GB configuration follows in late October 2026. Quad-die UltraFusion, 1.2 TB/s, 80-core GPU. Tensor peak derived as 2x the M5 Max (Apple publishes none). FP8/FP4 are storage formats on Metal 4.1, not hardware matmul paths.',
+        type: 'CPU/Integrated GPU'
+      },
+      'Mac M6 (32)': {
+        backend: 'metal',
+        name: 'Apple M6 (32GB)',
+        memoryGB: 32,
+        localBandwidthGBps: 170,
+        networkBandwidthGBps: 80 / 8,   // Thunderbolt 5
+        computeTFlops: {
+          'float32': 7.2,
+          'bfloat16': 36,
+          'float16': 36,      // 12 GPU cores at the M5 generation's per-core rate
+          'int8': 36,
+          'q4': 36            // no FP4 matmul path on Apple silicon
+        },
+        kernelOverheadScale: 0.6,
+        prefillEfficiencyScale: { llama_cpp: 0.8, ollama: 0.8, default: 1 },
+        sourceUrl: 'https://www.apple.com/newsroom/2026/08/apple-unveils-a-more-powerful-mac-mini-featuring-the-all-new-m6-and-m5-pro/',
+        specStatus: 'verified',
+        specNote: 'Announced 2026-08-25, ships 2026-09-22 in the Mac mini. Apple lists 170 GB/s for the 24 GB and 32 GB configurations and 153 GB/s for the 16 GB one. First 2 nm Apple chip, 12 CPU / 12 GPU cores. Tensor peak derived at the M5 generation per-core rate (Apple publishes none); Apple claims 4.8x M4 prompt processing, and M6 has 1.2x the M5 core count.',
         type: 'CPU/Integrated GPU'
       },
       'Mac Mini M2 (10G Ethernet)': {
@@ -4959,7 +5164,7 @@ function createEngine(options = {}) {
     // data-center NVIDIA parts, SGLang on Instinct/Gaudi/TPU, MLX on Macs.
     function getDefaultFrameworkForDevice(device) {
         const name = (device.template || device.name || '').toLowerCase();
-        if (/mac|apple|\bm[1-5]\b|m[1-5] (max|pro|ultra)/.test(name)) return 'mlx';
+        if (/mac|apple|\bm[1-6]\b|m[1-6] (max|pro|ultra)/.test(name)) return 'mlx';
         if (/h100|h200|b200|b300|a100|dgx station|gb300/.test(name)) return 'vllm';
         if (/mi355|mi350|mi300|gaudi|tpu|trainium|inferentia/.test(name)) return 'sglang';
         return 'llama_cpp';

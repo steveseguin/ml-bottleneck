@@ -59,8 +59,8 @@ function run(app, { preset, hardware, count = 1, quant = 'q4', format = '', runt
 
 const MODELS = ['llama3_8b', 'llama3.3_70b', 'qwen3.8_27b', 'qwen3.6_35b_a3b', 'gemma4_26b_a4b', 'gemma4_31b', 'gpt_oss_120b',
   'deepseek_v4_flash', 'glm5_2', 'kimi_k3', 'muse_glimmer_30b', 'mistral_medium_3.5_128b', 'nemotron3.5_lightning_30b_a3b', 'phi4_14b', 'lfm2.5_2.6b'];
-const SINGLE_GPUS = ['RTX 3060', 'RTX 4090', 'RTX 5090', 'RTX PRO 6000 Blackwell', 'H100', 'B200', 'AMD Radeon AI PRO R9700', 'Intel Arc Pro B70', 'RX 7900 XTX', 'Tesla V100 32GB', 'NVIDIA DGX Spark (GB10)', 'AMD Strix Halo (Ryzen AI Max+ 395)'];
-const MACS = ['Mac M4 Max (128)', 'Mac M3 Ultra (512)', 'Mac M5 Max (128)'];
+const SINGLE_GPUS = ['RTX 3060', 'RTX 4090', 'RTX 5090', 'RTX PRO 6000 Blackwell', 'RTX PRO 5000 Blackwell', 'H100', 'B200', 'AMD Radeon AI PRO R9700', 'Intel Arc Pro B70', 'RX 7900 XTX', 'Tesla V100 32GB', 'NVIDIA DGX Spark (GB10)', 'NVIDIA Jetson AGX Thor (T5000)', 'AMD Strix Halo (Ryzen AI Max+ 395)'];
+const MACS = ['Mac M4 Max (128)', 'Mac M3 Ultra (512)', 'Mac M5 Max (128)', 'Mac M5 Ultra (512)', 'Mac M6 (32)'];
 
 test('sanity matrix: every single-device configuration obeys the physics', () => {
   const app = loadApp({ snapshot });
@@ -195,6 +195,16 @@ const KNOWN = [
   { preset: 'gemma4_12b', hardware: 'RTX 3090', runtime: 'llama_cpp', min: 40, max: 90, note: 'gold rows 55-66' },
   { preset: 'gpt_oss_120b', hardware: 'RTX PRO 6000 Blackwell', runtime: 'llama_cpp', prompt: 589, min: 130, max: 300, note: 'gold rows 188-203' },
   { preset: 'gpt_oss_120b', hardware: 'NVIDIA DGX Spark (GB10)', runtime: 'llama_cpp', min: 25, max: 70, note: 'community ~40-55' },
+  // llama.cpp bench suite b7941 published in the repo (benches/dgx-spark).
+  { preset: 'gpt_oss_20b', hardware: 'NVIDIA DGX Spark (GB10)', runtime: 'llama_cpp', format: 'MXFP4', min: 50, max: 130, note: 'llama.cpp bench 83.4' },
+  { preset: 'qwen3_30b_a3b', hardware: 'NVIDIA DGX Spark (GB10)', quant: 'int8', runtime: 'llama_cpp', min: 35, max: 100, note: 'llama.cpp bench 61.1' },
+  // hardware-corner llama.cpp GGUF suite (Mar 2026) on the 48 GB card.
+  { preset: 'gpt_oss_20b', hardware: 'RTX PRO 5000 Blackwell', runtime: 'llama_cpp', format: 'MXFP4', min: 130, max: 345, note: 'measured 213.4' },
+  { preset: 'qwen2.5_32b', hardware: 'RTX PRO 5000 Blackwell', runtime: 'llama_cpp', min: 29, max: 75, note: 'measured 46.6' },
+  { preset: 'gpt_oss_120b', hardware: 'RTX PRO 5000 Blackwell 72GB', runtime: 'ollama', format: 'MXFP4', min: 95, max: 250, note: 'measured 156.5 on the 72 GB card' },
+  // jetsonhacks llama.cpp b6767 suite; decode still runs ~1.3x optimistic.
+  { preset: 'gpt_oss_120b', hardware: 'NVIDIA Jetson AGX Thor (T5000)', runtime: 'llama_cpp', format: 'MXFP4', min: 25, max: 70, note: 'measured 42' },
+  { preset: 'qwen3_30b_a3b', hardware: 'NVIDIA Jetson AGX Thor (T5000)', quant: 'int8', runtime: 'llama_cpp', min: 26, max: 70, note: 'measured 43' },
   { preset: 'gpt_oss_120b', hardware: 'AMD Strix Halo (Ryzen AI Max+ 395)', runtime: 'llama_cpp', min: 22, max: 60, note: 'community ~30-45' },
   { preset: 'gpt_oss_20b', hardware: 'AMD Radeon AI PRO R9700', count: 3, quant: 'int8', runtime: 'llama_cpp', prompt: 589, min: 80, max: 220, note: 'gold rows 105-161' },
   { preset: 'gemma4_26b_a4b', hardware: 'Mac M3 Ultra (512)', runtime: 'mlx', prompt: 65, min: 60, max: 170, note: 'gold row 97' },

@@ -120,6 +120,28 @@ test('deduped catalog entries keep the physically correct specs', () => {
   assert.equal(templates['Google TPU v5p'].memoryGB, 95);
   assert.equal(templates['Google TPU v5p'].localBandwidthGBps, 2765);
   assert.equal(templates['Google TPU v5p'].computeTFlops.bfloat16, 459);
+
+  // Tensor rates are DENSE everywhere. NVIDIA markets DGX Spark as "1 PFLOP
+  // FP4" and the GB300 Station as 5 PFLOPS FP16 / 10 PFLOPS FP8; those include
+  // sparsity, and using them over-predicted Spark prefill by 2.6x.
+  assert.equal(templates['NVIDIA DGX Spark (GB10)'].computeTFlops.q4, 480);
+  assert.equal(templates['NVIDIA DGX Spark (GB10)'].computeTFlops.float16, 120);
+  assert.equal(templates['NVIDIA DGX Station (GB300)'].computeTFlops.float16, 2500);
+  assert.equal(templates['NVIDIA DGX Station (GB300)'].computeTFlops.fp8, 5000);
+
+  // Apple silicon has no FP4/FP8 matmul path: 4-bit weights dequantize to FP16,
+  // so the q4 planning rate must never exceed the FP16 rate.
+  for (const key of ['Mac M5 Ultra (256)', 'Mac M5 Ultra (512)', 'Mac M6 (32)', 'Mac M5 Max (128)', 'Mac M5 Pro (64)']) {
+    assert.ok(templates[key], `missing template ${key}`);
+    assert.equal(templates[key].computeTFlops.q4, templates[key].computeTFlops.float16, `${key} q4 must equal float16`);
+  }
+
+  // M5 Ultra: 1.2 TB/s (Apple's "50% more than M3 Ultra"), 80-core GPU derived
+  // as 2x the 40-core M5 Max.
+  assert.equal(templates['Mac M5 Ultra (512)'].localBandwidthGBps, 1200);
+  assert.equal(templates['Mac M5 Ultra (512)'].computeTFlops.float16, 2 * templates['Mac M5 Max (128)'].computeTFlops.float16);
+  // M6 ships at 170 GB/s in the 24/32 GB configurations.
+  assert.equal(templates['Mac M6 (32)'].localBandwidthGBps, 170);
 });
 
 test('physics stays anchored to measured hardware behavior', () => {

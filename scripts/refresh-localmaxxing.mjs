@@ -112,7 +112,12 @@ const MODEL_PRESET_RULES = [
 // fall through unmatched on purpose.
 const HARDWARE_RULES = [
   [/\+/, null],
+  [/rtx\s*pro\s*6000.*max-?q/i, 'RTX PRO 6000 Blackwell Max-Q'],
   [/rtx\s*pro\s*6000.*blackwell/i, 'RTX PRO 6000 Blackwell'],
+  [/rtx\s*pro\s*5000.*72\s*gb/i, 'RTX PRO 5000 Blackwell 72GB'],
+  [/rtx\s*pro\s*5000/i, 'RTX PRO 5000 Blackwell'],
+  [/rtx\s*pro\s*4500/i, 'RTX PRO 4500 Blackwell'],
+  [/rtx\s*pro\s*4000/i, 'RTX PRO 4000 Blackwell'],
   [/rtx\s*a5000/i, 'RTX A5000'],
   [/rtx\s*5090/i, 'RTX 5090'],
   [/rtx\s*5080/i, 'RTX 5080'],
@@ -159,6 +164,9 @@ const HARDWARE_RULES = [
   [/mi350x/i, 'AMD MI350X'],
   [/mi300x/i, 'AMD MI300X'],
   [/dgx\s*spark|\bgb10\b/i, 'NVIDIA DGX Spark (GB10)'],
+  [/jetson.*thor|\bt5000\b/i, 'NVIDIA Jetson AGX Thor (T5000)'],
+  [/m5\s*ultra/i, 'Mac M5 Ultra (512)'],
+  [/\bm6\b/i, 'Mac M6 (32)'],
   [/m5\s*max/i, 'Mac M5 Max (128)'],
   [/m5\s*pro/i, 'Mac M5 Pro (64)'],
   [/m4\s*max/i, 'Mac M4 Max (128)'],

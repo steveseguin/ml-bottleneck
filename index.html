@@ -52,7 +52,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
 	<script src="data/localmaxxing-snapshot.js?v=20260824080611"></script>
 	<script src="data/lab-evidence.js?v=47452ee3d12c"></script>
-	<script src="engine.js?v=4d2dfe0f53b8"></script>
+	<script src="engine.js?v=c9940256d85e"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -7910,7 +7910,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         function getHardwarePresetGroup(templateKey, template) {
             const name = `${template?.name || ''} ${templateKey}`;
             if (/^(NVIDIA )?(B\d{3}|H\d{3}|A100|H200|L40|L4|Tesla|Grace Hopper)/i.test(name)) return 'NVIDIA · data center';
-            if (/NVIDIA DGX|DGX Spark|DGX Station/i.test(name)) return 'NVIDIA · AI systems';
+            if (/NVIDIA DGX|DGX Spark|DGX Station|Jetson/i.test(name)) return 'NVIDIA · AI systems';
             if (/NVIDIA.*(RTX PRO|RTX 6000|RTX A|Quadro)|\bRTX PRO\b/i.test(name)) return 'NVIDIA · workstation';
             if (/NVIDIA|\bRTX\b|\bGTX\b|\bGT \d/i.test(name)) return 'NVIDIA · GeForce';
             if (/AMD.*(MI\d|Instinct)/i.test(name)) return 'AMD · Instinct';
