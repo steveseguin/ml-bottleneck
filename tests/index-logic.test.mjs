@@ -700,7 +700,8 @@ test('hardware templates include corrected RTX PRO 6000 and 5090 SOC options', (
 
   assert.equal(soc5090.memoryGB, 32);
   assert.equal(soc5090.localBandwidthGBps, 1792);
-  assert.equal(soc5090.computeTFlops.q4, 1020);
+  // 21760 CUDA cores at MSI's 2.565 GHz boost, 16x shader FP32 for dense FP4.
+  assert.equal(soc5090.computeTFlops.q4, 1786.1);
 });
 
 test('current and exotic hardware presets use first-party capacity and bandwidth specs', () => {
@@ -1182,6 +1183,37 @@ test('Hugging Face metadata parser imports nested dense and MoE configs', () => 
   assert.equal(moe.isMoE, true);
   assert.equal(moe.numExperts, 128);
   assert.equal(moe.activeExperts, 8);
+});
+
+test('HF imports preserve all-sliding and periodic attention without inventing full layers', () => {
+  const H = loadApp().hooks;
+  // mistralai/Mistral-7B-v0.1/config.json (verified 2026-09-05).
+  const config = { hidden_size: 4096, num_hidden_layers: 32, num_attention_heads: 32,
+    num_key_value_heads: 8, intermediate_size: 14336, vocab_size: 32000,
+    max_position_embeddings: 32768, sliding_window: 4096 };
+  const info = { safetensors: { total: 7241732096 } };
+  const mistral = H.parseHuggingFaceModelMetadata(info, config);
+  assert.equal(mistral.fullAttentionLayers, 0);
+  assert.equal(mistral.vocabSize, 32000);
+  const atDepth = (model, depth) => H.calculateKVCacheBytes({ ...model, seqLength: depth, batchSize: 1 });
+  assert.equal(atDepth(mistral, 32768), atDepth(mistral, 4096));
+
+  // Gemma3TextConfig: five sliding layers then one full layer; 34 layers -> 5 full.
+  const gemma = H.parseHuggingFaceModelMetadata(info, { ...config, num_hidden_layers: 34,
+    sliding_window: 1024, sliding_window_pattern: 6, vocab_size: 262208 });
+  assert.equal(gemma.fullAttentionLayers, 5);
+  assert.equal(gemma.vocabSize, 262208);
+  assert.equal(atDepth(gemma, 32768), (5 * 32768 + 29 * 1024) * 2 * 8 * 128 * 2);
+
+  const explicit = H.parseHuggingFaceModelMetadata(info, { ...config, sliding_window_pattern: 6,
+    layer_types: Array.from({ length: 32 }, (_, i) => i < 2 ? 'full_attention' : 'sliding_attention') });
+  assert.equal(explicit.fullAttentionLayers, 2, 'explicit layer list wins over the periodic fallback');
+  const allFull = H.parseHuggingFaceModelMetadata(info, { ...config,
+    layer_types: Array(32).fill('full_attention') });
+  assert.equal(atDepth(allFull, 32768), atDepth(allFull, 4096) * 8,
+    'an explicit all-full list wins over a leftover sliding-window size');
+  const disabled = H.parseHuggingFaceModelMetadata(info, { ...config, use_sliding_window: false });
+  assert.equal(atDepth(disabled, 32768), atDepth(disabled, 4096) * 8);
 });
 
 test('speculative decoding model responds to acceptance and draft cost', () => {

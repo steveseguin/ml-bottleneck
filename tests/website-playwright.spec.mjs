@@ -19,12 +19,58 @@ async function loadApp(page) {
   await page.waitForSelector('#systemAnalysis .result-hero', { state: 'attached' });
 }
 
+for (const saved of ['{}', 'null', '[null, {}, 42]', '{broken']) {
+  test(`malformed saved library ${saved} does not prevent the planner from loading`, async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.addInitScript(value => localStorage.setItem('deviceLibrary', value), saved);
+    await loadApp(page);
+    await expect(page.locator('#devices')).toContainText('RTX');
+    expect(errors).toEqual([]);
+  });
+}
+
+test('valid saved devices survive invalid library entries and remain selectable', async ({ page }) => {
+  await loadApp(page);
+  await page.evaluate(() => {
+    const device = window.__mlBottleneckTestHooks.getDevices()[0];
+    localStorage.setItem('deviceLibrary', JSON.stringify([null, {}, { ...device, id: 123, name: 'Saved test GPU', template: 'Custom' }]));
+  });
+  await page.reload();
+  const option = page.locator('#devices option[value="lib_123"]');
+  await expect(option).toHaveText('Saved test GPU');
+  await option.evaluate(element => {
+    const select = element.closest('select');
+    select.value = 'lib_123';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  expect(await page.evaluate(() => window.__mlBottleneckTestHooks.getDevices()[0].name)).toBe('Saved test GPU');
+});
+
 async function selectAndChange(page, selector, value) {
   await page.locator(selector).evaluate((element, nextValue) => {
     element.value = nextValue;
     element.dispatchEvent(new Event('change', { bubbles: true }));
   }, value);
 }
+
+test('verified legacy architectures and Blackwell specs reach the live planner', async ({ page }) => {
+  await loadApp(page);
+  for (const [preset, heads, kvHeads, headDim] of [
+    ['phi3_14b', 40, 10, 128], ['phi3_mini_3.8b', 32, 32, 96], ['gemma_7b', 16, 16, 256],
+    ['gemma2_2b', 8, 4, 256], ['gemma2_9b', 16, 8, 256], ['gemma2_27b', 32, 16, 128]
+  ]) {
+    await selectAndChange(page, '#modelPreset', preset);
+    const config = await page.evaluate(() => window.__mlBottleneckTestHooks.buildEffectiveModelConfig());
+    expect([config.numHeads, config.numKVHeads, config.headDim]).toEqual([heads, kvHeads, headDim]);
+    await expect(page.locator('#executionMap')).toContainText(`${heads} Q / ${kvHeads} KV heads`);
+  }
+  await page.goto(`${appUrl}?model=phi3_mini_3.8b&hardware=RTX%205070&runtime=llama_cpp#plan`);
+  await page.waitForSelector('#systemAnalysis .result-hero', { state: 'attached' });
+  const device = await page.evaluate(() => window.__mlBottleneckTestHooks.getDevices()[0]);
+  expect(device.computeTFlops.float16).toBe(61.7);
+  await expect(page.locator('#devices')).toContainText('672 GB/s');
+});
 
 async function setInputAndChange(page, selector, value) {
   await page.locator(selector).evaluate((element, nextValue) => {
@@ -609,7 +655,12 @@ test('public Hugging Face model import populates a custom architecture', async (
       num_key_value_heads: 8,
       intermediate_size: 14336,
       num_local_experts: 64,
-      num_experts_per_tok: 4
+      num_experts_per_tok: 4,
+      head_dim: 256,
+      vocab_size: 248320,
+      layer_types: Array.from({ length: 40 }, (_, i) => i % 4 === 3 ? 'full_attention' : 'linear_attention'),
+      mtp_num_hidden_layers: 1,
+      max_position_embeddings: 131072
     })
   }));
   await loadApp(page);
@@ -622,6 +673,28 @@ test('public Hugging Face model import populates a custom architecture', async (
   await expect(page.locator('#numExperts')).toHaveValue('64');
   await expect(page.locator('#activeExperts')).toHaveValue('4');
   await expect(page.locator('#executionMap')).toContainText('top 4 of 64 experts active');
+  const assertImported = async () => {
+    const config = await page.evaluate(() => window.__mlBottleneckTestHooks.buildEffectiveModelConfig());
+    expect(config.headDim).toBe(256);
+    expect(config.fullAttentionLayers).toBe(10);
+    expect(config.vocabSize).toBe(248320);
+    expect(config.useMTP).toBe(true);
+    expect(config.contextLength).toBe(131072);
+  };
+  await assertImported();
+  await page.getByRole('button', { name: 'Explain', exact: true }).click();
+  await page.locator('#resultJson').fill(JSON.stringify({ tokSOut: 80, model: 'llama3_8b',
+    hardware: 'RTX 4090', engine: 'llama.cpp', quantization: 'Q4_K_M', contextLength: 4096 }));
+  await page.getByRole('button', { name: 'Explain this run', exact: true }).click();
+  await expect(page.locator('#interpreterOutput')).toContainText('Imported setup');
+  await assertImported();
+  await page.reload();
+  await page.waitForSelector('#systemAnalysis .result-hero', { state: 'attached' });
+  await assertImported();
+  await selectAndChange(page, '#modelPreset', 'llama3_8b');
+  const switched = await page.evaluate(() => window.__mlBottleneckTestHooks.buildEffectiveModelConfig());
+  expect(switched.headDim).toBe(128);
+  expect(switched.fullAttentionLayers).not.toBe(10);
 });
 
 test('mobile planner stays compact, readable, and within the viewport', async ({ page }) => {

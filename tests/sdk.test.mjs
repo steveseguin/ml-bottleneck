@@ -14,6 +14,26 @@ const distDir = path.join(repoRoot, 'dist');
 const require = createRequire(import.meta.url);
 const sdk = await import(pathToFileURL(path.join(distDir, 'mlbottleneck-engine.mjs')).href);
 
+test('invalid catalog names and nonphysical SDK inputs fail with actionable errors', () => {
+  const engine = sdk.createEngine();
+  const request = { model: 'llama3_8b', hardware: 'RTX 4090' };
+  for (const name of ['toString', 'constructor', '__proto__']) {
+    for (const field of ['model', 'hardware']) {
+      assert.throws(() => engine.predict({ ...request, [field]: name }),
+        error => error.name === 'MLBottleneckError' && /Unknown/.test(error.message));
+    }
+  }
+  for (const count of [0, -1, 1.5, Infinity, NaN]) {
+    assert.throws(() => engine.predict({ ...request, hardware: { template: 'RTX 4090', count } }), /positive.*integer/i);
+  }
+  for (const value of [-1, 0, Infinity, NaN]) {
+    for (const field of ['memoryGB', 'localBandwidthGBps']) {
+      assert.throws(() => engine.predict({ ...request, hardware: { template: 'RTX 4090', [field]: value } }), /positive.*finite/i);
+    }
+    assert.throws(() => engine.predict({ ...request, model: { preset: 'llama3_8b', totalParamsB: value } }), /positive.*finite/i);
+  }
+});
+
 test('ESM bundle exposes createEngine, predicts, and matches the page engine exactly', () => {
   const engine = sdk.createEngine();
   assert.equal(typeof engine.predict, 'function');

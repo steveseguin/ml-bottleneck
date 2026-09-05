@@ -27,7 +27,7 @@ If a figure is unpublished (e.g. NVIDIA gives "AI TOPS" not dense TFLOPS), deriv
   networkBandwidthGBps: 64,         // default link to other devices (PCIe 5 x16 = 64; TB5 = 10; NVLink per the template)
   pcieGeneration: 5, pcieLanes: 16, // optional, drives the interconnect presets
   computeTFlops: {                  // DENSE peak per precision; the engine picks by quantization
-    'float32': 105, 'float16': 318, 'bfloat16': 318, 'int8': 636, 'fp8': 636, 'q4': 954
+    'float32': 104.8, 'float16': 209.5, 'bfloat16': 209.5, 'int8': 838, 'fp8': 419, 'q4': 1676
   },
   powerWatts: 575,                  // TDP for the power/cost card (estimateDeviceTDP falls back to name heuristics)
   kernelOverheadScale: 1.5,         // ONLY for non-CUDA stacks: AMD ROCm/Vulkan 1.5, Intel SYCL/XPU 2.0; Apple M5 0.6 (fit on community runs)

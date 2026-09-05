@@ -842,20 +842,42 @@ function createEngine(options = {}) {
         attentionMechanism: 'mla'
       },
       'phi3_14b': {
-        totalParamsB: 14,
+        label: 'Phi-3 Medium 14B (4K)',
+        hfId: 'microsoft/Phi-3-medium-4k-instruct',
+        totalParamsB: 13.96023808,
+        vocabSize: 32064,
         hiddenSize: 5120,
-        numLayers: 32,
-        numHeads: 32,
-        numKVHeads: 8,
-        intermediateSize: 20480
+        numLayers: 40,
+        numHeads: 40,
+        numKVHeads: 10,
+        headDim: 128,
+        intermediateSize: 17920,
+        contextLength: 4096,
+        attentionMechanism: 'sliding_window',
+        slidingWindow: 2047,
+        fullAttentionLayers: 0,
+        specStatus: 'verified',
+        specSourceUrl: 'https://huggingface.co/microsoft/Phi-3-medium-4k-instruct/raw/main/config.json',
+        specNote: 'Microsoft config and safetensors parameter count verified 2026-09-05. Medium uses 40 layers, 40 query and 10 KV heads, head_dim 128. Window and context follow this checkpoint.'
       },
       'phi3_3.8b': {
-        totalParamsB: 3.8,
+        label: 'Phi-3 Mini 3.8B (4K)',
+        hfId: 'microsoft/Phi-3-mini-4k-instruct',
+        totalParamsB: 3.821079552,
+        vocabSize: 32064,
         hiddenSize: 3072,
         numLayers: 32,
         numHeads: 32,
-        numKVHeads: 8,
-        intermediateSize: 12288
+        numKVHeads: 32,
+        headDim: 96,
+        intermediateSize: 8192,
+        contextLength: 4096,
+        attentionMechanism: 'sliding_window',
+        slidingWindow: 2047,
+        fullAttentionLayers: 0,
+        specStatus: 'verified',
+        specSourceUrl: 'https://huggingface.co/microsoft/Phi-3-mini-4k-instruct/raw/main/config.json',
+        specNote: 'Microsoft config and safetensors parameter count verified 2026-09-05. Mini uses 32 query and 32 KV heads (MHA), head_dim 96. Window and context follow this checkpoint.'
       },
       'mixtral_8x7b': {
         totalParamsB: 46.7,
@@ -882,12 +904,20 @@ function createEngine(options = {}) {
         contextLength: 65536
       },
       'gemma_7b': {
-        totalParamsB: 8.5,
+        totalParamsB: 8.537680896,
+        vocabSize: 256000,
         hiddenSize: 3072,
         numLayers: 28,
         numHeads: 16,
-        numKVHeads: 1,
-        intermediateSize: 24576
+        numKVHeads: 16,
+        headDim: 256,
+        intermediateSize: 24576,
+        contextLength: 8192,
+        attentionMechanism: 'standard',
+        hfId: 'google/gemma-7b',
+        specStatus: 'verified',
+        specSourceUrl: 'https://github.com/google/gemma_pytorch/blob/main/gemma/config.py',
+        specNote: 'Google reference config and Hugging Face safetensors count verified 2026-09-05: 28 layers, 16 query and 16 KV heads (MHA), explicit head_dim 256, 24576 FFN, 8192 context.'
       },
       'gemma_2b': {
         totalParamsB: 2.5,
@@ -1945,25 +1975,58 @@ function createEngine(options = {}) {
       },
       // Gemma 2 Family
       'gemma2_27b': {
-        totalParamsB: 27,
+        totalParamsB: 27.22712832,
         hiddenSize: 4608,
         numLayers: 46,
         numHeads: 32,
-        numKVHeads: 16
+        numKVHeads: 16,
+        headDim: 128,
+        intermediateSize: 36864,
+        vocabSize: 256000,
+        contextLength: 8192,
+        attentionMechanism: 'sliding_window',
+        slidingWindow: 4096,
+        fullAttentionLayers: 23,
+        hfId: 'google/gemma-2-27b',
+        specStatus: 'verified',
+        specSourceUrl: 'https://github.com/google/gemma_pytorch/blob/main/gemma/config.py',
+        specNote: 'Google reference architecture verified 2026-09-05: alternating 4096-token sliding-window and full-attention layers, head_dim 128, 36864 FFN, 8192 context. Parameter count verified against the official Hugging Face safetensors metadata.'
       },
       'gemma2_9b': {
-        totalParamsB: 9,
+        totalParamsB: 9.241705984,
         hiddenSize: 3584,
         numLayers: 42,
         numHeads: 16,
-        numKVHeads: 8
+        numKVHeads: 8,
+        headDim: 256,
+        intermediateSize: 14336,
+        vocabSize: 256000,
+        contextLength: 8192,
+        attentionMechanism: 'sliding_window',
+        slidingWindow: 4096,
+        fullAttentionLayers: 21,
+        hfId: 'google/gemma-2-9b',
+        specStatus: 'verified',
+        specSourceUrl: 'https://github.com/google/gemma_pytorch/blob/main/gemma/config.py',
+        specNote: 'Google reference architecture verified 2026-09-05: alternating 4096-token sliding-window and full-attention layers, head_dim 256, 14336 FFN, 8192 context. Parameter count verified against the official Hugging Face safetensors metadata.'
       },
       'gemma2_2b': {
-        totalParamsB: 2,
+        totalParamsB: 2.614341888,
         hiddenSize: 2304,
         numLayers: 26,
         numHeads: 8,
-        numKVHeads: 4
+        numKVHeads: 4,
+        headDim: 256,
+        intermediateSize: 9216,
+        vocabSize: 256000,
+        contextLength: 8192,
+        attentionMechanism: 'sliding_window',
+        slidingWindow: 4096,
+        fullAttentionLayers: 13,
+        hfId: 'google/gemma-2-2b',
+        specStatus: 'verified',
+        specSourceUrl: 'https://github.com/google/gemma_pytorch/blob/main/gemma/config.py',
+        specNote: 'Google reference architecture verified 2026-09-05: alternating 4096-token sliding-window and full-attention layers, head_dim 256, 9216 FFN, 8192 context. Parameter count verified against the official Hugging Face safetensors metadata.'
       },
       // Phi-4 Family
       'phi4_14b': {
@@ -1996,11 +2059,23 @@ function createEngine(options = {}) {
       },
       // Phi-3 Family
       'phi3_medium_14b': {
-        totalParamsB: 14,
+        label: 'Phi-3 Medium 14B (4K)',
+        hfId: 'microsoft/Phi-3-medium-4k-instruct',
+        totalParamsB: 13.96023808,
+        vocabSize: 32064,
         hiddenSize: 5120,
         numLayers: 40,
         numHeads: 40,
-        numKVHeads: 10
+        numKVHeads: 10,
+        headDim: 128,
+        intermediateSize: 17920,
+        contextLength: 4096,
+        attentionMechanism: 'sliding_window',
+        slidingWindow: 2047,
+        fullAttentionLayers: 0,
+        specStatus: 'verified',
+        specSourceUrl: 'https://huggingface.co/microsoft/Phi-3-medium-4k-instruct/raw/main/config.json',
+        specNote: 'Microsoft config and safetensors parameter count verified 2026-09-05. Medium uses 40 layers, 40 query and 10 KV heads, head_dim 128. Window and context follow this checkpoint.'
       },
       'phi3_small_7b': {
         totalParamsB: 7,
@@ -2010,12 +2085,23 @@ function createEngine(options = {}) {
         numKVHeads: 8
       },
       'phi3_mini_3.8b': {
-        totalParamsB: 3.8,
+        label: 'Phi-3 Mini 3.8B (128K)',
+        hfId: 'microsoft/Phi-3-mini-128k-instruct',
+        totalParamsB: 3.821079552,
+        vocabSize: 32064,
         hiddenSize: 3072,
         numLayers: 32,
         numHeads: 32,
-        numKVHeads: 8,
-        contextLength: 128000
+        numKVHeads: 32,
+        headDim: 96,
+        intermediateSize: 8192,
+        contextLength: 131072,
+        attentionMechanism: 'sliding_window',
+        slidingWindow: 262144,
+        fullAttentionLayers: 0,
+        specStatus: 'verified',
+        specSourceUrl: 'https://huggingface.co/microsoft/Phi-3-mini-128k-instruct/raw/main/config.json',
+        specNote: 'Microsoft config and safetensors parameter count verified 2026-09-05. Mini uses 32 query and 32 KV heads (MHA), head_dim 96. Window and context follow this checkpoint.'
       },
       // Mixtral 8x22B (MoE)
       // DBRX (Databricks MoE)
@@ -3031,12 +3117,17 @@ function createEngine(options = {}) {
         pcieGeneration: 5,
         pcieLanes: 16,
         computeTFlops: {
-          'float32': 112,
-          'float16': 340,
-          'bfloat16': 340,
-          'int8': 680,
-          'q4': 1020
+          'float32': 111.6,
+          'float16': 223.3,
+          'bfloat16': 223.3,
+          'fp8': 446.5,
+          'int8': 893.1,
+          'q4': 1786.1
         },
+        powerWatts: 600,
+        sourceUrl: 'https://www.msi.com/Graphics-Card/GeForce-RTX-5090-32G-SUPRIM-SOC/Specification',
+        specStatus: 'verified',
+        specNote: 'Verified 2026-09-05: MSI Gaming-mode boost 2565 MHz, 21760 CUDA cores, 600 W, 1792 GB/s. Dense tensor peaks derived from NVIDIA Blackwell SM rates at this clock, with FP32 accumulation for FP16/BF16/FP8 and no sparsity.',
         type: 'GPU'
       },
       'RTX 5090': {
@@ -3047,15 +3138,17 @@ function createEngine(options = {}) {
         pcieGeneration: 5,
         pcieLanes: 16,
         computeTFlops: {
-          'float32': 105,
-          'float16': 318,
-          'bfloat16': 318,
-          'int8': 636,
-          'q4': 954
+          'float32': 104.8,
+          'float16': 209.5,
+          'bfloat16': 209.5,
+          'fp8': 419,
+          'int8': 838,
+          'q4': 1676
         },
-        sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/',
+        powerWatts: 575,
+        sourceUrl: 'https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf',
         specStatus: 'verified',
-        specNote: '32 GB and 1,792 GB/s are NVIDIA specifications. Low-precision planning rates are derived estimates because NVIDIA publishes AI TOPS rather than directly comparable dense inference TFLOPS.',
+        specNote: 'NVIDIA Blackwell whitepaper tables 3-6, verified 2026-09-05. Dense FP16/BF16/FP8 tensor rates use FP32 accumulation; INT8 and FP4 exclude sparsity. FP32 is shader throughput.',
         type: 'GPU'
       },
       'RTX 5080': {
@@ -3066,12 +3159,17 @@ function createEngine(options = {}) {
         pcieGeneration: 5,
         pcieLanes: 16,
         computeTFlops: {
-          'float32': 57,
-          'float16': 171,
-          'bfloat16': 171,
-          'int8': 342,
-          'q4': 513
+          'float32': 56.3,
+          'float16': 112.6,
+          'bfloat16': 112.6,
+          'fp8': 225.1,
+          'int8': 450.2,
+          'q4': 900.4
         },
+        powerWatts: 360,
+        sourceUrl: 'https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf',
+        specStatus: 'verified',
+        specNote: 'NVIDIA Blackwell whitepaper tables 3-6, verified 2026-09-05. Dense FP16/BF16/FP8 tensor rates use FP32 accumulation; INT8 and FP4 exclude sparsity. FP32 is shader throughput.',
         type: 'GPU'
       },
       'RTX 5070 Ti': {
@@ -3082,12 +3180,17 @@ function createEngine(options = {}) {
         pcieGeneration: 5,
         pcieLanes: 16,
         computeTFlops: {
-          'float32': 44,
-          'float16': 132,
-          'bfloat16': 132,
-          'int8': 264,
-          'q4': 396
+          'float32': 43.9,
+          'float16': 87.9,
+          'bfloat16': 87.9,
+          'fp8': 175.8,
+          'int8': 351.5,
+          'q4': 703
         },
+        powerWatts: 300,
+        sourceUrl: 'https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf',
+        specStatus: 'verified',
+        specNote: 'NVIDIA Blackwell whitepaper tables 3-6, verified 2026-09-05. Dense FP16/BF16/FP8 tensor rates use FP32 accumulation; INT8 and FP4 exclude sparsity. FP32 is shader throughput.',
         type: 'GPU'
       },
       'RTX 5070': {
@@ -3098,12 +3201,17 @@ function createEngine(options = {}) {
         pcieGeneration: 5,
         pcieLanes: 16,
         computeTFlops: {
-          'float32': 36,
-          'float16': 108,
-          'bfloat16': 108,
-          'int8': 216,
-          'q4': 324
+          'float32': 30.9,
+          'float16': 61.7,
+          'bfloat16': 61.7,
+          'fp8': 123.5,
+          'int8': 246.9,
+          'q4': 493.9
         },
+        powerWatts: 250,
+        sourceUrl: 'https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf',
+        specStatus: 'verified',
+        specNote: 'NVIDIA Blackwell whitepaper tables 3-6, verified 2026-09-05. Dense FP16/BF16/FP8 tensor rates use FP32 accumulation; INT8 and FP4 exclude sparsity. FP32 is shader throughput.',
         type: 'GPU'
       },
       'RTX 5060 Ti 16GB': {
@@ -3114,12 +3222,17 @@ function createEngine(options = {}) {
         pcieGeneration: 5,
         pcieLanes: 8,
         computeTFlops: {
-          'float32': 25,
-          'float16': 75,
-          'bfloat16': 75,
-          'int8': 150,
-          'q4': 225
+          'float32': 23.7,
+          'float16': 47.4,
+          'bfloat16': 47.4,
+          'fp8': 94.8,
+          'int8': 189.6,
+          'q4': 379.2
         },
+        powerWatts: 180,
+        sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/compare/',
+        specStatus: 'verified',
+        specNote: 'Verified 2026-09-05: NVIDIA 4608 CUDA cores at 2.57 GHz, 448 GB/s, 180 W. Dense tensor rates derived from the Blackwell SM ratios: FP16/BF16 2x shader FP32, FP8 4x (FP32 accumulation), INT8 8x, FP4 16x; no sparsity.',
         type: 'GPU'
       },
       'RTX 5060 Ti 8GB': {
@@ -3130,12 +3243,17 @@ function createEngine(options = {}) {
         pcieGeneration: 5,
         pcieLanes: 8,
         computeTFlops: {
-          'float32': 25,
-          'float16': 75,
-          'bfloat16': 75,
-          'int8': 150,
-          'q4': 225
+          'float32': 23.7,
+          'float16': 47.4,
+          'bfloat16': 47.4,
+          'fp8': 94.8,
+          'int8': 189.6,
+          'q4': 379.2
         },
+        powerWatts: 180,
+        sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/compare/',
+        specStatus: 'verified',
+        specNote: 'Verified 2026-09-05: NVIDIA 4608 CUDA cores at 2.57 GHz, 448 GB/s, 180 W. Dense tensor rates derived from the Blackwell SM ratios: FP16/BF16 2x shader FP32, FP8 4x (FP32 accumulation), INT8 8x, FP4 16x; no sparsity.',
         type: 'GPU'
       },
       'DGX Spark': {
@@ -3208,12 +3326,17 @@ function createEngine(options = {}) {
         pcieGeneration: 4,
         pcieLanes: 16,
         computeTFlops: {
-          'float32': 40,
-          'float16': 80,
-          'bfloat16': 80,
-          'int8': 160,
-          'q4': 240
+          'float32': 44.1,
+          'float16': 88.2,
+          'bfloat16': 88.2,
+          'fp8': 176.4,
+          'int8': 352.8,
+          'q4': 88.2 // Weight-only Q4 dequantizes to FP16; Ada has no native FP4.
         },
+        powerWatts: 285,
+        sourceUrl: 'https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4070-family/',
+        specStatus: 'verified',
+        specNote: 'Verified 2026-09-05: 16 GB, 672 GB/s, 285 W, 8448 CUDA cores at 2.61 GHz. Dense tensor rates derived from Ada SM ratios: FP16/BF16 2x and FP8 4x shader FP32 with FP32 accumulation; INT8 8x, without sparsity. Q4 uses FP16 compute.',
         type: 'GPU'
       },
       'Titan RTX + NVMe Gen3': {
@@ -8033,7 +8156,7 @@ function createEngine(options = {}) {
     // Case/space-insensitive catalog lookup: 'rtx 4090', 'RTX-4090', 'RTX 4090'.
     function sdkFindKey(catalog, query) {
         if (!query) return null;
-        if (catalog[query]) return query;
+        if (Object.hasOwn(catalog, query)) return query;
         const normalize = value => String(value).toLowerCase().replace(/[^a-z0-9]+/g, '');
         const wanted = normalize(query);
         const keys = Object.keys(catalog);
@@ -8057,7 +8180,7 @@ function createEngine(options = {}) {
         const { preset, ...overrides } = model;
         const merged = { ...base, ...overrides };
         for (const field of ['totalParamsB', 'hiddenSize', 'numLayers', 'numHeads']) {
-            if (!(Number(merged[field]) > 0)) throw sdkError(`Custom model needs a positive "${field}".`);
+            if (!Number.isFinite(Number(merged[field])) || !(Number(merged[field]) > 0)) throw sdkError(`Custom model needs a positive, finite "${field}".`);
         }
         return merged;
     }
@@ -8068,7 +8191,8 @@ function createEngine(options = {}) {
         for (const entry of entries) {
             if (!entry) continue;
             const spec = typeof entry === 'string' ? { template: entry } : entry;
-            const count = Math.max(1, parseInt(spec.count, 10) || 1);
+            const count = spec.count === undefined ? 1 : Number(spec.count);
+            if (!Number.isSafeInteger(count) || count <= 0) throw sdkError('Hardware count must be a positive safe integer.');
             let base;
             if (spec.template) {
                 const key = sdkFindKey(DEVICE_TEMPLATES, spec.template);
@@ -8087,6 +8211,12 @@ function createEngine(options = {}) {
                 };
             }
             const { count: _count, template: _template, ...overrides } = spec;
+            const resolved = { ...base, ...overrides };
+            for (const field of ['memoryGB', 'localBandwidthGBps']) {
+                if (!Number.isFinite(Number(resolved[field])) || !(Number(resolved[field]) > 0)) {
+                    throw sdkError(`Hardware needs a positive, finite "${field}".`);
+                }
+            }
             for (let index = 0; index < count; index += 1) {
                 devices.push({
                     ...base,

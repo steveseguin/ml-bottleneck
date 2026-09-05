@@ -25,7 +25,7 @@ function sdkRound(value, digits = 2) {
 // Case/space-insensitive catalog lookup: 'rtx 4090', 'RTX-4090', 'RTX 4090'.
 function sdkFindKey(catalog, query) {
     if (!query) return null;
-    if (catalog[query]) return query;
+    if (Object.hasOwn(catalog, query)) return query;
     const normalize = value => String(value).toLowerCase().replace(/[^a-z0-9]+/g, '');
     const wanted = normalize(query);
     const keys = Object.keys(catalog);
@@ -49,7 +49,7 @@ function sdkResolveModel(model) {
     const { preset, ...overrides } = model;
     const merged = { ...base, ...overrides };
     for (const field of ['totalParamsB', 'hiddenSize', 'numLayers', 'numHeads']) {
-        if (!(Number(merged[field]) > 0)) throw sdkError(`Custom model needs a positive "${field}".`);
+        if (!Number.isFinite(Number(merged[field])) || !(Number(merged[field]) > 0)) throw sdkError(`Custom model needs a positive, finite "${field}".`);
     }
     return merged;
 }
@@ -60,7 +60,8 @@ function sdkResolveDevices(hardware) {
     for (const entry of entries) {
         if (!entry) continue;
         const spec = typeof entry === 'string' ? { template: entry } : entry;
-        const count = Math.max(1, parseInt(spec.count, 10) || 1);
+        const count = spec.count === undefined ? 1 : Number(spec.count);
+        if (!Number.isSafeInteger(count) || count <= 0) throw sdkError('Hardware count must be a positive safe integer.');
         let base;
         if (spec.template) {
             const key = sdkFindKey(DEVICE_TEMPLATES, spec.template);
@@ -79,6 +80,12 @@ function sdkResolveDevices(hardware) {
             };
         }
         const { count: _count, template: _template, ...overrides } = spec;
+        const resolved = { ...base, ...overrides };
+        for (const field of ['memoryGB', 'localBandwidthGBps']) {
+            if (!Number.isFinite(Number(resolved[field])) || !(Number(resolved[field]) > 0)) {
+                throw sdkError(`Hardware needs a positive, finite "${field}".`);
+            }
+        }
         for (let index = 0; index < count; index += 1) {
             devices.push({
                 ...base,

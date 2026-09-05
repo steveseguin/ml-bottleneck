@@ -52,7 +52,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
 	<script src="data/localmaxxing-snapshot.js?v=20260824080611"></script>
 	<script src="data/lab-evidence.js?v=47452ee3d12c"></script>
-	<script src="engine.js?v=b6bc241b87a9"></script>
+	<script src="engine.js?v=b0a4dc2abcd5"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -4124,6 +4124,20 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         let selectedDeviceId = devices[0]?.id || null;
 	    const LAST_PLAN_STORAGE_KEY = 'mlBottleneck:lastPlan:v1';
 	    let lastPlanPreferencesReady = false;
+        let importedModelMetadata = null;
+
+        function pickImportedModelMetadata(model) {
+            if (!model || typeof model.hfId !== 'string') return null;
+            const metadata = { hfId: model.hfId };
+            for (const key of ['vocabSize', 'fullAttentionLayers', 'fullAttentionInterval', 'slidingWindow',
+                'kvLoraRank', 'qLoraRank', 'qkRopeHeadDim', 'mtpModules', 'contextLength', 'maxSeqLength', 'moeIntermediateSize']) {
+                if (Number.isFinite(model[key]) && model[key] >= 0) metadata[key] = model[key];
+            }
+            for (const key of ['useMTP', 'hasVision']) {
+                if (typeof model[key] === 'boolean') metadata[key] = model[key];
+            }
+            return metadata;
+        }
 
 	    function createFactoryDevice() {
 	        return {
@@ -4140,6 +4154,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	            localStorage.setItem(LAST_PLAN_STORAGE_KEY, JSON.stringify({
 	                version: 1,
 	                model: getModelConfig(),
+                    importedModelMetadata,
 	                selectedDeviceId,
 	                hoursPerDay: document.getElementById('hoursPerDay')?.value || '8',
 	                costPerKwh: document.getElementById('costPerKwh')?.value || '0.12'
@@ -4169,9 +4184,11 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	            setStoredControlValue('quantizationType', model.quantizationType || 'q4');
 	            updateModelConfigFromPreset();
 
+                importedModelMetadata = !model.modelPreset ? pickImportedModelMetadata(saved.importedModelMetadata) : null;
+
 	            const directFields = [
 	                'hfId', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'hiddenSize',
-	                'numLayers', 'numHeads', 'numKVHeads', 'intermediateSize', 'architectureType',
+	                'numLayers', 'numHeads', 'numKVHeads', 'headDim', 'intermediateSize', 'architectureType',
 	                'activeParamsB', 'numExperts', 'activeExperts', 'routingType', 'attentionMechanism',
 	                'parallelismStrategy', 'optimizationMode', 'specMethod', 'specTokens', 'specDraftModel',
 	                'kvCacheCompression', 'runtimeFramework', 'decodeBytesPerPassGB', 'residentWeightsGB', 'decodeOverheadMs',
@@ -4248,6 +4265,9 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         function getModelConfig() {
             const tokenLengths = getTokenLengthConfigFromDom();
             return {
+                ...(!document.getElementById('modelPreset').value &&
+                    importedModelMetadata?.hfId === document.getElementById('hfId')?.value?.trim()
+                    ? importedModelMetadata : {}),
                 modelPreset: document.getElementById('modelPreset').value,
                 hfId: document.getElementById('hfId')?.value?.trim() || '',
                 quantizationType: document.getElementById('quantizationType').value,
@@ -4931,21 +4951,32 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    saveDevices();
 	}
 	
+        // A saved library can contain valid JSON with an invalid shape (or stale records).
+        // Keep usable entries and let the planner work even when storage is damaged.
+        function readDeviceLibrary() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem('deviceLibrary') || '[]');
+                if (!Array.isArray(parsed)) return [];
+                return parsed.filter(device => device && typeof device === 'object' &&
+                    !Array.isArray(device) &&
+                    (typeof device.id === 'number' || typeof device.id === 'string') &&
+                    typeof device.name === 'string' &&
+                    Number.isFinite(Number(device.memoryGB)) && Number(device.memoryGB) > 0 &&
+                    Number.isFinite(Number(device.localBandwidthGBps)) && Number(device.localBandwidthGBps) > 0 &&
+                    device.computeTFlops && typeof device.computeTFlops === 'object');
+            } catch (error) {
+                console.error('Error loading device library:', error);
+                return [];
+            }
+        }
+
 	// Device library management
 	function saveToLibrary(id) {
 	    const device = devices.find(d => d.id === id);
 	    if (!device) return;
 	    
 	    // Get existing library
-	    let deviceLibrary = [];
-	    try {
-	        const savedLibrary = localStorage.getItem('deviceLibrary');
-	        if (savedLibrary) {
-	            deviceLibrary = JSON.parse(savedLibrary);
-	        }
-	    } catch (e) {
-	        console.error('Error loading device library:', e);
-	    }
+	    const deviceLibrary = readDeviceLibrary();
 	    
 	    // Create a copy to save
 	    const deviceToSave = {
@@ -6998,7 +7029,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 
         const RESULT_PLAN_FIELD_IDS = [
             'modelPreset', 'hfId', 'quantizationType', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'seqLength',
-            'hiddenSize', 'numLayers', 'numHeads', 'numKVHeads', 'intermediateSize', 'architectureType', 'activeParamsB',
+            'hiddenSize', 'numLayers', 'numHeads', 'numKVHeads', 'headDim', 'intermediateSize', 'architectureType', 'activeParamsB',
             'numExperts', 'activeExperts', 'routingType', 'attentionMechanism', 'dtype', 'parallelismStrategy',
             'optimizationMode', 'runtimeFramework', 'kvCacheCompression', 'decodeBytesPerPassGB',
             'residentWeightsGB', 'decodeOverheadMs', 'cpuMoeLayers', 'executionProfileName'
@@ -7226,6 +7257,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 
         function captureResultPlanState() {
             return {
+                importedModelMetadata,
                 fields: Object.fromEntries(RESULT_PLAN_FIELD_IDS.map(id => [id, document.getElementById(id)?.value])),
                 devices: JSON.parse(JSON.stringify(devices)),
                 selectedDeviceId,
@@ -7235,6 +7267,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         }
 
         function restoreResultPlanState(snapshot) {
+            importedModelMetadata = snapshot.importedModelMetadata;
             for (const [id, value] of Object.entries(snapshot.fields)) {
                 const element = document.getElementById(id);
                 if (element && value !== undefined) element.value = value;
@@ -7754,6 +7787,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             const slidingLayerCount = layerTypes.length ? countTypes(/sliding|local/) : 0;
             const linearLayerCount = layerTypes.length ? countTypes(/linear|mamba|ssm|conv|recurrent|delta|kda|gdn/) : 0;
             const fullAttentionInterval = firstNumber(config.full_attention_interval, config.attn_layer_period);
+            const slidingWindowPattern = firstNumber(config.sliding_window_pattern);
             const slidingWindow = config.use_sliding_window === false ? undefined : firstNumber(config.sliding_window, config.window_size);
             let attentionMechanism = 'auto';
             let fullAttentionLayers;
@@ -7765,11 +7799,18 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 fullAttentionLayers = fullLayerCount;
             } else if (fullAttentionInterval && fullAttentionInterval > 1) {
                 attentionMechanism = 'hybrid_linear';
-            } else if (slidingWindow && slidingLayerCount > 0 && fullLayerCount !== null) {
+            } else if (slidingWindow && layerTypes.length && fullLayerCount + slidingLayerCount === layerTypes.length) {
                 attentionMechanism = 'sliding_window';
                 fullAttentionLayers = fullLayerCount;
+            } else if (slidingWindow && !layerTypes.length && slidingWindowPattern) {
+                attentionMechanism = 'sliding_window';
+                // Gemma: every Nth layer is global, starting at layer N (1-based).
+                fullAttentionLayers = Math.floor(numLayers / slidingWindowPattern);
             } else if (slidingWindow && slidingWindow < (firstNumber(config.max_position_embeddings) || Infinity)) {
                 attentionMechanism = 'sliding_window';
+                // A plain sliding-window config (Mistral/Phi-3) windows every
+                // layer. Do not inherit the engine's mixed-attention fallback.
+                if (!layerTypes.length) fullAttentionLayers = 0;
             }
 
             if (!totalParams && hiddenSize && numLayers && numHeads && intermediateSize) {
@@ -7802,6 +7843,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 hfId: hfId || apiInfo.id || apiInfo.modelId || '',
                 label: apiInfo.id || apiInfo.modelId || hfId || 'Imported model',
                 totalParamsB: totalParams / 1e9,
+                vocabSize: firstNumber(config.vocab_size, config.padded_vocab_size),
                 hiddenSize,
                 numLayers,
                 numHeads,
@@ -7863,12 +7905,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 const parsed = parseHuggingFaceModelMetadata(apiInfo, rawConfig, hfId);
                 document.getElementById('modelPreset').value = '';
                 document.getElementById('hfId').value = parsed.hfId;
+                importedModelMetadata = pickImportedModelMetadata(parsed);
                 const fieldValues = {
                     totalParamsB: parsed.totalParamsB.toFixed(3),
                     hiddenSize: parsed.hiddenSize,
                     numLayers: parsed.numLayers,
                     numHeads: parsed.numHeads,
                     numKVHeads: parsed.numKVHeads,
+                    headDim: parsed.headDim,
                     intermediateSize: parsed.intermediateSize,
                     numExperts: parsed.numExperts,
                     activeExperts: parsed.activeExperts,
@@ -7972,15 +8016,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	    const devicesContainer = document.getElementById('devices');
 	    
 	    // Get saved device library
-	    let deviceLibrary = [];
-	    try {
-	        const savedLibrary = localStorage.getItem('deviceLibrary');
-	        if (savedLibrary) {
-	            deviceLibrary = JSON.parse(savedLibrary);
-	        }
-	    } catch (e) {
-	        console.error('Error loading device library:', e);
-	    }
+	    const deviceLibrary = readDeviceLibrary();
 	    
 	    // Create custom library options
 	    const libraryOptions = deviceLibrary.map(device => 
@@ -8262,13 +8298,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             const selectedDevice = getSelectedDevice();
             renderDeviceRoster();
 
-            let deviceLibrary = [];
-            try {
-                const savedLibrary = localStorage.getItem('deviceLibrary');
-                if (savedLibrary) deviceLibrary = JSON.parse(savedLibrary);
-            } catch (e) {
-                console.error('Error loading device library:', e);
-            }
+            const deviceLibrary = readDeviceLibrary();
 
             if (!selectedDevice) {
                 devicesContainer.innerHTML = `<button class="button add-device-inline" onclick="addDevice()">+ Add device</button>`;
@@ -8623,6 +8653,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	}
 
         function updateModelConfigFromPreset() {
+            importedModelMetadata = null;
 		const modelPresetId = document.getElementById('modelPreset').value;
 		if (modelPresetId && MODEL_PRESETS[modelPresetId]) {
 			const currentConfig = getModelConfig();
@@ -9185,7 +9216,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        try {
 	            const savedLibrary = localStorage.getItem('deviceLibrary');
 	            if (savedLibrary) {
-	                const deviceLibrary = JSON.parse(savedLibrary);
+	                const deviceLibrary = readDeviceLibrary();
 	                const libraryDevice = deviceLibrary.find(d => d.id.toString() === libraryId);
 	                
 	                if (libraryDevice) {
