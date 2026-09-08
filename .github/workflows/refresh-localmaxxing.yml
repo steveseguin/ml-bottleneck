@@ -17,15 +17,37 @@ jobs:
         with:
           node-version: 22
       - name: Refresh public model and benchmark data
-        run: node scripts/refresh-localmaxxing.mjs
+        run: |
+          cp data/localmaxxing-snapshot.js "$RUNNER_TEMP/previous-snapshot.js"
+          node scripts/refresh-localmaxxing.mjs
       # The engine is calibrated against the gold corpus. A refresh that
       # pushes the calibration guard outside its envelope must fail loudly
       # here and be triaged by a person (see .claude/skills/refresh-evidence),
       # never committed silently.
       - name: Validate the refreshed snapshot against the engine
         run: |
-          npm test
-          npm run audit:gold
+          set +e
+          npm test 2>&1 | tee "$RUNNER_TEMP/refresh-tests.log"
+          tests_status=${PIPESTATUS[0]}
+          npm run audit:gold 2>&1 | tee "$RUNNER_TEMP/refresh-gold-audit.log"
+          audit_status=${PIPESTATUS[0]}
+          if [ "$tests_status" -ne 0 ] || [ "$audit_status" -ne 0 ]; then exit 1; fi
+      - name: Prepare evidence review packet
+        if: always()
+        run: |
+          node scripts/report-snapshot-change.mjs "$RUNNER_TEMP/previous-snapshot.js" data/localmaxxing-snapshot.js > "$RUNNER_TEMP/refresh-changes.json"
+          git diff --binary -- data/localmaxxing-snapshot.js index.html dist > "$RUNNER_TEMP/refresh-candidate.patch"
+          echo "Candidate evidence, changed benchmark rows, tests, and calibration audit are attached as the refresh-review artifact. A failed validation prevents publication." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: refresh-review
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/refresh-*.log
+            ${{ runner.temp }}/refresh-changes.json
+            ${{ runner.temp }}/refresh-candidate.patch
+            data/localmaxxing-snapshot.js
       - name: Commit changed snapshot, its cache key, and the SDK evidence bundle
         run: |
           if git diff --quiet -- data/localmaxxing-snapshot.js index.html dist; then
