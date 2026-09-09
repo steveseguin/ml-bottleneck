@@ -1,9 +1,15 @@
 name: Refresh Localmaxxing snapshot
 
 on:
-  schedule:
-    - cron: "23 7 * * 1"
+  # Manual only: refreshed peers move snapshot-dependent numerical pins.
+  # Inspect the review artifact before explicitly requesting publication.
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Commit refreshed evidence only if all validation passes"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -49,6 +55,7 @@ jobs:
             ${{ runner.temp }}/refresh-candidate.patch
             data/localmaxxing-snapshot.js
       - name: Commit changed snapshot, its cache key, and the SDK evidence bundle
+        if: ${{ success() && inputs.publish }}
         run: |
           if git diff --quiet -- data/localmaxxing-snapshot.js index.html dist; then
             echo "Snapshot is already current."

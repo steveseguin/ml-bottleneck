@@ -18,8 +18,11 @@ regenerates `data/lab-evidence.js` and stamps its cache key) — see the `calibr
   `engine.js` through the test harness for the prefill plausibility check, so the engine must parse.
   Commit the snapshot, `index.html`, and `dist/` (the SDK evidence bundle `npm test` rebuilds) together;
   committing only the data file leaves browsers on a cached snapshot and fails the cache-key integrity
-  test. CI runs this weekly (`.github/workflows/refresh-localmaxxing.yml`) and runs `npm test` +
-  `npm run audit:gold` before committing.
+  test. The workflow (`.github/workflows/refresh-localmaxxing.yml`) is manual-only,
+  with publication off by default. It runs `npm test` + `npm run audit:gold` and
+  uploads a review artifact; committing additionally requires the explicit
+  `publish` input. Weekly refreshes were disabled after the September 8 review
+  found snapshot-dependent numerical pins blocking new evidence.
 - `npm run audit:gold` — distribution, per-runtime/hardware medians, roofline violations, worst rows.
 - `node scripts/fit-decode-constants.mjs --rows` — every row with depth, observed, predicted, physical.
 

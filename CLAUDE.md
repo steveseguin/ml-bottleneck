@@ -15,7 +15,7 @@ A static web application with no bundler, served from the repo root:
 - `index.html` (~10k lines) holds the UI, CSS, and the application script. It loads `engine.js?v=<content hash>` before its inline script; both share one global scope (top-level `const`/`function` declarations), so names must be unique across the two files. `npm test` re-stamps the hash (`scripts/stamp-engine.mjs`) — a stale tag fails the suite.
 - `sdk/api.js` + `scripts/build-sdk.mjs` wrap `engine.js` into `dist/` (ESM + UMD + types + evidence JSON) — the public SDK (`docs/sdk.md`). `npm test` rebuilds `dist/`; commit it. `package.json` `version` is the SDK version; bumping it on `main` triggers `.github/workflows/release-sdk.yml` to publish a `sdk-v<version>` GitHub release.
 - `data/localmaxxing-snapshot.js` is a generated, versioned model/benchmark snapshot loaded beside `index.html` (the snapshot must be served next to it; the app degrades gracefully if missing)
-- `scripts/refresh-localmaxxing.mjs` rebuilds the snapshot from the public Localmaxxing API; CI refreshes it weekly (`.github/workflows/refresh-localmaxxing.yml`)
+- `scripts/refresh-localmaxxing.mjs` rebuilds the snapshot from the public Localmaxxing API; the refresh workflow is manual-only and review-only by default (`.github/workflows/refresh-localmaxxing.yml`). Publishing requires its explicit `publish` input and passing validation.
 - Chart.js is loaded from cdnjs with an SRI hash pinned in the `<script>` tag
 - Device configurations persist to localStorage
 
