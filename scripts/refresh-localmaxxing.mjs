@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadApp } from '../tests/load-index-app.mjs';
+import { parseLlamaBenchDecodeContext } from './llama-bench-context.mjs';
 
 const API_ROOT = 'https://www.localmaxxing.com/api';
 const PAGE_SIZE = 200;
@@ -275,13 +276,9 @@ function normalizeGoldCase(run) {
   // from KV *reads per token* (bandwidth).
   const promptTokens = Number.isFinite(run.promptTokens) ? run.promptTokens : null;
   const outputTokens = Number.isFinite(run.outputTokens) ? run.outputTokens : null;
-  // llama-bench decodes at an explicit depth: `-d N` / `--n-depth N`, or the
-  // prompt half of `-pg N,M`. Recorded here so the projection can use it
-  // instead of the pp test's `-p` size.
-  const benchDepthMatch = /llama-bench/.test(command)
-    ? (command.match(/(?:\s-d|--n-depth)[=\s]+(\d+)/) || command.match(/-pg[=\s]+(\d+)\s*,\s*\d+/))
-    : null;
-  const decodeDepthTokens = benchDepthMatch ? parseInt(benchDepthMatch[1], 10) : null;
+  // Persist zero for independent tg, not null (which invokes the legacy
+  // prompt-depth fallback). Ambiguous measurements stay visible for review.
+  const { decodeDepthTokens, decodeMeasurementIssue } = parseLlamaBenchDecodeContext(command);
   // The structured kvCacheDtype flag is often missing while the command
   // line carries it (llama.cpp -ctk/-ctv, vLLM --kv-cache-dtype).
   const kvFlagMatch = command.match(/(?:-ctk|--cache-type-k|--kv-cache-dtype)[=\s]+([A-Za-z0-9_]+)/);
@@ -385,6 +382,7 @@ function normalizeGoldCase(run) {
     splitMode,
     cpuMoeLayers,
     decodeDepthTokens,
+    decodeMeasurementIssue,
     batchSize,
     observedTokS: run.tokSOut,
     prefillTokS: plausiblePrefillRate(run, presetKey, hardwareTemplate, deviceCount, quantKey),

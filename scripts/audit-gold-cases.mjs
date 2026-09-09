@@ -26,6 +26,10 @@ vm.runInContext(snapshotSource, context);
 const snapshot = context.window.LOCALMAXXING_SNAPSHOT;
 const cases = snapshot?.goldCases || [];
 console.log('gold cases in snapshot:', cases.length);
+const measurementIssues = cases.filter(row => row.decodeMeasurementIssue);
+for (const row of measurementIssues) {
+  console.log('Measurement review required:', row.id, '|', row.decodeMeasurementIssue, '|', row.source);
+}
 
 const app = loadApp({ snapshot });
 const rows = [];
@@ -84,6 +88,10 @@ for (const v of violations) {
 // impossible measurements require review even when aggregate accuracy passes.
 if (process.argv.includes('--strict-physical') && violations.length) {
   console.error('Publication blocked: unresolved physical-roofline violations.');
+  process.exitCode = 1;
+}
+if (process.argv.includes('--strict-physical') && measurementIssues.length) {
+  console.error('Publication blocked: unresolved decode-measurement semantics.');
   process.exitCode = 1;
 }
 

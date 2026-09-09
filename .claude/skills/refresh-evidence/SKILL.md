@@ -26,6 +26,10 @@ regenerates `data/lab-evidence.js` and stamps its cache key) — see the `calibr
   now use `tests/fixtures/calibration-2026-08-24.json`; do not refresh that fixture.
   The workflow additionally requires `audit:gold -- --strict-physical` (zero
   unresolved >5% roofline violations), while retaining existing statistical guards.
+  It also blocks rows carrying `decodeMeasurementIssue`. The parser now stores
+  zero for independent llama-bench tg and flags `-pg`/depth sweeps for original
+  per-test JSON review; never silently remove these rows or reinterpret combined
+  rates as isolated decode. Historical published rows await a guarded migration.
 - `npm run audit:gold` — distribution, per-runtime/hardware medians, roofline violations, worst rows.
 - `node scripts/fit-decode-constants.mjs --rows` — every row with depth, observed, predicted, physical.
 

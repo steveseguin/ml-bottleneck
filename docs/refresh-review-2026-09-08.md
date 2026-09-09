@@ -99,3 +99,38 @@ blocks refresh publication under the new strict check.
 - Ordinary published-data gold audit passes its existing envelope. Strict
   audits of both published and candidate evidence exit 1 on the two listed
   outliers, as intended. No benchmark evidence or physics was republished.
+
+## Ingestion repair and migration assessment
+
+The refresh parser now records explicit `decodeDepthTokens: 0` for standalone
+llama-bench tg, and preserves a single explicit `-d` / `--n-depth` value.
+It no longer takes a numeric prefix from a depth sweep. Combined `-pg` commands
+and ambiguous depths are retained with `decodeMeasurementIssue` reasons;
+strict publication refuses these rows even if their physical ceilings pass.
+No rows are silently removed. [Upstream implementation](https://github.com/ggml-org/llama.cpp/blob/master/tools/llama-bench/llama-bench.cpp)
+constructs tg with `n_prompt = 0` and clears KV before each repetition;
+the `-pg` result times both phases, so original per-test JSON is necessary
+before interpreting a submitted rate as isolated decode.
+
+Applying only this parser to a temporary copy of the published corpus removes
+the RTX 3060 ceiling violation and preserves the RTX 4070 violation. It exposes
+nine `-pg` rows needing measurement identification. Leave-one-out coverage
+becomes approximately 84% within 1.5× and 91% within 2×, below the unchanged
+85% / 92% test requirements. Thus ingestion is repaired, but publishing a
+migrated corpus still requires source-row review and justified calibration.
+The deployed snapshot and fixed calibration fixture have not been migrated.
+
+For the RTX 4070, the [official model config](https://huggingface.co/Qwen/Qwen3.6-27B/blob/main/config.json)
+confirms the preset's 64 layers, 256 head dimension, four KV heads and sixteen
+full-attention layers. The [currently hosted GGUF metadata](https://huggingface.co/api/models/unsloth/Qwen3.6-27B-GGUF/tree/main?recursive=true&expand=false)
+lists `Qwen3.6-27B-UD-IQ2_XXS.gguf` at 9,388,779,744 bytes, larger than the
+engine's uniform 7.7 GB estimate. This cannot justify increasing the ceiling,
+and the run did not pin a checkpoint revision. Allocation logs and actual KV/
+offload settings remain necessary; no preset or efficiency change is supported.
+
+Ingestion-repair validation: `npm test` passes 94/94, including the real 3060
+command, unchanged 4070 violation, malformed/swept depth handling, and an audit
+test proving ambiguous measurements block publication even with zero physical
+violations. The temporary migrated corpus fails the existing statistical test
+at 84.4% within 1.5× and fails strict publication on the 4070 plus nine ambiguous
+rows. No threshold was changed to make that candidate pass.
