@@ -3,10 +3,9 @@
 //
 // Those pins deliberately freeze specific numbers (e.g. the 4x Arc Pro B70
 // DeepSeek scenario) so that unintended physics drift is caught. They move
-// legitimately when:
-//   - the physics changes on purpose (re-anchor against measurements first), or
-//   - the gold snapshot is refreshed (the peer correction uses it).
-// After either, run this script, confirm the new numbers are physically
+// legitimately when the physics changes on purpose (re-anchor against
+// measurements first). Refreshes do not replace the fixed calibration corpus.
+// After a physics change, run this script, confirm the new numbers are physically
 // sensible, then update the pinned ranges (keep them tight, ~0.1%).
 //
 // Usage: node scripts/print-regression-pins.mjs
@@ -14,7 +13,7 @@ import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { loadApp, loadSnapshot } = await import(pathToFileURL(path.join(repoRoot, 'tests', 'load-index-app.mjs')).href);
+const { loadApp, loadCalibrationFixture } = await import(pathToFileURL(path.join(repoRoot, 'tests', 'load-index-app.mjs')).href);
 
 function setLlmDefaults(app, { preset, quant = 'q4', framework = 'auto', strategy = 'auto', batchSize = 1, seqLength = 2048, promptTokens, outputTokens, kvCacheCompression = 'none' } = {}) {
   if (preset) app.applyPreset(preset);
@@ -31,7 +30,7 @@ function setLlmDefaults(app, { preset, quant = 'q4', framework = 'auto', strateg
 }
 
 const round = (value, digits = 3) => (Number.isFinite(value) ? Number(value.toFixed(digits)) : value);
-const snapshot = loadSnapshot();
+const snapshot = loadCalibrationFixture();
 console.log(`snapshot generated ${snapshot.generatedAt} — ${snapshot.goldCases.length} gold cases`);
 
 {

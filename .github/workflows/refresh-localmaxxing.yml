@@ -1,7 +1,7 @@
 name: Refresh Localmaxxing snapshot
 
 on:
-  # Manual only: refreshed peers move snapshot-dependent numerical pins.
+  # Manual only: incoming benchmark semantics still require review.
   # Inspect the review artifact before explicitly requesting publication.
   workflow_dispatch:
     inputs:
@@ -35,7 +35,7 @@ jobs:
           set +e
           npm test 2>&1 | tee "$RUNNER_TEMP/refresh-tests.log"
           tests_status=${PIPESTATUS[0]}
-          npm run audit:gold 2>&1 | tee "$RUNNER_TEMP/refresh-gold-audit.log"
+          npm run audit:gold -- --strict-physical 2>&1 | tee "$RUNNER_TEMP/refresh-gold-audit.log"
           audit_status=${PIPESTATUS[0]}
           if [ "$tests_status" -ne 0 ] || [ "$audit_status" -ne 0 ]; then exit 1; fi
       - name: Prepare evidence review packet

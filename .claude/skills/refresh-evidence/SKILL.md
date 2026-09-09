@@ -22,7 +22,10 @@ regenerates `data/lab-evidence.js` and stamps its cache key) — see the `calibr
   with publication off by default. It runs `npm test` + `npm run audit:gold` and
   uploads a review artifact; committing additionally requires the explicit
   `publish` input. Weekly refreshes were disabled after the September 8 review
-  found snapshot-dependent numerical pins blocking new evidence.
+  found snapshot-dependent numerical pins blocking new evidence. Those pins
+  now use `tests/fixtures/calibration-2026-08-24.json`; do not refresh that fixture.
+  The workflow additionally requires `audit:gold -- --strict-physical` (zero
+  unresolved >5% roofline violations), while retaining existing statistical guards.
 - `npm run audit:gold` — distribution, per-runtime/hardware medians, roofline violations, worst rows.
 - `node scripts/fit-decode-constants.mjs --rows` — every row with depth, observed, predicted, physical.
 

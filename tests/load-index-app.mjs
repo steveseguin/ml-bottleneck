@@ -3,13 +3,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
-export function loadSnapshot() {
+export function loadSnapshot(snapshotPath = process.env.ML_BOTTLENECK_TEST_SNAPSHOT) {
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const source = fs.readFileSync(path.join(repoRoot, 'data', 'localmaxxing-snapshot.js'), 'utf8');
+  const source = fs.readFileSync(snapshotPath || path.join(repoRoot, 'data', 'localmaxxing-snapshot.js'), 'utf8');
   const context = { window: {} };
   vm.createContext(context);
   vm.runInContext(source, context);
   return context.window.LOCALMAXXING_SNAPSHOT;
+}
+
+// Numerical pins use a reviewed corpus; live evidence guards still use loadSnapshot().
+export function loadCalibrationFixture() {
+  return JSON.parse(fs.readFileSync(new URL('./fixtures/calibration-2026-08-24.json', import.meta.url), 'utf8'));
 }
 
 // The lab rows the page loads from data/lab-evidence.js (generated from the

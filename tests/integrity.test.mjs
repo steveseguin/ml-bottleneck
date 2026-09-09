@@ -14,7 +14,8 @@ const engineSource = fs.readFileSync(path.join(repoRoot, 'engine.js'), 'utf8');
 const combinedSource = `${engineSource}\n${html}`;
 
 test('benchmark snapshot URL is cache-keyed to its generated timestamp', () => {
-  const snapshot = loadSnapshot();
+  // This checks files deployed together, even when corpus tests use a candidate.
+  const snapshot = loadSnapshot(null);
   const expectedVersion = snapshot.generatedAt.replace(/\D/g, '').slice(0, 14);
   assert.match(html, new RegExp(`data/localmaxxing-snapshot\\.js\\?v=${expectedVersion}["']`));
 });

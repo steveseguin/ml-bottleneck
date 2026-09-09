@@ -62,6 +62,13 @@ Each constant has one physical meaning. If you find yourself wanting a constant 
 
 ## Workflow
 
+September 8 review correction: the historical llama-bench `-p` interpretation
+in the checklist below is current implementation debt, not verified upstream
+semantics. Separate pp/tg tests start tg at `-d` (default zero); `-pg` is the
+combined test. See `docs/refresh-review-2026-09-08.md` before recalibrating
+these rows. Numerical pins now use a fixed corpus in `tests/fixtures/`;
+routine snapshot refreshes must not replace it or repin expected values.
+
 1. **Baseline**: `npm run audit:gold` and `node scripts/fit-decode-constants.mjs` (add `--rows` for
    every row). Note the generic median, within-1.5×, rmsLog, per-group medians, and violations.
 2. **Triage the worst rows before fitting anything.** For each outlier, open the raw run (the

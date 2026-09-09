@@ -567,6 +567,14 @@ test('execution map visualizes MiniMax across four Arc Pro B70 GPUs and compares
 });
 
 test('B70 prediction leads with peer-calibrated reality and exports honest assumptions', async ({ page }) => {
+  const fixture = JSON.parse(await fs.readFile(path.join(repoRoot, 'tests/fixtures/calibration-2026-08-24.json'), 'utf8'));
+  await page.addInitScript(snapshot => {
+    Object.defineProperty(window, 'LOCALMAXXING_SNAPSHOT', {
+      configurable: true,
+      get: () => snapshot,
+      set() {}
+    });
+  }, fixture);
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,

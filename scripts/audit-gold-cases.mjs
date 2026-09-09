@@ -3,7 +3,7 @@
 // distribution, per-runtime and per-hardware medians, physical-roofline
 // violations, optimized-target coverage, and the worst outliers.
 //
-// Usage: node scripts/audit-gold-cases.mjs
+// Usage: node scripts/audit-gold-cases.mjs [snapshot.js] [--strict-physical]
 //
 // Interpreting the output: a perfect engine has median 1.0. Ratios < 1 mean
 // the generic model over-predicts (real kernels lose more than modeled);
@@ -18,7 +18,8 @@ import { fileURLToPath } from 'node:url';
 import { loadApp } from '../tests/load-index-app.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const snapshotSource = fs.readFileSync(path.join(repoRoot, 'data', 'localmaxxing-snapshot.js'), 'utf8');
+const snapshotPath = process.argv.slice(2).find(arg => !arg.startsWith('--'));
+const snapshotSource = fs.readFileSync(snapshotPath || path.join(repoRoot, 'data', 'localmaxxing-snapshot.js'), 'utf8');
 const context = { window: {} };
 vm.createContext(context);
 vm.runInContext(snapshotSource, context);
@@ -73,9 +74,17 @@ for (const key of ['runtimeKey', 'hardwareTemplate']) {
 const violations = rows.filter(r => r.observedToPhysical > 1.05).sort((a, b) => b.observedToPhysical - a.observedToPhysical);
 console.log(`--- ${violations.length}/${rows.length} runs beat the physical roofline by >5% (requires data/model review) ---`);
 for (const v of violations) {
+  console.log('  row:', v.id, '| source:', v.source);
   console.log(' ', v.presetKey.padEnd(20), v.hardwareTemplate.padEnd(26), 'x' + v.deviceCount, v.runtimeKey.padEnd(10),
     v.quantKey.padEnd(8), '| obs', String(v.observedTokS).slice(0, 7).padStart(7), '| physical', v.physicalTokS.toFixed(1).padStart(7),
     '| ratio', v.observedToPhysical.toFixed(2));
+}
+
+// Publication is stricter than historical distribution checks: unresolved
+// impossible measurements require review even when aggregate accuracy passes.
+if (process.argv.includes('--strict-physical') && violations.length) {
+  console.error('Publication blocked: unresolved physical-roofline violations.');
+  process.exitCode = 1;
 }
 
 console.log('--- worst outliers ---');

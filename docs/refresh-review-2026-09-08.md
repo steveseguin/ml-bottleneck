@@ -43,3 +43,59 @@ widen ranges merely to make incoming evidence pass.
 The original `refresh-review` artifact contains test logs, the gold audit,
 row-level changes, the candidate snapshot and its patch. GitHub retains that
 artifact for 14 days; this note preserves the diagnosis beyond its expiry.
+
+## Follow-up: fixed inputs and publication guard
+
+The four numerical regressions now use the preserved August 24 calibration
+corpus in `tests/fixtures/`, with their original tolerances unchanged. The B70
+browser pin and `npm run pins` use the same fixture. Current-evidence checks
+retain all existing statistical thresholds; a new scenario check also verifies
+finite, ordered prediction ladders and matching exported rates with live data.
+The manual workflow now runs `audit:gold -- --strict-physical`: any unresolved
+run over its modeled ceiling by more than 5% prevents publication, even if
+aggregate calibration statistics pass. The schedule remains disabled.
+
+### RTX 3060 / Qwen3 1.7B: wrong benchmark depth assumption
+
+Raw API row `cmrz3fzd0064fo401ez1cro4z` (retrieved September 8) records
+`llama-bench -p 4096 -n 512` with neither `-d` nor `-pg`, Q8_0, f16 KV,
+and 147.688289 tok/s. The notes repeat “4096 prompt / 512 generation” but
+do not attach the original per-test JSON. [Upstream llama-bench documentation](https://github.com/ggml-org/llama.cpp/blob/master/tools/llama-bench/README.md)
+defines separate pp and tg tests; combined prompt/generation requires `-pg`,
+and the default context depth is zero. Treating `-p` as tg context, as the
+current engine and repository instructions do, is unsupported by that command.
+
+A diagnostic projection with `decodeDepthTokens: 0` changes average decode
+depth from 4,352 to 256 and physical ceiling from 135.542313 to 164.666643
+tok/s, putting the observed rate below the ceiling. This identifies a concrete
+measurement-semantics problem without changing an efficiency constant. There
+are 87 published corpus rows containing llama-bench without an explicit stored
+decode depth; changing the rule requires a reviewed corpus migration because
+the current calibration was fit using the old interpretation. No row-specific
+override or blanket reinterpretation has been published.
+
+### RTX 4070 / Qwen3.6 27B: residency remains unresolved
+
+Raw API row `cmsdfst6o0062pp014i4f29gp` records UD-IQ2_XXS, an explicit
+`-d 98304`, 21.050943 tok/s, a 12 GB RTX 4070, 11.9 reported peak VRAM,
+and Ryzen 5 5600X host. Notes, runtime version, KV dtype and layer-offload
+metadata are absent; the command has no explicit KV/offload flags. The model
+predicts memory overflow and a 17.888287 tok/s physical ceiling (ratio 1.1768).
+The recorded depth is real here, so the 3060 explanation does not apply.
+Original benchmark JSON and model/KV allocation logs are needed to distinguish
+residency, quantization and host-offload assumptions. No evidence-backed
+correction is available from this row alone. This outlier stays visible and
+blocks refresh publication under the new strict check.
+
+### Verification
+
+- `npm test`: 90/90 pass with published evidence; engine cache keys and SDK
+  artifacts remain unchanged.
+- The same 90 tests pass with `ML_BOTTLENECK_TEST_SNAPSHOT` pointing at the
+  failed run's candidate. Corpus guards and live scenario checks consume the
+  candidate; numerical pins consume the fixed fixture. Cache-key and bundled
+  SDK checks continue to validate the actual files on disk.
+- Targeted Playwright B70 prediction/export regression: 1/1 pass.
+- Ordinary published-data gold audit passes its existing envelope. Strict
+  audits of both published and candidate evidence exit 1 on the two listed
+  outliers, as intended. No benchmark evidence or physics was republished.

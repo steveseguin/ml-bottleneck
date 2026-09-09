@@ -113,7 +113,7 @@ test('auto strategy, speculation, overflow warnings, and sweeps work through the
 
 test('benchmark evidence makes calibration available; catalogs list models and hardware', () => {
   const snapshot = JSON.parse(fs.readFileSync(path.join(distDir, 'localmaxxing-snapshot.json'), 'utf8'));
-  assert.equal(snapshot.goldCases.length, loadSnapshot().goldCases.length);
+  assert.equal(snapshot.goldCases.length, loadSnapshot(null).goldCases.length);
   const engine = sdk.createEngine({ snapshot });
   const result = engine.predict({ model: 'qwen3.6_35b_a3b', hardware: 'AMD Strix Halo (Ryzen AI Max+ 395)', quantization: 'q4', runtime: 'llama_cpp', promptTokens: 512, outputTokens: 128 });
   assert.ok(['strong', 'directional'].includes(result.ceiling.confidence), `confidence ${result.ceiling.confidence}`);

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { loadApp, loadSnapshot } from './load-index-app.mjs';
+import { loadApp, loadSnapshot, loadCalibrationFixture } from './load-index-app.mjs';
 
 function cloneTemplate(hooks, templateName, id = 1, name = templateName) {
   const template = hooks.DEVICE_TEMPLATES[templateName];
@@ -224,7 +224,7 @@ test('current Localmaxxing leaders have first-class architecture presets', () =>
 });
 
 test('versioned Localmaxxing snapshot contains a broad catalog and strict gold cases', () => {
-  const source = fs.readFileSync(new URL('../data/localmaxxing-snapshot.js', import.meta.url), 'utf8');
+  const source = fs.readFileSync(process.env.ML_BOTTLENECK_TEST_SNAPSHOT || new URL('../data/localmaxxing-snapshot.js', import.meta.url), 'utf8');
   const match = source.match(/Object\.freeze\(([\s\S]+)\);\s*$/);
   assert.ok(match, 'snapshot should be a single frozen JSON payload');
   const snapshot = JSON.parse(match[1]);
@@ -1256,7 +1256,7 @@ test('four B70 scenario loads a complete MiniMax planning configuration', () => 
 });
 
 test('four-B70 DeepSeek plan uses benchmark peers without hidden case-specific measurements', () => {
-  const app = loadApp({ snapshot: loadSnapshot() });
+  const app = loadApp({ snapshot: loadCalibrationFixture() });
   app.hooks.loadScenarioPreset('b70_x4_dsv4_reap_record');
 
   const plan = app.hooks.getActivePlanOutcome();
@@ -1306,8 +1306,25 @@ test('four-B70 DeepSeek plan uses benchmark peers without hidden case-specific m
     'the compact result strip must label the optimized target, not the physical roofline');
 });
 
-test('supplied execution assumptions reproduce their arithmetic without becoming benchmark facts', () => {
+test('current evidence keeps scenario predictions finite, ordered, and consistent with exports', () => {
   const app = loadApp({ snapshot: loadSnapshot() });
+  for (const scenario of ['b70_x4_dsv4_reap_record', 'b70_x4_minimax_m27']) {
+    app.hooks.loadScenarioPreset(scenario);
+    const plan = app.hooks.getActivePlanOutcome();
+    const { expectedTokS, optimizedTokS, physicalTokS } = plan.calibration;
+    for (const rate of [expectedTokS, optimizedTokS, physicalTokS]) {
+      assert.ok(Number.isFinite(rate) && rate > 0, `${scenario}: invalid rate ${rate}`);
+    }
+    assert.ok(expectedTokS <= optimizedTokS && optimizedTokS <= physicalTokS, scenario);
+    const payload = app.hooks.buildPlanExport(plan);
+    assert.equal(payload.prediction.primary.decodeTokensPerSecond, Number(expectedTokS.toFixed(3)));
+    assert.equal(payload.prediction.optimizedTarget.decodeTokensPerSecond, Number(optimizedTokS.toFixed(3)));
+    assert.equal(payload.prediction.physicalRoofline.decodeTokensPerSecond, Number(physicalTokS.toFixed(3)));
+  }
+});
+
+test('supplied execution assumptions reproduce their arithmetic without becoming benchmark facts', () => {
+  const app = loadApp({ snapshot: loadCalibrationFixture() });
   app.hooks.loadScenarioPreset('b70_x4_dsv4_reap_record');
   app.hooks.setDevices(app.hooks.getDevices().map(device => ({ ...device, sustainedBandwidthGBps: 527 })));
   app.setValue('decodeBytesPerPassGB', 15.3);
@@ -1378,7 +1395,7 @@ test('physical roofline uses the lower of official memory and compute limits', (
 });
 
 test('AI handoff and Plan JSON distinguish estimates, targets, and physical bounds', () => {
-  const app = loadApp({ snapshot: loadSnapshot() });
+  const app = loadApp({ snapshot: loadCalibrationFixture() });
   app.hooks.loadScenarioPreset('b70_x4_dsv4_reap_record');
   const payload = app.hooks.buildPlanExport();
   const handoff = app.hooks.buildAiHandoff(payload);
@@ -1418,9 +1435,9 @@ test('AI handoff and Plan JSON distinguish estimates, targets, and physical boun
 });
 
 test('projected, optimized, and physical rates stay aligned across hardware families', () => {
-  const snapshot = loadSnapshot();
+  const snapshot = loadCalibrationFixture();
   const fixtures = [
-    // Pinned against the 2026-08-23 snapshot (320 gold rows); measured: 227 tok/s, 60-73 tok/s, 66 tok/s.
+    // Pinned against the fixed 2026-08-24 corpus (320 gold rows); measured: 227 tok/s, 60-73 tok/s, 66 tok/s.
     { preset: 'qwen3_8b', hardware: 'RTX 5090', count: 1, quant: 'q4', framework: 'llama_cpp', strategy: 'pipeline', context: 8192, projected: [204.5, 205.0], optimized: [204.5, 205.0], physical: [306.2, 306.7] },
     { preset: 'qwen3.6_35b_a3b', hardware: 'AMD Radeon AI PRO R9700', count: 3, quant: 'int8', framework: 'llama_cpp', strategy: 'pipeline', context: 787, projected: [77.5, 77.9], optimized: [116.7, 117.1], physical: [243.7, 244.1] },
     { preset: 'minimax_m2.7', hardware: 'Intel Arc Pro B70', count: 4, quant: 'q4', framework: 'vllm', strategy: 'tensor', context: 2048, projected: [64.5, 65.1], optimized: [99.3, 99.7], physical: [278.0, 278.4] }

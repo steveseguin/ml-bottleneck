@@ -21,6 +21,14 @@ A static web application with no bundler, served from the repo root:
 
 ## The calculation engine (the crown jewel — protect it)
 
+Known input-semantics debt (September 8): the llama-bench depth rule below
+describes the current implementation, not upstream benchmark semantics.
+`-p` and `-n` request separate pp/tg tests; `-pg` combines them and `-d`
+sets depth. The current fallback affects 87 corpus rows and requires a
+reviewed migration. See `docs/refresh-review-2026-09-08.md` before using
+those rows as calibration anchors. Refresh publication requires zero
+unresolved >5% physical-ceiling violations (`audit:gold -- --strict-physical`).
+
 One decode pass (all sequences in the batch get one token) is modeled as
 
 ```
