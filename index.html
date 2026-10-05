@@ -7167,6 +7167,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             const runtimeRaw = isPlanExport ? payload.execution?.runtime : findResultField(payload, ['engine', 'runtime', 'framework', 'backend']);
             const quantRaw = isPlanExport ? payload.model?.quantization : findResultField(payload, ['quantization', 'quant', 'precision', 'dtype', 'format']);
             const contextRaw = isPlanExport ? payload.workload?.totalContextTokens : findResultField(payload, ['contextLength', 'context_length', 'context', 'contextSize', 'ctxSize', 'n_ctx', 'num_ctx', 'seqLength', 'sequenceLength', 'maxModelLen']);
+            const batchSize = isPlanExport ? Number(payload.workload?.batchSize) : null;
             const engineFlags = findResultField(payload, ['engineFlags', 'engine_flags', 'flags', 'arguments', 'args']);
             const hardware = normalizeImportedHardware(hardwareRaw);
             const modelPreset = findModelPresetForResult(modelRaw);
@@ -7193,6 +7194,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 hardware: hardware.devices,
                 runtimeFramework,
                 quantizationType,
+                batchSize: Number.isSafeInteger(batchSize) && batchSize > 0 ? batchSize : null,
                 contextLength: recognizedContext,
                 promptTokens: recognizedPrompt,
                 outputTokens: recognizedOutput,
@@ -7302,6 +7304,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 document.getElementById('hfId').value = MODEL_PRESETS[imported.modelPreset].hfId || '';
             }
             if (imported.quantizationType) document.getElementById('quantizationType').value = imported.quantizationType;
+            if (imported.batchSize) setStoredControlValue('batchSize', imported.batchSize);
             if (imported.runtimeFramework) document.getElementById('runtimeFramework').value = imported.runtimeFramework;
             if (imported.parallelismStrategy) document.getElementById('parallelismStrategy').value = imported.parallelismStrategy;
             if (imported.decodeBytesPerPassGB) document.getElementById('decodeBytesPerPassGB').value = imported.decodeBytesPerPassGB;
