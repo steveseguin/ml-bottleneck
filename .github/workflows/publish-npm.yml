@@ -77,5 +77,14 @@ jobs:
       - name: Confirm
         if: steps.check.outputs.already == 'false'
         run: |
-          sleep 20
-          npm view "${{ steps.check.outputs.name }}@${{ steps.check.outputs.version }}" version dist.tarball
+          for attempt in {1..10}; do
+            if npm view "${{ steps.check.outputs.name }}@${{ steps.check.outputs.version }}" version dist.tarball; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 10 ]; then
+              echo "Package is still processing; retrying registry confirmation in 30 seconds ($attempt/10)."
+              sleep 30
+            fi
+          done
+          echo "::error::Published package is not yet visible in the registry. Check npm processing status before retrying publication."
+          exit 1
