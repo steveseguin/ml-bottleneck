@@ -293,6 +293,7 @@ test('hardware editor keeps one selected device and adds new devices to topology
   expect(state).toEqual({ count: 2, selected: 2 });
 
   await advancePlanTo(page, 4);
+  await page.locator('.execution-card > summary').click();
   await page.locator('.topology-card > summary').click();
   const topologyBox = await page.locator('#topologyCanvas').boundingBox();
   expect(topologyBox?.width).toBeGreaterThan(200);
@@ -360,6 +361,7 @@ test('displayed result rates match core calculations across different configs', 
 test('published benchmark filters include official task-score rows', async ({ page }) => {
   await loadApp(page);
   await advancePlanTo(page, 4);
+  await page.locator('[data-workspace="evidence"]').click();
   await page.evaluate(() => {
     document.querySelector('#llmTable')?.closest('details')?.setAttribute('open', '');
   });
@@ -379,6 +381,7 @@ test('published benchmark filters include official task-score rows', async ({ pa
 test('published benchmark filters include community Qwen throughput rows', async ({ page }) => {
   await loadApp(page);
   await advancePlanTo(page, 4);
+  await page.locator('[data-workspace="evidence"]').click();
   await page.evaluate(() => {
     document.querySelector('#llmTable')?.closest('details')?.setAttribute('open', '');
   });
@@ -673,6 +676,7 @@ test('public Hugging Face model import populates a custom architecture', async (
   }));
   await loadApp(page);
 
+  await page.locator('#modelDiscovery > summary').click();
   await page.locator('#hfImportDisclosure > summary').click();
   await page.locator('#hfModelId').fill('demo/Sparse-12B');
   await page.locator('#hfImportButton').click();
@@ -742,11 +746,19 @@ test('mobile planner stays compact, readable, and within the viewport', async ({
   await expect(page.locator('.execution-card')).toHaveJSProperty('open', false);
   await expect(page.locator('.mobile-calibration-summary')).toBeVisible();
   await expect(page.locator('.mobile-calibration-summary')).toHaveJSProperty('open', false);
-  await expect(page.locator('.desktop-calibration-summary')).toBeHidden();
+  await expect(page.locator('#scalingDetails')).toHaveJSProperty('open', false);
+  await expect(page.locator('#systemAnalysis .scaling-chart').first()).toBeHidden();
+  await expect(page.locator('.result-facts')).toContainText('Device memory');
+  await page.locator('#scalingDetails > summary').click();
+  await expect(page.locator('#systemAnalysis .scaling-chart').first()).toBeVisible();
+  await setInputAndChange(page, '#outputTokens', 512);
+  await expect(page.locator('#scalingDetails')).toHaveJSProperty('open', true);
 
+  await page.locator('[data-workspace="evidence"]').click();
   await page.locator('.reference-card > summary').click();
   const expandedWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(expandedWidth).toBeLessThanOrEqual(390);
+  await page.locator('[data-workspace="plan"]').click();
   await expect(page.locator('.app-header h1')).toBeVisible();
 });
 
@@ -796,7 +808,9 @@ test('browser fuzz smoke changes configs repeatedly without invalid output', asy
 
 test('Flash Next checkpoint, lookup placement and exact quant survive plan export and reload', async ({ page }) => {
   await loadApp(page);
+  await page.locator('#modelDiscovery > summary').click();
   await page.getByRole('button', { name: 'Qwen Flash Next', exact: true }).click();
+  await page.locator('#checkpointDetails > summary').click();
   await page.selectOption('#checkpointQuant', 'GSQ-RCO IQ3_S');
   await page.selectOption('#lookupPlacement', 'ram');
   await expect(page.locator('#weightLayout')).toContainText('83.6 GB');
@@ -813,6 +827,7 @@ test('Flash Next checkpoint, lookup placement and exact quant survive plan expor
   await page.reload();
   await expect(page.locator('#quantFormat')).toHaveValue('GSQ-RCO IQ3_S');
   await expect(page.locator('#lookupPlacement')).toHaveValue('ram');
+  await page.locator('#modelDiscovery > summary').click();
   await page.getByRole('button', { name: 'GLM 5.3 Flash', exact: true }).click();
   await expect(page.locator('#quantFormat')).toHaveValue('');
   await expect(page.locator('#lookupOptions')).toBeHidden();
@@ -821,7 +836,9 @@ test('Flash Next checkpoint, lookup placement and exact quant survive plan expor
 test('Flash controls stay within a narrow mobile viewport and exact format selects its family', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await loadApp(page);
+  await page.locator('#modelDiscovery > summary').click();
   await page.getByRole('button', { name: 'Qwen Flash Next', exact: true }).click();
+  await page.locator('#checkpointDetails > summary').click();
   await page.locator('#quantFormat').fill('MXFP4');
   await page.locator('#quantFormat').dispatchEvent('change');
   await expect(page.locator('#quantizationType')).toHaveValue('q4');

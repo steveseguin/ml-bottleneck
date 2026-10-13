@@ -998,7 +998,7 @@ test('system analysis leads with decode rate and collapses breakdown', () => {
 
   // Primary result hero must come before the collapsed breakdown
   const heroIdx = html.indexOf('result-hero');
-  const breakdownIdx = html.indexOf('Breakdown &amp; details');
+  const breakdownIdx = html.indexOf('Timing, costs &amp; device breakdown');
   const recommendationIdx = html.indexOf('Recommended Setup');
   assert.ok(heroIdx >= 0, 'result hero should render at top');
   assert.ok(breakdownIdx > heroIdx, 'breakdown accordion should come after hero');
