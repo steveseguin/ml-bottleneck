@@ -97,7 +97,7 @@ async function applyConfig(page, { scenario, model, quant, framework, strategy =
 
 async function advancePlanTo(page, step) {
   for (let next = 2; next <= step; next += 1) {
-    const button = page.locator(`[data-plan-next="${next}"]`);
+    const button = page.locator(`[data-plan-next="${next}"]:visible`);
     if (await button.isVisible()) await button.click();
   }
 }
@@ -632,6 +632,7 @@ test('B70 prediction leads with peer-calibrated reality and exports honest assum
 test('speculative decoding exposes proposer verification flow and modeled inputs', async ({ page }) => {
   await loadApp(page);
   await advancePlanTo(page, 3);
+  await page.locator('#distributionOptions > summary').click();
   await selectAndChange(page, '#optimizationMode', 'speculative');
 
   await expect(page.locator('#speculativeControls')).toBeVisible();
@@ -707,6 +708,51 @@ test('public Hugging Face model import populates a custom architecture', async (
   const switched = await page.evaluate(() => window.__mlBottleneckTestHooks.buildEffectiveModelConfig());
   expect(switched.headDim).toBe(128);
   expect(switched.fullAttentionLayers).not.toBe(10);
+});
+
+test('model search preserves the selection for empty, ambiguous, and unmatched queries', async ({ page }) => {
+  await loadApp(page);
+  await selectAndChange(page, '#modelPreset', 'llama3_8b');
+  await page.locator('#modelDiscovery > summary').click();
+  const search = page.locator('#modelSearch');
+  for (const query of ['qwen', 'no-such-model-123', '']) {
+    await search.fill(query);
+    await search.press('Tab');
+    await expect(page.locator('#modelPreset')).toHaveValue('llama3_8b');
+    if (query === 'qwen') await expect(page.locator('#modelSearchStatus')).toContainText('models match');
+    if (query === 'no-such-model-123') await expect(page.locator('#modelSearchStatus')).toContainText('No built-in model');
+    if (!query) await expect(page.locator('#modelSearchStatus')).toHaveText('');
+  }
+  await search.fill('qwen3.8_flash_next');
+  await search.press('Tab');
+  await expect(page.locator('#modelPreset')).toHaveValue('qwen3.8_flash_next');
+  await expect(page.locator('#modelSearchStatus')).toHaveText('');
+});
+
+test('hardware can lead straight to an editable estimate without changing runtime settings', async ({ page }) => {
+  await loadApp(page);
+  await selectAndChange(page, '#modelPreset', 'llama3_8b');
+  const runtime = await page.locator('#runtimeFramework').inputValue();
+  const strategy = await page.locator('#parallelismStrategy').inputValue();
+  await advancePlanTo(page, 2);
+  await page.getByRole('button', { name: 'Show estimate' }).click();
+  await expect(page.locator('.planner-stage')).toBeVisible();
+  await expect(page.locator('.planner-stage h2').first()).toBeFocused();
+  await expect(page.locator('#runtimeFramework')).toHaveValue(runtime);
+  await expect(page.locator('#parallelismStrategy')).toHaveValue(strategy);
+  const setup = page.locator('.result-setup');
+  await expect(setup).toContainText('Llama3 8B');
+  await expect(setup).toContainText('RTX');
+  await setup.locator('[data-plan-back="1"]').click();
+  await expect(page.locator('#modelInputCard')).toBeVisible();
+  await page.locator('[data-plan-step="4"]').click();
+  await setup.locator('[data-plan-back="2"]').click();
+  await expect(page.locator('#hardwareInputCard')).toBeVisible();
+  await page.getByRole('button', { name: 'Runtime options' }).click();
+  await expect(page.locator('#runtimeFramework')).toBeVisible();
+  await expect(page.locator('#distributionOptions')).toHaveJSProperty('open', false);
+  await page.locator('#distributionOptions > summary').click();
+  await expect(page.locator('#parallelismStrategy')).toBeVisible();
 });
 
 test('mobile planner stays compact, readable, and within the viewport', async ({ page }) => {

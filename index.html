@@ -1356,36 +1356,38 @@ input, select {
     --on-primary: #ffffff;
     --destructive: #dc2626;
     --destructive-hover: #b91c1c;
-    --border: #d3dee8;
-    --background: #f3f7fb;
-    --card: #fbfdff;
-    --text: #0b1320;
-    --text-secondary: #516171;
-    --surface-muted: #edf4f8;
-    --radius: 0.5rem;
-    --shadow: 0 10px 28px -24px rgb(15 23 42 / 0.45);
+    --border: #e1e6eb;
+    --background: #f6f7f9;
+    --card: #ffffff;
+    --text: #18232d;
+    --text-secondary: #5d6b78;
+    --surface-muted: #f1f4f6;
+    --radius: 0.85rem;
+    --shadow: 0 3px 14px rgb(24 35 45 / 0.035);
     --transition: all 0.16s ease;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --primary: #2dd4bf;
-        --primary-hover: #5eead4;
+        --primary: #63d7c4;
+        --primary-hover: #8be4d5;
         --on-primary: #04211c;
         --destructive: #f87171;
         --destructive-hover: #ef4444;
-        --border: #20313b;
-        --background: #071117;
-        --card: #0d1b24;
-        --text: #e7f0f5;
-        --text-secondary: #91a4b1;
-        --surface-muted: #102430;
-        --shadow: 0 14px 32px -24px rgb(0 0 0 / 0.75);
+        --border: #2c3540;
+        --background: #101419;
+        --card: #181e25;
+        --text: #ecf0f5;
+        --text-secondary: #a6b2bf;
+        --surface-muted: #202831;
+        --shadow: 0 3px 14px rgb(0 0 0 / 0.1);
     }
 }
 
 body {
     max-width: 1680px;
+    font-family: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    font-size: 15px;
     padding: 1.25rem 1.5rem;
     background: var(--background);
     color: var(--text);
@@ -1434,7 +1436,7 @@ h3 {
 }
 
 .card:hover {
-    border-color: rgba(15, 118, 110, 0.45);
+    border-color: var(--border);
 }
 
 .card > h2:first-child {
@@ -2753,26 +2755,26 @@ td {
 
 /* Product shell: decision-first workspaces */
 body {
-    max-width: 1600px;
-    padding: 1rem 1.25rem 3rem;
+    max-width: 1280px;
+    padding: 0 2rem 2rem;
 }
 
 .product-nav {
     position: sticky;
-    top: 0.65rem;
+    top: 0;
     z-index: 50;
     display: grid;
-    grid-template-columns: minmax(13rem, auto) 1fr auto;
+    grid-template-columns: auto 1fr;
     align-items: center;
     gap: 1rem;
-    min-height: 4rem;
-    padding: 0.55rem 0.7rem;
-    margin-bottom: 1.25rem;
-    background: color-mix(in srgb, var(--background) 86%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-    border-radius: 1rem;
-    box-shadow: 0 14px 40px rgb(2 8 23 / 0.16);
-    backdrop-filter: blur(18px);
+    min-height: 5rem;
+    padding: 0.75rem 0;
+    margin-bottom: 2rem;
+    background: var(--background);
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .product-brand {
@@ -2786,7 +2788,7 @@ body {
 
 .product-brand:hover { color: var(--text); text-decoration: none; }
 .product-brand > span:last-child { display: grid; line-height: 1.05; }
-.product-brand strong { font-size: 0.9rem; letter-spacing: -0.02em; }
+.product-brand strong { font-size: 1rem; letter-spacing: -0.025em; color: var(--text); }
 .product-brand small { margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .brand-mark {
     display: grid;
@@ -2796,11 +2798,11 @@ body {
     flex: 0 0 auto;
     overflow: hidden;
     border-radius: 0.7rem;
-    box-shadow: 0 4px 12px rgb(2 8 23 / 0.2);
+    box-shadow: none;
 }
 .brand-mark img { display: block; width: 100%; height: 100%; }
 
-.workspace-tabs { display: flex; justify-content: center; gap: 0.25rem; min-width: 0; }
+.workspace-tabs { display: flex; justify-content: flex-end; gap: 0.25rem; min-width: 0; }
 .workspace-tab {
     border: 0;
     padding: 0.62rem 0.85rem;
@@ -2809,11 +2811,11 @@ body {
     color: var(--text-secondary);
     cursor: pointer;
     font: inherit;
-    font-size: 0.76rem;
+    font-size: 0.85rem;
     font-weight: 650;
 }
 .workspace-tab:hover { background: color-mix(in srgb, var(--card) 72%, transparent); color: var(--text); }
-.workspace-tab.is-active { background: var(--text); color: var(--background); }
+.workspace-tab.is-active { background: var(--surface-muted); color: var(--text); }
 .workspace-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .data-freshness { color: var(--text-secondary); font-size: 0.75rem; }
 .product-main { min-width: 0; }
@@ -2832,7 +2834,7 @@ body {
 .planner-controls > .grid { display: block; margin: 0; }
 .planner-controls > .grid > .card { margin-bottom: 1rem; padding: 1rem; }
 .planner-controls h2 { font-size: 1.05rem; }
-.planner-controls label { font-size: 0.72rem; }
+.planner-controls label { font-size: 0.85rem; }
 .planner-controls .input, .planner-controls select { margin-bottom: 0.7rem; }
 .planner-input-card { min-width: 0; }
 .planner-input-summary,
@@ -2855,52 +2857,29 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.5rem;
-    margin: 0 0 1rem;
-    scroll-margin-top: 10.25rem;
+    margin: 0 auto 1.5rem;
+    max-width: 900px;
+    scroll-margin-top: 6rem;
 }
 .header-result[hidden] { display: none !important; }
 .plan-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; margin-left: auto; }
 .plan-reset-button { min-height: 2rem; padding: 0.35rem 0.65rem; border: 1px solid var(--border); border-radius: 0.55rem; background: transparent; color: var(--text-secondary); cursor: pointer; font: inherit; font-size: 0.64rem; font-weight: 650; }
 .plan-reset-button:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); color: var(--text); }
 .plan-reset-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.plan-step-button {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    min-width: 0;
-    padding: 0.7rem 0.8rem;
-    border: 1px solid var(--border);
-    border-radius: 0.8rem;
-    background: color-mix(in srgb, var(--card) 88%, transparent);
-    color: var(--text-secondary);
-    cursor: pointer;
-    text-align: left;
-    font: inherit;
-}
-.plan-step-button:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); color: var(--text); }
-.plan-step-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.plan-step-number {
-    display: grid;
-    place-items: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    flex: 0 0 auto;
-    border-radius: 999px;
-    background: var(--background);
-    color: var(--text-secondary);
-    font-size: 0.7rem;
-    font-weight: 800;
-}
+/* The stepper is navigation; the card below holds the active decision. */
+.plan-step-button { display: flex; align-items: center; gap: 0.6rem; min-height: 3.5rem; padding: 0.6rem 0.75rem; border: 0; border-bottom: 2px solid var(--border); border-radius: 0; background: transparent; color: var(--text-secondary); text-align: left; cursor: pointer; font: inherit; }
+.plan-step-button:disabled { cursor: default; opacity: 0.55; }
+.plan-step-number { display: grid; place-items: center; flex: 0 0 auto; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--surface-muted); color: var(--text-secondary); font-size: 0.75rem; font-weight: 650; }
 .plan-step-copy { min-width: 0; }
-.plan-step-copy strong { display: block; overflow: hidden; color: inherit; font-size: 0.72rem; text-overflow: ellipsis; white-space: nowrap; }
-.plan-step-copy small { display: block; overflow: hidden; margin-top: 0.1rem; font-size: 0.58rem; text-overflow: ellipsis; white-space: nowrap; }
-.plan-step-button.is-active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--card)); color: var(--text); }
-.plan-step-button.is-active .plan-step-number { background: var(--primary); color: white; }
-.plan-step-button.is-complete .plan-step-number { background: color-mix(in srgb, var(--primary) 18%, var(--background)); color: var(--primary); }
+.plan-step-copy strong { display: block; color: inherit; font-size: 0.85rem; font-weight: 600; }
+.plan-step-copy small { display: none; }
+.plan-step-button.is-active { border-color: var(--primary); background: transparent; color: var(--text); }
+.plan-step-button.is-active .plan-step-number { background: var(--primary); color: var(--on-primary); }
+.plan-step-button.is-complete .plan-step-number { color: var(--primary); }
 [data-plan-step-panel][hidden] { display: none !important; }
 .planner-shell { grid-template-columns: minmax(0, 1fr); }
-.planner-controls > .grid { max-width: 62rem; margin: 0 auto; }
-.planner-controls > .grid > .card { margin-bottom: 0; padding: 1.15rem; }
+.planner-controls > .grid { max-width: 900px; margin: 0 auto; }
+.planner-controls > .grid > .card { margin-bottom: 0; padding: 2rem; }
 .plan-card-intro {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -2911,13 +2890,13 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     border-bottom: 1px solid var(--border);
 }
 .plan-card-intro h2 { margin: 0 0 0.18rem; }
-.plan-card-intro p { max-width: 62ch; margin: 0; color: var(--text-secondary); font-size: 0.71rem; line-height: 1.45; }
+.plan-card-intro p { max-width: 62ch; margin: 0; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; }
 .plan-card-icon {
     display: grid;
     place-items: center;
-    width: 3.25rem;
-    height: 3.25rem;
-    border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
     border-radius: 0.85rem;
     background: color-mix(in srgb, var(--primary) 9%, var(--card));
     color: var(--primary);
@@ -2925,24 +2904,24 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .plan-card-icon svg { width: 1.9rem; height: 1.9rem; stroke: currentColor; }
 .plan-step-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--border); }
 .plan-step-actions .button { margin: 0; }
-.plan-step-actions-copy { color: var(--text-secondary); font-size: 0.65rem; }
+.plan-step-actions-copy { color: var(--text-secondary); font-size: 0.8rem; }
 .plan-back-button { border-color: var(--border); background: var(--background); color: var(--text) !important; opacity: 1; }
 .plan-run-button { display: inline-flex; align-items: center; gap: 0.45rem; }
 .mode-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
 .decode-profile-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
 .decode-profile-fields label { display: block; margin-bottom: 0.25rem; font-size: 0.68rem; }
 .decode-profile-note { margin: 0.55rem 0 0; color: var(--text-secondary); font-size: 0.67rem; line-height: 1.45; }
-.mode-field { padding: 0.8rem; border: 1px solid var(--border); border-radius: 0.75rem; background: color-mix(in srgb, var(--background) 75%, transparent); }
+.mode-field { padding: 0; border: 0; background: transparent; }
 .mode-field label { display: block; margin-bottom: 0.35rem; }
 .mode-field .input { margin-bottom: 0; }
 .mode-field-wide { grid-column: 1 / -1; }
 .mode-hint { margin: 0.45rem 0 0; color: var(--text-secondary); font-size: 0.62rem; line-height: 1.45; }
-.planner-stage { max-width: 76rem; margin: 0 auto; }
-.results-card { padding: 1.15rem; }
+.planner-stage { width: 100%; max-width: 1040px; margin: 0 auto; }
+.results-card { padding: 2rem; }
 .result-reason {
     margin: 0;
     color: var(--text-secondary);
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     line-height: 1.5;
 }
 .result-reason strong { color: var(--text); }
@@ -2973,7 +2952,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .execution-card[open] > .mobile-execution-summary .planner-input-summary-action::after { content: 'Hide'; }
 .execution-card-content { border-top: 1px solid var(--border); }
 .execution-card:not([open]) { min-height: 0; padding: 0; }
-.compact-options, .mobile-calibration-summary { margin-top: 0.85rem; border: 1px solid var(--border); border-radius: 0.6rem; }
+.compact-options, .mobile-calibration-summary { margin-top: 0.85rem; border: 0; border-top: 1px solid var(--border); border-radius: 0; }
 .compact-options > summary, .mobile-calibration-summary > summary { padding: 0.8rem 0.9rem; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
 .compact-options > summary:hover, .mobile-calibration-summary > summary:hover { color: var(--text); }
 .compact-options-content { padding: 0 0.9rem 0.9rem; }
@@ -2985,7 +2964,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .result-facts dd { margin: 0; font-size: 1.1rem; font-weight: 650; }
 .result-facts small { display: block; color: var(--text-secondary); font-size: 0.75rem; font-weight: 400; margin-top: 0.3rem; }
 .results-card .details-disclosure { margin-top: 0.85rem; }
-.home-hero .home-cta { margin: 1.4rem 0 0; }
+.home-hero .home-cta { margin: 1.75rem 0 0; }
 .more-examples { margin-top: 0.7rem; }
 .more-examples > summary { cursor: pointer; font-size: 0.8rem; color: var(--text-secondary); padding: 0.5rem; }
 .quickstart-grid .more-examples .qs-row { width: 100%; }
@@ -3070,10 +3049,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .home-cta-button:hover { background: var(--primary-hover); }
 .home-cta-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
-.quickstart-section { margin: 0.4rem 0 0.8rem; --qs-expected: #2a78d6; --qs-ideal: #cde2fb; --qs-measured: var(--text); }
-@media (prefers-color-scheme: dark) {
-    .quickstart-section { --qs-expected: #3987e5; --qs-ideal: #2c4a70; }
-}
+.quickstart-section { margin: 0.4rem 0 0.8rem; --qs-expected: var(--primary); --qs-ideal: color-mix(in srgb, var(--primary) 15%, var(--card)); --qs-measured: var(--text); }
 .quickstart-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.8rem; margin-bottom: 0.55rem; }
 .quickstart-head h2 { margin: 0; font-size: 1rem; }
 .quickstart-head span { color: var(--text-secondary); font-size: 0.72rem; }
@@ -3241,6 +3217,52 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .api-contract-disclosure > summary:hover { color: var(--primary); }
 .api-contract-disclosure .api-contract { margin-top: 0; border-top: 0; }
 
+/* Shared form and result presentation. */
+button, input, select, textarea, table { font-family: inherit; }
+#workspace-plan > .app-header { max-width: 900px; margin: 0 auto 1.25rem; }
+.app-header h1 { font-size: 1.65rem; font-weight: 650; letter-spacing: -0.04em; }
+.app-subtitle { font-size: 0.9rem; margin-top: 0.4rem; }
+.planner-input-body .input { min-height: 2.75rem; padding: 0.7rem 0.8rem; font-size: 0.9rem; border-radius: 0.5rem; }
+.planner-input-body h2 { font-size: 1.2rem; letter-spacing: -0.025em; }
+.button, .icon-button { min-height: 2.6rem; border-radius: 0.5rem; font-family: inherit; }
+.button { font-weight: 600; }
+.button:disabled, .icon-button:disabled { cursor: not-allowed; }
+.plan-back-button, .icon-button { color: var(--text) !important; background: var(--surface-muted); }
+.plan-back-button:hover, .icon-button:hover { background: var(--border); }
+.plan-action-group { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: flex-end; }
+:where(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+#modelSearchStatus:empty { display: none; }
+#runtimeTuningSection > .tuning-section-title, #distributionTuningSection > .tuning-section-title { display: none; }
+#distributionControls > .tuning-section { margin: 0; border: 0; padding: 0; }
+#workspace-plan .tuning-panel, #workspace-plan .nested-details, #workspace-plan .runtime-guides,
+#workspace-plan .hardware-advanced, #workspace-plan .details-disclosure { border: 0; border-top: 1px solid var(--border); border-radius: 0; background: transparent; }
+#workspace-plan summary { color: var(--text); font-size: 0.85rem; font-weight: 500; background: transparent; }
+#workspace-plan summary:hover { color: var(--primary); }
+#workspace-plan .tuning-panel > summary, #workspace-plan .details-disclosure > summary { padding: 0.85rem 0.9rem; }
+.result-setup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; padding-bottom: 1.4rem; }
+.result-setup-edit { padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.result-setup-edit > span, .result-setup-edit small { display: block; color: var(--text-secondary); font-size: 0.78rem; }
+.result-setup-edit strong { display: block; margin: 0.3rem 0; font-size: 0.95rem; font-weight: 600; }
+.result-setup-edit:hover strong { color: var(--primary); }
+.result-hero { background: var(--surface-muted); border: 0; border-radius: 0.75rem; box-shadow: none; }
+.result-hero-main { background: transparent; }
+.result-hero-side { background: transparent; border: 0; }
+.result-hero .rate-number { font-size: 3.5rem; font-weight: 650; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.result-hero .rate-label { font-size: 0.72rem; letter-spacing: 0.045em; }
+.result-hero .rate-units { font-size: 0.95rem; }
+.result-hero .bottleneck-line { font-size: 0.8rem; border: 0; border-radius: 0.35rem; }
+.result-reason { font-size: 0.85rem; line-height: 1.6; }
+.result-facts { padding: 0.5rem 0; margin: 1.1rem 0; }
+.result-facts dd { font-variant-numeric: tabular-nums; font-size: 1.25rem; }
+.result-facts small { line-height: 1.5; }
+.result-step-footer { align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; }
+.home-hero h1 { font-size: clamp(2rem, 4vw, 3.35rem); font-weight: 650; letter-spacing: -0.045em; line-height: 1.08; }
+.home-hero p { line-height: 1.65; }
+.home-cta-button { min-height: 2.85rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; box-shadow: none; }
+.qs-row { padding: 0.7rem 0.45rem; }
+.qs-label strong { font-size: 0.85rem; }
+.product-footer { color: var(--text-secondary); }
+
 @media (max-width: 1120px) {
     .planner-shell { grid-template-columns: minmax(19rem, 22rem) minmax(0, 1fr); }
     .catalog-toolbar { grid-template-columns: repeat(2, 1fr); }
@@ -3327,8 +3349,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     .result-hero-main,
     .result-hero-side { padding: 0.68rem; }
     .result-hero-side { border-top: 1px solid var(--border); border-left: 0; }
-    .result-hero .rate-label { font-size: 0; }
-    .result-hero .rate-label::before { content: 'Projected decode'; font-size: 0.58rem; }
+    .result-hero .rate-label { font-size: 0.7rem; }
     .result-hero .rate-number { font-size: 2rem; }
     .result-hero .rate-units { font-size: 0.78rem; }
     .result-hero .bottleneck-line { padding: 0.35rem 0.5rem; font-size: 0.65rem; }
@@ -3339,7 +3360,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     .phase-summary-label { margin-bottom: 0.15rem; font-size: 0.55rem; }
     .phase-summary-value { font-size: 0.78rem; white-space: nowrap; }
     .phase-summary-sub { display: none; }
-    .mobile-calibration-summary { display: block; margin-top: 0.55rem; border: 1px solid var(--border); border-radius: 0.6rem; background: color-mix(in srgb, var(--background) 72%, transparent); }
+    .mobile-calibration-summary { display: block; margin-top: 0.55rem; }
     .mobile-calibration-summary > summary { padding: 0.65rem 0.7rem; cursor: pointer; color: var(--text-secondary); font-size: 0.78rem; font-weight: 650; }
     .mobile-calibration-summary .ceiling-ladder { margin: 0; padding: 0.7rem; border-top: 1px solid var(--border); }
     .result-facts { gap: 0.7rem; }
@@ -3388,6 +3409,29 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .runtime-guide-grid a { display:block; font-weight:600; }
 .runtime-guide-grid p { font-size:0.78rem; margin:0.3rem 0; }
 @media (max-width:600px) { .weight-layout-grid { gap:0.4rem; } .weight-layout-grid strong { font-size:1rem; } .runtime-guide-grid { grid-template-columns:1fr; } }
+@media (max-width: 620px) {
+    body { padding: 0 0.85rem 1.5rem; }
+    .product-nav { top: 0; min-height: 3.75rem; padding: 0.5rem 0; margin-bottom: 1.25rem; border-radius: 0; }
+    .workspace-tab { font-size: 0.72rem; padding: 0.5rem 0.42rem; }
+    .planner-controls > .grid > .card, .results-card { padding: 1.1rem; }
+    .plan-step-button { gap: 0.3rem; padding: 0.5rem 0.2rem; min-height: 3rem; border-radius: 0; }
+    .plan-step-copy strong { font-size: 0.68rem; }
+    .plan-step-number { width: 1.35rem; height: 1.35rem; font-size: 0.67rem; }
+    .plan-card-intro p { font-size: 0.8rem; }
+    .planner-controls label { font-size: 0.82rem; }
+    .planner-input-body .input { font-size: 1rem; }
+    .plan-action-group { gap: 0.4rem; }
+    .plan-action-group .button { padding: 0.65rem; font-size: 0.78rem; }
+    .result-setup { gap: 0.8rem; padding-bottom: 1rem; }
+    .result-setup-edit strong { font-size: 0.85rem; }
+    .result-hero .rate-number { font-size: 3rem; }
+    .result-hero-main, .result-hero-side { padding: 1rem; }
+    .result-reason { font-size: 0.8rem; }
+    .result-facts dt, .result-facts small { font-size: 0.72rem; }
+    .result-facts dd { font-size: 1rem; }
+    .result-step-footer .button { font-size: 0.85rem; }
+    #workspace-plan summary { font-size: 0.82rem; }
+}
 </style>
 </head>
 <body>
@@ -3539,8 +3583,9 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                     <summary>Search or import a model</summary>
                     <div class="compact-options-content">
                     <label for="modelSearch">Search built-in models</label>
-                    <input id="modelSearch" class="input" type="search" list="modelSearchOptions" placeholder="Model name" autocomplete="off">
+                    <input id="modelSearch" class="input" type="search" list="modelSearchOptions" placeholder="Model name" autocomplete="off" aria-describedby="modelSearchStatus">
                     <datalist id="modelSearchOptions"></datalist>
+                    <p id="modelSearchStatus" class="field-help" role="status"></p>
                 <div class="recent-models" aria-label="Recent model releases">
                     <button class="button button-secondary" type="button" data-switch-preset="qwen3.8_flash_next">Qwen Flash Next</button>
                     <button class="button button-secondary" type="button" data-switch-preset="glm5.3_flash">GLM 5.3 Flash</button>
@@ -3923,7 +3968,10 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             <div id="devices"></div>
             <div class="plan-step-actions">
                 <button class="button plan-back-button" type="button" data-plan-back="1">Back</button>
-                <button class="button" type="button" data-plan-next="3">Choose run mode</button>
+                <div class="plan-action-group">
+                    <button class="button plan-back-button" type="button" data-plan-next="3">Runtime options</button>
+                    <button class="button" type="button" data-plan-next="4">Show estimate <span aria-hidden="true">&#8594;</span></button>
+                </div>
             </div>
             </div>
         </details>
@@ -3937,6 +3985,10 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                     <div><h2 id="modeInputTitle">Choose how it runs</h2><p>Keep Automatic unless you have a runtime in mind.</p></div>
                 </div>
                 <div class="mode-choice-grid" id="modePrimaryControls"></div>
+                <details class="compact-options" id="distributionOptions">
+                    <summary>Distribution &amp; optimization</summary>
+                    <div class="compact-options-content" id="distributionControls"></div>
+                </details>
                 <div class="plan-step-actions">
                     <button class="button plan-back-button" type="button" data-plan-back="2">Back</button>
                     <button class="button plan-run-button" type="button" data-plan-next="4">
@@ -3954,7 +4006,6 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     <div class="card results-card" style="margin-top: 0;">
         <div class="section-heading">
             <div>
-                <span class="eyebrow">Step 4 · predicted outcome</span>
                 <h2>Your estimate</h2>
             </div>
             <span class="approximate-badge">Planning estimate</span>
@@ -5883,7 +5934,15 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 }, 20);
             }
             if (next === 2) setTimeout(() => revealSelectedDeviceInRoster(), 20);
-            if (scroll) document.querySelector('.plan-progress')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+            if (scroll) {
+                const heading = document.querySelector(`[data-plan-step-panel="${next}"]:not([hidden]) h2`);
+                if (heading) {
+                    heading.tabIndex = -1;
+                    heading.focus({ preventScroll: true });
+                }
+                const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                document.querySelector('.plan-progress')?.scrollIntoView?.({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+            }
         }
 
         function initializeGuidedPlanner() {
@@ -5891,9 +5950,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             const distribution = document.getElementById('distributionTuningSection');
             const runtime = document.getElementById('runtimeTuningSection');
             if (modeControls && distribution && runtime) {
-                distribution.classList.add('mode-field', 'mode-field-wide');
                 runtime.classList.add('mode-field', 'mode-field-wide');
-                modeControls.appendChild(distribution);
+                document.getElementById('distributionControls').appendChild(distribution);
                 modeControls.appendChild(runtime);
             }
             document.querySelector('.plan-progress')?.addEventListener('click', event => {
@@ -6557,11 +6615,20 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 
                 const scalingHtml = buildScalingSectionHtml(modelConfig, metrics, currentCalibration, parallelism);
                 const resultWeightLayout = getModelWeightLayout(modelConfig, DTYPE_SIZES[modelConfig.quantizationType], devices);
+                const resultModelLabel = modelConfig.label || getModelPresetLabel(modelConfig.modelPreset) || modelConfig.hfId || `${modelConfig.totalParamsB}B model`;
+                const hardwareNames = devices.map(device => (device.name || device.template || 'Custom device').replace(/ #\d+$/, ''));
+                const resultHardwareLabel = hardwareNames.length > 1 && hardwareNames.every(name => name === hardwareNames[0])
+                    ? `${hardwareNames.length} × ${hardwareNames[0]}` : hardwareNames.join(' + ');
+                const resultRuntimeLabel = getFrameworkProfile(modelConfig, devices).label;
                 const lookupSummary = resultWeightLayout.hostLookupGB > 0
                     ? `<p><strong>Host lookup RAM: ${resultWeightLayout.hostLookupGB.toFixed(1)} GB</strong> in addition to any CPU experts and runtime headroom. Enable lookup offload in your runtime; its transfer latency is not included in this estimate.</p>` : '';
                 const modelAssumptionsHtml = modelConfig.performanceNote || lookupSummary
                     ? `<div class="weight-layout">${lookupSummary}${modelConfig.performanceNote ? `<p>${escapeHtml(modelConfig.performanceNote)}</p>` : ''}</div>` : '';
                 systemAnalysisHtml += `
+                    <div class="result-setup" aria-label="Active setup">
+                        <button type="button" class="result-setup-edit" data-plan-back="1"><span>Model <span aria-hidden="true">&#8599;</span></span><strong>${escapeHtml(resultModelLabel)}</strong><small>${escapeHtml(modelConfig.quantFormat || modelConfig.quantizationType.toUpperCase())}</small></button>
+                        <button type="button" class="result-setup-edit" data-plan-back="2"><span>Hardware <span aria-hidden="true">&#8599;</span></span><strong>${escapeHtml(resultHardwareLabel)}</strong><small>${escapeHtml(resultRuntimeLabel)}</small></button>
+                    </div>
                     <div class="result-hero">
                         <div class="result-hero-main">
                             <div class="rate-label">${isImageGen ? 'System throughput' : 'Projected real decode'}</div>
@@ -9615,10 +9682,18 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
         ).join('');
         modelSearch.addEventListener('change', () => {
             const query = modelSearch.value.trim().toLowerCase();
-            const match = searchableModels.find(model =>
+            const status = document.getElementById('modelSearchStatus');
+            status.textContent = '';
+            if (!query) return;
+            const exact = searchableModels.find(model =>
                 model.label.toLowerCase() === query || model.key.toLowerCase() === query || model.hfId.toLowerCase() === query
-            ) || searchableModels.find(model => model.label.toLowerCase().includes(query));
-            if (!match) return;
+            );
+            const matches = searchableModels.filter(model => [model.label, model.key, model.hfId].some(value => value.toLowerCase().includes(query)));
+            const match = exact || (matches.length === 1 ? matches[0] : null);
+            if (!match) {
+                status.textContent = matches.length ? `${matches.length} models match. Choose a specific model from the suggestions.` : 'No built-in model found. Try another name or import a Hugging Face model below.';
+                return;
+            }
             modelPresetSelect.value = match.key;
             modelSearch.value = match.label;
             updateModelConfigFromPreset();
