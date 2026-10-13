@@ -1275,13 +1275,13 @@ input, select {
 .result-hero .bottleneck-line.is-good {
     border-color: rgba(34, 197, 94, 0.3);
     background: rgba(34, 197, 94, 0.12);
-    color: #22c55e;
+    color: var(--success-text);
 }
 
 .result-hero .bottleneck-line.is-warning {
     border-color: rgba(245, 158, 11, 0.35);
     background: rgba(245, 158, 11, 0.12);
-    color: #f59e0b;
+    color: var(--warning-text);
 }
 
 .result-hero .bottleneck-line.is-error {
@@ -1354,7 +1354,9 @@ input, select {
     --primary: #0f766e;
     --primary-hover: #0d9488;
     --on-primary: #ffffff;
-    --destructive: #dc2626;
+    --destructive: #b91c1c;
+    --success-text: #166534;
+    --warning-text: #854d0e;
     --destructive-hover: #b91c1c;
     --border: #e1e6eb;
     --background: #f6f7f9;
@@ -1373,6 +1375,8 @@ input, select {
         --primary-hover: #8be4d5;
         --on-primary: #04211c;
         --destructive: #f87171;
+        --success-text: #4ade80;
+        --warning-text: #fbbf24;
         --destructive-hover: #ef4444;
         --border: #2c3540;
         --background: #101419;
@@ -1592,9 +1596,9 @@ option {
 }
 .planner-controls .device-actions .icon-button { min-width: 0; padding-inline: 0.45rem; }
 .hardware-spec-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; margin: -0.05rem 0 0.65rem; color: var(--text-secondary); font-size: 0.63rem; }
-.hardware-spec-meta a { margin-left: auto; white-space: nowrap; }
+.hardware-spec-meta a { margin-inline-start: auto; display: inline-flex; align-items: center; min-height: 28px; padding: 0 0.2rem; white-space: nowrap; }
 .spec-pill { display: inline-flex; align-items: center; min-height: 1.3rem; padding: 0.1rem 0.38rem; border: 1px solid color-mix(in srgb, var(--primary) 38%, var(--border)); border-radius: 999px; color: var(--primary); font-size: 0.57rem; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; }
-.spec-pill.is-derived, .spec-pill.is-preview { border-color: color-mix(in srgb, #f59e0b 48%, var(--border)); color: #d97706; }
+.spec-pill.is-derived, .spec-pill.is-preview { border-color: color-mix(in srgb, #f59e0b 48%, var(--border)); color: var(--warning-text); }
 .hardware-spec-detail { margin: 0 0 0.8rem; padding: 0.65rem 0.7rem; border: 1px solid var(--border); border-radius: 5px; background: color-mix(in srgb, var(--primary) 6%, transparent); color: var(--text-secondary); font-size: 0.68rem; line-height: 1.5; }
 .device-roster-wrap { margin: 0 0 1rem; }
 .device-roster-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
@@ -2279,7 +2283,7 @@ td {
 }
 
 .evidence-rate {
-    color: #22c55e;
+    color: var(--success-text);
     font-size: 0.86rem;
     font-weight: 750;
     white-space: nowrap;
@@ -2490,8 +2494,8 @@ td {
 .hf-import-row .input,
 .hf-import-row .button { margin: 0; }
 .import-status { min-height: 1rem; margin-top: 0.4rem; color: var(--text-secondary); font-size: 0.7rem; }
-.import-status.is-error { color: #f87171; }
-.import-status.is-success { color: #22c55e; }
+.import-status.is-error { color: var(--destructive); }
+.import-status.is-success { color: var(--success-text); }
 
 .speculative-controls {
     margin: -0.35rem 0 1rem;
@@ -2611,7 +2615,7 @@ td {
     top: 50%;
     right: -0.48rem;
     width: 0.7rem;
-    color: #f59e0b;
+    color: var(--warning-text);
     background: var(--background);
     font-weight: 900;
     text-align: center;
@@ -2634,11 +2638,11 @@ td {
 .tensor-slices { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 0.45rem; }
 .tensor-slice { min-width: 0; }
 .collective-bus { grid-column: 1 / -1; display: flex; justify-content: center; margin-top: 0.55rem; border-top: 2px solid #f59e0b; }
-.collective-bus span { margin-top: -0.65rem; border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 999px; background: var(--background); color: #f59e0b; padding: 0.22rem 0.55rem; font-size: 0.62rem; font-weight: 700; }
+.collective-bus span { margin-top: -0.65rem; border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 999px; background: var(--background); color: var(--warning-text); padding: 0.22rem 0.55rem; font-size: 0.62rem; font-weight: 700; }
 
 .expert-router { display: grid; grid-template-columns: minmax(105px, 0.2fr) minmax(0, 1fr); gap: 0.65rem; align-items: stretch; }
 .router-node { display: grid; align-content: center; border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 9px; background: rgba(245, 158, 11, 0.055); padding: 0.7rem; }
-.router-node strong { color: #f59e0b; font-size: 0.75rem; }
+.router-node strong { color: var(--warning-text); font-size: 0.75rem; }
 .router-node span { color: var(--text-secondary); font-size: 0.62rem; }
 .expert-devices { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 0.45rem; }
 .expert-device { min-width: 0; }
@@ -2703,7 +2707,7 @@ td {
 
 .replica-flow { justify-content: center; }
 .replica-card { flex: 1 0 190px; max-width: 280px; border-top: 3px solid #22c55e; }
-.replica-fork { display: flex; justify-content: center; margin-bottom: 0.55rem; color: #22c55e; font-size: 0.66rem; font-weight: 700; }
+.replica-fork { display: flex; justify-content: center; margin-bottom: 0.55rem; color: var(--success-text); font-size: 0.66rem; font-weight: 700; }
 
 .speculation-flow {
     display: grid;
@@ -3030,7 +3034,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .catalog-identity strong { display: block; overflow: hidden; color: var(--text); font-size: 0.88rem; text-overflow: ellipsis; white-space: nowrap; }
 .catalog-identity span, .catalog-cell span { display: block; color: var(--text-secondary); font-size: 0.66rem; }
 .catalog-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
-.catalog-tag { padding: 0.16rem 0.36rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--text-secondary); font-size: 0.58rem; }
+.catalog-identity .catalog-tag { padding: 0.16rem 0.36rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--text); font-size: 0.58rem; }
 .catalog-show-all { border: none; background: none; padding: 0; color: var(--primary); font-size: inherit; cursor: pointer; text-decoration: underline; }
 
 .site-footer { margin: 2.5rem 0 1.5rem; padding: 1rem 0.2rem 0; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 0.72rem; }
@@ -3066,7 +3070,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .qs-tick { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--qs-measured); }
 .qs-value { font-size: 0.66rem; color: var(--text-secondary); text-align: right; white-space: nowrap; }
 .qs-value strong { color: var(--text); font-size: 0.8rem; }
-.qs-legend { display: flex; gap: 0.9rem; margin-top: 0.5rem; }
+.qs-legend { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 0.5rem; }
 .qs-key { display: inline-block; width: 12px; height: 8px; border-radius: 2px; }
 .qs-key.is-expected { background: var(--qs-expected); }
 .qs-key.is-ideal { background: var(--qs-ideal); }
@@ -3141,7 +3145,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .scaling-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.35rem; }
 .scaling-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
 .wf-seg.is-draft, .wf-key.is-draft { background: #a855f7; }
-.spec-warning { display: block; margin-top: 0.3rem; color: #f59e0b; font-size: 0.72rem; }
+.spec-warning { display: block; margin-top: 0.3rem; color: var(--warning-text); font-size: 0.72rem; }
 .spec-support { margin-top: 0.6rem; font-size: 0.76rem; color: var(--text-secondary); }
 .spec-support p { margin: 0 0 0.3rem; }
 .spec-support code { font-size: 0.72rem; }
@@ -3184,7 +3188,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .gold-run-meta { display: block; color: var(--text-secondary); font-size: 0.61rem; }
 .lab-set-note { color: var(--text-secondary); font-size: 0.72rem; margin: 0.2rem 0 0.8rem; max-width: 64rem; }
 .lab-stack { display: inline-block; padding: 0.1rem 0.4rem; border: 1px solid var(--border); border-radius: 999px; font-size: 0.6rem; white-space: nowrap; }
-.error-good { color: #22c55e; }.error-near { color: #f59e0b; }.error-far { color: var(--destructive); }
+.error-good { color: var(--success-text); }.error-near { color: var(--warning-text); }.error-far { color: var(--destructive); }
 
 .interpreter-layout { display: grid; grid-template-columns: minmax(18rem, 0.75fr) minmax(0, 1.4fr); gap: 1rem; align-items: stretch; }
 .interpreter-form, .interpreter-output { padding: clamp(1rem, 2.5vw, 1.6rem); border: 1px solid var(--border); border-radius: 0.9rem; background: color-mix(in srgb, var(--card) 72%, transparent); }
@@ -3194,8 +3198,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 .result-import-option input { flex: 0 0 auto; margin-top: 0.15rem; }
 .result-import-option[hidden] { display: none; }
 .result-import-status { min-height: 1.15rem; margin: -0.35rem 0 0.55rem; color: var(--text-secondary); font-size: 0.67rem; line-height: 1.45; }
-.result-import-status.is-ready { color: #0f766e; }
-.result-import-status.is-error { color: #dc2626; }
+.result-import-status.is-ready { color: var(--primary); }
+.result-import-status.is-error { color: var(--destructive); }
 .model-spec-notice { margin: -0.25rem 0 0.8rem; padding: 0.65rem 0.7rem; border: 1px solid color-mix(in srgb, #f59e0b 42%, var(--border)); border-radius: 0.55rem; background: color-mix(in srgb, #f59e0b 7%, transparent); color: var(--text-secondary); font-size: 0.66rem; line-height: 1.45; }
 .model-spec-notice strong { display: block; margin-bottom: 0.15rem; color: var(--text); font-size: 0.69rem; }
 .model-spec-notice a { white-space: nowrap; }
@@ -3230,7 +3234,7 @@ button, input, select, textarea, table { font-family: inherit; }
 .plan-back-button, .icon-button { color: var(--text) !important; background: var(--surface-muted); }
 .plan-back-button:hover, .icon-button:hover { background: var(--border); }
 .plan-action-group { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: flex-end; }
-:where(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+:is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--primary) !important; outline-offset: 3px; }
 #modelSearchStatus:empty { display: none; }
 #runtimeTuningSection > .tuning-section-title, #distributionTuningSection > .tuning-section-title { display: none; }
 #distributionControls > .tuning-section { margin: 0; border: 0; padding: 0; }
@@ -3354,7 +3358,7 @@ button, input, select, textarea, table { font-family: inherit; }
     .planner-shell { grid-template-columns: 1fr; }
     .planner-controls > .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
     .planner-controls > .grid > .card { margin: 0 0 1rem; }
-    .evidence-layout, .interpreter-layout, .api-contract { grid-template-columns: 1fr; }
+    .evidence-layout, .interpreter-layout, .api-contract { grid-template-columns: minmax(0, 1fr); }
     .calibration-method { padding: 1rem 0 0; border-left: 0; border-top: 1px solid var(--border); }
     .catalog-row { grid-template-columns: minmax(0, 1.8fr) repeat(2, minmax(7rem, 0.8fr)) auto; }
     .catalog-row .catalog-cell:nth-of-type(3) { display: none; }
@@ -3508,9 +3512,39 @@ button, input, select, textarea, table { font-family: inherit; }
     .result-step-footer .button { font-size: 0.85rem; }
     #workspace-plan summary { font-size: 0.82rem; }
 }
+
+/* Keyboard access and resilient text layout. */
+.product-main { overflow-wrap: anywhere; }
+.interpreter-form, .interpreter-output { min-width: 0; }
+
+.skip-link { position: fixed; inset-block-start: 0.5rem; inset-inline-start: 0.5rem; z-index: 1000; padding: 0.7rem 1rem; background: var(--card); color: var(--text); border: 2px solid var(--primary); border-radius: 0.4rem; transform: translateY(-200%); }
+.skip-link:focus { transform: translateY(0); }
+main a:not(.home-cta-button):not(.evidence-run) { text-decoration: underline; text-underline-offset: 0.15em; }
+th[data-sort] button { display: inline-block; min-height: 32px; border: 0; padding: 0.3rem 0; background: none; color: inherit; font: inherit; font-weight: inherit; text-align: start; cursor: pointer; }
+.plan-step-copy, .plan-step-button, .catalog-row > *, .workload-users { min-width: 0; }
+.plan-step-copy strong, .workspace-heading, .plan-action-group .button { overflow-wrap: anywhere; }
+[tabindex="-1"] { scroll-margin-block-start: 5rem; }
+@media (max-width: 620px) {
+    .workspace-tabs { scrollbar-width: thin; }
+    .result-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 4.5rem), 1fr)); }
+    .result-facts dt, .result-facts dd, .phase-summary-value, .recommendation-metric { white-space: normal; }
+    .result-setup { grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr)); }
+    .workload-controls .token-split-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr)); }
+    .result-hero .rate-value { flex-wrap: wrap; }
+    .result-hero .rate-number { overflow-wrap: anywhere; min-width: 0; }
+    .interpreter-form label span { float: none; display: block; }
+    .phase-summary-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 5rem), 1fr)); }
+
+    .workspace-tabs::-webkit-scrollbar { display: block; height: 3px; }
+    .plan-step-button { flex-wrap: wrap; }
+    .hardware-preset-line { flex-wrap: wrap; }
+    .hardware-preset-line select { flex: 1 1 10rem; min-width: 0; }
+    input.input, select.input, textarea.input, .planner-input-body .input { font-size: 1rem; }
+}
 </style>
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="product-nav">
         <a class="product-brand" href="#home" data-workspace-link="home" aria-label="ML Bottleneck home">
             <span class="brand-mark" aria-hidden="true"><img src="icon.svg" alt=""></span>
@@ -3525,7 +3559,7 @@ button, input, select, textarea, table { font-family: inherit; }
         </nav>
     </header>
 
-    <main class="product-main">
+    <main class="product-main" id="main-content" tabindex="-1">
     <section id="workspace-home" class="workspace-view" data-workspace-view="home">
         <div class="home-hero">
             <h1>How fast will a model run on your hardware?</h1>
@@ -3805,14 +3839,14 @@ button, input, select, textarea, table { font-family: inherit; }
                             <span class="tuning-section-title">Runtime</span>
                             <label for="runtimeFramework">Runtime framework</label>
                             <select id="runtimeFramework" class="input">
-                                <option value="auto" selected>AUTO &mdash; match hardware</option>
-                                <option value="llama_cpp">llama.cpp</option>
-                                <option value="mlx">MLX / MLX-LM</option>
-                                <option value="ollama">Ollama</option>
-                                <option value="vllm">vLLM</option>
-                                <option value="sglang">SGLang</option>
-                                <option value="tensorrt_llm">TensorRT-LLM</option>
-                                <option value="exo">EXO / MLX Distributed</option>
+                                <option translate="no" value="auto" selected>AUTO &mdash; match hardware</option>
+                                <option translate="no" value="llama_cpp">llama.cpp</option>
+                                <option translate="no" value="mlx">MLX / MLX-LM</option>
+                                <option translate="no" value="ollama">Ollama</option>
+                                <option translate="no" value="vllm">vLLM</option>
+                                <option translate="no" value="sglang">SGLang</option>
+                                <option translate="no" value="tensorrt_llm">TensorRT-LLM</option>
+                                <option translate="no" value="exo">EXO / MLX Distributed</option>
                             </select>
                             <details class="runtime-guides"><summary>Specialized engines &amp; measured results</summary>
                             <div id="runtimeGuideList" class="runtime-guide-grid"></div>
@@ -3835,7 +3869,7 @@ button, input, select, textarea, table { font-family: inherit; }
                                             <input id="decodeOverheadMs" class="input" type="number" min="0" step="0.01" placeholder="Estimated from runtime">
                                         </div>
                                         <div>
-                                            <label for="cpuMoeLayers">Expert layers on CPU (<code>--n-cpu-moe</code>)</label>
+                                            <label for="cpuMoeLayers">Expert layers on CPU (<code translate="no" dir="ltr">--n-cpu-moe</code>)</label>
                                             <input id="cpuMoeLayers" class="input" type="number" min="0" step="1" placeholder="Only what memory forces">
                                         </div>
                                         <div>
@@ -4235,15 +4269,15 @@ button, input, select, textarea, table { font-family: inherit; }
         <table id="llmTable">
         <thead>
             <tr>
-                <th data-sort="model">Model</th>
-                <th data-sort="quantization">Quantization / Mode</th>
-                <th data-sort="framework">Runtime / Benchmark</th>
-                <th data-sort="hardware">Hardware / Task</th>
-                <th data-sort="batchSize">Batch / Eval</th>
-                <th data-sort="seqLength">Seq / Setting</th>
-                <th data-sort="tokenRateBatch">Batch Rate / Score</th>
-                <th data-sort="tokenRateSingle">Single Rate / Score</th>
-                <th data-sort="source">Source</th>
+                <th data-sort="model" aria-sort="none"><button type="button">Model</button></th>
+                <th data-sort="quantization" aria-sort="none"><button type="button">Quantization / Mode</button></th>
+                <th data-sort="framework" aria-sort="none"><button type="button">Runtime / Benchmark</button></th>
+                <th data-sort="hardware" aria-sort="none"><button type="button">Hardware / Task</button></th>
+                <th data-sort="batchSize" aria-sort="none"><button type="button">Batch / Eval</button></th>
+                <th data-sort="seqLength" aria-sort="none"><button type="button">Seq / Setting</button></th>
+                <th data-sort="tokenRateBatch" aria-sort="none"><button type="button">Batch Rate / Score</button></th>
+                <th data-sort="tokenRateSingle" aria-sort="none"><button type="button">Single Rate / Score</button></th>
+                <th data-sort="source" aria-sort="none"><button type="button">Source</button></th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -4282,7 +4316,7 @@ button, input, select, textarea, table { font-family: inherit; }
             <summary>View the normalized result JSON</summary>
             <section class="api-contract">
                 <div><span class="eyebrow">Portable result</span><h2>One payload, with its assumptions made explicit.</h2><p>Copy this normalized result into a report or a future API call.</p></div>
-                <pre id="apiContractPreview"><code>{
+                <pre id="apiContractPreview"><code translate="no" dir="ltr">{
   "observedTokS": 32.2,
   "configuration": "active-plan",
   "return": ["optimizedTokS", "physicalRooflineTokS", "expectedTokS", "headroom", "recommendations"]
@@ -6212,7 +6246,7 @@ button, input, select, textarea, table { font-family: inherit; }
             const batchingCaveat = ['exo'].includes(concurrency.frameworkKey)
                 ? ' EXO serves one stream at a time in practice, so treat this as an upper bound.'
                 : (['llama_cpp', 'ollama'].includes(concurrency.frameworkKey)
-                    ? ` ${concurrency.frameworkLabel} needs parallel slots enabled (<code>-np</code> / <code>OLLAMA_NUM_PARALLEL</code>) and reserves KV for every slot up front.`
+                    ? ` ${concurrency.frameworkLabel} needs parallel slots enabled (<code translate="no" dir="ltr">-np</code> / <code translate="no" dir="ltr">OLLAMA_NUM_PARALLEL</code>) and reserves KV for every slot up front.`
                     : '');
             const speculationNote = specMultiplier > 1
                 ? (concurrency.speculationBreakEven
@@ -6223,11 +6257,11 @@ button, input, select, textarea, table { font-family: inherit; }
                 ? `With continuous batching, <strong>${best.concurrency} concurrent user${best.concurrency > 1 ? 's' : ''}</strong> reach about <strong>${formatCompactRate(best.expectedAggregateTokS)} tok/s</strong> combined (${formatCompactRate(best.expectedPerUserTokS)} tok/s each) at this context length. KV cache for ${maxFit} user${maxFit > 1 ? 's' : ''} fits in memory${cPoints.some(point => !point.fits) ? '; more would overflow' : ''}. The sweep is ${best.binding === 'compute' ? 'compute' : 'memory'}-bound at its best point.${speculationNote}${batchingCaveat}`
                 : 'No concurrency level fits in memory at this context length.';
 
-            const contextTable = `<details><summary>View as table</summary><div class="table-scroll"><table>
+            const contextTable = `<details><summary>View as table</summary><div class="table-scroll" tabindex="0" role="region" aria-label="Context scaling table"><table>
                 <thead><tr><th scope="col">Input</th><th scope="col">Decode</th><th scope="col">Engine</th><th scope="col">Prompt</th><th scope="col">First token</th><th scope="col">KV read/token</th><th scope="col">Memory</th></tr></thead>
                 <tbody>${points.map(point => `<tr><td>${formatTokensAxis(point.promptTokens)}${point.isCurrent ? ' ◀' : ''}</td><td>${formatCompactRate(point.expectedDecodeTokS)} tok/s</td><td>${formatCompactRate(point.decodeTokS)}</td><td>${formatCompactRate(point.prefillTokS)} tok/s</td><td>${formatSecondsCompact(point.ttftSeconds)}</td><td>${point.kvReadGB < 0.1 ? `${(point.kvReadGB * 1000).toFixed(0)} MB` : `${point.kvReadGB.toFixed(1)} GB`}</td><td>${point.fits ? `${point.memoryUtilization.toFixed(0)}%` : 'overflow'}</td></tr>`).join('')}</tbody>
             </table></div></details>`;
-            const concurrencyTable = `<details><summary>View as table</summary><div class="table-scroll"><table>
+            const concurrencyTable = `<details><summary>View as table</summary><div class="table-scroll" tabindex="0" role="region" aria-label="Concurrent requests scaling table"><table>
                 <thead><tr><th scope="col">Users</th><th scope="col">Combined</th><th scope="col">Per user</th><th scope="col">KV cache</th><th scope="col">Memory</th><th scope="col">Limit</th></tr></thead>
                 <tbody>${cPoints.map(point => `<tr><td>${point.concurrency}</td><td>${formatCompactRate(point.expectedAggregateTokS)} tok/s</td><td>${formatCompactRate(point.expectedPerUserTokS)} tok/s</td><td>${point.kvGB.toFixed(1)} GB</td><td>${point.fits ? `${point.memoryUtilization.toFixed(0)}%` : 'overflow'}</td><td>${point.binding}</td></tr>`).join('')}</tbody>
             </table></div></details>`;
@@ -6385,7 +6419,7 @@ button, input, select, textarea, table { font-family: inherit; }
                 if (m.hasOverflow) {
                     systemAnalysisHtml += `
                         <div style="background: rgba(255, 165, 0, 0.08); border: 1px solid var(--border); border-radius: 4px; padding: 0.75rem; margin-top: 0.75rem;">
-                            <div style="color: #ffa500; font-weight: 600; margin-bottom: 0.25rem;">
+                            <div style="color: var(--warning-text); font-weight: 600; margin-bottom: 0.25rem;">
                                 ⚠️ Memory Overflow Detected
                             </div>
                             <div style="font-size: 0.8rem; color: var(--text-secondary);">
@@ -6419,7 +6453,7 @@ button, input, select, textarea, table { font-family: inherit; }
                         bottleneckValue = m.networkBandwidthUtilization;
                     }
                     systemAnalysisHtml += `
-                        <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem;">
+                        <div style="color: var(--destructive); font-size: 0.875rem; margin-top: 0.5rem;">
                             ⛔ Prefill limited by <strong>${bottleneckType}</strong> (${m.bottleneckFactor.toFixed(1)}x slower)
                         </div>
                     `;
@@ -6433,7 +6467,7 @@ button, input, select, textarea, table { font-family: inherit; }
                         decodeBottleneckType = "Local Bandwidth";
                     }
                     systemAnalysisHtml += `
-                        <div style="color: #ff4444; font-size: 0.875rem; margin-top: 0.25rem;">
+                        <div style="color: var(--destructive); font-size: 0.875rem; margin-top: 0.25rem;">
                             ⛔ Decode limited by <strong>${decodeBottleneckType}</strong> (${m.decodeBottleneckFactor.toFixed(1)}x slower)
                         </div>
                     `;
@@ -6509,7 +6543,7 @@ button, input, select, textarea, table { font-family: inherit; }
                             </div>
                             <details style="font-size: 0.75rem;">
                                 <summary style="cursor: pointer; color: var(--text-secondary);">View all strategies compared</summary>
-                                <div style="margin-top: 0.5rem; max-height: 200px; overflow-y: auto;">
+                                <div class="table-scroll" tabindex="0" role="region" aria-label="Parallelism strategies compared" style="margin-top: 0.5rem; max-height: 200px; overflow: auto;">
                                     <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem;">
                                         <tr style="border-bottom: 1px solid var(--border);">
                                             <th style="text-align: left; padding: 0.25rem;">Strategy</th>
@@ -6520,7 +6554,7 @@ button, input, select, textarea, table { font-family: inherit; }
                                             <tr style="border-bottom: 1px solid var(--border); ${r.strategy === parallelism ? 'background: rgba(74, 222, 128, 0.15);' : ''}">
                                                 <td style="padding: 0.25rem;">${r.name}${r.strategy === parallelism ? ' ✓' : ''}</td>
                                                 <td style="text-align: right; padding: 0.25rem;">${r.valid ? r.rate.toFixed(1) + ' tok/s' : '-'}</td>
-                                                <td style="padding: 0.25rem; color: ${r.valid ? (r.hasOverflow ? '#fbbf24' : '#4ade80') : '#f87171'};">
+                                                <td style="padding: 0.25rem; color: ${r.valid ? (r.hasOverflow ? 'var(--warning-text)' : 'var(--success-text)') : 'var(--destructive)'};">
                                                     ${r.valid ? (r.hasOverflow ? 'Overflow' : 'OK') : r.reason}
                                                 </td>
                                             </tr>
@@ -6613,7 +6647,7 @@ button, input, select, textarea, table { font-family: inherit; }
                 if (benchmarkAlignment.length > 0) {
                     benchmarkAlignmentHtml = `
                         <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(34, 197, 94, 0.06); border: 1px solid var(--border); border-radius: 6px;">
-                            <div style="color: #22c55e; font-weight: 600; margin-bottom: 0.5rem;">
+                            <div style="color: var(--success-text); font-weight: 600; margin-bottom: 0.5rem;">
                                 Benchmark Alignment
                             </div>
                             ${benchmarkAlignment.map(match => `
@@ -6722,7 +6756,7 @@ button, input, select, textarea, table { font-family: inherit; }
                         ? `Projected is primary. The optimized target includes modeled latency and evidence from strong real runs; rates include accepted speculative tokens.`
                         : `Projected is primary. The optimized target keeps unavoidable communication latency and uses efficiency already demonstrated by strong benchmark runs.`;
                     return `
-                    <div class="ceiling-ladder" role="img" aria-label="Decode ladder: physical roofline ${formatCompactRate(currentCalibration.physicalTokS)}, optimized target ${formatCompactRate(currentCalibration.optimizedTokS)}, projected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second${speculationOn ? ' with speculative decoding' : ', no speculative decoding'}${labTunedRun ? `, lab tuned ${formatCompactRate(labTunedRun.observedTokS)}` : ''}${nearestMeasured && Number.isFinite(nearestMeasured.referenceRate) ? `, nearest measured ${formatCompactRate(nearestMeasured.referenceRate)}` : ''}">
+                    <div class="ceiling-ladder" role="group" aria-label="Decode ladder: physical roofline ${formatCompactRate(currentCalibration.physicalTokS)}, optimized target ${formatCompactRate(currentCalibration.optimizedTokS)}, projected real ${formatCompactRate(currentCalibration.expectedTokS)} tokens per second${speculationOn ? ' with speculative decoding' : ', no speculative decoding'}${labTunedRun ? `, lab tuned ${formatCompactRate(labTunedRun.observedTokS)}` : ''}${nearestMeasured && Number.isFinite(nearestMeasured.referenceRate) ? `, nearest measured ${formatCompactRate(nearestMeasured.referenceRate)}` : ''}">
                         <div class="ladder-title">${title}</div>
                         ${rung('is-ceiling', 'Physical roofline', currentCalibration.physicalTokS, 'official peak + current bytes/pass · sanity reference')}
                         ${rung('is-engine', 'Optimized target', currentCalibration.optimizedTokS, currentCalibration.envelopePeers
@@ -6880,7 +6914,7 @@ button, input, select, textarea, table { font-family: inherit; }
             return Number.isInteger(value) ? String(value) : value.toFixed(1);
         }
 
-        function switchWorkspace(name, { updateHash = true } = {}) {
+        function switchWorkspace(name, { updateHash = true, focus = false } = {}) {
             const allowed = new Set(['home', 'plan', 'models', 'evidence', 'explain']);
             const next = allowed.has(name) ? name : 'home';
             document.querySelectorAll('[data-workspace-view]').forEach(view => {
@@ -6904,6 +6938,10 @@ button, input, select, textarea, table { font-family: inherit; }
                     if (typeof updateTopology === 'function') updateTopology();
                     if (utilizationChart) utilizationChart.resize();
                 }, 20);
+            }
+            if (focus) {
+                const heading = document.querySelector(`#workspace-${next} h1, #workspace-${next} h2`);
+                if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus?.({ preventScroll: true }); }
             }
             window.scrollTo?.({ top: 0, behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
         }
@@ -7247,8 +7285,8 @@ button, input, select, textarea, table { font-family: inherit; }
                 return `
                     <article class="catalog-row">
                         <div class="catalog-identity">
-                            <strong>${escapeHtml(model.name)}</strong>
-                            <span>${escapeHtml(model.organization)} · ${escapeHtml(model.hfId)}</span>
+                            <strong translate="no" dir="auto">${escapeHtml(model.name)}</strong>
+                            <span translate="no" dir="auto">${escapeHtml(model.organization)} · ${escapeHtml(model.hfId)}</span>
                             <div class="catalog-tags"><span class="catalog-tag">${catalogIsMoE ? 'MoE' : 'Dense'}</span><span class="catalog-tag">${escapeHtml(model.modality || 'text')}</span>${model.baseHfId ? '<span class="catalog-tag">Variant</span>' : '<span class="catalog-tag">Base</span>'}${specTag}</div>
                         </div>
                         <div class="catalog-cell"><strong>${params}</strong><span>${active}</span></div>
@@ -8009,7 +8047,7 @@ button, input, select, textarea, table { font-family: inherit; }
             if (!recommendations.length) recommendations.push('The run is already near the expected envelope; gains now depend on fused kernels, custom quantization, or a faster memory subsystem.');
             const modelLabel = getSelectedModelLabel(plan.modelConfig);
             output.innerHTML = `<span class="empty-kicker">${escapeHtml(modelLabel)} · ${escapeHtml(devices[0]?.name || 'current hardware')}</span><h2>${efficiency > 1 ? 'Above the optimized target.' : `${(efficiency * 100).toFixed(0)}% of the optimized target.`}</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>projected real</span></div><div class="interpret-metric"><strong>${calibration.optimizedTokS.toFixed(1)}</strong><span>optimized target</span></div></div><p>${headroom.toFixed(1)} tok/s remains to the evidence-capped optimized target. The zero-overhead physical roofline is ${calibration.physicalTokS.toFixed(1)} tok/s and is not presented as achievable.</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
-            document.getElementById('apiContractPreview').innerHTML = `<code>${escapeHtml(JSON.stringify({
+            document.getElementById('apiContractPreview').innerHTML = `<code translate="no" dir="ltr">${escapeHtml(JSON.stringify({
                 observedTokS: measuredTokS,
                 model: plan.modelConfig.hfId || modelLabel,
                 hardware: devices.map(device => device.name),
@@ -8076,7 +8114,7 @@ button, input, select, textarea, table { font-family: inherit; }
                 ? `This is ${Math.abs(expectedDeltaPct).toFixed(0)}% ${expectedDeltaPct >= 0 ? 'above' : 'below'} the peer-calibrated expectation, based on ${calibration.peers} neighboring gold case${calibration.peers === 1 ? '' : 's'}.`
                 : 'No close gold-case peer was available, so the expected rate is uncalibrated.';
             output.innerHTML = `<span class="empty-kicker">${useImported ? 'Imported setup' : 'Active plan'} / ${escapeHtml(modelLabel)} / ${escapeHtml(hardwareLabel || 'current hardware')}</span><h2>${headline}</h2>${buildMeasuredComparison(measuredTokS, calibration)}<p>${headroom.toFixed(1)} tok/s remains to the attainable target; the ${calibration.physicalTokS.toFixed(1)} tok/s zero-overhead roofline is only a sanity reference. ${peerSentence}</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
-            document.getElementById('apiContractPreview').innerHTML = `<code>${escapeHtml(JSON.stringify({
+            document.getElementById('apiContractPreview').innerHTML = `<code translate="no" dir="ltr">${escapeHtml(JSON.stringify({
                 observedTokS: measuredTokS,
                 model: plan.modelConfig.hfId || modelLabel,
                 modelPreset: plan.modelConfig.modelPreset || null,
@@ -8325,7 +8363,7 @@ button, input, select, textarea, table { font-family: inherit; }
                     const group = getHardwarePresetGroup(key, template);
                     if (!groups.has(group)) groups.set(group, []);
                     const suffix = key === selectedTemplate && isEditedPreset ? ' - modified' : '';
-                    groups.get(group).push(`<option value="${escapeHtml(key)}" ${selectedTemplate === key ? 'selected' : ''}>${escapeHtml(template.name)}${suffix}</option>`);
+                    groups.get(group).push(`<option translate="no" value="${escapeHtml(key)}" ${selectedTemplate === key ? 'selected' : ''}>${escapeHtml(template.name)}${suffix}</option>`);
                 });
             return [...groups.entries()]
                 .filter(([, options]) => options.length)
@@ -8981,10 +9019,22 @@ button, input, select, textarea, table { font-family: inherit; }
 	        return updatedDevice;
 	    });
 
-	    // Name edits don't change the editor layout, so skip the full re-render.
+	    // Scalar edits keep the same controls so blur does not destroy the next focus/click target.
 	    // Rebuilding the devices container mid-blur can destroy a button the user just clicked
 	    // (e.g. "+ Add device") before its click event dispatches, forcing a second click.
-	    if (field === 'name') {
+	    if (['name', 'memoryGB', 'localBandwidthGBps', 'computeTFlops'].includes(field)) {
+                const updated = devices.find(d => d.id === id);
+                const editor = document.getElementById(`dev${id}-template`)?.closest?.('.device');
+                if (editor && updated) {
+                    const meta = editor.querySelector('.hardware-spec-meta');
+                    if (meta) meta.outerHTML = buildHardwareSpecMeta(updated);
+                    if (updated.isEdited && updated.template !== 'Custom') {
+                        editor.classList.add('custom-device');
+                        if (!editor.querySelector('.custom-badge')) editor.insertAdjacentHTML('afterbegin', '<div class="custom-badge edited">Modified</div>');
+                        const option = editor.querySelector('select[id$="-template"] option:checked');
+                        if (option) option.textContent = `${DEVICE_TEMPLATES[updated.template]?.name || updated.template} - modified`;
+                    }
+                }
 	        renderDeviceRoster();
 	        if (typeof updateTopology === 'function') updateTopology();
 	        updateSystemAnalysis();
@@ -9136,11 +9186,11 @@ button, input, select, textarea, table { font-family: inherit; }
             const frameworkProfile = getFrameworkProfile(config, devices);
             const plan = getSpeculationPlan(config, frameworkProfile.key, devices);
             if (!plan) { note.innerHTML = ''; return; }
-            const supportLines = Object.entries(plan.runtimes).map(([key, flag]) => `<li><strong>${escapeHtml(FRAMEWORK_PROFILES[key]?.label || key)}</strong>: <code>${escapeHtml(flag)}</code></li>`).join('');
+            const supportLines = Object.entries(plan.runtimes).map(([key, flag]) => `<li><strong>${escapeHtml(FRAMEWORK_PROFILES[key]?.label || key)}</strong>: <code translate="no" dir="ltr">${escapeHtml(flag)}</code></li>`).join('');
             const status = plan.missingModelSupport
                 ? `<p class="spec-warning">${escapeHtml(config.label || getModelPresetLabel(config.modelPreset) || 'This model')} ships no MTP head; pick DFlash/DSpark/EAGLE-3 (needs a published draft) or a separate draft model.</p>`
                 : (plan.supported
-                    ? `<p>${escapeHtml(frameworkProfile.label)}: <code>${escapeHtml(plan.supportNote)}</code>${plan.kind === 'lookup' ? ' · no extra memory' : ` · draft ~${plan.draftParamsB.toFixed(2)}B parameters plus its KV cache`}.</p>`
+                    ? `<p>${escapeHtml(frameworkProfile.label)}: <code translate="no" dir="ltr">${escapeHtml(plan.supportNote)}</code>${plan.kind === 'lookup' ? ' · no extra memory' : ` · draft ~${plan.draftParamsB.toFixed(2)}B parameters plus its KV cache`}.</p>`
                     : `<p class="spec-warning">${escapeHtml(frameworkProfile.label)} does not ship ${escapeHtml(plan.label)}; the prediction is shown without speculation.</p>`);
             note.innerHTML = `${status}<details><summary>Where this method is available</summary><ul>${supportLines}</ul></details>`;
         }
@@ -9579,7 +9629,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 
         // Sorting function
         const sortTable = (column, direction = 'asc') => {
-            const sortedData = [...data].sort((a, b) => {
+            const sortedData = getFilteredBenchmarkRows().sort((a, b) => {
                 let aVal = a[column] || '';
                 let bVal = b[column] || '';
                 
@@ -9678,19 +9728,23 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        saveDevices();
 	    }
 	}
-        // Filtering function
-        const filterTable = () => {
+        function getFilteredBenchmarkRows() {
             const modelFilter = document.getElementById('modelFilter').value.toLowerCase();
             const hardwareFilter = document.getElementById('hardwareFilter').value.toLowerCase();
             const quantizationFilter = document.getElementById('quantizationFilter').value.toLowerCase();
 
-            const filteredData = data.filter(row => {
+            return data.filter(row => {
                 return (!modelFilter || row.model.toLowerCase().includes(modelFilter)) &&
                        (!hardwareFilter || (row.hardware && row.hardware.toLowerCase().includes(hardwareFilter))) &&
                        (!quantizationFilter || (row.quantization && row.quantization.toLowerCase().includes(quantizationFilter)));
             });
 
-            renderTable(filteredData);
+        }
+
+        const filterTable = () => {
+            const sortedHeader = document.querySelector('th[data-sort].asc, th[data-sort].desc');
+            if (sortedHeader) sortTable(sortedHeader.dataset.sort, sortedHeader.classList.contains('asc') ? 'asc' : 'desc');
+            else renderTable(getFilteredBenchmarkRows());
         };
 
         // Event listeners
@@ -9700,11 +9754,13 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
                 const currentDirection = th.classList.contains('asc') ? 'desc' : 'asc';
                 
                 // Remove all sort indicators
-                document.querySelectorAll('th').forEach(el => {
+                document.querySelectorAll('th[data-sort]').forEach(el => {
                     el.classList.remove('asc', 'desc');
+                    el.setAttribute('aria-sort', 'none');
                 });
                 
                 th.classList.add(currentDirection);
+                th.setAttribute('aria-sort', currentDirection === 'asc' ? 'ascending' : 'descending');
                 sortTable(column, currentDirection);
             });
         });
@@ -9801,6 +9857,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	            if (!MODEL_PRESETS[key] || (trackModels && addedModels.has(key))) return;
 	            if (trackModels) addedModels.add(key);
 	            const option = document.createElement('option');
+	            option.setAttribute('translate', 'no');
 	            option.value = key;
 	            option.textContent = formatName(key);
 	            if (key === 'llama3_8b') option.selected = true;
@@ -9823,6 +9880,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        optgroup.label = 'Other';
 	        uncategorized.forEach(key => {
 	            const option = document.createElement('option');
+	            option.setAttribute('translate', 'no');
 	            option.value = key;
 	            option.textContent = formatName(key);
 	            optgroup.appendChild(option);
@@ -9891,10 +9949,10 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
             const families = [...new Set(getCatalogModels().map(model => model.family || model.organization).filter(Boolean))].sort((a, b) => a.localeCompare(b));
             familySelect.innerHTML = '<option value="">All families</option>' + families.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
         }
-        document.querySelectorAll('[data-workspace]').forEach(button => button.addEventListener('click', () => switchWorkspace(button.dataset.workspace)));
+        document.querySelectorAll('[data-workspace]').forEach(button => button.addEventListener('click', () => switchWorkspace(button.dataset.workspace, { focus: true })));
         document.querySelectorAll('[data-workspace-link]').forEach(link => link.addEventListener('click', event => {
             event.preventDefault();
-            switchWorkspace(link.dataset.workspaceLink);
+            switchWorkspace(link.dataset.workspaceLink, { focus: true });
         }));
         ['catalogSearch', 'catalogFamily', 'catalogArchitecture', 'catalogSize', 'catalogSort'].forEach(id => {
             const control = document.getElementById(id);
@@ -10325,7 +10383,21 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
         // Override updateDeviceDisplay to also update topology
         const _originalUpdateDeviceDisplay = updateDeviceDisplay;
         updateDeviceDisplay = function() {
+            const active = document.activeElement;
+            const editing = active?.closest?.('#devices, #deviceRoster, #hardwareHeadMeta');
+            const activeId = active?.id;
+            const previousPreset = document.querySelector('#devices select[id$="-template"]')?.id;
+            const advancedOpen = document.querySelector('#devices .hardware-advanced')?.open;
             _originalUpdateDeviceDisplay();
+            const preset = document.querySelector('#devices select[id$="-template"]');
+            if (advancedOpen && previousPreset === preset?.id) {
+                const advanced = document.querySelector('#devices .hardware-advanced');
+                if (advanced) advanced.open = true;
+            }
+            if (editing) {
+                const target = (activeId && document.getElementById(activeId)) || preset;
+                target?.focus?.({ preventScroll: true });
+            }
             setTimeout(updateTopology, 50);
         };
 

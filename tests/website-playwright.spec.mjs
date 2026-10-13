@@ -952,3 +952,70 @@ test('Flash controls stay within a narrow mobile viewport and exact format selec
   await expect(page.locator('#quantizationType')).toHaveValue('q2');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test('keyboard navigation retains focus through hardware edits and benchmark sorting', async ({ page }) => {
+  await loadApp(page);
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.skip-link')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#main-content')).toBeFocused();
+  await page.locator('[data-workspace="plan"]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#workspace-plan h1')).toBeFocused();
+  await expect(page.locator('#modelPreset option:checked')).toHaveAttribute('translate', 'no');
+  await advancePlanTo(page, 2);
+  const preset = page.locator('#devices select[id$="-template"]');
+  await preset.focus();
+  await preset.selectOption('RTX 4090');
+  await expect(preset).toBeFocused();
+  const advanced = page.locator('.hardware-advanced');
+  await page.keyboard.press('Tab');
+  await advanced.locator('summary').focus();
+  await expect(advanced.locator('summary')).toHaveCSS('outline-style', 'solid');
+  await page.keyboard.press('Enter');
+  await page.locator('#devices input[id$="-memory"]').fill('23');
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#devices input[id$="-bw"]')).toBeFocused();
+  await expect(advanced).toHaveAttribute('open', '');
+  await expect(page.locator('#devices .custom-badge')).toHaveText('Modified');
+  await page.getByRole('button', { name: 'Clone', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#dev2-template')).toBeFocused();
+  await page.getByRole('button', { name: 'Remove', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#dev1-template')).toBeFocused();
+  await page.locator('[data-workspace="evidence"]').click();
+  await page.locator('.reference-card > summary').click();
+  const sort = page.locator('th[data-sort="model"]');
+  await sort.locator('button').focus();
+  await page.keyboard.press('Enter');
+  await expect(sort).toHaveAttribute('aria-sort', 'ascending');
+  await page.keyboard.press('Enter');
+  await expect(sort).toHaveAttribute('aria-sort', 'descending');
+  await page.locator('#modelFilter').fill('Qwen');
+  const rows = page.locator('#llmTable tbody tr');
+  expect(await rows.count()).toBeGreaterThan(0);
+  for (const cell of await rows.locator('td:first-child').allTextContents()) expect(cell).toMatch(/Qwen/i);
+  await sort.locator('button').press('Enter');
+  await expect(sort).toHaveAttribute('aria-sort', 'ascending');
+  for (const cell of await rows.locator('td:first-child').allTextContents()) expect(cell).toMatch(/Qwen/i);
+});
+
+test('narrow layouts reflow with enlarged, spaced text and longer navigation labels', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await loadApp(page);
+  await advancePlanTo(page, 4);
+  await page.addStyleTag({ content: 'html { font-size: 200%; } body { line-height: 1.5; } p { margin-bottom: 2em; } * { letter-spacing: .12em !important; word-spacing: .16em !important; }' });
+  await page.evaluate(() => {
+    const labels = ['Startseite', 'Konfiguration planen', 'Modellbibliothek', 'Messergebnisse', 'Ergebnisse verstehen'];
+    document.querySelectorAll('[data-workspace]').forEach((button, index) => button.textContent = labels[index]);
+  });
+  for (const workspace of ['home', 'plan', 'models', 'evidence', 'explain']) {
+    await page.locator(`[data-workspace="${workspace}"]`).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
+  }
+  await expect(page.locator('#measuredTokS')).toBeVisible();
+  await page.locator('#measuredTokS').fill('100');
+  await page.getByRole('button', { name: 'Explain this run', exact: true }).click();
+  await expect(page.locator('#interpreterOutput')).toContainText('100');
+});
