@@ -61,6 +61,7 @@ const { ceiling } = engine.predict({ model: 'qwen3.6_35b_a3b', hardware: 'AMD St
 | `speculation` | object | `{ method: 'mtp' | 'dflash' | 'dspark' | 'eagle3' | 'draft_model' | 'ngram' | 'suffix', tokens?, acceptance?, draftRatio? }`. Omitted fields use the method's published defaults. Draft weights and draft KV count toward memory; gains shrink with batch size and context. |
 | `kvCacheCompression` | string | `none`, `q8_kv`, `q4_kv` (llama.cpp `-ctk q8_0` / `q4_0`, vLLM fp8 KV). Compressed KV reads fewer bytes but the decode attention kernel pays a dequantization cost, so deep contexts do not get the full byte saving. |
 | `cpuMoeLayers` | number | MoE only: pin this many layers' routed experts to system RAM (llama.cpp `--n-cpu-moe N`). Default: only what memory forces. |
+| `lookupPlacement` | string | `device` (default) or `ram`: place Qwen Flash Next n-gram / DeepSeek V4.1 Engram tables in host RAM. Requires runtime support; unified-memory systems keep the table in their shared pool. Reserve `memory.hostLookupGB` plus expert offload and runtime headroom separately. |
 | `usage` | object | `{ hoursPerDay, costPerKwh }` for the power/cost estimate. |
 | `includeRaw` | boolean | Attach the full per-device engine output under `result.raw`. |
 
@@ -77,7 +78,7 @@ const { ceiling } = engine.predict({ model: 'qwen3.6_35b_a3b', hardware: 'AMD St
              optimizedTokensPerSecond,     // what the best-demonstrated kernel efficiency on this stack reaches
              expectedTokensPerSecond,      // engine rate x peer correction (stock software)
              engineTokensPerSecond, correctionFactor, confidence, peers, verifiedPeers },
-  memory:  { modelSizeGB, residentWeightsGB, kvCacheGB, availableGB },
+  memory:  { checkpointWeightsGB, lookupTableGB, hostLookupGB, modelSizeGB, residentWeightsGB, kvCacheGB, availableGB },
   measured: { nearest,                     // closest stock measurement on this model + hardware template (community gold run or lab stock row), or null
               labTuned },                  // closest tuned neural.download lab run on the same machine (same template and device count), or null
            // each: { tokensPerSecond (per request), aggregateTokensPerSecond, concurrency, origin: 'community'|'lab', stack,
@@ -125,3 +126,23 @@ https://mlbottleneck.com/?model=qwen3.8_27b&hardware=Intel%20Arc%20Pro%20B70&cou
 - Predictions assume the runtime's mainstream kernels (flash attention on, weights resident unless the engine models expert offload or spill).
 - Network-bound multi-node setups use the template's interconnect bandwidth; pass `networkBandwidthGBps` per device for real fabrics.
 - The evidence snapshot is community-submitted (Localmaxxing); `confidence` tells you how much of it applies to your stack.
+
+### Flash models and mixed quantization
+
+Use `qwen3.8_flash_next`, `glm5.3_flash`, or `deepseek_v4.1_flash` as the model key. For the published Qwen GSQ-RCO checkpoint sizes:
+
+```js
+const result = engine.predict({
+  model: 'qwen3.8_flash_next',
+  hardware: { template: 'RTX 3090', count: 3 },
+  runtime: 'llama_cpp',
+  quantization: 'GSQ-RCO IQ3_S',
+  lookupPlacement: 'ram'
+});
+// 83.6 GB checkpoint: 54.8 GB transformer weights + 28.8 GB host lookup tables.
+console.log(result.memory, result.warnings);
+```
+
+The four profiles are `GSQ-RCO Q2_0`, `GSQ-RCO IQ2_XS`, `GSQ-RCO IQ3_XXS`, and `GSQ-RCO IQ3_S`. Sizes cover the text checkpoint; add 0.91 GB if loading the vision projector. [Checkpoint sizes and mmap instructions](https://huggingface.co/ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF).
+
+`fits` checks device capacity, not available host RAM. Lookup transfer latency is not included in the speed estimate. Check `warnings` for model-specific sparse-attention approximations before planning long-context deployment. `engine.catalogs.RUNTIME_GUIDES` links specialized engines, including Strata, and keeps their published measurements separate from stock runtime predictions.

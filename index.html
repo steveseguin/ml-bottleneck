@@ -50,9 +50,9 @@
 
     <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha384-4mFQWIqZrcfYZkFPEgIoT//zTEU64gEoH2tGV72Koyhoa9Fxz43YgroFUGj4/RAx" crossorigin="anonymous"></script>
-	<script src="data/localmaxxing-snapshot.js?v=20260824080611"></script>
-	<script src="data/lab-evidence.js?v=47452ee3d12c"></script>
-	<script src="engine.js?v=b0a4dc2abcd5"></script>
+	<script src="data/localmaxxing-snapshot.js?v=20261013031020"></script>
+	<script src="data/lab-evidence.js?v=13b8f4f982fc"></script>
+	<script src="engine.js?v=6409bca1f476"></script>
 	<!-- Structured Data for Google -->
     <script type="application/ld+json">
     {
@@ -3353,6 +3353,23 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
     .gold-set-head .input { width: 100%; }
     .interpret-metrics { grid-template-columns: 1fr; }
 }
+
+.recent-models { display:flex; flex-wrap:wrap; gap:0.45rem; margin:0.7rem 0; }
+.recent-models button { font-size:0.78rem; padding:0.45rem 0.7rem; }
+.weight-layout { margin:1rem 0; padding:1rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--background); }
+.weight-layout-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0.8rem; }
+.weight-layout-grid span { display:block; color:var(--text-secondary); font-size:0.74rem; }
+.weight-layout-grid strong { display:block; margin-top:0.25rem; font-size:1.15rem; color:var(--text); }
+.weight-layout-bar { display:flex; height:8px; overflow:hidden; border-radius:6px; margin:0.9rem 0; background:var(--border); }
+.weight-layout-bar .core { background:#168d8d; }
+.weight-layout-bar .lookup { background:#8b68cc; }
+.weight-layout p { margin:0.4rem 0 0; font-size:0.78rem; line-height:1.5; color:var(--text-secondary); }
+.runtime-guides { margin-top:1rem; padding:0.9rem; border:1px solid var(--border); border-radius:var(--radius); }
+.runtime-guides summary { cursor:pointer; font-weight:600; }
+.runtime-guide-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; margin-top:0.8rem; }
+.runtime-guide-grid a { display:block; font-weight:600; }
+.runtime-guide-grid p { font-size:0.78rem; margin:0.3rem 0; }
+@media (max-width:600px) { .weight-layout-grid { gap:0.4rem; } .weight-layout-grid strong { font-size:1rem; } .runtime-guide-grid { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -3506,6 +3523,11 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                         </optgroup>
                     </select>
                 <div id="modelSpecNotice" class="model-spec-notice" hidden></div>
+                <div class="recent-models" aria-label="Recent model releases">
+                    <button class="button button-secondary" type="button" data-switch-preset="qwen3.8_flash_next">Qwen Flash Next</button>
+                    <button class="button button-secondary" type="button" data-switch-preset="glm5.3_flash">GLM 5.3 Flash</button>
+                    <button class="button button-secondary" type="button" data-switch-preset="deepseek_v4.1_flash">DeepSeek V4.1 Flash</button>
+                </div>
 
                 <details class="hf-import" id="hfImportDisclosure">
                     <summary><strong>Load a Hugging Face model</strong><span>Use a model not listed above</span></summary>
@@ -3536,6 +3558,19 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 </select>
                 <label for="quantFormat">Exact format <span class="optional">optional</span></label>
                 <input id="quantFormat" class="input" type="text" list="quantFormatOptions" placeholder="e.g. Q4_K_M, IQ4_XS, NVFP4, UD-Q4_K_XL" autocomplete="off" spellcheck="false">
+                <div id="checkpointOptions" hidden>
+                    <label for="checkpointQuant">Published checkpoint sizes</label>
+                    <select id="checkpointQuant" class="input"><option value="">Use the format above</option></select>
+                </div>
+                <div id="lookupOptions" hidden>
+                    <label for="lookupPlacement">Lookup table placement</label>
+                    <select id="lookupPlacement" class="input">
+                        <option value="device">Device memory · include the whole checkpoint</option>
+                        <option value="ram">Host RAM · sparse lookup offload</option>
+                    </select>
+                    <small class="field-help">Requires lookup offload support in the chosen runtime. Experts are planned separately. Unified-memory devices still need space for both.</small>
+                </div>
+                <div id="weightLayout" class="weight-layout" aria-live="polite"></div>
                 <datalist id="quantFormatOptions">
                     <option value="Q4_K_M"></option><option value="Q4_K_S"></option><option value="Q4_0"></option><option value="IQ4_XS"></option><option value="IQ4_NL"></option><option value="UD-Q4_K_XL"></option><option value="UD-IQ4_XS"></option><option value="NVFP4"></option><option value="MXFP4"></option><option value="AWQ INT4"></option><option value="GPTQ INT4"></option>
                     <option value="Q5_K_M"></option><option value="Q6_K"></option><option value="Q3_K_M"></option><option value="IQ3_XXS"></option><option value="UD-Q3_K_XL"></option><option value="Q2_K"></option><option value="IQ2_M"></option><option value="UD-Q2_K_XL"></option><option value="Q8_0"></option><option value="FP8"></option><option value="BF16"></option>
@@ -3664,6 +3699,9 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                                 <option value="tensorrt_llm">TensorRT-LLM</option>
                                 <option value="exo">EXO / MLX Distributed</option>
                             </select>
+                            <details class="runtime-guides"><summary>Specialized engines &amp; measured results</summary>
+                            <div id="runtimeGuideList" class="runtime-guide-grid"></div>
+                            <p class="field-help">These engines use different placement and kernels. Follow their hardware and model requirements; the stock runtime estimate above does not predict their speed.</p></details>
                             <details class="nested-details" id="decodeProfileDisclosure">
                                 <summary>Advanced execution assumptions</summary>
                                 <div class="nested-details-content">
@@ -4187,12 +4225,12 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 importedModelMetadata = !model.modelPreset ? pickImportedModelMetadata(saved.importedModelMetadata) : null;
 
 	            const directFields = [
-	                'hfId', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'hiddenSize',
+	                'hfId', 'quantFormat', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'hiddenSize',
 	                'numLayers', 'numHeads', 'numKVHeads', 'headDim', 'intermediateSize', 'architectureType',
 	                'activeParamsB', 'numExperts', 'activeExperts', 'routingType', 'attentionMechanism',
 	                'parallelismStrategy', 'optimizationMode', 'specMethod', 'specTokens', 'specDraftModel',
 	                'kvCacheCompression', 'runtimeFramework', 'decodeBytesPerPassGB', 'residentWeightsGB', 'decodeOverheadMs',
-	                'cpuMoeLayers', 'executionProfileName'
+	                'cpuMoeLayers', 'lookupPlacement', 'executionProfileName'
 	            ];
 	            directFields.forEach(id => setStoredControlValue(id, model[id]));
 	            setStoredControlValue('seqLength', model.seqLength);
@@ -4217,13 +4255,14 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 	        selectedDeviceId = 1;
 	        setStoredControlValue('modelPreset', 'llama3_8b');
 	        setStoredControlValue('quantizationType', 'q4');
+            setStoredControlValue('quantFormat', '');
 	        updateModelConfigFromPreset();
 	        [
 	            ['batchSize', 1], ['promptTokens', 16384], ['outputTokens', 4096], ['seqLength', 20480],
 	            ['parallelismStrategy', 'auto'], ['optimizationMode', 'none'], ['runtimeFramework', 'auto'],
 	            ['kvCacheCompression', 'none'], ['specMethod', 'mtp'], ['specTokens', 3],
 	            ['specAcceptance', 70], ['specDraftRatio', 8], ['specDraftModel', ''],
-	            ['decodeBytesPerPassGB', ''], ['residentWeightsGB', ''], ['decodeOverheadMs', ''], ['cpuMoeLayers', ''], ['executionProfileName', ''],
+	            ['decodeBytesPerPassGB', ''], ['residentWeightsGB', ''], ['decodeOverheadMs', ''], ['cpuMoeLayers', ''], ['lookupPlacement', 'device'], ['executionProfileName', ''],
 	            ['hoursPerDay', 8], ['costPerKwh', 0.12]
 	        ].forEach(([id, value]) => setStoredControlValue(id, value));
 	        updateSpeculativeControls();
@@ -4272,6 +4311,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 hfId: document.getElementById('hfId')?.value?.trim() || '',
                 quantizationType: document.getElementById('quantizationType').value,
                 quantFormat: document.getElementById('quantFormat')?.value?.trim() || '',
+                lookupPlacement: document.getElementById('lookupPlacement')?.value || 'device',
                 totalParamsB: parseFloat(document.getElementById('totalParamsB').value),
                 batchSize: parseFloat(document.getElementById('batchSize').value),
                 promptTokens: tokenLengths.promptTokens,
@@ -6045,6 +6085,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         }
 
         function updateSystemAnalysis() {
+            updateWeightLayout();
             const metrics = calculateMetrics();
             _latestMetricsByDeviceId = new Map();
             metrics.forEach((m, idx) => {
@@ -6490,6 +6531,11 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 ` : '';
 
                 const scalingHtml = buildScalingSectionHtml(modelConfig, metrics, currentCalibration, parallelism);
+                const resultWeightLayout = getModelWeightLayout(modelConfig, DTYPE_SIZES[modelConfig.quantizationType], devices);
+                const lookupSummary = resultWeightLayout.hostLookupGB > 0
+                    ? `<p><strong>Host lookup RAM: ${resultWeightLayout.hostLookupGB.toFixed(1)} GB</strong> in addition to any CPU experts and runtime headroom. Enable lookup offload in your runtime; its transfer latency is not included in this estimate.</p>` : '';
+                const modelAssumptionsHtml = modelConfig.performanceNote || lookupSummary
+                    ? `<div class="weight-layout">${lookupSummary}${modelConfig.performanceNote ? `<p>${escapeHtml(modelConfig.performanceNote)}</p>` : ''}</div>` : '';
                 systemAnalysisHtml += `
                     <div class="result-hero">
                         <div class="result-hero-main">
@@ -6503,6 +6549,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                         </div>
                     </div>
                     ${phaseSummaryHtml}
+                    ${modelAssumptionsHtml}
                     ${responsiveCalibrationSummaryHtml}
                     ${scalingHtml}
 
@@ -6818,6 +6865,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                     if (!quant) document.getElementById('quantizationType').value = known.family;
                 }
             }
+            if (['device', 'ram'].includes(params.get('lookup'))) document.getElementById('lookupPlacement').value = params.get('lookup');
             const runtime = params.get('runtime');
             if (runtime && FRAMEWORK_PROFILES[runtime]) document.getElementById('runtimeFramework').value = runtime;
             const strategy = params.get('strategy');
@@ -6869,6 +6917,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             document.getElementById('modelPreset').value = reference.presetKey;
             updateModelConfigFromPreset();
             if (DTYPE_SIZES[reference.quantKey]) document.getElementById('quantizationType').value = reference.quantKey;
+            document.getElementById('quantFormat').value = reference.quantization || '';
+            document.getElementById('lookupPlacement').value = reference.lookupPlacement || 'device';
             if (FRAMEWORK_PROFILES[reference.runtimeKey]) document.getElementById('runtimeFramework').value = reference.runtimeKey;
             document.getElementById('parallelismStrategy').value = 'auto';
             saveDevices();
@@ -7028,11 +7078,11 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         }
 
         const RESULT_PLAN_FIELD_IDS = [
-            'modelPreset', 'hfId', 'quantizationType', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'seqLength',
+            'modelPreset', 'hfId', 'quantizationType', 'quantFormat', 'totalParamsB', 'batchSize', 'promptTokens', 'outputTokens', 'seqLength',
             'hiddenSize', 'numLayers', 'numHeads', 'numKVHeads', 'headDim', 'intermediateSize', 'architectureType', 'activeParamsB',
             'numExperts', 'activeExperts', 'routingType', 'attentionMechanism', 'dtype', 'parallelismStrategy',
             'optimizationMode', 'runtimeFramework', 'kvCacheCompression', 'decodeBytesPerPassGB',
-            'residentWeightsGB', 'decodeOverheadMs', 'cpuMoeLayers', 'executionProfileName'
+            'residentWeightsGB', 'decodeOverheadMs', 'cpuMoeLayers', 'lookupPlacement', 'executionProfileName'
         ];
 
         function normalizeResultLookup(value) {
@@ -7133,6 +7183,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
         function normalizeImportedQuantization(value) {
             const valueText = normalizeResultLookup(resultValueText(value));
             if (!valueText) return null;
+            const exact = getQuantFormat(resultValueText(value));
+            if (exact) return exact.family;
             if (/\b(fp32|float32)\b/.test(valueText)) return 'float32';
             if (/\b(bf16|bfloat16)\b/.test(valueText)) return 'bfloat16';
             if (/\b(fp16|float16|half)\b/.test(valueText)) return 'float16';
@@ -7193,6 +7245,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 hardware: hardware.devices,
                 runtimeFramework,
                 quantizationType,
+                quantFormat: isPlanExport ? (payload.model?.quantFormat || '') : (getQuantFormat(quantRaw)?.label || ''),
                 contextLength: recognizedContext,
                 promptTokens: recognizedPrompt,
                 outputTokens: recognizedOutput,
@@ -7203,6 +7256,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                     ? Number(exportedProfile.exposedNonMemoryOverheadMsPerPass)
                     : null,
                 executionProfileName: hasExplicitExportedProfile ? exportedProfile.name || '' : '',
+                lookupPlacement: exportedProfile?.lookupPlacement === 'ram' ? 'ram' : 'device',
                 cpuMoeLayers: (() => {
                     const exported = Number(exportedProfile?.expertLayersOnCpu);
                     if (Number.isFinite(exported) && exported > 0) return Math.round(exported);
@@ -7284,6 +7338,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 const preset = buildEffectiveModelConfig({
                     modelPreset: imported.modelPreset,
                     quantizationType: imported.quantizationType || currentConfig.quantizationType,
+                    quantFormat: imported.quantFormat || '',
+                    lookupPlacement: imported.lookupPlacement || 'device',
                     batchSize: currentConfig.batchSize,
                     promptTokens: currentConfig.promptTokens,
                     outputTokens: currentConfig.outputTokens,
@@ -7302,11 +7358,13 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 document.getElementById('hfId').value = MODEL_PRESETS[imported.modelPreset].hfId || '';
             }
             if (imported.quantizationType) document.getElementById('quantizationType').value = imported.quantizationType;
+            document.getElementById('quantFormat').value = imported.quantFormat || '';
             if (imported.runtimeFramework) document.getElementById('runtimeFramework').value = imported.runtimeFramework;
             if (imported.parallelismStrategy) document.getElementById('parallelismStrategy').value = imported.parallelismStrategy;
             if (imported.decodeBytesPerPassGB) document.getElementById('decodeBytesPerPassGB').value = imported.decodeBytesPerPassGB;
             if (imported.residentWeightsGB) document.getElementById('residentWeightsGB').value = imported.residentWeightsGB;
             if (Number.isFinite(imported.decodeOverheadMs)) document.getElementById('decodeOverheadMs').value = imported.decodeOverheadMs;
+            document.getElementById('lookupPlacement').value = imported.lookupPlacement || 'device';
             if (Number(imported.cpuMoeLayers) > 0) document.getElementById('cpuMoeLayers').value = imported.cpuMoeLayers;
             if (imported.executionProfileName) document.getElementById('executionProfileName').value = imported.executionProfileName;
             if (imported.promptTokens || imported.outputTokens) {
@@ -7425,6 +7483,7 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                     totalParametersB: roundPlanNumber(config.totalParamsB),
                     activeParametersB: roundPlanNumber(getActiveParamsB(config)),
                     quantization: config.quantizationType,
+                    quantFormat: config.quantFormat || null,
                     layers: config.numLayers,
                     hiddenSize: config.hiddenSize,
                     attentionHeads: config.numHeads,
@@ -7455,6 +7514,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                         aggregateBytesPerDecodePassGB: roundPlanNumber(aggregateBytesPerPassGB),
                         includesKvAndAuxiliaryReads: hasExplicitProfile,
                         exposedNonMemoryOverheadMsPerPass: Number.isFinite(config.decodeOverheadMs) ? roundPlanNumber(config.decodeOverheadMs) : null,
+                        lookupPlacement: config.lookupPlacement || 'device',
+                        weightLayout: getModelWeightLayout(config, DTYPE_SIZES[config.quantizationType], planDevices),
                         expertLayersOnCpu: Number(config.cpuMoeLayers) > 0 ? Math.round(Number(config.cpuMoeLayers)) : null
                     }
                 },
@@ -7514,6 +7575,8 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                     }
                 },
                 assumptions: {
+                    modelArchitecture: config.performanceNote || null,
+                    lookupPlacement: config.lookupParamsB > 0 ? 'Lookup tables require their own storage budget. Host transfer latency is not included; unified-memory devices retain the whole table in their shared pool.' : null,
                     primaryResult: 'Projected real is the headline and includes sustained-bandwidth, runtime, and coordination assumptions when available.',
                     optimizedTarget: 'Uses official hardware specifications, preserves modeled unavoidable communication latency, and applies efficiency already demonstrated by strong valid benchmark runs.',
                     physicalRoofline: 'Uses each device official peak specification with zero overhead. A supplied sustained value never lowers this reference bound.',
@@ -7581,8 +7644,9 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
                 '',
                 '## Configuration',
                 `- Model: ${payload.model.label}${payload.model.id ? ` (${payload.model.id})` : ''}`,
-                `- Weights/profile: ${String(payload.model.quantization).toUpperCase()} · ${profile.name || profile.source}`,
+                `- Weights/profile: ${payload.model.quantFormat || String(payload.model.quantization).toUpperCase()} · ${profile.name || profile.source}`,
                 `- Resident weights: ${profile.aggregateResidentWeightsGB} GB before KV/workspaces`,
+                ...(profile.weightLayout?.lookupGB > 0 ? [`- Lookup tables: ${profile.weightLayout.lookupGB.toFixed(1)} GB; placement ${profile.lookupPlacement}; host RAM ${profile.weightLayout.hostLookupGB.toFixed(1)} GB in addition to CPU experts and runtime headroom. Lookup transfer latency is not included.`] : []),
                 `- Decode traffic: ${profile.aggregateBytesPerDecodePassGB} GB per pass${profile.includesKvAndAuxiliaryReads ? ' (explicit mixed/profiled total)' : ' (estimated)'}`,
                 `- Runtime: ${payload.execution.runtime} · ${payload.execution.parallelism} · ${payload.execution.optimization}`,
                 `- Workload: batch ${payload.workload.batchSize}, ${payload.workload.promptTokens} prompt + ${payload.workload.outputTokens} output tokens`,
@@ -8695,9 +8759,43 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
 				document.getElementById('attentionMechanism').value = 'auto';
 			}
 		}
+		const quantInput = document.getElementById('quantFormat');
+        if (quantInput && /GSQ[-_ ]RCO/i.test(quantInput.value) && !MODEL_PRESETS[modelPresetId]?.quantProfiles) quantInput.value = '';
 		updateModelSpecNotice();
 		updateSystemAnalysis();
 	}
+
+        function updateWeightLayout() {
+            const container = document.getElementById('weightLayout');
+            if (!container) return;
+            const config = buildEffectiveModelConfig();
+            const dtype = DTYPE_SIZES[config.quantizationType] || 2;
+            const layout = getModelWeightLayout(config, dtype, devices);
+            const guideList = document.getElementById('runtimeGuideList');
+            if (guideList) guideList.innerHTML = RUNTIME_GUIDES.map(guide => `<div><a href="${escapeHtml(guide.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(guide.label)} &#8599;</a><p>${escapeHtml(guide.description)}</p></div>`).join('');
+            const profiles = config.quantProfiles || [];
+            const quantSelect = document.getElementById('checkpointQuant');
+            if (quantSelect) {
+                quantSelect.innerHTML = '<option value="">Use the format above</option>' + profiles.map(profile =>
+                    `<option value="${escapeHtml(profile.label)}">${escapeHtml(profile.label)} &#183; ${profile.coreGB} GB core + ${profile.lookupGB} GB lookup</option>`).join('');
+                quantSelect.value = layout.profile || '';
+            }
+            document.getElementById('checkpointOptions').hidden = !profiles.length;
+            document.getElementById('lookupOptions').hidden = !layout.lookupGB;
+            if (!Number.isFinite(layout.totalGB) || layout.totalGB <= 0) { container.hidden = true; return; }
+            container.hidden = false;
+            const corePercent = layout.coreGB / layout.totalGB * 100;
+            const lookupNote = layout.lookupGB > 0
+                ? `${escapeHtml(config.lookupLabel || 'Lookup tables')} are read sparsely. ${layout.hostLookupGB > 0 ? 'Reserve the host RAM shown, plus any CPU experts and runtime headroom. Lookup transfer latency is not included in the speed estimate.' : 'Choose host RAM to plan lookup offload on a discrete GPU.'}${layout.sharedPool ? ' This machine uses a shared memory pool; host placement does not free capacity.' : ''}`
+                : 'Weights only. KV cache, runtime workspace and any speculative draft need additional memory.';
+            container.innerHTML = `<div class="weight-layout-grid">
+                <div><span>Checkpoint weights</span><strong>${layout.totalGB.toFixed(1)} GB</strong></div>
+                <div><span>Device weight budget</span><strong>${layout.deviceWeightsGB.toFixed(1)} GB</strong></div>
+                <div><span>${layout.lookupGB > 0 ? 'Host lookup RAM' : 'Active per token'}</span><strong>${layout.lookupGB > 0 ? layout.hostLookupGB.toFixed(1) + ' GB' : getActiveParamsB(config).toFixed(1) + 'B'}</strong></div>
+                </div><div class="weight-layout-bar" aria-hidden="true"><span class="core" style="width:${corePercent}%"></span><span class="lookup" style="width:${100-corePercent}%"></span></div>
+                <p>${lookupNote}</p>${layout.profile ? `<p>Published text checkpoint sizes; add 0.91 GB for the optional vision projector. <a href="${escapeHtml(layout.sourceUrl)}" target="_blank" rel="noopener noreferrer">Quant details and mmap setup</a></p>` : ''}
+                ${config.performanceNote ? `<p>${escapeHtml(config.performanceNote)}</p>` : ''}`;
+        }
 
         function updateModelSpecNotice() {
             const notice = document.getElementById('modelSpecNotice');
@@ -8812,11 +8910,24 @@ details[open] > .mobile-execution-summary .planner-input-summary-action::after {
             }
         });
         document.getElementById('quantizationType').addEventListener('change', () => {
+            const format = getQuantFormat(document.getElementById('quantFormat').value);
+            if (format && format.family !== document.getElementById('quantizationType').value) document.getElementById('quantFormat').value = '';
 			// Update display for custom devices
 			updateDeviceDisplay();
 			updateSystemAnalysis();
 		});
 
+        document.getElementById('quantFormat').addEventListener('change', () => {
+            const format = getQuantFormat(document.getElementById('quantFormat').value);
+            if (format) document.getElementById('quantizationType').value = format.family;
+        });
+        document.getElementById('checkpointQuant').addEventListener('change', event => {
+            if (event.target.value) {
+                document.getElementById('quantFormat').value = event.target.value;
+                const format = getQuantFormat(event.target.value);
+                if (format) document.getElementById('quantizationType').value = format.family;
+            } else document.getElementById('quantFormat').value = '';
+        });
         document.querySelectorAll('#modelConfigContent input, #modelConfigContent select').forEach(input => {
             if (input.id !== 'modelPreset' && input.id !== 'quantizationType' && input.id !== 'dtype') {
                 input.addEventListener('change', updateSystemAnalysis);
@@ -9354,7 +9465,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	    // Keep a short featured group for discovery, then list every model again
 	    // under its actual family so popular entries never disappear from it.
 	    const featuredModelKeys = [
-	        'qwen3.8_27b', 'muse_glimmer_30b', 'qwen3.8_2.4t_a95b', 'deepseek_v4_pro', 'deepseek_v4_flash',
+	        'qwen3.8_flash_next', 'glm5.3_flash', 'deepseek_v4.1_flash', 'qwen3.8_27b', 'muse_glimmer_30b', 'qwen3.8_2.4t_a95b', 'deepseek_v4_pro', 'deepseek_v4_flash',
 	        'kimi_k3', 'glm5_2', 'ornith_1.5_35b_a3b', 'nemotron3.5_lightning_30b_a3b',
 	        'gemma4_31b', 'gemma4_26b_a4b', 'qwen3.6_35b_a3b', 'minimax_m3', 'mistral_medium_3.5_128b'
 	    ];
@@ -9364,8 +9475,8 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        'Gemma 4': ['gemma4_31b', 'gemma4_26b_a4b', 'gemma4_12b', 'gemma4_e4b', 'gemma4_e2b'],
 	        'Meta Muse': ['muse_glimmer_30b', 'muse_glimmer_assistant_2.6b'],
 	        'Llama': ['llama3_8b', 'llama3_70b', 'llama3.3_70b', 'llama3.2_3b', 'llama3.2_1b', 'llama3.2_90b_vision', 'llama3.2_11b_vision', 'llama4_scout', 'llama4_maverick'],
-	        'DeepSeek': ['deepseek_v4_pro', 'deepseek_v4_flash', 'deepseek_v4_flash_reap_180b', 'deepseek_v3.2', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
-	        'Qwen': ['qwen3.8_27b', 'qwen3.8_2.4t_a95b', 'qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_1.7b', 'qwen3_0.6b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_4b', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
+	        'DeepSeek': ['deepseek_v4.1_flash', 'deepseek_v4_pro', 'deepseek_v4_flash', 'deepseek_v4_flash_reap_180b', 'deepseek_v3.2', 'deepseek_r1', 'deepseek_v3_671b', 'deepseek_r1_distill_70b', 'deepseek_r1_distill_32b', 'deepseek_r1_distill_14b', 'deepseek_r1_distill_8b', 'deepseek_r1_distill_1.5b'],
+	        'Qwen': ['qwen3.8_flash_next', 'qwen3.8_27b', 'qwen3.8_2.4t_a95b', 'qwen3.6_27b', 'qwen3.6_35b_a3b', 'qwen3_coder_next', 'qwen2.5_72b', 'qwen2.5_32b', 'qwen2.5_14b', 'qwen2.5_7b', 'qwen2.5_3b', 'qwen2.5_coder_32b', 'qwen3_8b', 'qwen3_1.7b', 'qwen3_0.6b', 'qwen3_30b_a3b', 'qwen3_235b_moe', 'qwen3.5_4b', 'qwen3.5_9b', 'qwen3.5_27b', 'qwen3.5_35b_a3b', 'qwen3.5_122b_a10b', 'qwen3.5_397b_a17b'],
 	        'Gemma 3 and earlier': ['gemma3_27b', 'gemma3_12b', 'gemma3_4b', 'gemma3_1b', 'gemma2_27b', 'gemma2_9b', 'gemma2_2b', 'gemma_7b', 'gemma_2b'],
 	        'Phi': ['phi4_14b', 'phi4_mini_3.8b', 'phi4_multimodal_5.6b', 'phi3_medium_14b', 'phi3_small_7b', 'phi3_mini_3.8b', 'phi3_14b', 'phi3_3.8b'],
 	        'Mistral': ['mistral_medium_3.5_128b', 'mistral_small_4_119b_a6b', 'ministral_3_3b', 'mistral_7b', 'mistral_large_2_123b', 'mistral_nemo_12b', 'mistral_small_24b', 'mistral_small_3.1_24b'],
@@ -9373,7 +9484,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	        'Kimi': ['kimi_k3', 'kimi_k2.7_code', 'kimi_k2.6', 'kimi_k2.5', 'kimi_k2'],
 	        'MiniMax': ['minimax_m3', 'minimax_m2.7', 'minimax_m2.5', 'minimax_m2'],
 	        'NVIDIA Nemotron': ['nemotron3.5_lightning_30b_a3b', 'nemotron3_ultra_550b_a55b', 'nemotron3_super_120b_a12b', 'nemotron3_nano_30b_a3b', 'nemotron3_nano_4b', 'nemotron_nano_9b_v2'],
-	        'GLM': ['glm5_2', 'glm5_1', 'glm5', 'glm4.7_flash', 'glm4_9b'],
+	        'GLM': ['glm5.3_flash', 'glm5_2', 'glm5_1', 'glm5', 'glm4.7_flash', 'glm4_9b'],
 	        'Ornith': ['ornith_1.5_35b_a3b', 'ornith_1.5_9b', 'ornith_1.5_397b_a17b', 'ornith_1_9b', 'ornith_1_35b_a3b'],
 	        'IBM Granite': ['granite4.1_8b'],
 	        'Small & edge': ['lfm2.5_2.6b', 'lfm2.5_1.2b', 'lfm2.5_350m', 'lfm2.5_230m', 'minicpm5_1b', 'lfm2_350m'],
@@ -9443,7 +9554,7 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
 	    });
 	    document.getElementById('downloadPlanJsonButton')?.addEventListener('click', downloadPlanJson);
 
-        document.getElementById('modelSpecNotice')?.addEventListener('click', event => {
+        document.getElementById('modelConfigContent')?.addEventListener('click', event => {
             const button = event.target.closest?.('[data-switch-preset]');
             if (!button) return;
             modelPresetSelect.value = button.dataset.switchPreset;
@@ -9472,7 +9583,9 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
         const freshness = document.getElementById('dataFreshness');
         if (freshness) {
             const generated = LOCALMAXXING_DATA.generatedAt ? new Date(LOCALMAXXING_DATA.generatedAt).toLocaleDateString() : 'offline';
-            freshness.textContent = `${getCatalogModels().length.toLocaleString()} models · ${(LOCALMAXXING_DATA.stats?.goldCases || 0).toLocaleString()} gold runs · ${generated}`;
+            const calibrationDate = LOCALMAXXING_DATA.calibrationGeneratedAt || LOCALMAXXING_DATA.generatedAt;
+            const calibrationGenerated = calibrationDate ? new Date(calibrationDate).toLocaleDateString() : 'offline';
+            freshness.textContent = `${getCatalogModels().length.toLocaleString()} models · catalog ${generated} · ${(LOCALMAXXING_DATA.stats?.goldCases || 0).toLocaleString()} gold runs · calibration ${calibrationGenerated}`;
         }
 
         const familySelect = document.getElementById('catalogFamily');

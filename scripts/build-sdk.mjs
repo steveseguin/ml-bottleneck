@@ -29,7 +29,7 @@ const labEvidence = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data', 'lab-
 // Gold rows calibrate the engine; lab rows (neural.download, same author) are
 // measured references only and travel in their own collection.
 const evidence = {
-    generatedAt: snapshot.generatedAt,
+    generatedAt: snapshot.calibrationGeneratedAt || snapshot.generatedAt,
     source: snapshot.source,
     goldCases: snapshot.goldCases,
     labSource: labEvidence.source,
@@ -46,7 +46,7 @@ ${indent(apiSource)}
     if (options.snapshot) setEngineEvidence(options.snapshot);
     const api = createApi();
     api.version = ${JSON.stringify(version)};
-    api.evidenceGeneratedAt = options.snapshot?.generatedAt || null;
+    api.evidenceGeneratedAt = options.snapshot?.calibrationGeneratedAt || options.snapshot?.generatedAt || null;
     return api;
 }
 `;

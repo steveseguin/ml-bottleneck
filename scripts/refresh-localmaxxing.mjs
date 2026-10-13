@@ -13,6 +13,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const plannerHooks = loadApp().hooks;
 
 const MODEL_PRESET_RULES = [
+  [/^qwen\/qwen3\.8-flash-next(?:-fp8)?$/i, 'qwen3.8_flash_next'],
+  [/^zai-org\/glm-5\.3-flash(?:-fp8)?$/i, 'glm5.3_flash'],
+  [/^deepseek-ai\/deepseek-v4\.1-flash(?:-fp8)?$/i, 'deepseek_v4.1_flash'],
   [/^poolside\/laguna-s-2\.1/i, 'laguna_s_2.1'],
   [/^poolside\/laguna-xs-2\.1/i, 'laguna_xs_2.1'],
   [/^qwen\/qwen3-1\.7b/i, 'qwen3_1.7b'],
@@ -235,22 +238,23 @@ function parseTags(value) {
 
 function normalizeModel(model) {
   const tags = parseTags(model.tags);
+  const presetKey = pickRule(model.hfId, MODEL_PRESET_RULES) || pickRule(model.baseModel?.hfId, MODEL_PRESET_RULES);
+  const preset = plannerHooks.MODEL_PRESETS[presetKey];
   return {
     hfId: model.hfId,
     name: model.displayName,
     organization: model.organization || model.hfId?.split('/')[0] || '',
     family: model.family || '',
     paramsB: model.params || null,
-    activeParamsB: model.activeParams || null,
-    isMoE: Boolean(model.isMoE),
+    activeParamsB: model.activeParams || preset?.activeParamsB || null,
+    isMoE: Boolean(model.isMoE || preset?.isMoE),
     modality: model.pipelineTag || 'text-generation',
     benchmarkCount: model._count?.benchmarkRuns || model.speedStats?.total || 0,
     bestTokS: model.speedStats?.maxTokS || null,
     medianTokS: model.speedStats?.medianTokS || null,
     baseHfId: model.baseModel?.hfId || null,
     format: tags.includes('gguf') ? 'GGUF' : (tags.includes('safetensors') ? 'Safetensors' : ''),
-    presetKey: pickRule(model.hfId, MODEL_PRESET_RULES)
-      || pickRule(model.baseModel?.hfId, MODEL_PRESET_RULES)
+    presetKey
   };
 }
 
@@ -289,6 +293,7 @@ function normalizeGoldCase(run) {
     ? (parseInt(cpuMoeMatch[1], 10) > 0 ? parseInt(cpuMoeMatch[1], 10) : null)
     : (/--cpu-moe\b|(?:-ot|--override-tensor)[=\s]+"?[^"\s]*exps[^"\s]*=CPU/i.test(command) ? 'all' : null);
   const kvCacheDtype = run.engineFlags?.kvCacheDtype || (kvFlagMatch ? kvFlagMatch[1] : null);
+  const lookupPlacement = /(?:per_layer_token_embd|ngram|engram)[^\n]{0,100}=CPU|cpu_offload["'\s:]+true/i.test(command) ? 'ram' : 'device';
   const backend = run.engine?.backend || null;
   // llama.cpp row split (-sm row) shards each matrix across GPUs, which
   // aggregates bandwidth like tensor parallelism instead of layer-splitting.
@@ -381,6 +386,7 @@ function normalizeGoldCase(run) {
     backend,
     splitMode,
     cpuMoeLayers,
+    lookupPlacement,
     decodeDepthTokens,
     decodeMeasurementIssue,
     batchSize,
@@ -515,22 +521,35 @@ function chooseGoldCases(runs) {
   return selected;
 }
 
+// A catalog refresh can retain the published calibration while new benchmark
+// measurements await review. Preserve its date and rows without reinterpretation.
+const catalogOnly = process.argv.includes('--catalog-only');
+let published = null;
+if (catalogOnly) {
+  const source = await readFile(path.join(repoRoot, 'data', 'localmaxxing-snapshot.js'), 'utf8');
+  const payload = source.match(/Object\.freeze\(([\s\S]+)\);\s*$/);
+  if (!payload) throw new Error('Cannot preserve calibration: snapshot payload missing.');
+  published = JSON.parse(payload[1]);
+  if (!Array.isArray(published.goldCases) || !published.generatedAt) throw new Error('Cannot preserve calibration: invalid published snapshot.');
+}
 const [rawModels, rawRuns] = await Promise.all([
   fetchArrayPages('/models'),
-  fetchArrayPages('/leaderboard')
+  catalogOnly ? Promise.resolve([]) : fetchArrayPages('/leaderboard')
 ]);
 
 const models = rawModels
   .map(normalizeModel)
   .filter(model => model.hfId && model.name)
   .sort((a, b) => b.benchmarkCount - a.benchmarkCount || a.name.localeCompare(b.name));
-const goldCases = chooseGoldCases(rawRuns);
+const goldCases = catalogOnly ? published.goldCases : chooseGoldCases(rawRuns);
+const generatedAt = new Date().toISOString();
 const snapshot = {
-  generatedAt: new Date().toISOString(),
+  generatedAt,
+  calibrationGeneratedAt: catalogOnly ? (published.calibrationGeneratedAt || published.generatedAt) : generatedAt,
   source: 'https://www.localmaxxing.com',
   stats: {
     models: models.length,
-    benchmarkRunsScanned: rawRuns.length,
+    benchmarkRunsScanned: catalogOnly ? published.stats.benchmarkRunsScanned : rawRuns.length,
     goldCases: goldCases.length
   },
   models,
@@ -551,4 +570,4 @@ if (versionedIndex === indexSource && !indexSource.includes(`data/localmaxxing-s
   throw new Error('Could not update the snapshot cache key in index.html');
 }
 await writeFile(indexPath, versionedIndex, 'utf8');
-console.log(`Localmaxxing snapshot: ${models.length} models, ${rawRuns.length} runs scanned, ${goldCases.length} gold cases.`);
+console.log(`Localmaxxing snapshot: ${models.length} models, ${snapshot.stats.benchmarkRunsScanned} runs scanned, ${goldCases.length} gold cases${catalogOnly ? ' (published calibration preserved)' : ''}.`);

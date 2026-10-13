@@ -13,6 +13,9 @@ export interface ModelArchitecture {
   hfId?: string;
   totalParamsB: number;
   activeParamsB?: number;
+  prefillActiveParamsB?: number;
+  lookupParamsB?: number;
+  lookupMinBits?: number;
   hiddenSize: number;
   numLayers: number;
   numHeads: number;
@@ -67,6 +70,8 @@ export interface PredictRequest {
   kvCacheCompression?: 'none' | 'q8_kv' | 'q4_kv' | string;
   /** MoE only: pin this many layers' routed experts to system RAM (llama.cpp --n-cpu-moe N). */
   cpuMoeLayers?: number;
+  /** Place sparse lookup tables in host RAM; does not offload experts or free unified memory. */
+  lookupPlacement?: 'device' | 'ram';
   optimization?: 'none' | 'speculative' | string;
   speculation?: SpeculationRequest;
   usage?: { hoursPerDay?: number; costPerKwh?: number };
@@ -138,7 +143,7 @@ export interface Prediction {
     peers: number;
     verifiedPeers: number;
   } | null;
-  memory: { modelSizeGB: number | null; residentWeightsGB: number | null; kvCacheGB: number | null; availableGB: number | null };
+  memory: { checkpointWeightsGB: number | null; lookupTableGB: number | null; hostLookupGB: number | null; modelSizeGB: number | null; residentWeightsGB: number | null; kvCacheGB: number | null; availableGB: number | null };
   /** Measured runs on the same model and hardware template (null when none exist). */
   measured: {
     /** Closest stock measurement: a community gold run or a lab stock/baseline row. */
@@ -151,7 +156,7 @@ export interface Prediction {
   devices: DeviceSummary[];
   warnings: string[];
   config: {
-    model: string; quantization: QuantFamily; quantFormat: string | null; runtime: Runtime;
+    model: string; quantization: QuantFamily; quantFormat: string | null; lookupPlacement: 'device' | 'ram'; runtime: Runtime;
     batchSize: number; promptTokens: number; outputTokens: number;
     speculation: { method: string; label: string; tokensPerStep: number | null } | null;
   };
@@ -170,6 +175,7 @@ export interface HardwareListing {
 
 export interface EvidenceSnapshot {
   generatedAt?: string;
+  calibrationGeneratedAt?: string;
   /** Community gold rows: calibrate the engine (peer correction, optimized target). */
   goldCases: any[];
   /** neural.download lab rows (stock / lab-baseline / tuned): measured references only, never calibration. */
@@ -190,7 +196,7 @@ export interface Engine {
   strategies: Strategy[];
   quantizations: QuantFamily[];
   speculationMethods: SpeculationMethod[];
-  catalogs: { MODEL_PRESETS: Record<string, any>; DEVICE_TEMPLATES: Record<string, any>; FRAMEWORK_PROFILES: Record<string, any>; SPECULATION_METHODS: Record<string, any>; QUANT_FORMATS: any[] };
+  catalogs: { MODEL_PRESETS: Record<string, any>; DEVICE_TEMPLATES: Record<string, any>; FRAMEWORK_PROFILES: Record<string, any>; SPECULATION_METHODS: Record<string, any>; QUANT_FORMATS: any[]; RUNTIME_GUIDES: any[] };
   /** Lower-level engine functions, same signatures as in engine.js. */
   engine: Record<string, (...args: any[]) => any>;
 }

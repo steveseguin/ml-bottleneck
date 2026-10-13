@@ -1,6 +1,6 @@
 {
   "source": "neural.download — Unofficial Intel XPU Optimization Lab (same author); measurements are the lab's, reproduced from the linked packets. Not part of the Localmaxxing gold set: `stack` says whether a row is stock software, the lab's baseline build, or a tuned lab stack.",
-  "updated": "2026-08-25",
+  "updated": "2026-10-12",
   "rows": [
     {
       "id": "nd-ornith35b-q4km-baseline",
@@ -379,6 +379,26 @@
       "observedTokS": 71.45,
       "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/families/qwen-27b.json",
       "note": "a3561ef8 TP4 graph overlay, strict natural-EOS 25-prompt cache-zero gate, 99-interval median (71.35 / 71.45 across two arms); the lab's curated family headline. Prompt/response shape approximated as 512/256 (natural EOS, conventional suite)"
+    },
+    {
+      "id": "nd-qwen38-flash-next-fp8-mtp1-structured",
+      "stack": "tuned",
+      "presetKey": "qwen3.8_flash_next",
+      "hardwareTemplate": "Intel Arc Pro B70",
+      "deviceCount": 4,
+      "runtimeKey": "vllm",
+      "quantization": "FP8",
+      "lookupPlacement": "ram",
+      "strategy": "tensor",
+      "promptTokens": 61,
+      "outputTokens": 100,
+      "observedTokS": 46.828957268107985,
+      "speculation": {
+        "method": "mtp",
+        "tokens": 1
+      },
+      "url": "https://github.com/steveseguin/b70-optimization-lab/blob/main/experiments/qwen38-flash-next-fp8-b70/data/20260913-tp4-mtp1-a367-native-exact-gdn-realistic-suite-v1-result.json",
+      "note": "2026-09-13 tuned XPU exact serial GDN, full BF16 KV, host lookup offload. Structured-writing prompt risk-register; 99 inter-token intervals across first 100 tokens after TTFT, cold response. The 12-prompt class-balanced suite median is 46.854250 tok/s. No prefill measurement for this identity."
     }
   ]
 }

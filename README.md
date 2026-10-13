@@ -49,11 +49,11 @@ Or install it: `npm install @mlbottleneck/engine` ([npm](https://www.npmjs.com/p
 
 ### 📐 Model Parameters
 - Model Presets (architecture verified against the official config.json where marked):
-  - Qwen 3.8 27B and Qwen 3.8 Max 2.4T-A95B, Qwen 3.6 / 3.5 / 3 families
+  - Qwen 3.8 Flash Next (with separate lookup-table placement), Qwen 3.8 27B and Qwen 3.8 Max 2.4T-A95B, Qwen 3.6 / 3.5 / 3 families
   - Meta Muse Glimmer 30B (+ its 2.6B draft assistant), Llama 3.x / 4
-  - DeepSeek V4 Pro / Flash, V3.2, R1 and distills
+  - DeepSeek V4.1 Flash, V4 Pro / Flash, V3.2, R1 and distills
   - Gemma 4 (31B, 26B-A4B, 12B, E4B, E2B), Gemma 3
-  - Kimi K3 / K2.x, GLM-5.x / 4.7 Flash, MiniMax M3 / M2.x
+  - Kimi K3 / K2.x, GLM-5.3 Flash / 5.x / 4.7 Flash, MiniMax M3 / M2.x
   - Ornith 1.5 / 1.0, NVIDIA Nemotron 3.5 Lightning and Nemotron 3
   - Mistral Medium 3.5, Mistral Small 4, Mistral/Mixtral classics
   - IBM Granite 4.1, LFM 2.5, gpt-oss, Phi, and more

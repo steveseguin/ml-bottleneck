@@ -42,6 +42,7 @@ function configFor(row, overrides = {}) {
       modelPreset: row.presetKey,
       quantizationType: format ? format.family : (row.quantization || 'q4'),
       quantFormat: format ? row.quantization : '',
+      lookupPlacement: row.lookupPlacement || 'device',
       runtimeFramework: row.runtimeKey,
       parallelismStrategy: strategy,
       optimizationMode: spec ? 'speculative' : 'none',

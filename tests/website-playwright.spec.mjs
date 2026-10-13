@@ -792,3 +792,40 @@ test('browser fuzz smoke changes configs repeatedly without invalid output', asy
     expect(pageText).not.toContain('undefined');
   }
 });
+
+
+test('Flash Next checkpoint, lookup placement and exact quant survive plan export and reload', async ({ page }) => {
+  await loadApp(page);
+  await page.getByRole('button', { name: 'Qwen Flash Next', exact: true }).click();
+  await page.selectOption('#checkpointQuant', 'GSQ-RCO IQ3_S');
+  await page.selectOption('#lookupPlacement', 'ram');
+  await expect(page.locator('#weightLayout')).toContainText('83.6 GB');
+  await expect(page.locator('#weightLayout')).toContainText('54.8 GB');
+  await expect(page.locator('#systemAnalysis')).toContainText('Host lookup RAM: 28.8 GB');
+  const exported = await page.evaluate(() => {
+    const h = window.__mlBottleneckTestHooks;
+    const payload = h.buildPlanExport();
+    return { payload, parsed: h.parseMeasuredResultPayload(payload) };
+  });
+  expect(exported.payload.model.quantFormat).toBe('GSQ-RCO IQ3_S');
+  expect(exported.parsed.quantFormat).toBe('GSQ-RCO IQ3_S');
+  expect(exported.parsed.lookupPlacement).toBe('ram');
+  await page.reload();
+  await expect(page.locator('#quantFormat')).toHaveValue('GSQ-RCO IQ3_S');
+  await expect(page.locator('#lookupPlacement')).toHaveValue('ram');
+  await page.getByRole('button', { name: 'GLM 5.3 Flash', exact: true }).click();
+  await expect(page.locator('#quantFormat')).toHaveValue('');
+  await expect(page.locator('#lookupOptions')).toBeHidden();
+});
+
+test('Flash controls stay within a narrow mobile viewport and exact format selects its family', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await loadApp(page);
+  await page.getByRole('button', { name: 'Qwen Flash Next', exact: true }).click();
+  await page.locator('#quantFormat').fill('MXFP4');
+  await page.locator('#quantFormat').dispatchEvent('change');
+  await expect(page.locator('#quantizationType')).toHaveValue('q4');
+  await page.selectOption('#checkpointQuant', 'GSQ-RCO IQ2_XS');
+  await expect(page.locator('#quantizationType')).toHaveValue('q2');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});

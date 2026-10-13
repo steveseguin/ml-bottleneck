@@ -112,6 +112,8 @@ function sdkResolveQuantization(quantization, model) {
 function sdkBuildConfig(request) {
     const model = sdkResolveModel(request.model);
     const quant = sdkResolveQuantization(request.quantization, model);
+    if (request.lookupPlacement != null && !['device', 'ram'].includes(request.lookupPlacement)) throw sdkError('lookupPlacement must be device or ram.');
+    if (/GSQ[-_ ]RCO/i.test(quant.quantFormat) && !model.quantProfiles?.some(profile => profile.label === getQuantFormat(quant.quantFormat)?.label)) throw sdkError('This GSQ-RCO size profile is available only for Qwen 3.8 Flash Next.');
     const runtime = request.runtime || 'auto';
     if (!SDK_RUNTIMES.includes(runtime)) throw sdkError(`Unknown runtime "${runtime}". Options: ${SDK_RUNTIMES.join(', ')}.`);
     const strategy = request.strategy || 'auto';
@@ -134,6 +136,7 @@ function sdkBuildConfig(request) {
         optimizationMode,
         kvCacheCompression: request.kvCacheCompression || 'none',
         cpuMoeLayers: Number(request.cpuMoeLayers) > 0 ? Math.round(Number(request.cpuMoeLayers)) : null,
+        lookupPlacement: request.lookupPlacement === 'ram' ? 'ram' : 'device',
         specMethod: speculation?.method || 'mtp',
         specTokens: Number.isFinite(speculation?.tokens) ? speculation.tokens : null,
         specAcceptance: Number.isFinite(speculation?.acceptance) ? speculation.acceptance : null,
@@ -192,6 +195,10 @@ function predict(request = {}) {
     const fits = metrics.every(metric => !metric.hasOverflow);
     const primary = metrics[0];
     const warnings = [];
+    const weightLayout = getModelWeightLayout(config, DTYPE_SIZES[config.quantizationType], devices);
+    if (config.performanceNote) warnings.push(config.performanceNote);
+    if (weightLayout.hostLookupGB > 0) warnings.push(`Reserve at least ${weightLayout.hostLookupGB.toFixed(1)} GB of host RAM for lookup tables, plus CPU experts and runtime headroom. Enable lookup offload in your runtime. Lookup transfer latency is not included in the speed estimate.`);
+    if (config.lookupPlacement === 'ram' && weightLayout.sharedPool) warnings.push('Lookup tables share this device\'s unified/CPU memory pool; host placement does not reduce its memory requirement.');
     if (!fits) {
         const overflowing = metrics.filter(metric => metric.hasOverflow);
         const mode = overflowing[0]?.overflowMode === 'experts' ? 'MoE experts stream from system RAM' : 'weights spill past device memory';
@@ -234,6 +241,9 @@ function predict(request = {}) {
             }
             : null,
         memory: {
+            checkpointWeightsGB: sdkRound(weightLayout.totalGB, 2),
+            lookupTableGB: sdkRound(weightLayout.lookupGB, 2),
+            hostLookupGB: sdkRound(weightLayout.hostLookupGB, 2),
             modelSizeGB: sdkRound(primary?.modelSizeGB, 2),
             residentWeightsGB: sdkRound(metrics.reduce((sum, metric) => sum + (metric.residentWeightSizeGB || 0), 0), 2),
             kvCacheGB: sdkRound(metrics.reduce((sum, metric) => sum + (metric.residentKvCacheGB || 0), 0), 2),
@@ -251,6 +261,7 @@ function predict(request = {}) {
             model: config.modelPreset || config.label || 'custom',
             quantization: config.quantizationType,
             quantFormat: config.quantFormat || null,
+            lookupPlacement: weightLayout.placement,
             runtime: getFrameworkProfile(config, devices).key,
             batchSize: config.batchSize,
             promptTokens: config.promptTokens,
@@ -331,7 +342,7 @@ function createApi() {
         strategies: SDK_STRATEGIES.slice(),
         quantizations: SDK_QUANT_FAMILIES.slice(),
         speculationMethods: Object.keys(SPECULATION_METHODS),
-        catalogs: { MODEL_PRESETS, DEVICE_TEMPLATES, FRAMEWORK_PROFILES, SPECULATION_METHODS, QUANT_FORMATS },
+        catalogs: { MODEL_PRESETS, DEVICE_TEMPLATES, FRAMEWORK_PROFILES, SPECULATION_METHODS, QUANT_FORMATS, RUNTIME_GUIDES },
         engine: {
             normalizeModelConfig,
             calculateMetricsForConfig,
@@ -347,6 +358,7 @@ function createApi() {
             getSpeculationMemoryBytes,
             getQuantFormat,
             getStoredBytesPerParam,
+            getModelWeightLayout,
             getFrameworkProfile,
             buildExecutionPlan,
             getPresetSuccessor

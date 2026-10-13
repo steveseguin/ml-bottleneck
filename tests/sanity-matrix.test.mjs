@@ -57,7 +57,7 @@ function run(app, { preset, hardware, count = 1, quant = 'q4', format = '', runt
   return { config, metrics, devices, decode, prefill, strategy: resolvedStrategy };
 }
 
-const MODELS = ['llama3_8b', 'llama3.3_70b', 'qwen3.8_27b', 'qwen3.6_35b_a3b', 'gemma4_26b_a4b', 'gemma4_31b', 'gpt_oss_120b',
+const MODELS = ['qwen3.8_flash_next', 'glm5.3_flash', 'deepseek_v4.1_flash', 'llama3_8b', 'llama3.3_70b', 'qwen3.8_27b', 'qwen3.6_35b_a3b', 'gemma4_26b_a4b', 'gemma4_31b', 'gpt_oss_120b',
   'deepseek_v4_flash', 'glm5_2', 'kimi_k3', 'muse_glimmer_30b', 'mistral_medium_3.5_128b', 'nemotron3.5_lightning_30b_a3b', 'phi4_14b', 'lfm2.5_2.6b',
   'phi3_14b', 'phi3_mini_3.8b', 'gemma_7b', 'gemma2_2b', 'gemma2_9b', 'gemma2_27b'];
 const SINGLE_GPUS = ['RTX 3060', 'RTX 4090', 'RTX 5090', 'RTX PRO 6000 Blackwell', 'RTX PRO 5000 Blackwell', 'H100', 'B200', 'AMD Radeon AI PRO R9700', 'Intel Arc Pro B70', 'RX 7900 XTX', 'Tesla V100 32GB', 'NVIDIA DGX Spark (GB10)', 'NVIDIA Jetson AGX Thor (T5000)', 'AMD Strix Halo (Ryzen AI Max+ 395)'];

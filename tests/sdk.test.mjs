@@ -178,3 +178,42 @@ test('dist/ is in sync with engine.js and sdk/api.js', () => {
   assert.ok(probe && bundle.includes(`    ${probe}`), 'bundle is stale: run npm run build:sdk');
   assert.ok(bundle.includes('function predict(request = {})'));
 });
+
+
+test('Flash Next mixed checkpoint sizes separate host lookup from GPU weights', () => {
+  const engine = sdk.createEngine();
+  const request = { model: 'qwen3.8_flash_next', hardware: { template: 'RTX 3090', count: 3 }, runtime: 'llama_cpp', quantization: 'GSQ-RCO IQ3_S', promptTokens: 512, outputTokens: 128 };
+  const resident = engine.predict(request);
+  const host = engine.predict({ ...request, lookupPlacement: 'ram' });
+  assert.equal(resident.memory.checkpointWeightsGB, 83.6);
+  assert.equal(host.memory.checkpointWeightsGB, 83.6);
+  assert.equal(host.memory.residentWeightsGB, 54.8);
+  assert.equal(host.memory.hostLookupGB, 28.8);
+  assert.equal(resident.memory.hostLookupGB, 0);
+  assert.equal(host.fits, true);
+  assert.equal(resident.fits, false);
+  assert.ok(host.warnings.some(w => /host RAM/.test(w)));
+  for (const hardware of ['Mac M3 Ultra (512)', 'AMD Strix Halo (Ryzen AI Max+ 395)', 'NVIDIA DGX Spark (GB10)']) {
+    const unified = engine.predict({ ...request, hardware, lookupPlacement: 'ram' });
+    assert.equal(unified.memory.residentWeightsGB, 83.6, hardware);
+    assert.equal(unified.memory.hostLookupGB, 0, hardware);
+  }
+  assert.throws(() => engine.predict({ ...request, model: 'llama3_8b' }), /only for Qwen/);
+  assert.throws(() => engine.predict({ ...request, lookupPlacement: 'ssd' }), /lookupPlacement/);
+  const old = { model: 'llama3_8b', hardware: 'RTX 4090', runtime: 'llama_cpp' };
+  assert.deepEqual(engine.predict(old).decode, engine.predict({ ...old, lookupPlacement: 'ram' }).decode);
+});
+
+test('Flash architectures preserve verified KV shape and MXFP4 format identity', () => {
+  const engine = sdk.createEngine();
+  assert.equal(engine.engine.getQuantFormat('MXFP4').bitsPerWeight, 4.25);
+  assert.equal(engine.engine.getQuantFormat('NVFP4').bitsPerWeight, 4.5);
+  const glm = engine.predict({ model: 'glm5.3_flash', hardware: { template: 'H200', count: 4 }, quantization: 'FP8', runtime: 'vllm', promptTokens: 2048, outputTokens: 256, includeRaw: true });
+  const cacheGB = glm.raw.metrics.reduce((sum, m) => sum + m.residentKvCacheGB, 0);
+  assert.ok(Math.abs(cacheGB - 11 * 512 * 2 * 2304 / 1e9) < 1e-9, '11 MLA layers; 512 latent channels and no RoPE channel');
+  const ds = engine.predict({ model: 'deepseek_v4.1_flash', hardware: { template: 'H200', count: 8 }, quantization: 'FP8', includeRaw: true });
+  assert.equal(ds.raw.config.prefillActiveParamsB, 8);
+  assert.equal(ds.raw.config.activeParamsB, 16);
+  assert.ok(ds.memory.lookupTableGB >= 196);
+  assert.ok(engine.catalogs.RUNTIME_GUIDES.find(r => r.key === 'strata').measured.length > 0);
+});

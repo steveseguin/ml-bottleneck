@@ -61,6 +61,10 @@ const DTYPE_SIZES = {
 // included). Llama-3-8B-class numbers; large models sit a few percent
 // lower. Matched against the quantization label in order.
 const QUANT_FORMATS = [
+    { pattern: /gsq[-_ ]rco.*q2_0/i, family: 'q2', bitsPerWeight: 2.4, label: 'GSQ-RCO Q2_0' },
+    { pattern: /gsq[-_ ]rco.*iq2_xs/i, family: 'q2', bitsPerWeight: 2.5, label: 'GSQ-RCO IQ2_XS' },
+    { pattern: /gsq[-_ ]rco.*iq3_xxs/i, family: 'q3', bitsPerWeight: 3.0, label: 'GSQ-RCO IQ3_XXS' },
+    { pattern: /gsq[-_ ]rco.*iq3_s/i, family: 'q3', bitsPerWeight: 3.5, label: 'GSQ-RCO IQ3_S' },
     { pattern: /ud[-_ ]?iq1|iq1_[ms]/i, family: 'q2', bitsPerWeight: 1.9, label: 'IQ1' },
     { pattern: /ud[-_ ]?iq2_xxs|iq2_xxs/i, family: 'q2', bitsPerWeight: 2.2, label: 'IQ2_XXS' },
     { pattern: /iq2_xs/i, family: 'q2', bitsPerWeight: 2.4, label: 'IQ2_XS' },
@@ -81,8 +85,8 @@ const QUANT_FORMATS = [
     { pattern: /q4_k_m/i, family: 'q4', bitsPerWeight: 4.9, label: 'Q4_K_M' },
     { pattern: /q4_k_s/i, family: 'q4', bitsPerWeight: 4.7, label: 'Q4_K_S' },
     { pattern: /q4_0|q4_1/i, family: 'q4', bitsPerWeight: 4.6, label: 'Q4_0' },
-    { pattern: /nvfp4|fp4/i, family: 'q4', bitsPerWeight: 4.5, label: 'NVFP4' },
     { pattern: /mxfp4/i, family: 'q4', bitsPerWeight: 4.25, label: 'MXFP4' },
+    { pattern: /nvfp4|fp4/i, family: 'q4', bitsPerWeight: 4.5, label: 'NVFP4' },
     { pattern: /awq|gptq|w4a16|int4|4[-_ ]?bit|autoround|exl2.*4\.|4\.\d+bpw/i, family: 'q4', bitsPerWeight: 4.3, label: 'INT4 (AWQ/GPTQ/AutoRound)' },
     { pattern: /ud[-_ ]?q5_k_xl/i, family: 'q5', bitsPerWeight: 5.9, label: 'UD-Q5_K_XL' },
     { pattern: /q5_k_m/i, family: 'q5', bitsPerWeight: 5.7, label: 'Q5_K_M' },
@@ -188,6 +192,14 @@ const OVERFLOW_BANDWIDTH = {
 // the same microseconds whether the GEMV behind them is 1 MB or 1 GB.
 // Efficiencies are calibrated against the gold-case corpus
 // (npm run audit:gold) and the anchors in tests/integrity.test.mjs.
+// Specialized engines are references, not calibrated framework profiles.
+const RUNTIME_GUIDES = [
+    { key: 'strata', label: 'Strata', url: 'https://github.com/Niko1221/Strata', description: 'Qwen Flash Next across VRAM, RAM and SSD. Published RTX 5070 + 64 GB RAM results: 53 tok/s IQ3_S, 94 tok/s Q2_0; different builds and quantization. NVIDIA/AMD; other backends experimental.', measured: [{ hardware: 'RTX 5070', hostMemoryGB: 64, quantization: 'GSQ-RCO IQ3_S', decodeTokS: 53, prefillTokS: 1620, build: '0.1.26' }, { hardware: 'RTX 5070', hostMemoryGB: 64, quantization: 'GSQ-RCO Q2_0', decodeTokS: 94, prefillTokS: 2650, build: '0.1.36' }] },
+    { key: 'ktransformers', label: 'KTransformers', url: 'https://github.com/kvcache-ai/ktransformers', description: 'CPU/GPU MoE execution, including GLM 5.3 Flash. CPU instruction set, memory bandwidth and the exact model recipe determine the setup.' },
+    { key: 'ik_llama', label: 'ik_llama.cpp', url: 'https://github.com/ikawrakow/ik_llama.cpp', description: 'Additional quant formats and optimized inference kernels. Check its supported architectures and quant-specific measurements.' },
+    { key: 'tokenspeed', label: 'TokenSpeed', url: 'https://lightseek.org/tokenspeed/', description: 'Specialized serving kernels; Qwen publishes a Flash Next recipe. Check accelerator and checkpoint requirements before comparing rates.' }
+];
+
 const FRAMEWORK_PROFILES = {
     auto: {
         specDraftStepOverheadUs: 600,      // fixed cost per draft token (sampling, sync, launches) measured against paired spec/plain runs
@@ -715,6 +727,59 @@ const MODEL_TYPES = {
 
 
 const MODEL_PRESETS = {
+  'qwen3.8_flash_next': {
+    label: 'Qwen 3.8 Flash Next 125B A6B + 51B lookup',
+    hfId: 'Qwen/Qwen3.8-Flash-Next',
+    totalParamsB: 180, activeParamsB: 6, lookupParamsB: 51.2,
+    lookupMinBits: 4.5, lookupLabel: 'N-gram embeddings',
+    vocabSize: 248320, hiddenSize: 2560, numLayers: 48,
+    numHeads: 24, numKVHeads: 2, headDim: 256,
+    intermediateSize: 640, moeIntermediateSize: 640,
+    isMoE: true, numExperts: 512, activeExperts: 10, routingType: 'moe',
+    attentionMechanism: 'hybrid_linear', fullAttentionLayers: 12,
+    useMTP: true, mtpModules: 1, hasVision: true, contextLength: 262144,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/main/config.json',
+    specNote: '125B core + 51B lookup tables + 4B MTP. The lookup tables can live in host RAM with a compatible runtime; this is separate from CPU expert offload. 48 layers, 12 QSA layers, 512 experts / top 10. Native context 262K.',
+    performanceNote: 'QSA sparse selection is approximated with full attention on 12 layers. Long-context speed is conservative; compare a measured run at your intended depth.',
+    quantProfiles: [
+      { id: 'gsq_q2_0', label: 'GSQ-RCO Q2_0', family: 'q2', bitsPerWeight: 2.40, coreGB: 37.6, lookupGB: 28.8 },
+      { id: 'gsq_iq2_xs', label: 'GSQ-RCO IQ2_XS', family: 'q2', bitsPerWeight: 2.50, coreGB: 39.2, lookupGB: 28.8 },
+      { id: 'gsq_iq3_xxs', label: 'GSQ-RCO IQ3_XXS', family: 'q3', bitsPerWeight: 3.00, coreGB: 47.0, lookupGB: 28.8 },
+      { id: 'gsq_iq3_s', label: 'GSQ-RCO IQ3_S', family: 'q3', bitsPerWeight: 3.50, coreGB: 54.8, lookupGB: 28.8 }
+    ],
+    quantSourceUrl: 'https://huggingface.co/ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF'
+  },
+  'glm5.3_flash': {
+    label: 'GLM 5.3 Flash 320B A18B', hfId: 'zai-org/GLM-5.3-Flash',
+    totalParamsB: 321.323, activeParamsB: 18,
+    vocabSize: 154880, hiddenSize: 4096, numLayers: 45,
+    numHeads: 64, numKVHeads: 64, headDim: 256,
+    intermediateSize: 12288, moeIntermediateSize: 2048,
+    isMoE: true, numExperts: 288, activeExperts: 8, routingType: 'moe',
+    attentionMechanism: 'mla', fullAttentionLayers: 11,
+    kvLoraRank: 512, qLoraRank: 1536, qkRopeHeadDim: 0, qkNopeHeadDim: 256, vHeadDim: 256,
+    useMTP: true, mtpModules: 1, hasVision: true, contextLength: 1048576,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/config.json',
+    specNote: '45 layers: 34 KDA + 11 MLA; 288 routed experts / top 8, three initial dense layers. MLA stores 512 latent channels without a RoPE key. FP8 checkpoint includes higher-precision tensors.',
+    performanceNote: 'Sparse index selection and KDA recurrent state are approximated. Use matched runtime measurements when planning long-context capacity.'
+  },
+  'deepseek_v4.1_flash': {
+    label: 'DeepSeek V4.1 Flash 552B + 196B Engram', hfId: 'deepseek-ai/DeepSeek-V4.1-Flash',
+    totalParamsB: 763.205, activeParamsB: 16, prefillActiveParamsB: 8,
+    lookupParamsB: 196.614, lookupLabel: 'Engram lookup tables', lookupMinBits: 8,
+    vocabSize: 129280, hiddenSize: 5120, numLayers: 40,
+    numHeads: 64, numKVHeads: 1, headDim: 512,
+    intermediateSize: 2304, moeIntermediateSize: 2304,
+    isMoE: true, numExperts: 384, activeExperts: 6, routingType: 'moe',
+    attentionMechanism: 'multi_query',
+    useMTP: true, mtpModules: 3, hasVision: true, contextLength: 1048576,
+    specStatus: 'verified',
+    specSourceUrl: 'https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/main/config.json',
+    specNote: '552B backbone + 196B Engram; complete checkpoint about 763B including auxiliary tensors. Causal encoder-decoder: 40 layers, 8B active in prefill / 16B in decode, 384 experts / top 6. Engram uses sparse lookup, not a full table read per token.',
+    performanceNote: 'CED shared/compressed KV and sparse attention are approximated with full-context MQA. Memory and long-context speed are conservative estimates; use a runtime-specific measurement before sizing a deployment.'
+  },
   'llama3_8b': {
     totalParamsB: 8,
     vocabSize: 128256,
@@ -3039,7 +3104,7 @@ const DEVICE_TEMPLATES = {
     powerWatts: 300,
     sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/',
     specStatus: 'verified',
-    specNote: '72 GB GDDR7 ECC on a 384-bit bus (1,344 GB/s), released 2025-12-22 with the same GB202 configuration as the 48 GB card. Tensor rates are the dense halves of the sparse AI TOPS headline (verified 2026-08-26).',
+    specNote: '72 GB GDDR7 ECC on a 512-bit bus (1,344 GB/s), released 2025-12-22 with the same GB202 configuration as the 48 GB card. Tensor rates are the dense halves of the sparse AI TOPS headline (verified 2026-08-26).',
     type: 'GPU'
   },
   'RTX PRO 5000 Blackwell': {
@@ -3060,7 +3125,7 @@ const DEVICE_TEMPLATES = {
     powerWatts: 300,
     sourceUrl: 'https://www.nvidia.com/en-us/products/workstations/professional-desktop-gpus/rtx-pro-5000/',
     specStatus: 'verified',
-    specNote: '48 GB GDDR7 ECC, 384-bit, 1,344 GB/s, 14,080 CUDA cores. Tensor rates are dense (verified 2026-08-26).',
+    specNote: '48 GB GDDR7 ECC, 512-bit, 1,344 GB/s, 14,080 CUDA cores. Tensor rates are dense (verified 2026-08-26).',
     type: 'GPU'
   },
   'RTX PRO 4500 Blackwell': {
@@ -3834,6 +3899,8 @@ const DEVICE_TEMPLATES = {
     },
     powerWatts: 300,
     sourceUrl: 'https://www.amd.com/en/products/graphics/workstations/radeon-ai-pro/ai-9000-series/amd-radeon-ai-pro-r9700.html',
+    specStatus: 'verified',
+    specNote: 'AMD specifications checked 2026-10-12: 32 GB GDDR6, 640 GB/s, 191 dense FP16 matrix TFLOPS, 383 FP8/INT8, 300 W, PCIe 5.0 x16.',
     type: 'GPU'
   },
   'RX 7900 XTX': {
@@ -4062,7 +4129,7 @@ const DEVICE_TEMPLATES = {
     powerWatts: 230,
     sourceUrl: 'https://www.intel.com/content/www/us/en/products/sku/245797/intel-arc-pro-b70-graphics/specifications.html',
     specStatus: 'verified',
-    specNote: 'Memory, bandwidth, TDP, PCIe, FP32 and INT8 are Intel ARK specifications. Intel publishes no FP16 figure; 183.5 TFLOPS is the XMX matrix rate derived from 32 Xe cores x 2,048 FP16 ops/clock x 2.8 GHz, which reproduces the official 367 INT8 TOPS at the matching 4,096 ops/clock. Xe2 XMX has no FP8 datapath, so fp8 mirrors the FP16 rate (verified 2026-08-26).',
+    specNote: 'Memory, bandwidth, TDP, PCIe, FP32 and INT8 are Intel ARK specifications. Intel publishes no FP16 figure; 183.5 TFLOPS is the XMX matrix rate derived from 32 Xe cores x 2,048 FP16 ops/clock x 2.8 GHz, which reproduces the official 367 INT8 TOPS at the matching 4,096 ops/clock. Xe2 XMX has no FP8 datapath, so fp8 mirrors the FP16 rate. Intel reference card 230 W; partner range 160-290 W (checked 2026-10-12).',
     type: 'GPU'
   },
   'Intel Arc Pro B65': {
@@ -5101,6 +5168,10 @@ function getAttentionLayerMix(modelConfig) {
     }
 
     if (mechanism === 'mla') {
+        if (Number.isFinite(explicitFull)) {
+            const fullLayers = clampLayers(explicitFull);
+            return { fullLayers, windowLayers: 0, windowSize: Infinity, linearLayers: numLayers - fullLayers, source: 'explicit' };
+        }
         // Hybrid KDA + MLA (Kimi K3): MLA only on every n-th layer.
         if (Number.isFinite(interval) && interval > 1) {
             const fullLayers = clampLayers(numLayers / interval);
@@ -5189,10 +5260,31 @@ function getWeightStorageOverhead(quantizationType) {
 }
 
 
-function getResidentWeightBytes(modelConfig, dtypeSize) {
+// Checkpoint-specific mixed quants keep lookup-table storage independent of
+// transformer precision. Host placement is explicit and never frees unified RAM.
+function getModelWeightLayout(modelConfig, dtypeSize, devicesArray = []) {
+    const bytes = getStoredBytesPerParam(modelConfig, dtypeSize);
+    const lookupParamsB = Math.max(0, Math.min(modelConfig.totalParamsB, Number(modelConfig.lookupParamsB) || 0));
+    const format = getQuantFormat(modelConfig.quantFormat);
+    const profile = (modelConfig.quantProfiles || []).find(item => item.label === format?.label && item.family === modelConfig.quantizationType);
+    const lookupGB = profile ? profile.lookupGB : lookupParamsB * Math.max(bytes, (Number(modelConfig.lookupMinBits) || 0) / 8);
+    const coreGB = profile ? profile.coreGB : (modelConfig.totalParamsB - lookupParamsB) * bytes;
+    const sharedPool = devicesArray.some(device => /CPU|AI PC|Integrated/i.test(device.type || '') || /Mac |Apple|Strix|DGX Spark|GB10/i.test(device.template || device.name || ''));
+    const onHost = lookupGB > 0 && modelConfig.lookupPlacement === 'ram' && !sharedPool;
+    return {
+        coreGB, lookupGB, totalGB: coreGB + lookupGB,
+        deviceWeightsGB: coreGB + (onHost ? 0 : lookupGB),
+        hostLookupGB: onHost ? lookupGB : 0,
+        placement: onHost ? 'ram' : 'device', sharedPool,
+        profile: profile?.label || null,
+        sourceUrl: profile ? modelConfig.quantSourceUrl : modelConfig.specSourceUrl || null
+    };
+}
+
+function getResidentWeightBytes(modelConfig, dtypeSize, devicesArray = []) {
     const profiledResidentGB = Number(modelConfig?.residentWeightsGB);
     if (Number.isFinite(profiledResidentGB) && profiledResidentGB > 0) return profiledResidentGB * 1e9;
-    return modelConfig.totalParamsB * 1e9 * getStoredBytesPerParam(modelConfig, dtypeSize);
+    return getModelWeightLayout(modelConfig, dtypeSize, devicesArray).deviceWeightsGB * 1e9;
 }
 
 
@@ -5751,7 +5843,7 @@ function calculateKVCacheBytes(modelConfig, kvScale = 1, contextTokens = null) {
     // component per token/layer; applying a generic GQA head count on
     // top of kv_lora_rank overstates long-context cache by multiples.
     if (modelConfig.attentionMechanism === 'mla' && Number(modelConfig.kvLoraRank) > 0) {
-        const latentChannels = Number(modelConfig.kvLoraRank) + Math.max(1, Number(modelConfig.qkRopeHeadDim) || 64);
+        const latentChannels = Number(modelConfig.kvLoraRank) + Math.max(0, Number(modelConfig.qkRopeHeadDim ?? 64));
         return batchSize * layerTokens * latentChannels * kvCacheDtypeSize *
             kvCompressionProfile.kvByteMultiplier * kvScale;
     }
@@ -5768,7 +5860,7 @@ function calculateMemoryBreakdown(modelConfig, dtypeSize, deviceCount, isPipelin
 	// KV cache entries are stored at fp16 by every mainstream runtime
 	// regardless of weight quantization; only explicit KV compression
 	// (the TurboQuant modes) shrinks them.
-	const paramsMemory = getResidentWeightBytes(modelConfig, dtypeSize);
+    const paramsMemory = getResidentWeightBytes(modelConfig, dtypeSize, devicesArray);
 	const kvCacheMemory = calculateKVCacheBytes(modelConfig, 1);
 	const intermediateSize = modelConfig.intermediateSize || (4 * modelConfig.hiddenSize);
 	const activationSizePerLayer = modelConfig.batchSize * modelConfig.seqLength *
@@ -5840,7 +5932,7 @@ function calculateTransformerFlops(modelConfig) {
     const seqLength = Math.max(parseFloat(modelConfig.seqLength) || 1, 1);
     const numHeads = Math.max(parseFloat(modelConfig.numHeads) || 1, 1);
     const headDim = getPrefillAttentionDim(modelConfig);
-    const activeParams = Math.max(getActiveParamsB(modelConfig), 0.001) * 1e9;
+    const activeParams = Math.max(Number(modelConfig.prefillActiveParamsB) || getActiveParamsB(modelConfig), 0.001) * 1e9;
     const layerTokens = getAttendedLayerTokens(modelConfig, seqLength);
     // Average causal span is half the prompt; per-layer attended tokens
     // already encode windows and linear layers.
@@ -5866,7 +5958,7 @@ function getDevicePrefillScale(device, frameworkKey) {
 // 4·heads·dim·positions rule needs their average, not hidden/heads.
 function getPrefillAttentionDim(modelConfig) {
     if (modelConfig.attentionMechanism === 'mla' && Number(modelConfig.kvLoraRank) > 0) {
-        const qkDim = (Number(modelConfig.qkNopeHeadDim) || 128) + (Number(modelConfig.qkRopeHeadDim) || 64);
+        const qkDim = (Number(modelConfig.qkNopeHeadDim) || 128) + Number(modelConfig.qkRopeHeadDim ?? 64);
         const vDim = Number(modelConfig.vHeadDim) || 128;
         return (qkDim + vDim) / 2;
     }
@@ -5879,7 +5971,7 @@ function getPrefillAttentionDim(modelConfig) {
 // attended position is 4·kv_lora_rank + 2·rope, not 4·head_dim.
 function getDecodeAttentionDim(modelConfig) {
     if (modelConfig.attentionMechanism === 'mla' && Number(modelConfig.kvLoraRank) > 0) {
-        const rope = Math.max(1, Number(modelConfig.qkRopeHeadDim) || 64);
+        const rope = Math.max(0, Number(modelConfig.qkRopeHeadDim ?? 64));
         return Number(modelConfig.kvLoraRank) + rope / 2;
     }
     return getHeadDim(modelConfig);
@@ -5942,7 +6034,9 @@ function describeExpertOffload(modelConfig, device, residentWeightBytes, residen
     const composition = deriveMoEComposition(modelConfig);
     if (!(composition.expertParamsB > 0) || !(modelConfig.totalParamsB > 0)) return null;
     const deviceMemoryBytes = device.memoryGB * 1e9;
-    const expertShare = composition.expertParamsB / modelConfig.totalParamsB;
+    const layout = getModelWeightLayout(modelConfig, DTYPE_SIZES[modelConfig.quantizationType], [device]);
+    const coreParamsB = modelConfig.totalParamsB - (Number(modelConfig.lookupParamsB) || 0);
+    const expertShare = composition.expertParamsB / Math.max(coreParamsB, 1e-9) * (layout.coreGB / Math.max(layout.deviceWeightsGB, 1e-9));
     const activeExpertShare = composition.activeExpertParamsB / Math.max(modelConfig.activeParamsB || modelConfig.totalParamsB, 1e-9);
     const residentExpertBytes = residentWeightBytes * expertShare;
     const residentDenseBytes = residentWeightBytes - residentExpertBytes;
@@ -6295,7 +6389,7 @@ function calculateDecodeComputeSeconds(modelConfig, device, frameworkProfile, co
  * with the model.
  */
 function calculateDecodeTokenRate(device, modelConfig, dtypeSize, allDevices, deviceIndex = 0) {
-    const modelSizeBytes = getResidentWeightBytes(modelConfig, dtypeSize);
+    const modelSizeBytes = getResidentWeightBytes(modelConfig, dtypeSize, allDevices);
     const frameworkProfile = getFrameworkProfile(modelConfig, allDevices);
     const optimization = getOptimizationAdjustments(modelConfig);
     const batchSize = Math.max(parseFloat(modelConfig.batchSize) || 1, 1);
@@ -7389,6 +7483,7 @@ function calculateConcurrencySweep(modelConfig, devicesArray = defaultDevices(),
 
 function deriveMoEComposition(modelConfig) {
     const config = normalizeModelConfig(modelConfig);
+    config.totalParamsB -= Math.max(0, Math.min(config.totalParamsB, Number(config.lookupParamsB) || 0));
     if (!config.isMoE) {
         return {
             denseParamsB: config.totalParamsB,
@@ -7423,7 +7518,7 @@ function buildExecutionPlan(modelConfig, devicesArray, metricsArray = [], strate
     const count = Math.max(devicesArray.length, 1);
     const dtypeSize = DTYPE_SIZES[config.quantizationType] || 2;
     const composition = deriveMoEComposition(config);
-    const totalWeightsGB = getResidentWeightBytes(config, dtypeSize) / 1e9;
+    const totalWeightsGB = getResidentWeightBytes(config, dtypeSize, devicesArray) / 1e9;
     const activeWeightsGB = getDecodeWeightProfile(config, dtypeSize).aggregateWeightBytes / 1e9;
     const tensorDegree = Math.max(1, Math.floor(Math.sqrt(count)));
     const pipelineDegree = Math.max(1, Math.ceil(count / tensorDegree));
@@ -7608,6 +7703,7 @@ function calculateGoldCaseProjection(reference) {
         hfId: preset.hfId || reference.hfId,
         quantizationType: reference.quantKey,
         quantFormat: reference.quantization || '',
+        lookupPlacement: reference.lookupPlacement || 'device',
         runtimeFramework: reference.runtimeKey,
         parallelismStrategy: strategy,
         optimizationMode: 'none',
@@ -7799,6 +7895,7 @@ function normalizeLabEvidenceRow(row, overrides = {}) {
         origin: LAB_EVIDENCE_ORIGIN,
         isLab: true,
         stack: row.stack || 'stock',
+        lookupPlacement: row.lookupPlacement || 'device',
         source: row.url || '',
         url: row.url || '',
         note: row.note || '',
@@ -7969,6 +8066,7 @@ function calculateLabCaseProjection(row) {
         ...preset,
         modelPreset: row.presetKey,
         quantizationType: row.quantKey,
+        lookupPlacement: row.lookupPlacement || 'device',
         quantFormat: getQuantFormat(row.quantization) ? row.quantization : '',
         runtimeFramework: row.runtimeKey,
         parallelismStrategy: strategy,
@@ -8075,6 +8173,7 @@ function calculateCurrentCalibration(modelConfig, metrics, genericSystemRate, st
 // Older releases whose successor exists as a preset. The landing page
 // prefers current models and the picker offers the upgrade.
 const PRESET_SUPERSEDED_BY = {
+    'deepseek_v4_flash': 'deepseek_v4.1_flash',
     'qwen3.5_27b': 'qwen3.8_27b',
     'qwen3.6_27b': 'qwen3.8_27b',
     'qwen3.5_9b': 'ornith_1.5_9b',

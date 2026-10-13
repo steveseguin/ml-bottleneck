@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { parseLlamaBenchDecodeContext } from '../scripts/llama-bench-context.mjs';
 import { loadApp, loadCalibrationFixture } from './load-index-app.mjs';
@@ -55,7 +56,7 @@ test('strict publication rejects ambiguous measurements even without roofline vi
     const candidate = path.join(temporary, 'candidate.js');
     fs.writeFileSync(candidate, `window.LOCALMAXXING_SNAPSHOT = ${JSON.stringify(snapshot)};`);
     const script = new URL('../scripts/audit-gold-cases.mjs', import.meta.url);
-    const result = spawnSync(process.execPath, [script.pathname, candidate, '--strict-physical'], { encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [fileURLToPath(script), candidate, '--strict-physical'], { encoding: 'utf8' });
     assert.equal(result.status, 1, result.stderr);
     assert.match(result.stdout, /--- 0\/\d+ runs beat the physical roofline/);
     assert.match(result.stdout, /Measurement review required:.*per-test JSON required/);
