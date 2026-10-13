@@ -3263,6 +3263,82 @@ button, input, select, textarea, table { font-family: inherit; }
 .qs-label strong { font-size: 0.85rem; }
 .product-footer { color: var(--text-secondary); }
 
+/* At-a-glance allocation and latency, using the current plan's calculations. */
+.result-workload { margin: 0 0 1.4rem; padding: 1rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.workload-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.7rem; }
+.workload-heading h3 { margin: 0; font-size: 0.9rem; }
+.workload-heading > span, .workload-presets { color: var(--text-secondary); font-size: 0.75rem; }
+.workload-controls { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
+.workload-controls .token-split-grid { margin: 0; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.workload-controls label { display: block; font-size: 0.78rem; margin: 0 0 0.35rem; }
+.workload-controls .input { margin: 0; width: 100%; min-height: 2.65rem; font-size: 0.85rem; }
+.workload-controls .field-help { display: none; }
+.workload-presets { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; margin-top: 0.7rem; }
+.workload-presets button { padding: 0.35rem 0.65rem; color: var(--text-secondary); background: transparent; border: 1px solid var(--border); border-radius: 2rem; cursor: pointer; font: inherit; }
+.workload-presets button[aria-pressed="true"], .workload-presets button:hover { color: var(--primary); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, var(--card)); }
+.result-visuals { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding: 1.3rem 0; border-top: 1px solid var(--border); }
+.result-visuals h3 { margin: 0 0 1rem; font-size: 1rem; letter-spacing: -0.02em; }
+.result-visuals section { min-width: 0; }
+.memory-budget-row { margin: 0 0 0.8rem; }
+.budget-row-heading { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.76rem; margin-bottom: 0.5rem; }
+.budget-row-heading span { overflow-wrap: anywhere; }
+.budget-row-heading strong { font-weight: 600; white-space: nowrap; }
+.budget-track { display: flex; position: relative; height: 15px; border-radius: 4px; background: var(--surface-muted); }
+.budget-segment { display: block; height: 100%; flex-shrink: 0; }
+.budget-segment:first-child { border-radius: 4px 0 0 4px; }
+.budget-segment:last-child { border-radius: 0 4px 4px 0; }
+.result-visuals .is-weights { background: var(--primary); }
+.result-visuals .is-kv { background: #678fda; }
+.result-visuals .is-workspace { background: #a4afbd; }
+.result-visuals .is-compute { background: #a784c9; }
+.result-visuals .is-coordination { background: #c89545; }
+.result-visuals .is-draft { background: #d28b9a; }
+.capacity-marker { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--destructive); box-shadow: 0 0 0 1px var(--card); }
+.budget-row-note { margin-top: 0.4rem; font-size: 0.73rem; color: var(--text-secondary); }
+.is-overflow .budget-row-note { color: var(--destructive); }
+.budget-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.85rem; font-size: 0.7rem; color: var(--text-secondary); }
+.budget-legend span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.budget-legend i, .timeline-labels i { display: inline-block; width: 8px; height: 8px; flex-shrink: 0; border-radius: 2px; }
+.budget-note { color: var(--text-secondary); font-size: 0.72rem; line-height: 1.5; margin: 0.6rem 0 0; }
+.timeline-labels { display: flex; justify-content: space-between; gap: 1rem; margin: 0.65rem 0 1.1rem; font-size: 0.75rem; color: var(--text-secondary); }
+.timeline-labels i { margin-right: 0.3rem; }
+.timeline-labels strong { display: block; color: var(--text); font-size: 1rem; margin-top: 0.2rem; }
+.timeline-labels > span:last-child { text-align: right; }
+.decode-budget { padding-top: 0.85rem; border-top: 1px solid var(--border); }
+.decode-budget .budget-track { margin-bottom: 0.65rem; height: 10px; }
+.result-diagnostics [style*="color: #4ade80"], .result-diagnostics [style*="color: #22c55e"], .result-diagnostics [style*="color: #fbbf24"], .result-diagnostics [style*="color: #60a5fa"] { color: var(--text) !important; }
+.planner-controls, .planner-controls > .grid, .planner-input-card, .device { min-width: 0; }
+.measured-comparison { margin: 1.5rem 0; padding: 1.2rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.measured-comparison figcaption { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; }
+.measured-comparison figcaption span { font-size: 0.7rem; font-weight: 400; color: var(--text-secondary); }
+.comparison-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 3.5rem; align-items: center; gap: 0.7rem; margin: 0.85rem 0; font-size: 0.8rem; }
+.comparison-row strong { text-align: right; font-variant-numeric: tabular-nums; }
+.comparison-track { height: 13px; background: var(--surface-muted); border-radius: 3px; }
+.comparison-track i { display: block; height: 100%; border-radius: 3px; background: var(--primary); }
+.comparison-track .is-projected { background: #678fda; }
+.comparison-track .is-target { background: #a4afbd; }
+@media (max-width: 620px) { .comparison-row { grid-template-columns: 6.5rem minmax(0, 1fr) 3rem; gap: 0.5rem; font-size: 0.73rem; } }
+.interpreter-plan { padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+.interpreter-plan > span, .interpreter-plan > strong { display: block; margin-bottom: 0.35rem; }
+.interpreter-plan > span, .interpreter-plan p { color: var(--text-secondary); }
+.interpreter-plan p { margin: 0 0 0.6rem; }
+.interpreter-output > .empty-kicker { color: var(--primary); }
+.interpreter-output > h2 { font-size: 1.5rem; line-height: 1.3; }
+.list-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0.8rem 0 1.5rem; font-size: 0.78rem; color: var(--text-secondary); }
+.list-footer .button { font-size: 0.78rem; background: var(--surface-muted); color: var(--text); }
+@media (max-width: 760px) {
+    .result-visuals { grid-template-columns: 1fr; gap: 1.5rem; }
+    .result-diagnostics .device-grid { display: block; }
+    .result-diagnostics .device-grid > div { margin: 0.55rem 0; line-height: 1.5; }
+    .workload-heading > span { display: none; }
+    .workload-controls { grid-template-columns: 1fr; gap: 0.7rem; }
+    .workload-controls .input { font-size: 1rem; }
+    .workload-users { display: grid; grid-template-columns: 1fr 1.5fr; align-items: center; gap: 0.6rem; }
+    .workload-users label { margin: 0; }
+    .budget-row-heading { flex-wrap: wrap; }
+    .list-footer { flex-wrap: wrap; }
+}
+
 @media (max-width: 1120px) {
     .planner-shell { grid-template-columns: minmax(19rem, 22rem) minmax(0, 1fr); }
     .catalog-toolbar { grid-template-columns: repeat(2, 1fr); }
@@ -3650,39 +3726,8 @@ button, input, select, textarea, table { font-family: inherit; }
                 <span class="quick-summary" id="modelSummary" style="display:none;">Llama3 8b @ Q4</span>
 
                 <details class="tuning-panel">
-                    <summary>Context, workload &amp; advanced settings</summary>
+                    <summary>Model architecture &amp; advanced settings</summary>
                     <div class="tuning-panel-content">
-
-                        <div class="tuning-section">
-                            <span class="tuning-section-title">Workload</span>
-                            <div class="token-split-grid">
-                                <div class="token-input-group">
-                                    <label for="promptTokens">Input context</label>
-                                    <input type="number" id="promptTokens" class="input" value="16384" min="1" step="256">
-                                    <small class="field-help">Prompt tokens processed before generation.</small>
-                                </div>
-                                <div class="token-input-group">
-                                    <label for="outputTokens">Output response</label>
-                                    <input type="number" id="outputTokens" class="input" value="4096" min="1" step="256">
-                                    <small class="field-help">Generated tokens decoded autoregressively.</small>
-                                </div>
-                            </div>
-                            <input type="hidden" id="seqLength" value="20480">
-                            <small class="field-help token-total-help">Memory uses the combined context window; timing is split into prompt processing and decode.</small>
-
-                            <label for="batchSize">Concurrent requests (batch size)</label>
-                            <select id="batchSize" class="input">
-                                <option value="1">1 &mdash; single user, lowest latency</option>
-                                <option value="2">2 concurrent requests</option>
-                                <option value="4">4 concurrent requests</option>
-                                <option value="8">8 concurrent requests</option>
-                                <option value="16">16 concurrent requests</option>
-                                <option value="32">32 concurrent requests</option>
-                                <option value="64">64 concurrent requests</option>
-                                <option value="128">128 concurrent requests</option>
-                            </select>
-                            <small class="field-help">Requests decoded in the same pass. Each user sees the per-request rate; the combined rate and the memory cost of every extra KV cache appear in the prediction.</small>
-                        </div>
 
                         <div class="tuning-section" id="distributionTuningSection">
                             <span class="tuning-section-title">Distribution &amp; optimization</span>
@@ -3939,7 +3984,7 @@ button, input, select, textarea, table { font-family: inherit; }
                 </select>
             </div>
             <div class="plan-step-actions">
-                <span class="plan-step-actions-copy">You can change this later.</span>
+                <span class="plan-step-actions-copy">Adjust context and users alongside your estimate.</span>
                 <button class="button" type="button" data-plan-next="2">Choose hardware</button>
             </div>
             </div>
@@ -4010,6 +4055,45 @@ button, input, select, textarea, table { font-family: inherit; }
             </div>
             <span class="approximate-badge">Planning estimate</span>
         </div>
+        <section class="result-workload" id="resultWorkload" aria-labelledby="workloadTitle">
+            <div class="workload-heading"><h3 id="workloadTitle">Your workload</h3><span>Change it to see the trade-offs</span></div>
+            <div id="workloadControls" class="workload-controls">
+                <div class="token-split-grid">
+                    <div class="token-input-group">
+                        <label for="promptTokens">Input tokens</label>
+                        <input type="number" id="promptTokens" class="input" value="16384" min="1" step="256">
+                        <small class="field-help">Prompt tokens processed before generation.</small>
+                    </div>
+                    <div class="token-input-group">
+                        <label for="outputTokens">Output tokens</label>
+                        <input type="number" id="outputTokens" class="input" value="4096" min="1" step="256">
+                        <small class="field-help">Generated tokens decoded autoregressively.</small>
+                    </div>
+                </div>
+                <input type="hidden" id="seqLength" value="20480">
+                <small class="field-help token-total-help">Memory uses the combined context window; timing is split into prompt processing and decode.</small>
+
+                <div class="workload-users"><label for="batchSize">Concurrent users</label>
+                <select id="batchSize" class="input">
+                    <option value="1">1 user</option>
+                    <option value="2">2 users</option>
+                    <option value="4">4 users</option>
+                    <option value="8">8 users</option>
+                    <option value="16">16 users</option>
+                    <option value="32">32 users</option>
+                    <option value="64">64 users</option>
+                    <option value="128">128 users</option>
+                </select>
+                </div>
+            </div>
+
+            <div class="workload-presets" aria-label="Workload examples">
+                <span>Try</span>
+                <button type="button" data-workload-prompt="2048" data-workload-output="512">Quick chat</button>
+                <button type="button" data-workload-prompt="16384" data-workload-output="4096">Long answer</button>
+                <button type="button" data-workload-prompt="65536" data-workload-output="1024">Long document</button>
+            </div>
+        </section>
         <div id="alerts"></div>
         <div id="systemAnalysis"></div>
         <div class="result-step-footer">
@@ -4090,6 +4174,7 @@ button, input, select, textarea, table { font-family: inherit; }
         </div>
         <div class="catalog-summary" id="catalogSummary" aria-live="polite"></div>
         <div class="model-catalog" id="modelCatalog"></div>
+        <div class="list-footer"><span id="catalogPageStatus" role="status"></span><button class="button" type="button" id="catalogMore">Show more models</button></div>
     </section>
 
     <section id="workspace-evidence" class="workspace-view" data-workspace-view="evidence" hidden>
@@ -4116,10 +4201,12 @@ button, input, select, textarea, table { font-family: inherit; }
         </div>
         <div class="gold-set-head"><div><span class="eyebrow">Gold set</span><h2>Reproducible reference runs</h2></div><label class="visually-hidden" for="goldSearch">Filter reference runs</label><input class="input" id="goldSearch" type="search" placeholder="Filter model, hardware, runtime…"></div>
         <div class="gold-table-wrap"><table class="gold-table"><thead><tr><th>Model / setup</th><th>Observed</th><th>Optimized</th><th>Projected</th><th>Error</th></tr></thead><tbody id="goldTableBody"></tbody></table></div>
+        <div class="list-footer"><span id="goldPageStatus" role="status"></span><button class="button" type="button" id="goldMore">Show more reference runs</button></div>
         <div class="lab-set" id="labEvidenceSection" hidden>
             <div class="gold-set-head lab-set-head"><div><span class="eyebrow">Lab measurements</span><h2>Intel Arc Pro runs from the <a href="https://neural.download/" target="_blank" rel="noopener noreferrer">neural.download</a> lab</h2></div></div>
             <p class="lab-set-note">Same author, kept apart from the gold set and never used to calibrate the engine. Stock and baseline rows are compared with the projection for that setup; tuned rows show how much of the optimized target a tuned software stack actually reached. Every row links to its measurement.</p>
             <div class="gold-table-wrap"><table class="gold-table"><thead><tr><th>Run / setup</th><th>Stack</th><th>Measured</th><th>Projected</th><th>Optimized</th><th>Comparison</th></tr></thead><tbody id="labTableBody"></tbody></table></div>
+            <div class="list-footer"><span id="labPageStatus" role="status"></span><button class="button" type="button" id="labMore">Show more lab runs</button></div>
         </div>
     <details class="card reference-card">
         <summary class="section-summary">
@@ -4173,6 +4260,7 @@ button, input, select, textarea, table { font-family: inherit; }
         </header>
         <div class="interpreter-layout">
             <form class="interpreter-form" id="resultInterpreterForm">
+                <div class="interpreter-plan" id="interpreterPlanSummary"></div>
                 <label for="measuredTokS">Measured output speed <span>tok/s</span></label>
                 <input class="input" id="measuredTokS" type="number" min="0.01" step="0.01" placeholder="32.2" required>
                 <label for="resultJson">Optional measured-result JSON</label>
@@ -5954,6 +6042,13 @@ button, input, select, textarea, table { font-family: inherit; }
                 document.getElementById('distributionControls').appendChild(distribution);
                 modeControls.appendChild(runtime);
             }
+            document.getElementById('resultWorkload')?.addEventListener('click', event => {
+                const button = event.target.closest('[data-workload-prompt]');
+                if (!button) return;
+                document.getElementById('promptTokens').value = button.dataset.workloadPrompt;
+                document.getElementById('outputTokens').value = button.dataset.workloadOutput;
+                updateSystemAnalysis();
+            });
             document.querySelector('.plan-progress')?.addEventListener('click', event => {
                 const button = event.target.closest('[data-plan-step]');
                 if (button && !button.disabled) showPlanStep(button.dataset.planStep);
@@ -6166,6 +6261,68 @@ button, input, select, textarea, table { font-family: inherit; }
                         </div>
                     </div>
                 </section>`;
+        }
+
+        function buildResultVisuals(modelConfig, metrics, workflow, parallelism) {
+            if (!workflow || !metrics.length || metrics[0].isImageGen) return '';
+            const config = { ...modelConfig, parallelismStrategy: parallelism };
+            const gb = bytes => `${(bytes / 1e9).toFixed(1)} GB`;
+            const segment = (value, total, kind, label) => `<span class="budget-segment ${kind}" style="width:${(Math.max(0, value) / Math.max(total, 1e-9) * 100).toFixed(3)}%" title="${escapeHtml(label)}"></span>`;
+            const totals = { weights: 0, kv: 0, workspace: 0 };
+            const memoryRows = devices.map((device, index) => {
+                const memory = calculateMemoryBreakdown(config, DTYPE_SIZES[config.quantizationType], devices.length, parallelism === 'pipeline', index, devices);
+                const capacity = Math.max(0, Number(device.memoryGB) || 0) * 1e9;
+                const scale = Math.max(memory.total, capacity, 1);
+                const workspace = memory.activationMemory + memory.attentionMemory + memory.speculationMemory;
+                totals.weights += memory.paramsMemory;
+                totals.kv += memory.kvCacheMemory;
+                totals.workspace += workspace;
+                const over = memory.total > capacity;
+                const description = `${device.name}: ${gb(memory.total)} required, ${gb(capacity)} available. Weights ${gb(memory.paramsMemory)}, KV cache ${gb(memory.kvCacheMemory)}, workspace and draft ${gb(workspace)}. ${over ? `${gb(memory.total - capacity)} over capacity` : `${gb(capacity - memory.total)} headroom`}.`;
+                return `<div class="memory-budget-row ${over ? 'is-overflow' : ''}" data-required-gb="${memory.total / 1e9}" data-capacity-gb="${capacity / 1e9}">
+                    <div class="budget-row-heading"><span>${escapeHtml(device.name)}</span><strong>${gb(memory.total)} / ${gb(capacity)}</strong></div>
+                    <div class="budget-track" role="img" aria-label="${escapeHtml(description)}">
+                        ${segment(memory.paramsMemory, scale, 'is-weights', `Weights: ${gb(memory.paramsMemory)}`)}${segment(memory.kvCacheMemory, scale, 'is-kv', `KV cache: ${gb(memory.kvCacheMemory)}`)}${segment(workspace, scale, 'is-workspace', `Workspace and draft: ${gb(workspace)}`)}
+                        ${over ? `<span class="capacity-marker" style="left:${(capacity / scale * 100).toFixed(3)}%" title="Device capacity"></span>` : ''}
+                    </div>
+                    <div class="budget-row-note">${over ? `${gb(memory.total - capacity)} over capacity &middot; offload or add memory` : `${gb(capacity - memory.total)} headroom`}</div>
+                </div>`;
+            });
+            const layout = getModelWeightLayout(config, DTYPE_SIZES[config.quantizationType], devices);
+            const memoryHtml = memoryRows.slice(0, 4).join('') + (memoryRows.length > 4 ? `<details class="more-memory"><summary>${memoryRows.length - 4} more devices</summary>${memoryRows.slice(4).join('')}</details>` : '');
+            const totalSeconds = workflow.totalSeconds;
+            const timeline = Number.isFinite(totalSeconds) && totalSeconds > 0
+                ? `<div class="budget-track response-timeline" role="img" aria-label="Response timeline: process input ${formatDuration(workflow.promptSeconds)}, generate output ${formatDuration(workflow.decodeSeconds)}, total ${formatDuration(totalSeconds)}">
+                    ${segment(workflow.promptSeconds, totalSeconds, 'is-kv', 'Process input')}${segment(workflow.decodeSeconds, totalSeconds, 'is-weights', 'Generate output')}
+                   </div>` : '';
+            const worst = metrics.reduce((a, b) => (b.decodeTimeBreakdown?.totalMs || 0) > (a.decodeTimeBreakdown?.totalMs || 0) ? b : a);
+            const time = worst.decodeTimeBreakdown || {};
+            const bands = [
+                ['Read weights', time.weightReadMs, 'is-weights'], ['Read KV cache', time.kvReadMs, 'is-kv'],
+                ['Compute', time.computeMs, 'is-compute'], ['Runtime', time.runtimeMs, 'is-workspace'],
+                ['Coordination', time.coordinationMs, 'is-coordination'], ['Draft', time.draftMs, 'is-draft']
+            ].filter(([, value]) => Number.isFinite(value) && value > 0);
+            const budgetTotal = bands.reduce((sum, [, value]) => sum + value, 0);
+            const decodeBudget = budgetTotal > 0 ? `<div class="decode-budget">
+                <div class="budget-row-heading"><span>Where token time goes</span><strong>${budgetTotal.toFixed(2)} ms</strong></div>
+                <div class="budget-track" role="img" aria-label="Engine time per token on ${escapeHtml(worst.name)}: ${bands.map(([label, value]) => `${label} ${value.toFixed(2)} milliseconds`).join(', ')}">${bands.map(([label, value, kind]) => segment(value, budgetTotal, kind, `${label}: ${value.toFixed(2)} ms`)).join('')}</div>
+                <div class="budget-legend">${bands.map(([label, value, kind]) => `<span><i class="${kind}"></i>${label} <strong>${Math.round(value / budgetTotal * 100)}%</strong></span>`).join('')}</div>
+                <p class="budget-note">Engine breakdown${devices.length > 1 ? ` on ${escapeHtml(worst.name)}` : ''}, before benchmark adjustment.</p>
+            </div>` : '';
+            return `<div class="result-visuals">
+                <section class="memory-visual" aria-labelledby="memoryVisualTitle">
+                    <h3 id="memoryVisualTitle">Will it fit?</h3>
+                    ${memoryHtml}
+                    <div class="budget-legend"><span><i class="is-weights"></i>Weights ${gb(totals.weights)}</span><span><i class="is-kv"></i>KV cache ${gb(totals.kv)}</span><span><i class="is-workspace"></i>Workspace &amp; draft ${gb(totals.workspace)}</span></div>
+                    <p class="budget-note">Modeled allocation${devices.length > 1 ? ' across all devices' : ''}. Leave extra room for the runtime.${layout.hostLookupGB > 0 ? ` <strong>Plus ${layout.hostLookupGB.toFixed(1)} GB host RAM for lookup weights.</strong>` : ''}</p>
+                </section>
+                <section class="timing-visual" aria-labelledby="timingVisualTitle">
+                    <h3 id="timingVisualTitle">How long will a response take?</h3>
+                    ${timeline}
+                    <div class="timeline-labels"><span><i class="is-kv"></i>Process input<strong>${formatDuration(workflow.promptSeconds)}</strong></span><span><i class="is-weights"></i>Generate output<strong>${formatDuration(workflow.decodeSeconds)}</strong></span></div>
+                    ${decodeBudget}
+                </section>
+            </div>`;
         }
 
         function updateSystemAnalysis() {
@@ -6412,12 +6569,12 @@ button, input, select, textarea, table { font-family: inherit; }
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem;">
                                 <div>
                                     <strong>Est. Power Draw:</strong>
-                                    <div style="color: #fff; font-size: 0.9rem;">${powerCost.actualPowerWatts.toFixed(0)} W</div>
+                                    <div style="color: var(--text); font-size: 0.9rem;">${powerCost.actualPowerWatts.toFixed(0)} W</div>
                                     <div style="color: var(--text-secondary); font-size: 0.7rem;">TDP: ${powerCost.totalTDP} W</div>
                                 </div>
                                 <div>
                                     <strong>Cost (@ $${powerCost.costPerKwh.toFixed(2)}/kWh):</strong>
-                                    <div style="color: #fff; font-size: 0.9rem;">$${powerCost.costPer1MTokens.toFixed(4)}/M tok</div>
+                                    <div style="color: var(--text); font-size: 0.9rem;">$${powerCost.costPer1MTokens.toFixed(4)}/M tok</div>
                                     <div style="color: var(--text-secondary); font-size: 0.7rem;">$${powerCost.costPerHour.toFixed(3)}/hr</div>
                                 </div>
                             </div>
@@ -6645,23 +6802,22 @@ button, input, select, textarea, table { font-family: inherit; }
                         <div><dt>Prompt processing</dt><dd>${formatDuration(workflowSummary.promptSeconds)}<small>${formatTokenCount(workflowSummary.promptTokens)} input tokens</small></dd></div>
                         <div><dt>Full response</dt><dd>${formatDuration(workflowSummary.totalSeconds)}<small>${formatTokenCount(workflowSummary.outputTokens)} output tokens</small></dd></div>
                     </dl>` : ''}
+                    ${buildResultVisuals(modelConfig, metrics, workflowSummary, parallelism)}
                     ${modelAssumptionsHtml}
                     ${responsiveCalibrationSummaryHtml}
                     ${scalingHtml ? `<details class="compact-options" id="scalingDetails"><summary>Explore context length &amp; concurrent users</summary><div class="compact-options-content">${scalingHtml}</div></details>` : ''}
 
                     <details class="details-disclosure" id="resultBreakdown">
                         <summary>Timing, costs &amp; device breakdown</summary>
-                        <div class="details-disclosure-content">
+                        <div class="details-disclosure-content result-diagnostics">
                             <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
                                 ${rateExplanation}
                             </div>
                             ${phaseSummaryHtml}
-                            ${recommendationHtml}
                             ${autoModeHtml}
                             ${phaseSplitHtml}
                             ${powerCostHtml}
-                            ${benchmarkAlignmentHtml}
-                            ${benchmarkHtml}
+                            <details class="compact-options" id="setupRecommendations"><summary>Setup recommendations &amp; reference runs</summary><div class="compact-options-content">${recommendationHtml}${benchmarkAlignmentHtml}${benchmarkHtml}</div></details>
                             <h4 style="margin: 1.25rem 0 0.5rem 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Per-device</h4>
                             ${deviceDetailsHtml}
                         </div>
@@ -6690,6 +6846,11 @@ button, input, select, textarea, table { font-family: inherit; }
                 headerMeta.textContent = `${config.label || getModelPresetLabel(config.modelPreset) || config.hfId || `${config.totalParamsB.toFixed(1)}B model`} · ${devices.length} device${devices.length === 1 ? '' : 's'} · ${formatStrategyLabel(config.parallelismStrategy)}`;
             }
             updatePlannerInputSummaries();
+            const workloadPanel = document.getElementById('resultWorkload');
+            if (workloadPanel) workloadPanel.hidden = Boolean(metrics[0]?.isImageGen);
+            document.querySelectorAll('[data-workload-prompt]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.workloadPrompt === document.getElementById('promptTokens').value && button.dataset.workloadOutput === document.getElementById('outputTokens').value));
+            });
 
             // Update model summary in collapsed header
             if (typeof updateModelSummary === 'function') {
@@ -6733,13 +6894,18 @@ button, input, select, textarea, table { font-family: inherit; }
             if (updateHash && window.history?.replaceState) window.history.replaceState(null, '', `#${next}`);
             if (next === 'evidence') renderEvidenceWorkspace();
             if (next === 'models') renderModelCatalog();
+            if (next === 'explain') {
+                const config = buildEffectiveModelConfig();
+                const summary = document.getElementById('interpreterPlanSummary');
+                if (summary) summary.innerHTML = `<span>Active plan</span><strong>${escapeHtml(config.label || getModelPresetLabel(config.modelPreset) || config.hfId || 'Custom model')}</strong><p>${escapeHtml(devices.map(device => device.name).join(' + '))} &middot; ${escapeHtml(config.quantFormat || config.quantizationType.toUpperCase())}</p><button type="button" class="link-button" onclick="switchWorkspace('plan'); showPlanStep(4, { unlock: true });">Review this plan</button>`;
+            }
             if (next === 'plan') {
                 setTimeout(() => {
                     if (typeof updateTopology === 'function') updateTopology();
                     if (utilizationChart) utilizationChart.resize();
                 }, 20);
             }
-            window.scrollTo?.({ top: 0, behavior: 'smooth' });
+            window.scrollTo?.({ top: 0, behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
         }
 
         function getCatalogModels() {
@@ -6775,10 +6941,15 @@ button, input, select, textarea, table { font-family: inherit; }
             return [...supplemental, ...snapshotModels];
         }
 
-        let catalogShowAll = false;
-        function toggleCatalogShowAll() {
-            catalogShowAll = !catalogShowAll;
-            renderModelCatalog();
+        let catalogVisibleCount = 12;
+        let goldVisibleCount = 12;
+        let labVisibleCount = 12;
+
+        function updateListCount(prefix, shown, total) {
+            const status = document.getElementById(`${prefix}PageStatus`);
+            const more = document.getElementById(`${prefix}More`);
+            if (status) status.textContent = `Showing ${shown.toLocaleString()} of ${total.toLocaleString()}`;
+            if (more) more.hidden = shown >= total;
         }
 
         // Landing quick-start: the community's most-benchmarked model+hardware
@@ -7045,7 +7216,7 @@ button, input, select, textarea, table { font-family: inherit; }
             const filtered = models.filter(model => {
                 const haystack = normalizeCatalogText(`${model.name} ${model.hfId} ${model.organization} ${model.family} ${model.modality}`);
                 const catalogIsMoE = Boolean(MODEL_PRESETS[model.presetKey]?.isMoE ?? model.isMoE);
-                if (query && !haystack.includes(query)) return false;
+                if (query && !query.split(' ').every(term => haystack.includes(term))) return false;
                 if (family && (model.family || model.organization) !== family) return false;
                 if (architecture === 'moe' && !catalogIsMoE) return false;
                 if (architecture === 'dense' && catalogIsMoE) return false;
@@ -7061,13 +7232,11 @@ button, input, select, textarea, table { font-family: inherit; }
                 size: (a, b) => (a.paramsB || Infinity) - (b.paramsB || Infinity)
             };
             filtered.sort(sorters[sort] || sorters.benchmarks);
-            const catalogLimit = catalogShowAll ? filtered.length : 60;
+            const catalogLimit = catalogVisibleCount;
             const visible = filtered.slice(0, catalogLimit);
             const baseCount = filtered.filter(model => !model.baseHfId).length;
-            const showAllControl = filtered.length > visible.length
-                ? ` · <button type="button" class="catalog-show-all" onclick="toggleCatalogShowAll()">Show all ${filtered.length.toLocaleString()}</button>`
-                : (catalogShowAll && filtered.length > 60 ? ` · <button type="button" class="catalog-show-all" onclick="toggleCatalogShowAll()">Show fewer</button>` : '');
-            document.getElementById('catalogSummary').innerHTML = `<span><strong>${filtered.length.toLocaleString()}</strong> matching models · ${baseCount.toLocaleString()} base models · ${Math.max(0, filtered.length - baseCount).toLocaleString()} variants</span><span>Snapshot ${LOCALMAXXING_DATA.generatedAt ? new Date(LOCALMAXXING_DATA.generatedAt).toLocaleDateString() : 'unavailable'} · first ${visible.length} shown${showAllControl}</span>`;
+            document.getElementById('catalogSummary').innerHTML = `<span><strong>${filtered.length.toLocaleString()}</strong> matching models &middot; ${baseCount.toLocaleString()} base models &middot; ${Math.max(0, filtered.length - baseCount).toLocaleString()} variants</span><span>Speeds span different hardware and runtimes</span>`;
+            updateListCount('catalog', visible.length, filtered.length);
             container.innerHTML = visible.length ? visible.map(model => {
                 const preset = MODEL_PRESETS[model.presetKey] || {};
                 const catalogIsMoE = Boolean(preset.isMoE ?? model.isMoE);
@@ -7159,7 +7328,8 @@ button, input, select, textarea, table { font-family: inherit; }
             section.hidden = rows.length === 0;
             if (!rows.length) return;
             const stackLabel = { stock: 'stock software', 'lab-baseline': 'lab baseline', tuned: 'tuned stack' };
-            tbody.innerHTML = rows.map(row => {
+            updateListCount('lab', Math.min(rows.length, labVisibleCount), rows.length);
+            tbody.innerHTML = rows.slice(0, labVisibleCount).map(row => {
                 const tuned = row.stack === 'tuned';
                 const ratio = tuned ? row.observedToOptimized : row.observedToExpected;
                 const comparisonClass = tuned
@@ -7174,8 +7344,9 @@ button, input, select, textarea, table { font-family: inherit; }
             const tbody = document.getElementById('goldTableBody');
             if (!tbody) return;
             const query = (document.getElementById('goldSearch')?.value || '').trim().toLowerCase();
-            const rows = getGoldValidationRows().filter(row => `${row.model} ${row.hardware} ${row.engine} ${row.quantization}`.toLowerCase().includes(query)).slice(0, 80);
-            tbody.innerHTML = rows.map(row => {
+            const rows = getGoldValidationRows().filter(row => `${row.model} ${row.hardware} ${row.engine} ${row.quantization}`.toLowerCase().includes(query));
+            updateListCount('gold', Math.min(rows.length, goldVisibleCount), rows.length);
+            tbody.innerHTML = rows.slice(0, goldVisibleCount).map(row => {
                 const errorClass = row.absoluteErrorPct <= 20 ? 'error-good' : (row.absoluteErrorPct <= 40 ? 'error-near' : 'error-far');
                 return `<tr><td><a class="gold-run-title" href="${escapeHtml(row.source)}" target="_blank" rel="noopener">${escapeHtml(row.model)}</a><span class="gold-run-meta">${escapeHtml(row.hardware)} · ${escapeHtml(row.engine)} ${escapeHtml(row.quantization)} · ${row.contextLength.toLocaleString()} ctx</span></td><td>${row.observedTokS.toFixed(1)}</td><td>${row.optimizedTokS.toFixed(1)}</td><td>${row.calibratedTokS.toFixed(1)}</td><td class="${errorClass}">${row.absoluteErrorPct.toFixed(1)}%</td></tr>`;
             }).join('') || '<tr><td colspan="5">No gold cases match this filter.</td></tr>';
@@ -7853,6 +8024,12 @@ button, input, select, textarea, table { font-family: inherit; }
             }, null, 2))}</code>`;
         }
 
+        function buildMeasuredComparison(measured, calibration) {
+            const rows = [['Measured', measured, 'is-measured'], ['Projected', calibration.expectedTokS, 'is-projected'], ['Optimized target', calibration.optimizedTokS, 'is-target']];
+            const scale = Math.max(...rows.map(([, value]) => value), 1);
+            return `<figure class="measured-comparison"><figcaption>Output speed <span>tok/s &middot; higher is faster</span></figcaption>${rows.map(([label, value, kind]) => `<div class="comparison-row"><span>${label}</span><span class="comparison-track" aria-hidden="true"><i class="${kind}" style="width:${(value / scale * 100).toFixed(2)}%"></i></span><strong>${value.toFixed(1)}</strong></div>`).join('')}</figure>`;
+        }
+
         function renderResultInterpretation(measuredTokS, parsed = null) {
             const output = document.getElementById('interpreterOutput');
             let imported = null;
@@ -7898,7 +8075,7 @@ button, input, select, textarea, table { font-family: inherit; }
                 : calibration.peers > 0
                 ? `This is ${Math.abs(expectedDeltaPct).toFixed(0)}% ${expectedDeltaPct >= 0 ? 'above' : 'below'} the peer-calibrated expectation, based on ${calibration.peers} neighboring gold case${calibration.peers === 1 ? '' : 's'}.`
                 : 'No close gold-case peer was available, so the expected rate is uncalibrated.';
-            output.innerHTML = `<span class="empty-kicker">${useImported ? 'Imported setup' : 'Active plan'} / ${escapeHtml(modelLabel)} / ${escapeHtml(hardwareLabel || 'current hardware')}</span><h2>${headline}</h2><div class="interpret-metrics"><div class="interpret-metric"><strong>${measuredTokS.toFixed(1)}</strong><span>measured tok/s</span></div><div class="interpret-metric"><strong>${calibration.expectedTokS.toFixed(1)}</strong><span>projected real</span></div><div class="interpret-metric"><strong>${calibration.optimizedTokS.toFixed(1)}</strong><span>optimized target</span></div></div><p>${headroom.toFixed(1)} tok/s remains to the attainable target; the ${calibration.physicalTokS.toFixed(1)} tok/s zero-overhead roofline is only a sanity reference. ${peerSentence}</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+            output.innerHTML = `<span class="empty-kicker">${useImported ? 'Imported setup' : 'Active plan'} / ${escapeHtml(modelLabel)} / ${escapeHtml(hardwareLabel || 'current hardware')}</span><h2>${headline}</h2>${buildMeasuredComparison(measuredTokS, calibration)}<p>${headroom.toFixed(1)} tok/s remains to the attainable target; the ${calibration.physicalTokS.toFixed(1)} tok/s zero-overhead roofline is only a sanity reference. ${peerSentence}</p><ul class="recommendation-list">${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
             document.getElementById('apiContractPreview').innerHTML = `<code>${escapeHtml(JSON.stringify({
                 observedTokS: measuredTokS,
                 model: plan.modelConfig.hfId || modelLabel,
@@ -8518,10 +8695,7 @@ button, input, select, textarea, table { font-family: inherit; }
                         </div>
                     </div>
                     ${buildHardwareSpecMeta(selectedDevice)}
-                    <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.6rem; display: block;" for="dev${selectedDevice.id}-name">Label</label>
                     <div class="device-name-row">
-                        <input class="input device-name-input" id="dev${selectedDevice.id}-name" title="Rename this device (label only)" value="${escapeHtml(selectedDevice.name)}"
-                               onchange="updateDevice(${selectedDevice.id}, 'name', this.value)">
                         <div class="device-actions">
                             <button class="icon-button" onclick="cloneDevice(${selectedDevice.id})" title="Duplicate this device">Clone</button>
                             <button class="icon-button" onclick="saveToLibrary(${selectedDevice.id})" title="Save this spec to your library for reuse">Save</button>
@@ -8531,6 +8705,9 @@ button, input, select, textarea, table { font-family: inherit; }
                     <details class="hardware-advanced"${advancedOpen}>
                         <summary>Advanced hardware settings</summary>
                         <div class="hardware-advanced-content">
+                            <label style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.6rem; display: block;" for="dev${selectedDevice.id}-name">Label</label>
+                            <input class="input device-name-input" id="dev${selectedDevice.id}-name" title="Rename this device (label only)" value="${escapeHtml(selectedDevice.name)}"
+                                   onchange="updateDevice(${selectedDevice.id}, 'name', this.value)">
                             ${selectedDevice.specNote ? `<div class="hardware-spec-detail">${escapeHtml(selectedDevice.specNote)}</div>` : ''}
                             <div class="device-grid">
                                 <div>
@@ -8971,6 +9148,7 @@ button, input, select, textarea, table { font-family: inherit; }
         let hardwareFilterApplyTimer = null;
         function filterHardwarePresets(query, select, autoApply = true) {
             if (!select) return;
+            clearTimeout(hardwareFilterApplyTimer);
             const normalizedQuery = String(query || '').trim().toLowerCase();
             Array.from(select.options).forEach(option => {
                 option.hidden = Boolean(normalizedQuery) && !option.textContent.toLowerCase().includes(normalizedQuery);
@@ -8985,7 +9163,8 @@ button, input, select, textarea, table { font-family: inherit; }
             }
             const matches = Array.from(select.options).filter(option => !option.hidden);
             if (!matches.length) return;
-            const bestMatch = matches.find(option => option.textContent.trim().toLowerCase().startsWith(normalizedQuery)) || matches[0];
+            const bestMatch = matches.find(option => [option.textContent.trim().toLowerCase(), option.value.toLowerCase()].includes(normalizedQuery)) || (matches.length === 1 ? matches[0] : null);
+            if (!bestMatch) return;
             const previousValue = select.value;
             select.value = bestMatch.value;
             if (!autoApply || bestMatch.value === previousValue) return;
@@ -9039,7 +9218,7 @@ button, input, select, textarea, table { font-family: inherit; }
                 if (format) document.getElementById('quantizationType').value = format.family;
             } else document.getElementById('quantFormat').value = '';
         });
-        document.querySelectorAll('#modelConfigContent input, #modelConfigContent select').forEach(input => {
+        document.querySelectorAll('#modelConfigContent input, #modelConfigContent select, #workloadControls input, #workloadControls select').forEach(input => {
             if (input.id !== 'modelPreset' && input.id !== 'quantizationType' && input.id !== 'dtype') {
                 input.addEventListener('change', updateSystemAnalysis);
             }
@@ -9719,13 +9898,16 @@ DeepSeek V3.2	Official eval	DeepSeek official	TerminalBench 2	Terminal tasks	HF 
         }));
         ['catalogSearch', 'catalogFamily', 'catalogArchitecture', 'catalogSize', 'catalogSort'].forEach(id => {
             const control = document.getElementById(id);
-            control?.addEventListener(id === 'catalogSearch' ? 'input' : 'change', renderModelCatalog);
+            control?.addEventListener(id === 'catalogSearch' ? 'input' : 'change', () => { catalogVisibleCount = 12; renderModelCatalog(); });
         });
         document.getElementById('modelCatalog')?.addEventListener('click', event => {
             const button = event.target.closest?.('[data-use-model]');
             if (button) useCatalogModel(button.dataset.useModel, button.dataset.presetKey);
         });
-        document.getElementById('goldSearch')?.addEventListener('input', renderGoldTable);
+        document.getElementById('goldSearch')?.addEventListener('input', () => { goldVisibleCount = 12; renderGoldTable(); });
+        document.getElementById('catalogMore')?.addEventListener('click', () => { catalogVisibleCount += 12; renderModelCatalog(); });
+        document.getElementById('goldMore')?.addEventListener('click', () => { goldVisibleCount += 12; renderGoldTable(); });
+        document.getElementById('labMore')?.addEventListener('click', () => { labVisibleCount += 12; renderLabTable(); });
         document.getElementById('resultJson')?.addEventListener('input', updateResultImportPreview);
         document.getElementById('resultInterpreterForm')?.addEventListener('submit', event => {
             event.preventDefault();

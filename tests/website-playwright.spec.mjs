@@ -183,6 +183,8 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
   ]);
 
   await page.getByRole('button', { name: 'Models', exact: true }).click();
+  await page.locator('#catalogSearch').fill('Qwen Flash Next');
+  await expect(page.locator('#modelCatalog [data-preset-key="qwen3.8_flash_next"]').first()).toBeVisible();
   await page.locator('#catalogSearch').fill('Gemma 4');
   await expect(page.locator('#catalogSummary')).toContainText('matching models');
   await expect(page.locator('#modelCatalog')).toContainText('gemma-4');
@@ -197,12 +199,16 @@ test('new workspaces connect catalog, evidence, and result interpretation', asyn
   const goldCount = parseInt(goldStat.match(/(\d+)\s*reproducible/)?.[1] || '0', 10);
   expect(goldCount).toBeGreaterThanOrEqual(50);
   const goldRows = await page.locator('#goldTableBody tr').count();
-  expect(goldRows).toBeGreaterThanOrEqual(40);
+  expect(goldRows).toBe(12);
+  await page.locator('#goldMore').click();
+  await expect(page.locator('#goldTableBody tr')).toHaveCount(24);
 
   await page.getByRole('button', { name: 'Explain', exact: true }).click();
   await page.locator('#measuredTokS').fill('45');
   await page.getByRole('button', { name: 'Explain this run', exact: true }).click();
   await expect(page.locator('#interpreterOutput')).toContainText('optimized target');
+  await expect(page.locator('.measured-comparison .comparison-row')).toHaveCount(3);
+  await expect(page.locator('.measured-comparison')).toContainText('45.0');
   await expect(page.locator('#apiContractPreview')).toContainText('expectedTokS');
 
   const activePreset = await page.locator('#modelPreset').inputValue();
@@ -264,10 +270,11 @@ test('hardware editor keeps one selected device and adds new devices to topology
   await expect(page.locator('#devices .hardware-spec-meta')).toBeVisible();
   await expect(page.locator('#devices optgroup[label="NVIDIA · GeForce"]')).toHaveCount(1);
 
-  const labelInputBox = await page.locator('#devices .device-name-input').boundingBox();
+  await expect(page.locator('#devices .device-name-input')).toBeHidden();
+  const presetBox = await page.locator('#devices .hardware-preset-row').boundingBox();
   const actionsBox = await page.locator('#devices .device-actions').boundingBox();
   const deviceBox = await page.locator('#devices > .device').boundingBox();
-  expect(actionsBox?.y).toBeGreaterThan((labelInputBox?.y || 0) + (labelInputBox?.height || 0) - 1);
+  expect(actionsBox?.y).toBeGreaterThan((presetBox?.y || 0) + (presetBox?.height || 0) - 1);
   expect((actionsBox?.x || 0) + (actionsBox?.width || 0)).toBeLessThanOrEqual((deviceBox?.x || 0) + (deviceBox?.width || 0) + 1);
 
   await page.locator('#devices .add-device-inline').click();
@@ -282,6 +289,7 @@ test('hardware editor keeps one selected device and adds new devices to topology
   await expect(page.locator('#hardwareHeadMeta')).toContainText('Editing device 1 of 2');
   await page.locator('#deviceRoster .device-roster-card').nth(1).click();
   await expect(page.locator('#hardwareHeadMeta')).toContainText('Editing device 2 of 2');
+  await page.locator('#devices .hardware-advanced > summary').click();
   await page.locator('#devices .device-name-input').fill('Render GPU');
   await page.locator('#devices .device-name-input').dispatchEvent('change');
   await expect(page.locator('#deviceRoster .device-roster-card').nth(1)).toContainText('Render GPU');
@@ -789,6 +797,9 @@ test('mobile planner stays compact, readable, and within the viewport', async ({
   await advancePlanTo(page, 4);
   await expect(page.locator('.planner-stage')).toBeVisible();
   await expect(page.locator('.result-reason')).toBeVisible();
+  await expect(page.locator('.memory-visual')).toBeVisible();
+  await expect(page.locator('.response-timeline')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await expect(page.locator('.execution-card')).toHaveJSProperty('open', false);
   await expect(page.locator('.mobile-calibration-summary')).toBeVisible();
   await expect(page.locator('.mobile-calibration-summary')).toHaveJSProperty('open', false);
@@ -806,6 +817,55 @@ test('mobile planner stays compact, readable, and within the viewport', async ({
   expect(expandedWidth).toBeLessThanOrEqual(390);
   await page.locator('[data-workspace="plan"]').click();
   await expect(page.locator('.app-header h1')).toBeVisible();
+});
+
+test('workload exploration updates the visible memory and time diagrams and persists', async ({ page }) => {
+  await loadApp(page);
+  await advancePlanTo(page, 2);
+  await page.getByRole('button', { name: 'Show estimate' }).click();
+  await page.getByRole('button', { name: 'Quick chat', exact: true }).click();
+  await expect(page.locator('#promptTokens')).toHaveValue('2048');
+  await expect(page.locator('#outputTokens')).toHaveValue('512');
+  await expect(page.locator('.response-timeline')).toBeVisible();
+  await expect(page.locator('.memory-visual')).toContainText('headroom');
+  const shortMemory = Number(await page.locator('.memory-budget-row').first().getAttribute('data-required-gb'));
+  const shortRate = await displayedRate(page);
+  await page.getByRole('button', { name: 'Long document', exact: true }).click();
+  const longMemory = Number(await page.locator('.memory-budget-row').first().getAttribute('data-required-gb'));
+  expect(longMemory).toBeGreaterThan(shortMemory);
+  expect(await displayedRate(page)).toBeLessThan(shortRate);
+  await page.locator('#batchSize').selectOption('4');
+  const batchedMemory = Number(await page.locator('.memory-budget-row').first().getAttribute('data-required-gb'));
+  expect(batchedMemory).toBeGreaterThan(longMemory);
+  await page.reload();
+  await expect(page.locator('#promptTokens')).toHaveValue('65536');
+  await expect(page.locator('#outputTokens')).toHaveValue('1024');
+  await expect(page.locator('#batchSize')).toHaveValue('4');
+  await selectAndChange(page, '#modelPreset', 'qwen3.8_flash_next');
+  await advancePlanTo(page, 4);
+  await expect(page.locator('.memory-budget-row.is-overflow')).toHaveCount(1);
+  await expect(page.locator('.capacity-marker')).toBeVisible();
+  await expect(page.locator('.memory-visual')).toContainText('over capacity');
+  const sizes = await page.evaluate(() => {
+    const metric = window.__mlBottleneckTestHooks.calculateMetrics()[0];
+    const device = window.__mlBottleneckTestHooks.getDevices()[0];
+    return { required: metric.memoryUtilization / 100 * device.memoryGB };
+  });
+  expect(Number(await page.locator('.memory-budget-row').getAttribute('data-required-gb'))).toBeCloseTo(sizes.required, 5);
+});
+
+test('hardware filtering preserves the active GPU for ambiguous searches', async ({ page }) => {
+  await loadApp(page);
+  await advancePlanTo(page, 2);
+  const initial = await page.locator('#devices .hardware-preset-line select').inputValue();
+  for (const query of ['Intel', 'no-such-GPU', '']) {
+    await page.locator('#devices .hardware-search').fill(query);
+    await page.waitForTimeout(300);
+    await expect(page.locator('#devices .hardware-preset-line select')).toHaveValue(initial);
+    expect(await page.evaluate(() => window.__mlBottleneckTestHooks.getDevices()[0].template)).toBe(initial);
+  }
+  await page.locator('#devices .hardware-search').fill('RTX 5070 Ti');
+  await expect(page.locator('#deviceRoster')).toContainText('RTX 5070 Ti');
 });
 
 test('browser fuzz smoke changes configs repeatedly without invalid output', async ({ page }) => {
